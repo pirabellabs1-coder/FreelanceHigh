@@ -1,0 +1,150 @@
+schema: spec-driven
+
+context: |
+  ## Projet : FreelanceHigh
+  Plateforme internationale de freelancing, francophone en premier (Afrique francophone + diaspora + international).
+  Fondateur : Lissanon Gildas — CEO & Fondateur (2026)
+  Slogan : "La plateforme freelance qui élève votre carrière au plus haut niveau"
+  Roadmap : MVP (M1–3) → V1 (M4–6) → V2 (M7–10) → V3 (M11–15) → V4 (M16–20)
+
+  ## Rôles utilisateurs
+  - Freelance (`/dashboard`) — vend des services, postule aux projets
+  - Client (`/client`) — commande des services, publie des projets
+  - Agence (`/agence`) — gère une équipe, publie des services sous sa marque
+  - Admin (`/admin`) — modère, gère la plateforme
+
+  ## Stack technique
+
+  ### Frontend (apps/web)
+  - Framework : Next.js 14 (App Router, RSC, SSR/SSG/ISR)
+  - Langage : TypeScript strict
+  - UI : shadcn/ui + Radix UI (accessible, non-opinionated)
+  - Styles : Tailwind CSS — classes `rtl:` pour support arabe natif
+  - État UI : Zustand (devise, langue, modales, wizards)
+  - État serveur : TanStack Query v5 (cache, optimistic updates)
+  - i18n : next-intl (routing par locale, RSC-compatible)
+  - SEO : Next.js Metadata API (sitemap dynamique, Schema.org, OG tags)
+  - PWA : next-pwa (V4)
+
+  ### Backend (apps/api)
+  - Runtime : Node.js 20+ LTS
+  - Framework HTTP : Fastify (TypeScript natif)
+  - API type-safe : tRPC v11 sur Fastify (end-to-end type safety)
+  - WebSocket : Socket.io sur Fastify (chat temps réel, présence, typing)
+  - Queue de jobs : BullMQ (emails, PDFs, retraits, webhooks)
+  - Cache / broker BullMQ : Redis (Upstash MVP → Railway V2+)
+
+  ### Base de données
+  - Supabase Postgres 15+ (région eu-central-1, Frankfurt)
+  - ORM : Prisma 5 — schema.prisma = source unique de vérité
+  - RLS : Row Level Security via `auth.uid()` dans les policies Supabase
+  - Supabase Realtime : statuts commandes live, dashboard admin
+  - Recherche : Postgres FTS (MVP) → Meilisearch (V1) → pgvector (V3)
+
+  ### Authentification
+  - Supabase Auth : email+MDP, OAuth (Google, Facebook, LinkedIn, Apple)
+  - OTP email, 2FA TOTP (Google Authenticator), 2FA SMS (Twilio)
+  - JWT custom claims : `role`, `kyc_level`, `subscription_tier`
+  - KYC progressif 4 niveaux : email → téléphone → identité → pro
+
+  ### Paiements
+  - Stripe Connect (cartes, SEPA, PayPal, Apple Pay, Stripe Billing abonnements)
+  - CinetPay (Orange Money, Wave, MTN MoMo — Afrique francophone, MVP)
+  - Flutterwave (Nigeria, Ghana, Kenya, Rwanda — V1)
+  - Escrow géré en DB via `wallet_transactions.escrow_status` (held/released/disputed)
+
+  ### Stockage médias
+  - Supabase Storage (buckets privés RLS) : documents KYC, livrables commandes, contrats
+  - Cloudinary (images publiques) : avatars, images services, portfolio
+
+  ### Email / SMS / Push
+  - Email transactionnel : Resend + React Email (templates comme composants React)
+  - SMS : Twilio (2FA, alertes critiques) + Africa's Talking en fallback
+  - Push notifications : Web Push API via service worker (V4)
+
+  ### Intelligence Artificielle (V3)
+  - OpenAI gpt-4o : génération de contrats
+  - OpenAI gpt-4o-mini : certifications compétences, recommandations, SEO services
+  - text-embedding-3-small : embeddings recherche sémantique via BullMQ pipeline
+  - Résultats mis en cache dans pgvector
+
+  ### Monitoring
+  - Sentry : erreurs frontend + backend, performance
+  - PostHog : analytics produit, funnels, cohortes de rétention
+
+  ### Hébergement
+  - Vercel : apps/web (Edge Network mondial, déploiements preview sur PR)
+  - Railway EU West : apps/api (Fastify + Socket.io + BullMQ)
+  - CI/CD : GitHub Actions (lint → tests → build → deploy preview puis production)
+
+  ## Structure monorepo
+  ```
+  freelancehigh/
+  ├── apps/
+  │   ├── web/app/
+  │   │   ├── (public)/    # Landing, marketplace, blog
+  │   │   ├── (auth)/      # Inscription, connexion, onboarding
+  │   │   ├── dashboard/   # Espace Freelance
+  │   │   ├── client/      # Espace Client
+  │   │   ├── agence/      # Espace Agence
+  │   │   └── admin/       # Espace Admin
+  │   └── api/src/
+  │       ├── routes/      # Routers tRPC
+  │       ├── socket/      # Handlers Socket.io
+  │       ├── workers/     # Processeurs jobs BullMQ
+  │       ├── services/    # Logique métier
+  │       └── lib/         # Stripe, CinetPay, Resend, OpenAI…
+  ├── packages/
+  │   ├── db/              # schema.prisma + client généré + migrations
+  │   ├── types/           # Types TypeScript partagés
+  │   ├── ui/              # Composants shadcn/ui + templates React Email
+  │   └── config/          # Configs ESLint, TypeScript partagées
+  ├── package.json         # Workspace pnpm
+  └── turbo.json           # Config Turborepo
+  ```
+
+  ## Conventions de développement
+  - TypeScript strict partout (frontend, backend, schéma DB, types partagés)
+  - Pas de NoSQL — une seule base relationnelle Postgres
+  - État UI dans Zustand, état serveur dans TanStack Query (pas de mélange)
+  - RLS Supabase = contrôle d'accès principal au niveau DB
+  - Migrations via `prisma migrate` (critique sur une plateforme financière)
+  - Classes Tailwind `rtl:` dès les premiers composants pour support arabe
+  - React Email pour tous les templates email (dans `packages/ui/emails/`)
+  - Adaptateur Redis Socket.io configuré dès le jour 1 (scalabilité horizontale)
+  - Services managés préférés pour réduire la charge opérationnelle
+
+  ## Domaine métier — concepts clés
+  - **Service** : offre publiée par un freelance/agence (3 forfaits : Basique/Standard/Premium)
+  - **Commande** : achat d'un service ou acceptation d'une candidature
+  - **Escrow** : fonds bloqués à la commande, libérés à la validation de livraison
+  - **Candidature** : postulation d'un freelance à un projet client
+  - **Offre personnalisée** : devis sur mesure freelance → client spécifique
+  - **Wallet** : portefeuille multi-devises (EUR, FCFA, USD, GBP, MAD)
+  - **KYC** : vérification identité progressive (4 niveaux)
+  - **Boost** : mise en avant d'un service dans la marketplace
+
+  ## Devise & i18n
+  - Devise par défaut : EUR (€) partout
+  - Devises disponibles : EUR, FCFA, USD, GBP, MAD
+  - Taux : 1 EUR = 655.957 FCFA = 1.08 USD = 0.85 GBP = 10.95 MAD
+  - Préférence sauvegardée localStorage + profil utilisateur
+  - Locales actives : fr (MVP), en (V1), ar RTL (V2), es/pt (V2+)
+
+  ## Plans d'abonnement
+  - Gratuit : €0/mois, commission 20%, 3 services, 5 candidatures/mois
+  - Pro : €15/mois, commission 15%, 15 services, 20 candidatures/mois
+  - Business : €45/mois, commission 10%, illimité, clés API
+  - Agence : €99/mois, commission 8%, illimité, 20 membres, 50 GB stockage
+
+rules:
+  proposal:
+    - Toujours préciser la version cible (MVP, V1, V2, V3 ou V4)
+    - Inclure une section "Impact sur les autres rôles" si la fonctionnalité touche plusieurs espaces
+    - Préciser si la fonctionnalité nécessite un job BullMQ, un handler Socket.io, ou un template email
+    - Indiquer l'impact sur le schéma Prisma (nouvelles tables, colonnes, relations)
+  tasks:
+    - Décomposer en tâches de max 4 heures chacune
+    - Séparer clairement les tâches frontend (apps/web), backend (apps/api) et DB (packages/db)
+    - Indiquer les dépendances entre tâches (ex : migration DB avant implémentation API)
+    - Chaque tâche doit avoir un critère d'acceptation clair et testable
