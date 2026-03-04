@@ -2,156 +2,115 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, ChevronDown, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useCurrencyStore, CURRENCIES, type Currency } from "@/store/currency";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
-  { label: "Explorer", href: "/explorer" },
-  { label: "Projets", href: "/projets" },
-  { label: "Comment ça marche", href: "/comment-ca-marche" },
-];
-
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currencyOpen, setCurrencyOpen] = useState(false);
   const { currency, setCurrency } = useCurrencyStore();
 
-  const currentCurrency = CURRENCIES.find((c) => c.code === currency);
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-primary rtl:flex-row-reverse"
-          >
-            <Zap className="h-7 w-7 fill-primary text-primary" />
-            <span className="text-xl font-extrabold tracking-tight text-gray-900">
-              FreelanceHigh
-            </span>
-          </Link>
+    <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-6 lg:px-20 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 text-primary">
+          <span className="material-symbols-outlined text-3xl font-bold">public</span>
+          <h2 className="text-xl font-extrabold tracking-tight dark:text-slate-100">FreelanceHigh</h2>
+        </Link>
 
-          {/* Nav desktop */}
-          <nav className="hidden md:flex flex-1 justify-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-semibold text-gray-600 hover:text-primary transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        {/* Nav desktop */}
+        <nav className="hidden md:flex flex-1 justify-center gap-8">
+          <Link href="/explorer" className="text-sm font-semibold hover:text-primary transition-colors">Explorer</Link>
+          <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">Devenir Freelance</Link>
+          <Link href="/projets" className="text-sm font-semibold hover:text-primary transition-colors">Projets</Link>
+          <Link href="/tarifs" className="text-sm font-semibold hover:text-primary transition-colors">Tarifs</Link>
+        </nav>
 
-          {/* Actions desktop */}
-          <div className="hidden md:flex items-center gap-3 rtl:flex-row-reverse">
-            {/* Currency selector */}
-            <div className="relative">
-              <button
-                onClick={() => setCurrencyOpen(!currencyOpen)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-700 hover:border-primary transition-all"
-              >
-                <span>{currentCurrency?.symbol}</span>
-                <span>{currency}</span>
-                <ChevronDown className="h-3 w-3" />
-              </button>
-              {currencyOpen && (
-                <div className="absolute right-0 rtl:left-0 rtl:right-auto mt-2 w-36 rounded-xl border border-gray-200 bg-white shadow-xl z-50 p-1">
-                  {CURRENCIES.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        setCurrency(c.code as Currency);
-                        setCurrencyOpen(false);
-                      }}
-                      className={cn(
-                        "w-full text-left rtl:text-right px-3 py-2 text-xs font-bold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors",
-                        currency === c.code && "text-primary bg-primary/5"
-                      )}
-                    >
-                      {c.symbol} {c.code}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Link
-              href="/connexion"
-              className="text-sm font-bold text-gray-700 hover:text-primary transition-colors px-3 py-2"
-            >
-              Connexion
-            </Link>
-            <Button asChild size="default">
-              <Link href="/inscription">Inscription</Link>
-            </Button>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden p-2 rounded-md text-gray-600 hover:text-primary hover:bg-gray-100"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
-          >
-            {mobileOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-4">
-          <nav className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-2 text-sm font-semibold text-gray-700 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-            {/* Currency mobile */}
-            <div className="flex flex-wrap gap-2">
+        {/* Actions desktop */}
+        <div className="flex items-center gap-6">
+          {/* Currency selector */}
+          <div className="relative group hidden lg:block">
+            <button className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold hover:border-primary transition-all">
+              <span className="material-symbols-outlined text-sm">payments</span>
+              {currency} ({CURRENCIES.find((c) => c.code === currency)?.symbol})
+              <span className="material-symbols-outlined text-xs">expand_more</span>
+            </button>
+            <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2">
               {CURRENCIES.map((c) => (
                 <button
                   key={c.code}
                   onClick={() => setCurrency(c.code as Currency)}
                   className={cn(
-                    "px-3 py-1 text-xs font-bold rounded-lg border transition-colors",
-                    currency === c.code
-                      ? "border-primary bg-primary text-white"
-                      : "border-gray-200 text-gray-600 hover:border-primary hover:text-primary"
+                    "block w-full text-left px-3 py-2 text-xs font-bold hover:bg-primary/10 rounded-lg transition-colors",
+                    currency === c.code && "text-primary"
                   )}
                 >
                   {c.symbol} {c.code}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Auth buttons */}
+          <div className="flex items-center gap-3">
             <Link
               href="/connexion"
-              className="block text-center text-sm font-bold text-gray-700 hover:text-primary py-2"
-              onClick={() => setMobileOpen(false)}
+              className="text-sm font-bold hover:text-primary transition-colors px-2 py-2"
             >
               Connexion
             </Link>
-            <Button asChild className="w-full">
-              <Link href="/inscription" onClick={() => setMobileOpen(false)}>
-                Inscription
-              </Link>
-            </Button>
+            <Link
+              href="/inscription"
+              className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
+            >
+              Inscription
+            </Link>
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-md text-slate-600 dark:text-slate-400 hover:text-primary"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            <span className="material-symbols-outlined">{mobileOpen ? "close" : "menu"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-primary/20 mt-4 pt-4 pb-4 px-4 space-y-4">
+          <nav className="flex flex-col gap-2">
+            <Link href="/explorer" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Explorer</Link>
+            <Link href="/inscription" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Devenir Freelance</Link>
+            <Link href="/projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Projets</Link>
+            <Link href="/tarifs" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Tarifs</Link>
+          </nav>
+
+          {/* Currency selector mobile */}
+          <div className="pt-2 border-t border-primary/20">
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 px-3">Devise</p>
+            <div className="flex flex-wrap gap-2 px-3">
+              {CURRENCIES.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => setCurrency(c.code as Currency)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors",
+                    currency === c.code
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "border-slate-200 dark:border-slate-700 hover:border-primary"
+                  )}
+                >
+                  {c.symbol} {c.code}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2 border-t border-primary/20">
+            <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>Connexion</Link>
+            <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>Inscription</Link>
           </div>
         </div>
       )}

@@ -1,0 +1,344 @@
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+const OFFRES = [
+  {
+    id: "OFF-018",
+    client: "Koffi M.",
+    clientCountry: "CI",
+    title: "Développement API REST Node.js + documentation Swagger",
+    amount: 1400,
+    delay: "14 jours",
+    revisions: 2,
+    status: "acceptee",
+    sentAt: "20 Fév 2026",
+    expiresAt: "6 Mar 2026",
+    description: "Développement d'une API REST complète avec authentification JWT, documentation Swagger interactive et tests unitaires Jest.",
+  },
+  {
+    id: "OFF-017",
+    client: "Amara D.",
+    clientCountry: "SN",
+    title: "Intégration Supabase Auth + Storage pour app existante",
+    amount: 750,
+    delay: "7 jours",
+    revisions: 1,
+    status: "en_attente",
+    sentAt: "25 Fév 2026",
+    expiresAt: "11 Mar 2026",
+    description: "Migration du système d'authentification vers Supabase Auth avec intégration du stockage sécurisé pour les documents utilisateurs.",
+  },
+  {
+    id: "OFF-016",
+    client: "StartupTech Dakar",
+    clientCountry: "SN",
+    title: "Migration base de données MySQL vers PostgreSQL + Prisma",
+    amount: 980,
+    delay: "10 jours",
+    revisions: 2,
+    status: "expiree",
+    sentAt: "1 Fév 2026",
+    expiresAt: "15 Fév 2026",
+    description: "Migration complète de la base de données MySQL vers PostgreSQL avec mise en place de Prisma ORM et migration des données existantes.",
+  },
+  {
+    id: "OFF-015",
+    client: "Agence Digital Paris",
+    clientCountry: "FR",
+    title: "Audit technique et refactoring Next.js app router",
+    amount: 600,
+    delay: "5 jours",
+    revisions: 1,
+    status: "refusee",
+    sentAt: "10 Jan 2026",
+    expiresAt: "24 Jan 2026",
+    description: "Audit complet du projet Next.js, identification des bottlenecks de performance et refactoring vers App Router avec Server Components.",
+  },
+  {
+    id: "OFF-014",
+    client: "TechCorp Mali",
+    clientCountry: "ML",
+    title: "Développement tableau de bord analytics avec Recharts",
+    amount: 1850,
+    delay: "18 jours",
+    revisions: 3,
+    status: "en_attente",
+    sentAt: "27 Fév 2026",
+    expiresAt: "13 Mar 2026",
+    description: "Création d'un dashboard analytics complet avec graphiques interactifs, filtres avancés, export PDF/CSV et accès par rôles.",
+  },
+];
+
+const STATUS_CONFIG = {
+  en_attente: { label: "En attente", color: "bg-blue-500/10 text-blue-400", iconName: "schedule" },
+  vue: { label: "Vue", color: "bg-primary/10 text-primary", iconName: "visibility" },
+  acceptee: { label: "Acceptée", color: "bg-emerald-500/10 text-emerald-400", iconName: "check_circle" },
+  refusee: { label: "Refusée", color: "bg-red-500/10 text-red-400", iconName: "cancel" },
+  expiree: { label: "Expirée", color: "bg-slate-500/10 text-slate-500", iconName: "schedule" },
+};
+
+const FLAG: Record<string, string> = { CI: "🇨🇮", SN: "🇸🇳", FR: "🇫🇷", ML: "🇲🇱", BJ: "🇧🇯" };
+
+const TABS = [
+  { label: "Toutes", statuses: ["en_attente", "vue", "acceptee", "refusee", "expiree"] },
+  { label: "En attente", statuses: ["en_attente", "vue"] },
+  { label: "Acceptées", statuses: ["acceptee"] },
+  { label: "Archivées", statuses: ["refusee", "expiree"] },
+];
+
+type NewOffer = {
+  client: string;
+  title: string;
+  amount: string;
+  delay: string;
+  revisions: string;
+  description: string;
+  expiry: string;
+};
+
+export default function OffresPage() {
+  const [activeTab, setActiveTab] = useState("Toutes");
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<NewOffer>({
+    client: "",
+    title: "",
+    amount: "",
+    delay: "",
+    revisions: "2",
+    description: "",
+    expiry: "14",
+  });
+
+  const activeStatuses = TABS.find((t) => t.label === activeTab)?.statuses ?? [];
+  const filtered = OFFRES.filter(
+    (o) =>
+      activeStatuses.includes(o.status) &&
+      (o.title.toLowerCase().includes(search.toLowerCase()) ||
+        o.client.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  function handleChange(field: keyof NewOffer, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-black text-slate-100">Offres personnalisées</h2>
+          <p className="text-sm text-slate-400 mt-0.5">Devis sur mesure envoyés à vos clients</p>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="inline-flex items-center gap-2 bg-primary hover:opacity-90 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm"
+        >
+          <span className="material-symbols-outlined text-base leading-none">add</span>
+          Nouvelle offre
+        </button>
+      </div>
+
+      {/* New offer form */}
+      {showForm && (
+        <div className="bg-background-dark/50 rounded-2xl border border-border-dark p-6">
+          <h3 className="text-base font-black text-slate-100 mb-5">Créer une offre personnalisée</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Client *</label>
+              <input
+                type="text"
+                value={form.client}
+                onChange={(e) => handleChange("client", e.target.value)}
+                placeholder="Nom du client ou email"
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Titre de l&apos;offre *</label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Ex: Développement API REST"
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Montant (€) *</label>
+              <input
+                type="number"
+                value={form.amount}
+                onChange={(e) => handleChange("amount", e.target.value)}
+                placeholder="Ex: 1200"
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Délai de livraison *</label>
+              <input
+                type="text"
+                value={form.delay}
+                onChange={(e) => handleChange("delay", e.target.value)}
+                placeholder="Ex: 10 jours"
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Révisions incluses</label>
+              <select
+                value={form.revisions}
+                onChange={(e) => handleChange("revisions", e.target.value)}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                {["1", "2", "3", "5", "Illimitées"].map((v) => (
+                  <option key={v} value={v}>{v} révision{v === "1" ? "" : "s"}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Durée de validité</label>
+              <select
+                value={form.expiry}
+                onChange={(e) => handleChange("expiry", e.target.value)}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                {["7", "14", "30"].map((v) => (
+                  <option key={v} value={v}>{v} jours</option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">Description de la prestation *</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Décrivez précisément ce que vous allez livrer, les technologies utilisées, les livrables attendus…"
+                rows={4}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder:text-slate-500"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button className="flex-1 bg-primary hover:opacity-90 text-white font-bold py-2.5 rounded-xl text-sm transition-all">
+              Envoyer l&apos;offre
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2.5 border border-border-dark rounded-xl text-sm font-bold text-slate-400 hover:bg-primary/5 transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs + search */}
+      <div className="bg-background-dark/50 rounded-2xl border border-border-dark overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-border-dark">
+          <div className="flex gap-1 bg-neutral-dark rounded-xl p-1">
+            {TABS.map((t) => (
+              <button
+                key={t.label}
+                onClick={() => setActiveTab(t.label)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all",
+                  activeTab === t.label ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 bg-neutral-dark rounded-xl px-3 py-2 flex-1 max-w-xs ml-auto">
+            <span className="material-symbols-outlined text-base leading-none text-slate-500">search</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher…"
+              className="bg-transparent outline-none text-sm text-slate-200 placeholder:text-slate-500 w-full"
+            />
+          </div>
+        </div>
+
+        {/* List */}
+        {filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <span className="material-symbols-outlined text-4xl leading-none text-slate-600 mx-auto mb-3 block">sell</span>
+            <p className="text-slate-500 font-semibold">Aucune offre dans cette catégorie</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border-dark">
+            {filtered.map((o) => {
+              const s = STATUS_CONFIG[o.status as keyof typeof STATUS_CONFIG];
+              const isActive = ["en_attente", "vue"].includes(o.status);
+              const daysLeft = isActive
+                ? Math.max(
+                    0,
+                    Math.ceil(
+                      (new Date(o.expiresAt.split(" ").reverse().join("-")).getTime() -
+                        Date.now()) /
+                        86400000
+                    )
+                  )
+                : 0;
+
+              return (
+                <div key={o.id} className="px-5 py-5 hover:bg-primary/5 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2 mb-1.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-100 line-clamp-1">{o.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 flex-wrap">
+                            <span>{o.id}</span>
+                            <span>·</span>
+                            <span>{FLAG[o.clientCountry] ?? ""} {o.client}</span>
+                            <span>·</span>
+                            <span>Envoyée le {o.sentAt}</span>
+                            {isActive && daysLeft <= 3 && (
+                              <>
+                                <span>·</span>
+                                <span className="text-amber-400 font-semibold">Expire dans {daysLeft}j</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg ${s.color}`}>
+                          <span className="material-symbols-outlined text-sm leading-none">{s.iconName}</span>
+                          {s.label}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-500 line-clamp-2 mb-3">{o.description}</p>
+
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span>Montant : <span className="font-black text-slate-100">€{o.amount.toLocaleString("fr-FR")}</span></span>
+                        <span>·</span>
+                        <span>Délai : <span className="font-semibold text-slate-300">{o.delay}</span></span>
+                        <span>·</span>
+                        <span>{o.revisions} révisions</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title="Dupliquer">
+                        <span className="material-symbols-outlined text-sm leading-none">content_copy</span>
+                      </button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Supprimer">
+                        <span className="material-symbols-outlined text-sm leading-none">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -2,117 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, ArrowLeft, CheckCircle, Zap, Check } from "lucide-react";
 
-// ─── Lock illustration ──────────────────────────────────────────────────
-function LockIllustration() {
-  return (
-    <div className="flex justify-center">
-      <div className="relative w-24 h-24 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-white/10" />
-        <div className="absolute inset-4 rounded-full bg-white/10" />
-        <svg viewBox="0 0 80 90" fill="none" className="w-14 h-14 relative z-10">
-          {/* Lock body */}
-          <rect
-            x="8" y="38" width="64" height="50" rx="12"
-            fill="white" fillOpacity="0.18"
-            stroke="white" strokeOpacity="0.35" strokeWidth="1.5"
-          />
-          {/* Lock shackle */}
-          <path
-            d="M22 38V28C22 14 58 14 58 28V38"
-            stroke="white" strokeOpacity="0.75" strokeWidth="7"
-            strokeLinecap="round" fill="none"
-          />
-          {/* Keyhole */}
-          <circle cx="40" cy="58" r="7" fill="white" fillOpacity="0.5" />
-          <rect x="37" y="62" width="6" height="12" rx="3" fill="white" fillOpacity="0.5" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-const REASSURANCES = [
-  "Lien sécurisé valable 15 minutes",
-  "Vérifiez vos spams si nécessaire",
-  "Votre compte et vos données restent intacts",
-];
-
-// ─── Left panel ─────────────────────────────────────────────────────────
-function LeftPanel() {
-  return (
-    <div
-      className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between p-12"
-      style={{ background: "linear-gradient(145deg, #6C2BD9 0%, #4A1B9E 55%, #2D1060 100%)" }}
-    >
-      {/* Grid pattern */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <svg className="w-full h-full" preserveAspectRatio="none">
-          <defs>
-            <pattern id="fpwd-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#fpwd-grid)" />
-        </svg>
-      </div>
-      {/* Glow blobs */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Logo */}
-      <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="bg-white/15 p-2 rounded-xl">
-            <Zap className="h-6 w-6 text-white fill-white" />
-          </div>
-          <span className="text-white text-xl font-extrabold tracking-tight">FreelanceHigh</span>
-        </Link>
-      </div>
-
-      {/* Center content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center py-10 gap-6">
-        <LockIllustration />
-        <div>
-          <h2 className="text-white text-3xl font-black leading-tight mb-3">
-            Pas de panique,{" "}
-            <br />
-            <span className="text-yellow-300">ça arrive à tout le monde.</span>
-          </h2>
-          <p className="text-white/70 text-sm leading-relaxed max-w-sm">
-            Vous recevrez un lien de réinitialisation dans votre boîte mail en moins de 2 minutes.
-          </p>
-        </div>
-        <ul className="space-y-3.5">
-          {REASSURANCES.map((t) => (
-            <li key={t} className="flex items-start gap-3">
-              <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-              </div>
-              <span className="text-white/80 text-sm leading-snug">{t}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Bottom */}
-      <div className="relative z-10 border-t border-white/15 pt-6">
-        <p className="text-white/40 text-xs">
-          Besoin d&apos;aide ? Contactez-nous à{" "}
-          <a
-            href="mailto:support@freelancehigh.com"
-            className="text-white/60 hover:text-white transition-colors underline underline-offset-2"
-          >
-            support@freelancehigh.com
-          </a>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Page ───────────────────────────────────────────────────────────────
 export default function MotDePasseOubliePage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -130,36 +20,89 @@ export default function MotDePasseOubliePage() {
 
   return (
     <div className="flex flex-col lg:flex-row w-full min-h-screen">
-      <LeftPanel />
-
-      {/* ── Right panel ── */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-6 py-12 sm:px-10 bg-white overflow-y-auto">
-        {/* Mobile logo */}
-        <div className="lg:hidden mb-8 self-start">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Zap className="h-6 w-6 text-purple-600 fill-purple-600" />
-            <span className="text-xl font-extrabold text-gray-900">FreelanceHigh</span>
-          </Link>
+      {/* Left Section: Visual */}
+      <div
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12"
+        style={{ background: "linear-gradient(135deg, #0e7c66 0%, #1a2e2a 100%)" }}
+      >
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+            <defs>
+              <pattern id="grid-fpwd" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="url(#grid-fpwd)" />
+          </svg>
         </div>
 
+        <div className="relative z-10 max-w-lg text-center lg:text-left">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="bg-accent p-2 rounded-lg">
+              <span className="material-symbols-outlined text-[#11211e] font-bold text-3xl">work</span>
+            </div>
+            <h1 className="text-white text-3xl font-extrabold tracking-tight">FreelanceHigh</h1>
+          </div>
+
+          <h2 className="text-white text-5xl font-black leading-tight mb-6">
+            Pas de panique, ça arrive à tout le monde
+          </h2>
+
+          <p className="text-white/80 text-lg mb-10 leading-relaxed">
+            Vous recevrez un lien de réinitialisation dans votre boîte mail en moins de 2 minutes. Votre compte et vos données restent intacts.
+          </p>
+
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-accent text-3xl font-bold">
+                <span className="material-symbols-outlined text-accent text-3xl align-middle">lock_reset</span>
+              </span>
+              <span className="text-white/60 text-sm">Lien valable 15 min</span>
+            </div>
+            <div className="w-px h-12 bg-white/20 mx-4"></div>
+            <div className="flex flex-col gap-1">
+              <span className="text-accent text-3xl font-bold">
+                <span className="material-symbols-outlined text-accent text-3xl align-middle">verified_user</span>
+              </span>
+              <span className="text-white/60 text-sm">Connexion sécurisée SSL</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Decorative blob */}
+        <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Right Section: Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 md:p-20 bg-background-light dark:bg-background-dark">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
+            <span className="material-symbols-outlined text-primary text-3xl">work</span>
+            <h1 className="text-slate-900 dark:text-slate-100 text-2xl font-bold">FreelanceHigh</h1>
+          </div>
+
           {!sent ? (
             <>
               <div className="mb-8">
-                <h1 className="text-3xl font-black text-gray-900 mb-1.5">Mot de passe oublié</h1>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  Mot de passe oublié
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
                   Entrez votre email pour recevoir un lien de réinitialisation.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Adresse email
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+                      mail
                     </span>
                     <input
                       type="email"
@@ -168,7 +111,7 @@ export default function MotDePasseOubliePage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="nom@exemple.com"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 </div>
@@ -176,15 +119,15 @@ export default function MotDePasseOubliePage() {
                 <button
                   type="submit"
                   disabled={loading || !email.trim()}
-                  className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all text-sm flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all mt-4 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
-                      Envoi en cours…
+                      Envoi en cours...
                     </>
                   ) : (
                     "Envoyer le lien"
@@ -192,28 +135,30 @@ export default function MotDePasseOubliePage() {
                 </button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-10 text-center">
                 <Link
                   href="/connexion"
-                  className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold transition-colors"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="material-symbols-outlined text-lg">arrow_back</span>
                   Retour à la connexion
                 </Link>
               </div>
             </>
           ) : (
-            /* ── Success state ── */
+            /* Success state */
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-8 h-8 text-emerald-500" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <span className="material-symbols-outlined text-primary text-3xl">check_circle</span>
               </div>
-              <h1 className="text-2xl font-black text-gray-900 mb-3">Email envoyé !</h1>
-              <p className="text-gray-500 text-sm leading-relaxed mb-1.5">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+                Email envoyé !
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-1.5">
                 Un lien de réinitialisation a été envoyé à
               </p>
-              <p className="text-gray-800 font-bold text-sm mb-6">{email}</p>
-              <p className="text-gray-400 text-xs leading-relaxed mb-8">
+              <p className="text-slate-900 dark:text-slate-100 font-bold text-sm mb-6">{email}</p>
+              <p className="text-slate-500 dark:text-slate-500 text-xs leading-relaxed mb-8">
                 Vérifiez votre boîte mail et vos dossiers spams.
                 <br />
                 Le lien est valable 15 minutes.
@@ -221,27 +166,25 @@ export default function MotDePasseOubliePage() {
               <button
                 type="button"
                 onClick={() => { setSent(false); setEmail(""); }}
-                className="text-xs text-purple-600 hover:text-purple-700 font-semibold underline underline-offset-2 mb-4 block mx-auto"
+                className="text-xs text-primary hover:text-primary/80 font-bold underline underline-offset-2 mb-4 block mx-auto"
               >
                 Renvoyer un lien
               </button>
               <Link
                 href="/connexion"
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold transition-colors"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="material-symbols-outlined text-lg">arrow_back</span>
                 Retour à la connexion
               </Link>
             </div>
           )}
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-4 mt-12 text-xs text-gray-400">
-            <Link href="/cgu" className="hover:text-gray-600 transition-colors">CGU</Link>
-            <span>·</span>
-            <Link href="/confidentialite" className="hover:text-gray-600 transition-colors">Confidentialité</Link>
-            <span>·</span>
-            <Link href="/contact" className="hover:text-gray-600 transition-colors">Aide</Link>
+          <div className="mt-12 flex items-center justify-center gap-6 opacity-60">
+            <Link href="/cgu" className="text-xs hover:text-primary transition-colors">Conditions d&apos;utilisation</Link>
+            <Link href="/confidentialite" className="text-xs hover:text-primary transition-colors">Politique de confidentialité</Link>
+            <Link href="/contact" className="text-xs hover:text-primary transition-colors">Aide</Link>
           </div>
         </div>
       </div>

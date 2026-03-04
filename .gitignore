@@ -22,6 +22,11 @@ build/
 node_modules/
 .npm/
 
+# Next.js
+.next/
+out/
+*.tsbuildinfo
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,44 +1,22 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "../../packages/ui/src/**/*.{ts,tsx}",
   ],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
-        // FreelanceHigh brand colors
-        primary: {
-          DEFAULT: "#6C2BD9",
-          50: "#F3EEFF",
-          100: "#E5DBFF",
-          200: "#CDBCFF",
-          300: "#B09AFF",
-          400: "#9078FF",
-          500: "#6C2BD9",
-          600: "#5620B5",
-          700: "#421891",
-          800: "#30116D",
-          900: "#200B49",
-          foreground: "#FFFFFF",
-        },
-        secondary: {
-          DEFAULT: "#0EA5E9",
-          foreground: "#FFFFFF",
-        },
-        accent: {
-          DEFAULT: "#10B981",
-          foreground: "#FFFFFF",
-        },
+        // CSS-variable-driven colors — scoped per space via layout overrides
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        accent: "#f2b705",
+        "background-light": "rgb(var(--color-bg-light) / <alpha-value>)",
+        "background-dark": "rgb(var(--color-bg-dark) / <alpha-value>)",
+        "neutral-dark": "rgb(var(--color-neutral-dark) / <alpha-value>)",
+        "border-dark": "rgb(var(--color-border-dark) / <alpha-value>)",
         // shadcn/ui tokens
         background: "hsl(0 0% 100%)",
         foreground: "hsl(222.2 84% 4.9%)",
@@ -48,7 +26,7 @@ const config: Config = {
         },
         border: "hsl(214.3 31.8% 91.4%)",
         input: "hsl(214.3 31.8% 91.4%)",
-        ring: "#6C2BD9",
+        ring: "rgb(var(--color-primary) / <alpha-value>)",
         destructive: {
           DEFAULT: "hsl(0 84.2% 60.2%)",
           foreground: "hsl(210 40% 98%)",
@@ -63,13 +41,16 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Manrope", "Inter", "sans-serif"],
+        sans: ["Manrope", "sans-serif"],
         display: ["Manrope", "sans-serif"],
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        DEFAULT: "0.25rem",
+        lg: "0.5rem",
+        xl: "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
+        full: "9999px",
       },
       keyframes: {
         "accordion-down": {

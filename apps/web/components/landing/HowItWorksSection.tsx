@@ -1,82 +1,70 @@
 import Link from "next/link";
-import { Rocket } from "lucide-react";
 
 const STEPS = [
   {
     number: 1,
-    title: "Publiez votre mission",
+    title: "Décrivez votre projet",
     description:
-      "Décrivez votre projet, vos besoins techniques et votre budget en moins de 2 minutes.",
+      "Dites-nous ce que vous cherchez. Publiez votre besoin ou parcourez notre catalogue de services freelance.",
   },
   {
     number: 2,
-    title: "Sélectionnez votre expert",
+    title: "Trouvez l'expert idéal",
     description:
-      "Recevez des propositions qualifiées de freelances vérifiés et comparez les profils.",
+      "Comparez les profils, les portfolios et les avis. Échangez directement avec les freelances avant de vous engager.",
   },
   {
     number: 3,
-    title: "Collaborez en toute sécurité",
+    title: "Collaborez en confiance",
     description:
-      "Payez via notre système de séquestre sécurisé. Les fonds ne sont libérés qu'après validation.",
+      "Paiement sécurisé par séquestre. Vos fonds sont protégés jusqu'à ce que vous soyez satisfait de la livraison.",
   },
 ];
 
 export function HowItWorksSection() {
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+    <section className="py-32 px-6 lg:px-20">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
         {/* Visual */}
         <div className="relative order-2 lg:order-1">
-          <div className="bg-primary/10 rounded-2xl w-full aspect-square absolute -rotate-3 z-0" />
-          <div
-            className="relative z-10 w-full aspect-square rounded-2xl shadow-2xl bg-cover bg-center"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80')",
-            }}
-            role="img"
-            aria-label="Équipe de freelances collaborant autour d'un ordinateur"
+          <div className="bg-accent/10 rounded-[3rem] w-full aspect-square absolute -rotate-6 z-0 border border-accent/20"></div>
+          <img
+            alt="Collaboration entre client et freelance"
+            className="relative z-10 w-full aspect-square object-cover rounded-[3rem] shadow-2xl"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU-wjNmvoaekii1VavUXeH1NsSrY4IxYrzNNkTbCP8yKbfy1k_TDeZhsNcFxkTJeixI5PfZ3lPN3DXitH98toGdsHGA3QEPVNUMsRJcTEZ1kPA67JZrE1WYBDQl1BF91GUVn7T07qLGjcz-eSWPFRr4Lo2feTVSi1k3mcwpO1UW0P_ceWrYmdf9frG9yLFLjlNPDfwX5xUJiKodovaeyIgF_XnSDmuGO0-n1_rgYfJbv8OihuopGfISoad4bbM3SBwAkfp6yFhKD9o"
           />
-          {/* Floating badge */}
-          <div className="absolute -bottom-4 -right-4 rtl:-left-4 rtl:right-auto bg-white rounded-xl shadow-lg p-4 z-20 border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <span className="text-accent text-xl">✓</span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Paiements</p>
-                <p className="text-sm font-extrabold text-gray-900">Sécurisés</p>
-              </div>
+          {/* Floating card */}
+          <div className="absolute -bottom-8 -right-8 z-20 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl border border-primary/10 max-w-xs">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="material-symbols-outlined text-primary text-3xl">verified</span>
+              <p className="font-bold text-lg leading-tight">Satisfaction garantie</p>
             </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Chaque freelance est vérifié. Vous ne payez que lorsque le travail vous satisfait pleinement.
+            </p>
           </div>
         </div>
 
         {/* Content */}
-        <div className="space-y-10 order-1 lg:order-2">
-          <div className="space-y-4">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-              Comment ça marche ?
+        <div className="space-y-12 order-1 lg:order-2">
+          <div className="space-y-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+              Simple, rapide et <span className="text-primary">sécurisé</span>
             </h2>
-            <p className="text-gray-500 text-lg">
-              Trouvez le talent qu&apos;il vous faut en quelques clics grâce à
-              notre processus simplifié et sécurisé.
+            <p className="text-slate-500 dark:text-slate-400 text-lg">
+              En 3 étapes, trouvez le freelance parfait et lancez votre projet en toute sérénité.
             </p>
           </div>
 
           <div className="space-y-8">
             {STEPS.map((step) => (
-              <div key={step.number} className="flex gap-5">
-                <div className="flex-none size-12 rounded-full bg-primary text-white flex items-center justify-center font-extrabold text-xl shadow-md shadow-primary/20">
+              <div key={step.number} className="flex gap-6 items-start">
+                <div className="flex-none size-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-primary/20">
                   {step.number}
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1.5">
-                    {step.title}
-                  </h4>
-                  <p className="text-gray-500 leading-relaxed">
-                    {step.description}
-                  </p>
+                  <h4 className="text-xl font-bold mb-2">{step.title}</h4>
+                  <p className="text-slate-500 dark:text-slate-400">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -84,10 +72,10 @@ export function HowItWorksSection() {
 
           <Link
             href="/inscription"
-            className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 transition-all"
+            className="inline-flex items-center gap-4 bg-primary hover:bg-primary/90 text-white rounded-2xl px-10 py-5 text-xl font-bold shadow-2xl shadow-primary/20 transition-all group"
           >
-            Lancer mon projet
-            <Rocket className="h-5 w-5" />
+            Commencer gratuitement
+            <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </Link>
         </div>
       </div>

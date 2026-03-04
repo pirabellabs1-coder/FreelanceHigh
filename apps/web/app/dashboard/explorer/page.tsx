@@ -1,0 +1,1329 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { useToastStore } from "@/store/dashboard";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type MarketplaceService = {
+  id: string;
+  title: string;
+  sellerName: string;
+  sellerType: "freelance" | "agence";
+  rating: number;
+  reviewsCount: number;
+  price: number;
+  deliveryDays: number;
+  tags: string[];
+  category: string;
+  categoryIcon: string;
+};
+
+type ClientOffer = {
+  id: string;
+  title: string;
+  description: string;
+  budgetMin: number;
+  budgetMax: number;
+  deadline: string;
+  skills: string[];
+  urgency: "normale" | "urgente" | "tres_urgente";
+  proposalsCount: number;
+  clientName: string;
+  clientCountry: string;
+};
+
+type Agency = {
+  id: string;
+  name: string;
+  description: string;
+  rating: number;
+  membersCount: number;
+  specialities: string[];
+  country: string;
+  countryFlag: string;
+  verified: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Demo data
+// ---------------------------------------------------------------------------
+
+const DEMO_SERVICES: MarketplaceService[] = [
+  {
+    id: "ms-1",
+    title: "Site vitrine WordPress professionnel",
+    sellerName: "Moussa K.",
+    sellerType: "freelance",
+    rating: 4.9,
+    reviewsCount: 142,
+    price: 250,
+    deliveryDays: 7,
+    tags: ["WordPress", "Responsive", "SEO"],
+    category: "Developpement",
+    categoryIcon: "code",
+  },
+  {
+    id: "ms-2",
+    title: "Logo et identite visuelle complete",
+    sellerName: "Studio Krea",
+    sellerType: "agence",
+    rating: 4.8,
+    reviewsCount: 89,
+    price: 180,
+    deliveryDays: 5,
+    tags: ["Logo", "Branding", "Illustrator"],
+    category: "Design",
+    categoryIcon: "palette",
+  },
+  {
+    id: "ms-3",
+    title: "Strategie SEO et audit de site web",
+    sellerName: "Fatou D.",
+    sellerType: "freelance",
+    rating: 4.7,
+    reviewsCount: 56,
+    price: 320,
+    deliveryDays: 10,
+    tags: ["SEO", "Analytics", "Audit"],
+    category: "Marketing",
+    categoryIcon: "campaign",
+  },
+  {
+    id: "ms-4",
+    title: "Application mobile React Native",
+    sellerName: "DevForge Agency",
+    sellerType: "agence",
+    rating: 5.0,
+    reviewsCount: 203,
+    price: 1500,
+    deliveryDays: 30,
+    tags: ["React Native", "iOS", "Android"],
+    category: "Developpement",
+    categoryIcon: "code",
+  },
+  {
+    id: "ms-5",
+    title: "Redaction articles SEO (lot de 10)",
+    sellerName: "Amadou S.",
+    sellerType: "freelance",
+    rating: 4.6,
+    reviewsCount: 78,
+    price: 200,
+    deliveryDays: 14,
+    tags: ["Redaction", "SEO", "Blog"],
+    category: "Redaction",
+    categoryIcon: "edit_note",
+  },
+  {
+    id: "ms-6",
+    title: "Montage video promotionnelle 60s",
+    sellerName: "Ibrahima T.",
+    sellerType: "freelance",
+    rating: 4.8,
+    reviewsCount: 34,
+    price: 150,
+    deliveryDays: 3,
+    tags: ["Premiere Pro", "After Effects", "Motion"],
+    category: "Video",
+    categoryIcon: "videocam",
+  },
+  {
+    id: "ms-7",
+    title: "Dashboard analytics sur mesure",
+    sellerName: "DataPulse",
+    sellerType: "agence",
+    rating: 4.9,
+    reviewsCount: 67,
+    price: 800,
+    deliveryDays: 15,
+    tags: ["React", "D3.js", "Tableau de bord"],
+    category: "Data & IA",
+    categoryIcon: "analytics",
+  },
+  {
+    id: "ms-8",
+    title: "Design UI/UX application mobile",
+    sellerName: "Aissatou B.",
+    sellerType: "freelance",
+    rating: 4.7,
+    reviewsCount: 112,
+    price: 400,
+    deliveryDays: 10,
+    tags: ["Figma", "UI/UX", "Prototypage"],
+    category: "Design",
+    categoryIcon: "palette",
+  },
+  {
+    id: "ms-9",
+    title: "API REST Node.js + documentation",
+    sellerName: "Ousmane M.",
+    sellerType: "freelance",
+    rating: 4.5,
+    reviewsCount: 45,
+    price: 600,
+    deliveryDays: 12,
+    tags: ["Node.js", "Express", "Swagger"],
+    category: "Developpement",
+    categoryIcon: "code",
+  },
+  {
+    id: "ms-10",
+    title: "Campagne Facebook Ads complete",
+    sellerName: "GrowthLab Abidjan",
+    sellerType: "agence",
+    rating: 4.6,
+    reviewsCount: 91,
+    price: 350,
+    deliveryDays: 7,
+    tags: ["Facebook Ads", "Meta", "Publicite"],
+    category: "Marketing",
+    categoryIcon: "campaign",
+  },
+  {
+    id: "ms-11",
+    title: "Traduction FR-EN documents techniques",
+    sellerName: "Mariam C.",
+    sellerType: "freelance",
+    rating: 4.9,
+    reviewsCount: 156,
+    price: 80,
+    deliveryDays: 3,
+    tags: ["Traduction", "Technique", "FR-EN"],
+    category: "Redaction",
+    categoryIcon: "edit_note",
+  },
+  {
+    id: "ms-12",
+    title: "Animation 3D pour presentation",
+    sellerName: "Pixel Studio",
+    sellerType: "agence",
+    rating: 4.8,
+    reviewsCount: 29,
+    price: 550,
+    deliveryDays: 8,
+    tags: ["Blender", "3D", "Animation"],
+    category: "Video",
+    categoryIcon: "videocam",
+  },
+];
+
+const DEMO_OFFERS: ClientOffer[] = [
+  {
+    id: "co-1",
+    title: "Developpement plateforme e-commerce B2B",
+    description:
+      "Nous recherchons un developpeur full-stack pour creer une plateforme de commerce en ligne B2B avec gestion de catalogue, commandes et paiements Mobile Money integres.",
+    budgetMin: 2000,
+    budgetMax: 5000,
+    deadline: "30 jours",
+    skills: ["Next.js", "PostgreSQL", "Stripe", "Mobile Money"],
+    urgency: "urgente",
+    proposalsCount: 18,
+    clientName: "TechCorp Dakar",
+    clientCountry: "SN",
+  },
+  {
+    id: "co-2",
+    title: "Refonte design site web institutionnel",
+    description:
+      "Refonte complete du site web de notre organisation. Nous avons besoin d'un designer UX/UI pour moderniser l'interface, ameliorer l'experience utilisateur et creer un design system coherent.",
+    budgetMin: 800,
+    budgetMax: 1500,
+    deadline: "15 jours",
+    skills: ["Figma", "UI/UX", "Responsive", "Design System"],
+    urgency: "normale",
+    proposalsCount: 7,
+    clientName: "ONG Solidaire",
+    clientCountry: "CI",
+  },
+  {
+    id: "co-3",
+    title: "Application mobile de livraison (MVP)",
+    description:
+      "Creation d'un MVP d'application de livraison de repas pour le marche ivoirien. Besoin d'un developpeur React Native avec experience en geolocalisation et paiements CinetPay.",
+    budgetMin: 3000,
+    budgetMax: 6000,
+    deadline: "45 jours",
+    skills: ["React Native", "Node.js", "CinetPay", "Geolocalisation"],
+    urgency: "tres_urgente",
+    proposalsCount: 24,
+    clientName: "StartupFood CI",
+    clientCountry: "CI",
+  },
+  {
+    id: "co-4",
+    title: "Strategie marketing digital et SEO",
+    description:
+      "Mise en place d'une strategie marketing digitale complete pour notre lancement au Senegal. SEO, reseaux sociaux, campagnes publicitaires et creation de contenu sur 3 mois.",
+    budgetMin: 1200,
+    budgetMax: 2500,
+    deadline: "90 jours",
+    skills: ["SEO", "Google Ads", "Community Management", "Copywriting"],
+    urgency: "normale",
+    proposalsCount: 11,
+    clientName: "ModaAfrik",
+    clientCountry: "SN",
+  },
+  {
+    id: "co-5",
+    title: "Video corporate + montage reseaux sociaux",
+    description:
+      "Tournage d'une video de presentation corporate de 2 minutes + declinaison en formats courts pour Instagram Reels et TikTok. Cameraman et monteur necessaires.",
+    budgetMin: 500,
+    budgetMax: 1000,
+    deadline: "10 jours",
+    skills: ["Tournage", "Montage", "After Effects", "Reseaux sociaux"],
+    urgency: "urgente",
+    proposalsCount: 5,
+    clientName: "Agence Immo Douala",
+    clientCountry: "CM",
+  },
+  {
+    id: "co-6",
+    title: "Pipeline data et dashboard analytics",
+    description:
+      "Construction d'un pipeline ETL pour agreger nos donnees commerciales et creation d'un dashboard interactif avec visualisations en temps reel pour l'equipe de direction.",
+    budgetMin: 1800,
+    budgetMax: 3500,
+    deadline: "25 jours",
+    skills: ["Python", "SQL", "Power BI", "ETL"],
+    urgency: "normale",
+    proposalsCount: 9,
+    clientName: "FinBank Mali",
+    clientCountry: "ML",
+  },
+];
+
+const DEMO_AGENCIES: Agency[] = [
+  {
+    id: "ag-1",
+    name: "Studio Krea",
+    description:
+      "Agence de design et branding basee a Abidjan. Specialistes en identite visuelle, UI/UX et communication digitale pour startups et PME africaines.",
+    rating: 4.8,
+    membersCount: 12,
+    specialities: ["Branding", "UI/UX", "Web Design"],
+    country: "Cote d'Ivoire",
+    countryFlag: "CI",
+    verified: true,
+  },
+  {
+    id: "ag-2",
+    name: "DevForge Agency",
+    description:
+      "Equipe de developpeurs full-stack specialisee en applications mobiles et web. Experience en fintech, e-commerce et solutions SaaS pour le marche africain.",
+    rating: 5.0,
+    membersCount: 8,
+    specialities: ["React Native", "Next.js", "Node.js"],
+    country: "Senegal",
+    countryFlag: "SN",
+    verified: true,
+  },
+  {
+    id: "ag-3",
+    name: "GrowthLab Abidjan",
+    description:
+      "Agence de marketing digital et growth hacking. Nous aidons les entreprises a scaler leur acquisition client via SEO, publicite payante et automatisation.",
+    rating: 4.6,
+    membersCount: 6,
+    specialities: ["SEO", "Google Ads", "Facebook Ads"],
+    country: "Cote d'Ivoire",
+    countryFlag: "CI",
+    verified: false,
+  },
+  {
+    id: "ag-4",
+    name: "Pixel Studio",
+    description:
+      "Studio de creation audiovisuelle et animation 3D. Production video, motion design et contenu multimedia pour marques et institutions.",
+    rating: 4.8,
+    membersCount: 5,
+    specialities: ["Video", "Animation 3D", "Motion Design"],
+    country: "Cameroun",
+    countryFlag: "CM",
+    verified: true,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const VIEW_TABS = [
+  { key: "services", label: "Services", icon: "storefront" },
+  { key: "offres", label: "Offres Clients", icon: "work" },
+  { key: "agences", label: "Agences", icon: "business" },
+] as const;
+
+type ViewTab = (typeof VIEW_TABS)[number]["key"];
+
+const SERVICE_CATEGORIES = [
+  { label: "Toutes", value: "all", icon: "apps" },
+  { label: "Developpement", value: "Developpement", icon: "code" },
+  { label: "Design", value: "Design", icon: "palette" },
+  { label: "Marketing", value: "Marketing", icon: "campaign" },
+  { label: "Redaction", value: "Redaction", icon: "edit_note" },
+  { label: "Video", value: "Video", icon: "videocam" },
+  { label: "Data & IA", value: "Data & IA", icon: "analytics" },
+];
+
+const URGENCY_CONFIG = {
+  normale: { label: "Normale", className: "bg-slate-500/10 text-slate-400" },
+  urgente: { label: "Urgent", className: "bg-amber-500/10 text-amber-400" },
+  tres_urgente: { label: "Tres urgent", className: "bg-red-500/10 text-red-400" },
+};
+
+const FLAG: Record<string, string> = {
+  CI: "\uD83C\uDDE8\uD83C\uDDEE",
+  SN: "\uD83C\uDDF8\uD83C\uDDF3",
+  CM: "\uD83C\uDDE8\uD83C\uDDF2",
+  FR: "\uD83C\uDDEB\uD83C\uDDF7",
+  ML: "\uD83C\uDDF2\uD83C\uDDF1",
+  BJ: "\uD83C\uDDE7\uD83C\uDDEF",
+};
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
+  const full = Math.floor(rating);
+  const hasHalf = rating - full >= 0.5;
+  const empty = 5 - full - (hasHalf ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: full }).map((_, i) => (
+        <span
+          key={`f-${i}`}
+          className="material-symbols-outlined text-amber-400"
+          style={{ fontSize: size, fontVariationSettings: "'FILL' 1" }}
+        >
+          star
+        </span>
+      ))}
+      {hasHalf && (
+        <span
+          className="material-symbols-outlined text-amber-400"
+          style={{ fontSize: size, fontVariationSettings: "'FILL' 1" }}
+        >
+          star_half
+        </span>
+      )}
+      {Array.from({ length: empty }).map((_, i) => (
+        <span
+          key={`e-${i}`}
+          className="material-symbols-outlined text-slate-600"
+          style={{ fontSize: size }}
+        >
+          star
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Service Card
+// ---------------------------------------------------------------------------
+
+function ServiceCard({
+  service,
+  onContact,
+}: {
+  service: MarketplaceService;
+  onContact: (name: string) => void;
+}) {
+  return (
+    <div className="group flex flex-col rounded-2xl bg-background-dark/50 border border-border-dark hover:border-primary/40 transition-all overflow-hidden">
+      {/* Image placeholder */}
+      <div className="relative h-40 bg-neutral-dark flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent, transparent 20px, rgb(var(--color-primary)) 20px, rgb(var(--color-primary)) 21px), repeating-linear-gradient(90deg, transparent, transparent 20px, rgb(var(--color-primary)) 20px, rgb(var(--color-primary)) 21px)",
+          }}
+        />
+        <span className="material-symbols-outlined text-primary/20 text-[56px]">
+          {service.categoryIcon}
+        </span>
+        {/* Category badge */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-background-dark/80 backdrop-blur-sm px-2.5 py-1 rounded-lg">
+          <span className="material-symbols-outlined text-primary text-[14px]">
+            {service.categoryIcon}
+          </span>
+          <span className="text-[11px] font-bold text-slate-300">{service.category}</span>
+        </div>
+        {/* Seller type badge */}
+        <div
+          className={cn(
+            "absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider",
+            service.sellerType === "agence"
+              ? "bg-blue-500/20 text-blue-400"
+              : "bg-primary/20 text-primary"
+          )}
+        >
+          {service.sellerType === "agence" ? "Agence" : "Freelance"}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-col flex-1 p-4">
+        {/* Seller name */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-primary text-[14px]">person</span>
+          </div>
+          <span className="text-xs font-semibold text-slate-400 truncate">
+            {service.sellerName}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-sm font-bold text-slate-100 line-clamp-2 mb-2 group-hover:text-primary transition-colors leading-snug min-h-[2.5rem]">
+          {service.title}
+        </h3>
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {service.tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center gap-2 mb-3">
+          <StarRating rating={service.rating} size={12} />
+          <span className="text-xs font-bold text-slate-300">{service.rating}</span>
+          <span className="text-[11px] text-slate-500">({service.reviewsCount} avis)</span>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Footer: price + delivery */}
+        <div className="flex items-center justify-between pt-3 border-t border-border-dark mb-3">
+          <div className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-slate-500 text-[14px]">schedule</span>
+            <span className="text-[11px] text-slate-500">{service.deliveryDays}j</span>
+          </div>
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-xs text-slate-500">A partir de</span>
+            <span className="text-lg font-black text-primary ml-1">{service.price}</span>
+            <span className="text-xs font-bold text-primary">&euro;</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all",
+              "bg-primary/10 text-primary hover:bg-primary/20"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            Voir
+          </button>
+          <button
+            onClick={() => onContact(service.sellerName)}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all",
+              "border border-border-dark text-slate-300 hover:border-primary/40 hover:text-primary"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">chat</span>
+            Contacter
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Client Offer Card
+// ---------------------------------------------------------------------------
+
+function OfferCard({
+  offer,
+  onApply,
+}: {
+  offer: ClientOffer;
+  onApply: (offer: ClientOffer) => void;
+}) {
+  const urgency = URGENCY_CONFIG[offer.urgency];
+
+  return (
+    <div className="group flex flex-col md:flex-row items-stretch gap-5 p-5 rounded-2xl bg-background-dark/50 border border-border-dark hover:border-primary/40 transition-all">
+      {/* Left icon area */}
+      <div className="hidden md:flex w-20 shrink-0 items-center justify-center rounded-xl bg-neutral-dark">
+        <span className="material-symbols-outlined text-primary/30 text-[40px]">work</span>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        {/* Top row */}
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-slate-100 group-hover:text-primary transition-colors leading-snug line-clamp-1">
+              {offer.title}
+            </h3>
+            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+              <span>{FLAG[offer.clientCountry] ?? ""} {offer.clientName}</span>
+              <span>&middot;</span>
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                {offer.deadline}
+              </span>
+              <span>&middot;</span>
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">group</span>
+                {offer.proposalsCount} propositions
+              </span>
+            </div>
+          </div>
+
+          {/* Urgency badge + budget */}
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            <span
+              className={cn(
+                "px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider",
+                urgency.className
+              )}
+            >
+              {urgency.label}
+            </span>
+            <span className="text-primary font-black text-sm whitespace-nowrap">
+              {offer.budgetMin.toLocaleString("fr-FR")}&euro; &ndash;{" "}
+              {offer.budgetMax.toLocaleString("fr-FR")}&euro;
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-xs text-slate-400 line-clamp-2 mb-3">{offer.description}</p>
+
+        {/* Skills */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {offer.skills.map((skill) => (
+            <span
+              key={skill}
+              className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full border border-primary/20"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-3 border-t border-border-dark">
+          <button
+            className={cn(
+              "flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold transition-all",
+              "bg-primary/10 text-primary hover:bg-primary/20"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            Voir details
+          </button>
+          <button
+            onClick={() => onApply(offer)}
+            className={cn(
+              "flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold transition-all",
+              "bg-primary text-white hover:opacity-90 shadow-sm shadow-primary/20"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            Postuler
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Agency Card
+// ---------------------------------------------------------------------------
+
+function AgencyCard({
+  agency,
+  onContact,
+}: {
+  agency: Agency;
+  onContact: (name: string) => void;
+}) {
+  return (
+    <div className="group flex flex-col rounded-2xl bg-background-dark/50 border border-border-dark hover:border-primary/40 transition-all overflow-hidden">
+      {/* Header area */}
+      <div className="relative h-28 bg-neutral-dark flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 30% 50%, rgb(var(--color-primary)), transparent 60%)",
+          }}
+        />
+        <div className="w-16 h-16 rounded-2xl bg-background-dark/80 backdrop-blur-sm border border-border-dark flex items-center justify-center">
+          <span className="material-symbols-outlined text-primary text-[28px]">business</span>
+        </div>
+        {agency.verified && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-primary/20 px-2 py-0.5 rounded-md">
+            <span
+              className="material-symbols-outlined text-primary text-[12px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              verified
+            </span>
+            <span className="text-[10px] font-bold text-primary">Verifiee</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-col flex-1 p-4">
+        {/* Name + country */}
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-base font-bold text-slate-100 group-hover:text-primary transition-colors">
+            {agency.name}
+          </h3>
+          <span className="text-sm" title={agency.country}>
+            {FLAG[agency.countryFlag] ?? ""}
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">
+          {agency.description}
+        </p>
+
+        {/* Rating + Members */}
+        <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-1.5">
+            <StarRating rating={agency.rating} size={12} />
+            <span className="text-xs font-bold text-slate-300">{agency.rating}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            <span className="material-symbols-outlined text-[14px]">group</span>
+            <span>{agency.membersCount} membres</span>
+          </div>
+        </div>
+
+        {/* Specialities */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {agency.specialities.map((spec) => (
+            <span
+              key={spec}
+              className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-full"
+            >
+              {spec}
+            </span>
+          ))}
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-3 border-t border-border-dark">
+          <button
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all",
+              "bg-primary/10 text-primary hover:bg-primary/20"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            Voir profil
+          </button>
+          <button
+            onClick={() => onContact(agency.name)}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-xs font-bold transition-all",
+              "border border-border-dark text-slate-300 hover:border-primary/40 hover:text-primary"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">chat</span>
+            Contacter
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Contact Modal
+// ---------------------------------------------------------------------------
+
+function ContactModal({
+  open,
+  recipientName,
+  onClose,
+  onSend,
+}: {
+  open: boolean;
+  recipientName: string;
+  onClose: () => void;
+  onSend: (message: string) => void;
+}) {
+  const [message, setMessage] = useState("");
+
+  if (!open) return null;
+
+  function handleSend() {
+    if (!message.trim()) return;
+    onSend(message.trim());
+    setMessage("");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-lg bg-background-dark border border-border-dark rounded-2xl shadow-2xl animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-dark">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-xl">chat</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Contacter</h3>
+              <p className="text-xs text-slate-500">{recipientName}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-primary/10 transition-all"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6">
+          <label className="block text-xs font-bold text-slate-400 mb-2">Votre message</label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Bonjour, je suis interesse par vos services..."
+            rows={5}
+            className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder:text-slate-500"
+          />
+          <p className="text-[11px] text-slate-600 mt-1.5">
+            Le destinataire recevra votre message dans sa messagerie FreelanceHigh.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border border-border-dark text-sm font-bold text-slate-400 hover:bg-primary/5 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={!message.trim()}
+            className={cn(
+              "flex-1 h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2",
+              message.trim()
+                ? "bg-primary text-white hover:opacity-90 shadow-sm shadow-primary/20"
+                : "bg-neutral-dark text-slate-600 cursor-not-allowed"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Apply Modal
+// ---------------------------------------------------------------------------
+
+function ApplyModal({
+  open,
+  offer,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  offer: ClientOffer | null;
+  onClose: () => void;
+  onSubmit: (data: { coverLetter: string; proposedPrice: string; proposedDeadline: string }) => void;
+}) {
+  const [coverLetter, setCoverLetter] = useState("");
+  const [proposedPrice, setProposedPrice] = useState("");
+  const [proposedDeadline, setProposedDeadline] = useState("");
+
+  if (!open || !offer) return null;
+
+  function handleSubmit() {
+    if (!coverLetter.trim() || !proposedPrice.trim() || !proposedDeadline.trim()) return;
+    onSubmit({
+      coverLetter: coverLetter.trim(),
+      proposedPrice: proposedPrice.trim(),
+      proposedDeadline: proposedDeadline.trim(),
+    });
+    setCoverLetter("");
+    setProposedPrice("");
+    setProposedDeadline("");
+  }
+
+  const isValid = coverLetter.trim() && proposedPrice.trim() && proposedDeadline.trim();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-xl bg-background-dark border border-border-dark rounded-2xl shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-dark sticky top-0 bg-background-dark z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-xl">send</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Postuler a cette offre</h3>
+              <p className="text-xs text-slate-500 line-clamp-1 max-w-[280px]">{offer.title}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-primary/10 transition-all"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        {/* Offer summary */}
+        <div className="mx-6 mt-4 p-3 rounded-xl bg-neutral-dark border border-border-dark">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Budget client</span>
+            <span className="font-bold text-primary">
+              {offer.budgetMin.toLocaleString("fr-FR")}&euro; &ndash;{" "}
+              {offer.budgetMax.toLocaleString("fr-FR")}&euro;
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-1.5">
+            <span>Delai souhaite</span>
+            <span className="font-semibold text-slate-300">{offer.deadline}</span>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="p-6 space-y-4">
+          {/* Cover letter */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-2">
+              Lettre de motivation *
+            </label>
+            <textarea
+              value={coverLetter}
+              onChange={(e) => setCoverLetter(e.target.value)}
+              placeholder="Expliquez pourquoi vous etes le meilleur candidat pour ce projet, votre experience pertinente, votre approche..."
+              rows={5}
+              className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder:text-slate-500"
+            />
+          </div>
+
+          {/* Proposed price + deadline */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2">
+                Prix propose (&euro;) *
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={proposedPrice}
+                  onChange={(e) => setProposedPrice(e.target.value)}
+                  placeholder="Ex: 3000"
+                  className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500 pr-10"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
+                  &euro;
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2">
+                Delai propose *
+              </label>
+              <input
+                type="text"
+                value={proposedDeadline}
+                onChange={(e) => setProposedDeadline(e.target.value)}
+                placeholder="Ex: 25 jours"
+                className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border border-border-dark text-sm font-bold text-slate-400 hover:bg-primary/5 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid}
+            className={cn(
+              "flex-1 h-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2",
+              isValid
+                ? "bg-primary text-white hover:opacity-90 shadow-sm shadow-primary/20"
+                : "bg-neutral-dark text-slate-600 cursor-not-allowed"
+            )}
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            Envoyer la candidature
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
+
+export default function ExplorerPage() {
+  const addToast = useToastStore((s) => s.addToast);
+
+  // View state
+  const [activeView, setActiveView] = useState<ViewTab>("services");
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Modals
+  const [contactModal, setContactModal] = useState<{ open: boolean; name: string }>({
+    open: false,
+    name: "",
+  });
+  const [applyModal, setApplyModal] = useState<{ open: boolean; offer: ClientOffer | null }>({
+    open: false,
+    offer: null,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Filtered data
+  // ---------------------------------------------------------------------------
+
+  const filteredServices = useMemo(() => {
+    let result = DEMO_SERVICES;
+    if (selectedCategory !== "all") {
+      result = result.filter((s) => s.category === selectedCategory);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.sellerName.toLowerCase().includes(q) ||
+          s.tags.some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [search, selectedCategory]);
+
+  const filteredOffers = useMemo(() => {
+    if (!search) return DEMO_OFFERS;
+    const q = search.toLowerCase();
+    return DEMO_OFFERS.filter(
+      (o) =>
+        o.title.toLowerCase().includes(q) ||
+        o.clientName.toLowerCase().includes(q) ||
+        o.skills.some((s) => s.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  const filteredAgencies = useMemo(() => {
+    if (!search) return DEMO_AGENCIES;
+    const q = search.toLowerCase();
+    return DEMO_AGENCIES.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        a.specialities.some((s) => s.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  function handleContactSend(message: string) {
+    setContactModal({ open: false, name: "" });
+    addToast("success", `Message envoye a ${contactModal.name}`);
+  }
+
+  function handleApplySubmit(data: {
+    coverLetter: string;
+    proposedPrice: string;
+    proposedDeadline: string;
+  }) {
+    setApplyModal({ open: false, offer: null });
+    addToast("success", "Candidature envoyee avec succes !");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Modals */}
+      <ContactModal
+        open={contactModal.open}
+        recipientName={contactModal.name}
+        onClose={() => setContactModal({ open: false, name: "" })}
+        onSend={handleContactSend}
+      />
+      <ApplyModal
+        open={applyModal.open}
+        offer={applyModal.offer}
+        onClose={() => setApplyModal({ open: false, offer: null })}
+        onSubmit={handleApplySubmit}
+      />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Header                                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-black text-slate-100 tracking-tight">
+          Explorer le marche
+        </h1>
+        <p className="text-sm text-slate-400">
+          Decouvrez les services, offres clients et agences de la marketplace FreelanceHigh
+        </p>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* View tabs                                                           */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex items-center gap-1 bg-neutral-dark rounded-xl p-1 w-fit">
+        {VIEW_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => {
+              setActiveView(tab.key);
+              setSearch("");
+              setSelectedCategory("all");
+            }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all",
+              activeView === tab.key
+                ? "bg-primary/10 text-primary"
+                : "text-slate-500 hover:text-slate-300"
+            )}
+          >
+            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Search + category filters                                           */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search bar */}
+        <div className="flex items-center gap-2 bg-neutral-dark border border-border-dark rounded-xl px-4 py-2.5 flex-1">
+          <span className="material-symbols-outlined text-slate-500 text-[20px]">search</span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              activeView === "services"
+                ? "Rechercher un service, vendeur, tag..."
+                : activeView === "offres"
+                ? "Rechercher une offre, client, competence..."
+                : "Rechercher une agence, specialite..."
+            }
+            className="bg-transparent outline-none text-sm text-slate-200 placeholder:text-slate-500 w-full"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          )}
+        </div>
+
+        {/* Category filter (services view only) */}
+        {activeView === "services" && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {SERVICE_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0",
+                  selectedCategory === cat.value
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-neutral-dark border border-border-dark text-slate-400 hover:border-primary/30 hover:text-slate-300"
+                )}
+              >
+                <span className="material-symbols-outlined text-[16px]">{cat.icon}</span>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Results count                                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          {activeView === "services" && (
+            <>
+              <span className="font-bold text-slate-300">{filteredServices.length}</span> service
+              {filteredServices.length !== 1 ? "s" : ""} trouve
+              {filteredServices.length !== 1 ? "s" : ""}
+            </>
+          )}
+          {activeView === "offres" && (
+            <>
+              <span className="font-bold text-slate-300">{filteredOffers.length}</span> offre
+              {filteredOffers.length !== 1 ? "s" : ""} client
+              {filteredOffers.length !== 1 ? "s" : ""} disponible
+              {filteredOffers.length !== 1 ? "s" : ""}
+            </>
+          )}
+          {activeView === "agences" && (
+            <>
+              <span className="font-bold text-slate-300">{filteredAgencies.length}</span> agence
+              {filteredAgencies.length !== 1 ? "s" : ""}
+            </>
+          )}
+        </p>
+
+        {(search || selectedCategory !== "all") && (
+          <button
+            onClick={() => {
+              setSearch("");
+              setSelectedCategory("all");
+            }}
+            className="flex items-center gap-1 text-xs font-bold text-primary hover:opacity-80 transition-opacity"
+          >
+            <span className="material-symbols-outlined text-[14px]">close</span>
+            Effacer les filtres
+          </button>
+        )}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Content views                                                       */}
+      {/* ------------------------------------------------------------------ */}
+
+      {/* Services view */}
+      {activeView === "services" && (
+        <>
+          {filteredServices.length === 0 ? (
+            <div className="py-20 text-center">
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">
+                search_off
+              </span>
+              <p className="text-slate-500 font-semibold">Aucun service trouve</p>
+              <p className="text-xs text-slate-600 mt-1">
+                Essayez de modifier vos criteres de recherche
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredServices.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  onContact={(name) => setContactModal({ open: true, name })}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Offers view */}
+      {activeView === "offres" && (
+        <>
+          {filteredOffers.length === 0 ? (
+            <div className="py-20 text-center">
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">
+                search_off
+              </span>
+              <p className="text-slate-500 font-semibold">Aucune offre trouvee</p>
+              <p className="text-xs text-slate-600 mt-1">
+                Essayez de modifier vos criteres de recherche
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredOffers.map((offer) => (
+                <OfferCard
+                  key={offer.id}
+                  offer={offer}
+                  onApply={(o) => setApplyModal({ open: true, offer: o })}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Agencies view */}
+      {activeView === "agences" && (
+        <>
+          {filteredAgencies.length === 0 ? (
+            <div className="py-20 text-center">
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">
+                search_off
+              </span>
+              <p className="text-slate-500 font-semibold">Aucune agence trouvee</p>
+              <p className="text-xs text-slate-600 mt-1">
+                Essayez de modifier vos criteres de recherche
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredAgencies.map((agency) => (
+                <AgencyCard
+                  key={agency.id}
+                  agency={agency}
+                  onContact={(name) => setContactModal({ open: true, name })}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

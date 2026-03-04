@@ -2,36 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, Zap, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// ─── Shield illustration ─────────────────────────────────────────────────
-function ShieldIllustration() {
-  return (
-    <div className="flex justify-center">
-      <div className="relative w-24 h-24 flex items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-white/10" />
-        <div className="absolute inset-4 rounded-full bg-white/10" />
-        <svg viewBox="0 0 100 112" fill="none" className="w-16 h-16 relative z-10">
-          <path
-            d="M50 6 L90 24 L90 62 C90 86 50 106 50 106 C50 106 10 86 10 62 L10 24 Z"
-            fill="white" fillOpacity="0.18"
-            stroke="white" strokeOpacity="0.35" strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M32 57 L45 70 L70 42"
-            stroke="white" strokeOpacity="0.9"
-            strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 // ─── Password strength ───────────────────────────────────────────────────
-type Strength = { label: string; score: number; color: string; bar: string };
+type Strength = { label: string; score: number; color: string; barColor: string };
 
 function getStrength(pwd: string): Strength {
   let score = 0;
@@ -40,84 +14,12 @@ function getStrength(pwd: string): Strength {
   if (/[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-  if (score <= 1) return { label: "Faible", score, color: "text-red-500", bar: "bg-red-500" };
-  if (score === 2) return { label: "Moyen", score, color: "text-orange-500", bar: "bg-orange-400" };
-  return { label: "Fort", score, color: "text-emerald-500", bar: "bg-emerald-500" };
+  if (score <= 1) return { label: "Faible", score, color: "text-red-500", barColor: "bg-red-500" };
+  if (score === 2) return { label: "Moyen", score, color: "text-orange-500", barColor: "bg-orange-400" };
+  if (score === 3) return { label: "Bon", score, color: "text-accent", barColor: "bg-accent" };
+  return { label: "Fort", score, color: "text-primary", barColor: "bg-primary" };
 }
 
-const TIPS = [
-  "Au moins 8 caractères recommandés",
-  "Mélangez lettres, chiffres et symboles",
-  "N'utilisez pas le même mot de passe ailleurs",
-];
-
-// ─── Left panel ─────────────────────────────────────────────────────────
-function LeftPanel() {
-  return (
-    <div
-      className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between p-12"
-      style={{ background: "linear-gradient(145deg, #6C2BD9 0%, #4A1B9E 55%, #2D1060 100%)" }}
-    >
-      {/* Grid pattern */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <svg className="w-full h-full" preserveAspectRatio="none">
-          <defs>
-            <pattern id="reset-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-              <path d="M 32 0 L 0 0 0 32" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#reset-grid)" />
-        </svg>
-      </div>
-      {/* Glow blobs */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-sky-400/15 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Logo */}
-      <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="bg-white/15 p-2 rounded-xl">
-            <Zap className="h-6 w-6 text-white fill-white" />
-          </div>
-          <span className="text-white text-xl font-extrabold tracking-tight">FreelanceHigh</span>
-        </Link>
-      </div>
-
-      {/* Center content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center py-10 gap-6">
-        <ShieldIllustration />
-        <div>
-          <h2 className="text-white text-3xl font-black leading-tight mb-3">
-            Choisissez un mot de passe{" "}
-            <span className="text-yellow-300">fort et unique.</span>
-          </h2>
-          <p className="text-white/70 text-sm leading-relaxed max-w-sm">
-            Un bon mot de passe protège votre compte, vos finances et vos données professionnelles.
-          </p>
-        </div>
-        <ul className="space-y-3.5">
-          {TIPS.map((t) => (
-            <li key={t} className="flex items-start gap-3">
-              <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                <Check className="w-3 h-3 text-white" strokeWidth={3} />
-              </div>
-              <span className="text-white/80 text-sm leading-snug">{t}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Bottom */}
-      <div className="relative z-10 border-t border-white/15 pt-6">
-        <p className="text-white/40 text-xs">
-          Vos données sont chiffrées · Connexion sécurisée SSL
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Page ───────────────────────────────────────────────────────────────
 export default function ReinitialiserMotDePassePage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -159,24 +61,77 @@ export default function ReinitialiserMotDePassePage() {
 
   return (
     <div className="flex flex-col lg:flex-row w-full min-h-screen">
-      <LeftPanel />
-
-      {/* ── Right panel ── */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-6 py-12 sm:px-10 bg-white overflow-y-auto">
-        {/* Mobile logo */}
-        <div className="lg:hidden mb-8 self-start">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Zap className="h-6 w-6 text-purple-600 fill-purple-600" />
-            <span className="text-xl font-extrabold text-gray-900">FreelanceHigh</span>
-          </Link>
+      {/* Left Section: Visual */}
+      <div
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12"
+        style={{ background: "linear-gradient(135deg, #0e7c66 0%, #1a2e2a 100%)" }}
+      >
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+            <defs>
+              <pattern id="grid-rpwd" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="url(#grid-rpwd)" />
+          </svg>
         </div>
 
+        <div className="relative z-10 max-w-lg text-center lg:text-left">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="bg-accent p-2 rounded-lg">
+              <span className="material-symbols-outlined text-[#11211e] font-bold text-3xl">work</span>
+            </div>
+            <h1 className="text-white text-3xl font-extrabold tracking-tight">FreelanceHigh</h1>
+          </div>
+
+          <h2 className="text-white text-5xl font-black leading-tight mb-6">
+            Choisissez un mot de passe fort et unique
+          </h2>
+
+          <p className="text-white/80 text-lg mb-10 leading-relaxed">
+            Un bon mot de passe protège votre compte, vos finances et vos données professionnelles sur FreelanceHigh.
+          </p>
+
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-accent text-3xl font-bold">
+                <span className="material-symbols-outlined text-accent text-3xl align-middle">shield</span>
+              </span>
+              <span className="text-white/60 text-sm">Données chiffrées</span>
+            </div>
+            <div className="w-px h-12 bg-white/20 mx-4"></div>
+            <div className="flex flex-col gap-1">
+              <span className="text-accent text-3xl font-bold">
+                <span className="material-symbols-outlined text-accent text-3xl align-middle">lock</span>
+              </span>
+              <span className="text-white/60 text-sm">Connexion sécurisée</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Decorative blob */}
+        <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Right Section: Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 md:p-20 bg-background-light dark:bg-background-dark">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
+            <span className="material-symbols-outlined text-primary text-3xl">work</span>
+            <h1 className="text-slate-900 dark:text-slate-100 text-2xl font-bold">FreelanceHigh</h1>
+          </div>
+
           {!success ? (
             <>
               <div className="mb-8">
-                <h1 className="text-3xl font-black text-gray-900 mb-1.5">Nouveau mot de passe</h1>
-                <p className="text-gray-500 text-sm">
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  Nouveau mot de passe
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400">
                   Choisissez un mot de passe sécurisé pour votre compte.
                 </p>
               </div>
@@ -184,12 +139,12 @@ export default function ReinitialiserMotDePassePage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* New password */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Nouveau mot de passe
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Lock className="w-4 h-4 text-gray-400" />
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+                      lock
                     </span>
                     <input
                       type={showPwd ? "text" : "password"}
@@ -198,27 +153,29 @@ export default function ReinitialiserMotDePassePage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm transition-all"
+                      className="w-full pl-10 pr-12 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-slate-100"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPwd((v) => !v)}
                       tabIndex={-1}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary"
                     >
-                      {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span className="material-symbols-outlined text-xl">
+                        {showPwd ? "visibility_off" : "visibility"}
+                      </span>
                     </button>
                   </div>
 
                   {/* Strength indicator */}
                   {password && strength && (
-                    <div className="mt-2.5">
+                    <div className="mt-3">
                       <div className="flex gap-1 mb-1.5">
                         {[1, 2, 3, 4].map((i) => (
                           <div
                             key={i}
-                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                              i <= strength.score ? strength.bar : "bg-gray-200"
+                            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                              i <= strength.score ? strength.barColor : "bg-slate-200 dark:bg-neutral-dark"
                             }`}
                           />
                         ))}
@@ -226,7 +183,7 @@ export default function ReinitialiserMotDePassePage() {
                       <p className={`text-xs font-semibold ${strength.color}`}>
                         {strength.label}
                         {strength.score < 3 && (
-                          <span className="text-gray-400 font-normal">
+                          <span className="text-slate-400 font-normal">
                             {" "}— ajoutez des majuscules, chiffres ou symboles
                           </span>
                         )}
@@ -237,12 +194,12 @@ export default function ReinitialiserMotDePassePage() {
 
                 {/* Confirm password */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Confirmer le mot de passe
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Lock className="w-4 h-4 text-gray-400" />
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+                      lock
                     </span>
                     <input
                       type={showConfirm ? "text" : "password"}
@@ -251,21 +208,23 @@ export default function ReinitialiserMotDePassePage() {
                       value={confirm}
                       onChange={(e) => setConfirm(e.target.value)}
                       placeholder="••••••••"
-                      className={`w-full pl-10 pr-11 py-3 border rounded-xl bg-gray-50 focus:bg-white outline-none text-sm transition-all ${
+                      className={`w-full pl-10 pr-12 py-3 bg-white dark:bg-neutral-dark border rounded-xl outline-none transition-all text-slate-900 dark:text-slate-100 ${
                         mismatch
-                          ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                          ? "border-red-400 focus:ring-2 focus:ring-red-200"
                           : confirmOk
-                          ? "border-emerald-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                          : "border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                          ? "border-primary focus:ring-2 focus:ring-primary/30"
+                          : "border-slate-200 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent"
                       }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
                       tabIndex={-1}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary"
                     >
-                      {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span className="material-symbols-outlined text-xl">
+                        {showConfirm ? "visibility_off" : "visibility"}
+                      </span>
                     </button>
                   </div>
                   {mismatch && (
@@ -274,7 +233,7 @@ export default function ReinitialiserMotDePassePage() {
                     </p>
                   )}
                   {confirmOk && (
-                    <p className="text-xs text-emerald-500 font-semibold mt-1.5">
+                    <p className="text-xs text-primary font-semibold mt-1.5">
                       Les mots de passe correspondent.
                     </p>
                   )}
@@ -282,23 +241,24 @@ export default function ReinitialiserMotDePassePage() {
 
                 {/* Global error */}
                 {error && (
-                  <p className="text-xs text-red-500 font-semibold bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
+                  <div className="flex items-center gap-2 text-xs text-red-500 font-semibold bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-3">
+                    <span className="material-symbols-outlined text-base">error</span>
                     {error}
-                  </p>
+                  </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading || mismatch || !password || !confirm}
-                  className="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-purple-200 transition-all text-sm flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all mt-4 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
-                      Réinitialisation…
+                      Réinitialisation...
                     </>
                   ) : (
                     "Réinitialiser mon mot de passe"
@@ -306,48 +266,46 @@ export default function ReinitialiserMotDePassePage() {
                 </button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-10 text-center">
                 <Link
                   href="/connexion"
-                  className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold transition-colors"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="material-symbols-outlined text-lg">arrow_back</span>
                   Retour à la connexion
                 </Link>
               </div>
             </>
           ) : (
-            /* ── Success state ── */
+            /* Success state */
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-8 h-8 text-emerald-500" />
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <span className="material-symbols-outlined text-primary text-3xl">check_circle</span>
               </div>
-              <h1 className="text-2xl font-black text-gray-900 mb-3">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
                 Mot de passe modifié !
-              </h1>
-              <p className="text-gray-500 text-sm leading-relaxed mb-8">
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
                 Votre mot de passe a été mis à jour avec succès.
                 <br />
-                Vous allez être redirigé vers la connexion…
+                Vous allez être redirigé vers la connexion...
               </p>
               {/* Redirect progress bar */}
-              <div className="w-48 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+              <div className="w-48 h-1.5 bg-slate-200 dark:bg-neutral-dark rounded-full mx-auto overflow-hidden">
                 <div
-                  className="h-full bg-purple-600 rounded-full transition-all duration-[2500ms] ease-linear"
+                  className="h-full bg-primary rounded-full transition-all duration-[2500ms] ease-linear"
                   style={{ width: "100%" }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-3">Redirection en cours…</p>
+              <p className="text-xs text-slate-500 mt-3">Redirection en cours...</p>
             </div>
           )}
 
           {/* Footer links */}
-          <div className="flex items-center justify-center gap-4 mt-12 text-xs text-gray-400">
-            <Link href="/cgu" className="hover:text-gray-600 transition-colors">CGU</Link>
-            <span>·</span>
-            <Link href="/confidentialite" className="hover:text-gray-600 transition-colors">Confidentialité</Link>
-            <span>·</span>
-            <Link href="/contact" className="hover:text-gray-600 transition-colors">Aide</Link>
+          <div className="mt-12 flex items-center justify-center gap-6 opacity-60">
+            <Link href="/cgu" className="text-xs hover:text-primary transition-colors">Conditions d&apos;utilisation</Link>
+            <Link href="/confidentialite" className="text-xs hover:text-primary transition-colors">Politique de confidentialité</Link>
+            <Link href="/contact" className="text-xs hover:text-primary transition-colors">Aide</Link>
           </div>
         </div>
       </div>
