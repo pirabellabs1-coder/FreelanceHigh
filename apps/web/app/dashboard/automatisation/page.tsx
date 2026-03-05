@@ -1,84 +1,281 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // ============================================================
-// Types & Demo Data
+// Types
 // ============================================================
 
-interface AutomationRule {
+interface Trigger {
+  id: string;
+  icon: string;
+  label: string;
+  category: string;
+}
+
+interface Condition {
+  id: string;
+  icon: string;
+  label: string;
+  valueType: "number" | "select" | "text";
+  options?: string[];
+}
+
+interface Action {
+  id: string;
+  icon: string;
+  label: string;
+  hasMessage?: boolean;
+}
+
+interface Scenario {
   id: string;
   name: string;
   active: boolean;
-  event: { icon: string; label: string };
-  action: { icon: string; label: string };
+  trigger: Trigger;
+  conditions: { condition: Condition; value: string }[];
+  actions: { action: Action; message?: string }[];
+  triggerCount: number;
+  lastTriggered?: string;
+  createdAt: string;
 }
 
-const DEMO_RULES: AutomationRule[] = [
+// ============================================================
+// Available triggers, conditions, actions
+// ============================================================
+
+const TRIGGERS: Trigger[] = [
+  { id: "t1", icon: "chat_bubble", label: "Nouveau message recu", category: "Messages" },
+  { id: "t2", icon: "person_add", label: "Nouveau client qui contacte", category: "Messages" },
+  { id: "t3", icon: "shopping_cart", label: "Commande passee", category: "Commandes" },
+  { id: "t4", icon: "check_circle", label: "Commande livree", category: "Commandes" },
+  { id: "t5", icon: "star", label: "Avis laisse", category: "Avis" },
+  { id: "t6", icon: "visibility", label: "Profil visite X fois", category: "Profil" },
+  { id: "t7", icon: "group_add", label: "Nouveau follower", category: "Profil" },
+  { id: "t8", icon: "request_quote", label: "Proposition recue", category: "Commandes" },
+  { id: "t9", icon: "cancel", label: "Commande annulee", category: "Commandes" },
+  { id: "t10", icon: "payments", label: "Paiement recu", category: "Finances" },
+  { id: "t11", icon: "timer_off", label: "Delai de reponse depasse", category: "Messages" },
+  { id: "t12", icon: "person_off", label: "Client inactif depuis X jours", category: "Clients" },
+];
+
+const CONDITIONS: Condition[] = [
+  { id: "c1", icon: "euro", label: "Budget superieur a", valueType: "number" },
+  { id: "c2", icon: "category", label: "Categorie", valueType: "select", options: ["Design", "Developpement", "Marketing", "Redaction", "Video"] },
+  { id: "c3", icon: "fiber_new", label: "Client est nouveau", valueType: "select", options: ["Oui", "Non"] },
+  { id: "c4", icon: "repeat", label: "Client est recurrent", valueType: "select", options: ["Oui", "Non"] },
+  { id: "c5", icon: "star", label: "Note superieure a", valueType: "number" },
+  { id: "c6", icon: "schedule", label: "Heure entre", valueType: "text" },
+  { id: "c7", icon: "calendar_today", label: "Jour de la semaine", valueType: "select", options: ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] },
+  { id: "c8", icon: "public", label: "Pays", valueType: "select", options: ["France", "Senegal", "Cote d'Ivoire", "Cameroun", "Belgique", "Canada", "Autre"] },
+  { id: "c9", icon: "search", label: "Mot-cle contient", valueType: "text" },
+  { id: "c10", icon: "shopping_cart", label: "Montant commande superieur a", valueType: "number" },
+];
+
+const ACTIONS: Action[] = [
+  { id: "a1", icon: "send", label: "Envoyer un message automatique", hasMessage: true },
+  { id: "a2", icon: "local_offer", label: "Envoyer une offre personnalisee", hasMessage: true },
+  { id: "a3", icon: "confirmation_number", label: "Envoyer un code promo", hasMessage: true },
+  { id: "a4", icon: "priority_high", label: "Marquer conversation prioritaire" },
+  { id: "a5", icon: "notifications_active", label: "Notifier le freelance" },
+  { id: "a6", icon: "label", label: "Ajouter un tag au client" },
+  { id: "a7", icon: "email", label: "Envoyer un email de suivi", hasMessage: true },
+  { id: "a8", icon: "alarm", label: "Planifier un rappel" },
+];
+
+const MESSAGE_VARIABLES = [
+  { var: "{nom_client}", label: "Nom du client" },
+  { var: "{service}", label: "Nom du service" },
+  { var: "{montant}", label: "Montant" },
+  { var: "{delai}", label: "Delai de livraison" },
+  { var: "{date}", label: "Date actuelle" },
+];
+
+// ============================================================
+// Demo scenarios
+// ============================================================
+
+const INITIAL_SCENARIOS: Scenario[] = [
   {
-    id: "1",
+    id: "sc1",
     name: "Accueil des nouveaux clients",
     active: true,
-    event: { icon: "chat_bubble", label: 'Premier message recu d\'un prospect' },
-    action: { icon: "forward_to_inbox", label: 'Envoyer "Merci de m\'avoir contacte..."' },
+    trigger: TRIGGERS[1],
+    conditions: [{ condition: CONDITIONS[2], value: "Oui" }],
+    actions: [{ action: ACTIONS[0], message: "Bonjour {nom_client} ! Merci de m'avoir contacte. Je suis disponible pour discuter de votre projet. N'hesitez pas a me decrire vos besoins." }],
+    triggerCount: 48,
+    lastTriggered: "Il y a 2 heures",
+    createdAt: "15 jan. 2026",
   },
   {
-    id: "2",
+    id: "sc2",
     name: "Notification de livraison",
     active: true,
-    event: { icon: "check_circle", label: 'Statut du projet passe a "Livre"' },
-    action: { icon: "notifications_active", label: 'Email + Push "Votre travail est pret"' },
+    trigger: TRIGGERS[3],
+    conditions: [],
+    actions: [
+      { action: ACTIONS[0], message: "Bonjour {nom_client}, votre commande pour {service} vient d'etre livree ! N'hesitez pas a verifier le livrable et me contacter si besoin." },
+      { action: ACTIONS[6], message: "Votre commande {service} a ete livree. Merci de verifier le travail et valider la livraison." },
+    ],
+    triggerCount: 127,
+    lastTriggered: "Il y a 30 min",
+    createdAt: "20 jan. 2026",
+  },
+  {
+    id: "sc3",
+    name: "Relance client inactif",
+    active: false,
+    trigger: TRIGGERS[11],
+    conditions: [{ condition: CONDITIONS[3], value: "Oui" }],
+    actions: [{ action: ACTIONS[0], message: "Bonjour {nom_client}, j'espere que vous allez bien ! Cela fait un moment que nous n'avons pas collabore. Je suis disponible si vous avez de nouveaux projets." }],
+    triggerCount: 12,
+    lastTriggered: "Il y a 3 jours",
+    createdAt: "1 fev. 2026",
+  },
+  {
+    id: "sc4",
+    name: "Remerciement avis positif",
+    active: true,
+    trigger: TRIGGERS[4],
+    conditions: [{ condition: CONDITIONS[4], value: "4" }],
+    actions: [{ action: ACTIONS[0], message: "Merci beaucoup pour votre avis {nom_client} ! Votre satisfaction est ma priorite. Au plaisir de travailler ensemble a nouveau." }],
+    triggerCount: 35,
+    lastTriggered: "Hier",
+    createdAt: "5 fev. 2026",
   },
 ];
 
-const EVENT_OPTIONS = [
-  "Le projet est paye",
-  "Retard de 24h",
-  "Nouvelle demande",
-  "Premier message recu",
-];
+// ============================================================
+// Plan check — simulated subscription tier
+// ============================================================
 
-const ACTION_OPTIONS = [
-  "Envoyer un recu",
-  "Relancer le client",
-  "Archiver la discussion",
-  "Envoyer un message",
-];
-
-type SideTab = "workflows" | "historique" | "modeles";
+type PlanTier = "gratuit" | "pro" | "business";
 
 // ============================================================
 // Page Component
 // ============================================================
 
 export default function AutomationPage() {
-  const [rules, setRules] = useState(DEMO_RULES);
-  const [sideTab, setSideTab] = useState<SideTab>("workflows");
-  const [newEvent, setNewEvent] = useState(EVENT_OPTIONS[0]);
-  const [newAction, setNewAction] = useState(ACTION_OPTIONS[0]);
+  // Simulated plan — change to "gratuit" to see the gate
+  const [currentPlan] = useState<PlanTier>("pro");
+  const [scenarios, setScenarios] = useState(INITIAL_SCENARIOS);
+  const [sideTab, setSideTab] = useState<"scenarios" | "historique" | "modeles">("scenarios");
+  const [showCreator, setShowCreator] = useState(false);
 
-  function handleDelete(id: string) {
-    setRules((prev) => prev.filter((r) => r.id !== id));
-  }
+  // Creator state
+  const [creatorStep, setCreatorStep] = useState(0);
+  const [scenarioName, setScenarioName] = useState("");
+  const [selectedTrigger, setSelectedTrigger] = useState<Trigger | null>(null);
+  const [selectedConditions, setSelectedConditions] = useState<{ condition: Condition; value: string }[]>([]);
+  const [selectedActions, setSelectedActions] = useState<{ action: Action; message?: string }[]>([]);
 
-  function handleToggle(id: string) {
-    setRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, active: !r.active } : r))
+  // ============================================================
+  // Plan gate
+  // ============================================================
+  if (currentPlan === "gratuit") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
+        <div className="max-w-md text-center">
+          <div className="size-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-symbols-outlined text-4xl text-primary">lock</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-3">
+            Automatisation Marketing
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+            Passez en Pro ou Business pour acceder a l&apos;automatisation marketing et automatiser vos reponses, relances et workflows.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/dashboard/abonnement"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+            >
+              <span className="material-symbols-outlined text-sm">workspace_premium</span>
+              Passer Pro - 15 EUR/mois
+            </Link>
+            <Link
+              href="/dashboard/abonnement"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-primary/30 text-primary font-bold rounded-xl hover:bg-primary/5 transition-all"
+            >
+              Voir tous les plans
+            </Link>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  function handleAddRule() {
-    const newRule: AutomationRule = {
-      id: `rule-${Date.now()}`,
-      name: `Regle: ${newEvent}`,
-      active: true,
-      event: { icon: "bolt", label: newEvent },
-      action: { icon: "send", label: newAction },
-    };
-    setRules((prev) => [...prev, newRule]);
+  // ============================================================
+  // Handlers
+  // ============================================================
+
+  function handleToggle(id: string) {
+    setScenarios((prev) => prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s)));
   }
 
+  function handleDelete(id: string) {
+    setScenarios((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function resetCreator() {
+    setCreatorStep(0);
+    setScenarioName("");
+    setSelectedTrigger(null);
+    setSelectedConditions([]);
+    setSelectedActions([]);
+    setShowCreator(false);
+  }
+
+  function handleCreateScenario() {
+    if (!selectedTrigger || selectedActions.length === 0 || !scenarioName) return;
+    const newScenario: Scenario = {
+      id: `sc-${Date.now()}`,
+      name: scenarioName,
+      active: true,
+      trigger: selectedTrigger,
+      conditions: selectedConditions,
+      actions: selectedActions,
+      triggerCount: 0,
+      createdAt: "Aujourd'hui",
+    };
+    setScenarios((prev) => [...prev, newScenario]);
+    resetCreator();
+  }
+
+  function addCondition(condition: Condition) {
+    if (selectedConditions.find((c) => c.condition.id === condition.id)) return;
+    setSelectedConditions((prev) => [...prev, { condition, value: "" }]);
+  }
+
+  function removeCondition(id: string) {
+    setSelectedConditions((prev) => prev.filter((c) => c.condition.id !== id));
+  }
+
+  function updateConditionValue(id: string, value: string) {
+    setSelectedConditions((prev) =>
+      prev.map((c) => (c.condition.id === id ? { ...c, value } : c))
+    );
+  }
+
+  function addAction(action: Action) {
+    setSelectedActions((prev) => [...prev, { action, message: "" }]);
+  }
+
+  function removeAction(idx: number) {
+    setSelectedActions((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateActionMessage(idx: number, message: string) {
+    setSelectedActions((prev) =>
+      prev.map((a, i) => (i === idx ? { ...a, message } : a))
+    );
+  }
+
+  // ============================================================
+  // Render
+  // ============================================================
   return (
     <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-80px)]">
       {/* Sidebar */}
@@ -90,25 +287,40 @@ export default function AutomationPage() {
             </h3>
             <nav className="space-y-1">
               {([
-                { key: "workflows" as SideTab, icon: "settings_suggest", label: "Workflows actifs" },
-                { key: "historique" as SideTab, icon: "history", label: "Historique" },
-                { key: "modeles" as SideTab, icon: "class", label: "Modeles" },
+                { key: "scenarios" as const, icon: "settings_suggest", label: "Scenarios", count: scenarios.length },
+                { key: "historique" as const, icon: "history", label: "Historique" },
+                { key: "modeles" as const, icon: "class", label: "Modeles" },
               ]).map((item) => (
                 <button
                   key={item.key}
                   onClick={() => setSideTab(item.key)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg font-semibold w-full text-left transition-colors",
-                    sideTab === item.key
-                      ? "bg-primary/10 text-primary"
-                      : "text-slate-500 hover:bg-primary/5"
+                    sideTab === item.key ? "bg-primary/10 text-primary" : "text-slate-500 hover:bg-primary/5"
                   )}
                 >
                   <span className="material-symbols-outlined text-lg">{item.icon}</span>
                   {item.label}
+                  {item.count !== undefined && (
+                    <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                      {item.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>
+          </div>
+
+          {/* Quick stats */}
+          <div className="space-y-3 mb-8">
+            <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-xs text-slate-500">Scenarios actifs</p>
+              <p className="text-xl font-extrabold text-primary">{scenarios.filter((s) => s.active).length}</p>
+            </div>
+            <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <p className="text-xs text-slate-500">Total declenchements</p>
+              <p className="text-xl font-extrabold text-primary">{scenarios.reduce((a, s) => a + s.triggerCount, 0)}</p>
+            </div>
           </div>
 
           <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
@@ -117,181 +329,569 @@ export default function AutomationPage() {
               <span className="text-xs font-bold uppercase">Conseil</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Les reponses automatiques peuvent augmenter votre taux de conversion de 25% en
-              repondant instantanement aux nouveaux clients.
+              Les reponses automatiques peuvent augmenter votre taux de conversion de 25% en repondant instantanement aux nouveaux clients.
             </p>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <section className="flex-1 p-6 lg:p-10">
+      <section className="flex-1 p-6 lg:p-10 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <nav className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-              <span className="hover:text-primary cursor-pointer">Gestion</span>
+              <span className="hover:text-primary cursor-pointer">Dashboard</span>
               <span className="material-symbols-outlined text-[10px]">chevron_right</span>
               <span className="text-primary font-medium">Automatisation</span>
             </nav>
-            <h1 className="text-3xl font-extrabold mb-2">Automatisation des Messages</h1>
+            <h1 className="text-3xl font-extrabold mb-2">Automatisation Marketing</h1>
             <p className="text-slate-500 dark:text-slate-400">
-              Configurez vos workflows et notifications automatiques.
+              Creez des scenarios automatises pour gagner du temps et professionnaliser vos echanges.
             </p>
           </div>
           <button
-            onClick={handleAddRule}
+            onClick={() => { resetCreator(); setShowCreator(true); }}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
           >
             <span className="material-symbols-outlined">add</span>
-            Nouvelle Regle
+            Creer un scenario
           </button>
         </div>
 
-        {/* Rules List */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">account_tree</span>
-            Vos regles configurees
-          </h3>
-
-          {rules.map((rule) => (
-            <div
-              key={rule.id}
-              className="relative bg-white dark:bg-primary/5 p-6 rounded-xl border border-primary/10 shadow-sm border-l-4 border-l-primary"
-            >
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span
-                      className={cn(
-                        "px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider",
-                        rule.active
-                          ? "bg-green-900/30 text-green-400"
-                          : "bg-slate-700 text-slate-400"
-                      )}
-                    >
-                      {rule.active ? "Actif" : "Inactif"}
-                    </span>
-                    <h4 className="font-bold">{rule.name}</h4>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-3 bg-black/20 rounded-lg border border-primary/5">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">
-                        SI [EVENEMENT]
-                      </p>
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <span className="material-symbols-outlined text-primary text-lg">
-                          {rule.event.icon}
-                        </span>
-                        {rule.event.label}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-black/20 rounded-lg border border-primary/5">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">
-                        ALORS [ACTION]
-                      </p>
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <span className="material-symbols-outlined text-primary text-lg">
-                          {rule.action.icon}
-                        </span>
-                        {rule.action.label}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleToggle(rule.id)}
-                    className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 transition-colors"
-                    title={rule.active ? "Desactiver" : "Activer"}
-                  >
-                    <span className="material-symbols-outlined">
-                      {rule.active ? "pause_circle" : "play_circle"}
-                    </span>
-                  </button>
-                  <button className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 transition-colors">
-                    <span className="material-symbols-outlined">edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(rule.id)}
-                    className="p-2 hover:bg-red-900/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {rules.length === 0 && (
-            <div className="text-center py-12 text-slate-500">
-              <span className="material-symbols-outlined text-4xl mb-4">
-                settings_suggest
-              </span>
-              <p>Aucune regle configuree. Creez votre premiere regle ci-dessous.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Add Rule Builder */}
-        <div className="mt-12 bg-primary/5 border-2 border-dashed border-primary/20 rounded-2xl p-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="size-16 bg-background-dark rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/10 shadow-sm">
-              <span className="material-symbols-outlined text-3xl text-primary">
-                magic_button
-              </span>
-            </div>
-            <h3 className="text-xl font-bold mb-2">Ajouter une logique intelligente</h3>
-            <p className="text-slate-500 mb-8">
-              Creez des chaines d&apos;actions automatisees pour gagner du temps et
-              professionnaliser votre relation client.
-            </p>
-
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-              <div className="w-full md:w-auto flex items-center gap-3 bg-background-dark px-4 py-3 rounded-xl border border-primary/20">
-                <span className="text-xs font-bold text-slate-400">SI</span>
-                <select
-                  className="bg-transparent border-none text-sm font-bold focus:ring-0 p-0 pr-8 outline-none"
-                  value={newEvent}
-                  onChange={(e) => setNewEvent(e.target.value)}
-                >
-                  {EVENT_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <span className="material-symbols-outlined text-slate-400">arrow_forward</span>
-
-              <div className="w-full md:w-auto flex items-center gap-3 bg-background-dark px-4 py-3 rounded-xl border border-primary/20">
-                <span className="text-xs font-bold text-slate-400">ALORS</span>
-                <select
-                  className="bg-transparent border-none text-sm font-bold focus:ring-0 p-0 pr-8 text-primary outline-none"
-                  value={newAction}
-                  onChange={(e) => setNewAction(e.target.value)}
-                >
-                  {ACTION_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={handleAddRule}
-                className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all"
-              >
-                Ajouter
+        {/* ============================================================ */}
+        {/* Scenario Creator Modal                                       */}
+        {/* ============================================================ */}
+        {showCreator && (
+          <div className="mb-10 bg-white dark:bg-neutral-dark border border-primary/20 rounded-2xl p-6 shadow-xl">
+            {/* Creator header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">magic_button</span>
+                Nouveau scenario
+              </h2>
+              <button onClick={resetCreator} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors">
+                <span className="material-symbols-outlined text-slate-400">close</span>
               </button>
             </div>
+
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mb-8">
+              {["Nom", "Declencheur", "Conditions", "Actions", "Apercu"].map((step, i) => (
+                <div key={step} className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCreatorStep(i)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                      creatorStep === i
+                        ? "bg-primary text-white"
+                        : creatorStep > i
+                        ? "bg-primary/10 text-primary"
+                        : "bg-slate-100 dark:bg-border-dark text-slate-400"
+                    )}
+                  >
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-white/20">
+                      {creatorStep > i ? "\u2713" : i + 1}
+                    </span>
+                    <span className="hidden sm:inline">{step}</span>
+                  </button>
+                  {i < 4 && <span className="material-symbols-outlined text-xs text-slate-300">chevron_right</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* Step 0: Name */}
+            {creatorStep === 0 && (
+              <div className="max-w-lg">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">
+                  Nom du scenario
+                </label>
+                <input
+                  type="text"
+                  value={scenarioName}
+                  onChange={(e) => setScenarioName(e.target.value)}
+                  placeholder="Ex: Accueil des nouveaux clients"
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                <button
+                  onClick={() => scenarioName && setCreatorStep(1)}
+                  disabled={!scenarioName}
+                  className="mt-4 px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
+                >
+                  Suivant
+                </button>
+              </div>
+            )}
+
+            {/* Step 1: Trigger */}
+            {creatorStep === 1 && (
+              <div>
+                <p className="text-sm text-slate-500 mb-4">Choisissez l&apos;evenement qui declenchera le scenario :</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {TRIGGERS.map((trigger) => (
+                    <button
+                      key={trigger.id}
+                      onClick={() => setSelectedTrigger(trigger)}
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-xl border text-left transition-all",
+                        selectedTrigger?.id === trigger.id
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                          : "border-slate-200 dark:border-border-dark hover:border-primary/30"
+                      )}
+                    >
+                      <span className="material-symbols-outlined text-primary text-xl">{trigger.icon}</span>
+                      <div>
+                        <p className="text-sm font-bold">{trigger.label}</p>
+                        <p className="text-[10px] text-slate-400 uppercase">{trigger.category}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setCreatorStep(0)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">
+                    Retour
+                  </button>
+                  <button
+                    onClick={() => selectedTrigger && setCreatorStep(2)}
+                    disabled={!selectedTrigger}
+                    className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Conditions (optional) */}
+            {creatorStep === 2 && (
+              <div>
+                <p className="text-sm text-slate-500 mb-4">Ajoutez des conditions (optionnel) :</p>
+
+                {/* Selected conditions */}
+                {selectedConditions.length > 0 && (
+                  <div className="space-y-3 mb-6">
+                    {selectedConditions.map((sc) => (
+                      <div key={sc.condition.id} className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                        <span className="material-symbols-outlined text-primary">{sc.condition.icon}</span>
+                        <span className="text-sm font-medium flex-1">{sc.condition.label}</span>
+                        {sc.condition.valueType === "select" && sc.condition.options ? (
+                          <select
+                            value={sc.value}
+                            onChange={(e) => updateConditionValue(sc.condition.id, e.target.value)}
+                            className="text-sm p-1.5 rounded-lg border border-primary/20 bg-white dark:bg-background-dark outline-none"
+                          >
+                            <option value="">Choisir...</option>
+                            {sc.condition.options.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={sc.condition.valueType === "number" ? "number" : "text"}
+                            value={sc.value}
+                            onChange={(e) => updateConditionValue(sc.condition.id, e.target.value)}
+                            placeholder="Valeur..."
+                            className="w-32 text-sm p-1.5 rounded-lg border border-primary/20 bg-white dark:bg-background-dark outline-none"
+                          />
+                        )}
+                        <button onClick={() => removeCondition(sc.condition.id)} className="text-slate-400 hover:text-red-500 transition-colors">
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Available conditions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {CONDITIONS.filter((c) => !selectedConditions.find((sc) => sc.condition.id === c.id)).map((condition) => (
+                    <button
+                      key={condition.id}
+                      onClick={() => addCondition(condition)}
+                      className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-border-dark hover:border-primary/30 text-left transition-all text-sm"
+                    >
+                      <span className="material-symbols-outlined text-slate-400 text-lg">add_circle</span>
+                      <span className="material-symbols-outlined text-primary text-sm">{condition.icon}</span>
+                      {condition.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setCreatorStep(1)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">
+                    Retour
+                  </button>
+                  <button onClick={() => setCreatorStep(3)} className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all">
+                    Suivant {selectedConditions.length === 0 && "(sans conditions)"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Actions */}
+            {creatorStep === 3 && (
+              <div>
+                <p className="text-sm text-slate-500 mb-4">Choisissez les actions a executer :</p>
+
+                {/* Selected actions */}
+                {selectedActions.length > 0 && (
+                  <div className="space-y-4 mb-6">
+                    {selectedActions.map((sa, idx) => (
+                      <div key={idx} className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-primary text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <span className="material-symbols-outlined text-primary">{sa.action.icon}</span>
+                            <span className="text-sm font-bold">{sa.action.label}</span>
+                          </div>
+                          <button onClick={() => removeAction(idx)} className="text-slate-400 hover:text-red-500 transition-colors">
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                        {sa.action.hasMessage && (
+                          <div className="mt-3">
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {MESSAGE_VARIABLES.map((v) => (
+                                <button
+                                  key={v.var}
+                                  onClick={() => updateActionMessage(idx, (sa.message || "") + v.var)}
+                                  className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded hover:bg-primary/20 transition-colors"
+                                  title={v.label}
+                                >
+                                  {v.var}
+                                </button>
+                              ))}
+                            </div>
+                            <textarea
+                              value={sa.message || ""}
+                              onChange={(e) => updateActionMessage(idx, e.target.value)}
+                              placeholder="Redigez votre message... Utilisez les variables ci-dessus."
+                              className="w-full p-3 rounded-lg border border-primary/20 bg-white dark:bg-background-dark text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
+                              rows={3}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Available actions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ACTIONS.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => addAction(action)}
+                      className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-border-dark hover:border-primary/30 text-left transition-all text-sm"
+                    >
+                      <span className="material-symbols-outlined text-slate-400 text-lg">add_circle</span>
+                      <span className="material-symbols-outlined text-primary text-sm">{action.icon}</span>
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setCreatorStep(2)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">
+                    Retour
+                  </button>
+                  <button
+                    onClick={() => selectedActions.length > 0 && setCreatorStep(4)}
+                    disabled={selectedActions.length === 0}
+                    className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40"
+                  >
+                    Apercu
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Preview */}
+            {creatorStep === 4 && (
+              <div>
+                <div className="bg-slate-50 dark:bg-background-dark p-6 rounded-xl border border-slate-200 dark:border-border-dark mb-6">
+                  <h3 className="font-bold text-lg mb-4">{scenarioName}</h3>
+
+                  {/* Visual flow */}
+                  <div className="space-y-4">
+                    {/* Trigger */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-blue-500">{selectedTrigger?.icon}</span>
+                      </div>
+                      <div className="flex-1 p-3 bg-blue-500/5 rounded-lg border border-blue-500/20">
+                        <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Declencheur</p>
+                        <p className="text-sm font-medium">{selectedTrigger?.label}</p>
+                      </div>
+                    </div>
+
+                    {/* Arrow */}
+                    {(selectedConditions.length > 0 || selectedActions.length > 0) && (
+                      <div className="flex justify-center">
+                        <span className="material-symbols-outlined text-slate-300">arrow_downward</span>
+                      </div>
+                    )}
+
+                    {/* Conditions */}
+                    {selectedConditions.length > 0 && (
+                      <>
+                        {selectedConditions.map((sc) => (
+                          <div key={sc.condition.id} className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-amber-500">{sc.condition.icon}</span>
+                            </div>
+                            <div className="flex-1 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                              <p className="text-[10px] font-bold text-amber-500 uppercase mb-0.5">Condition</p>
+                              <p className="text-sm font-medium">{sc.condition.label}: <span className="text-primary font-bold">{sc.value || "Non defini"}</span></p>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex justify-center">
+                          <span className="material-symbols-outlined text-slate-300">arrow_downward</span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Actions */}
+                    {selectedActions.map((sa, idx) => (
+                      <div key={idx}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-emerald-500">{sa.action.icon}</span>
+                          </div>
+                          <div className="flex-1 p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                            <p className="text-[10px] font-bold text-emerald-500 uppercase mb-0.5">Action {idx + 1}</p>
+                            <p className="text-sm font-medium">{sa.action.label}</p>
+                            {sa.message && (
+                              <p className="text-xs text-slate-500 mt-1 italic border-l-2 border-emerald-500/20 pl-2">
+                                {sa.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {idx < selectedActions.length - 1 && (
+                          <div className="flex justify-center mt-2">
+                            <span className="material-symbols-outlined text-slate-300 text-sm">arrow_downward</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => setCreatorStep(3)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">
+                    Modifier
+                  </button>
+                  <button
+                    onClick={handleCreateScenario}
+                    className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">check</span>
+                    Activer le scenario
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* Scenarios list                                                */}
+        {/* ============================================================ */}
+        {sideTab === "scenarios" && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">account_tree</span>
+              Vos scenarios ({scenarios.length})
+            </h3>
+
+            {scenarios.map((scenario) => (
+              <div
+                key={scenario.id}
+                className="bg-white dark:bg-primary/5 p-5 rounded-xl border border-slate-200 dark:border-primary/10 shadow-sm border-l-4 border-l-primary"
+              >
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <button
+                        onClick={() => handleToggle(scenario.id)}
+                        className={cn(
+                          "relative w-10 h-6 rounded-full transition-colors",
+                          scenario.active ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                          scenario.active ? "left-[18px]" : "left-0.5"
+                        )} />
+                      </button>
+                      <h4 className="font-bold text-sm">{scenario.name}</h4>
+                      <span className={cn(
+                        "px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider",
+                        scenario.active ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-700 text-slate-400"
+                      )}>
+                        {scenario.active ? "Actif" : "Inactif"}
+                      </span>
+                    </div>
+
+                    {/* Flow summary */}
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/5 rounded-lg border border-blue-500/10">
+                        <span className="material-symbols-outlined text-blue-500 text-sm">{scenario.trigger.icon}</span>
+                        <span className="font-medium text-blue-700 dark:text-blue-400">{scenario.trigger.label}</span>
+                      </div>
+                      {scenario.conditions.length > 0 && (
+                        <>
+                          <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/5 rounded-lg border border-amber-500/10">
+                            <span className="material-symbols-outlined text-amber-500 text-sm">filter_alt</span>
+                            <span className="font-medium text-amber-700 dark:text-amber-400">{scenario.conditions.length} condition{scenario.conditions.length > 1 ? "s" : ""}</span>
+                          </div>
+                        </>
+                      )}
+                      <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                        <span className="material-symbols-outlined text-emerald-500 text-sm">{scenario.actions[0]?.action.icon}</span>
+                        <span className="font-medium text-emerald-700 dark:text-emerald-400">{scenario.actions.length} action{scenario.actions.length > 1 ? "s" : ""}</span>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">bolt</span>
+                        {scenario.triggerCount} declenchements
+                      </span>
+                      {scenario.lastTriggered && (
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">schedule</span>
+                          Dernier: {scenario.lastTriggered}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">calendar_today</span>
+                        Cree le {scenario.createdAt}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-1 shrink-0">
+                    <button className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Modifier">
+                      <span className="material-symbols-outlined text-lg">edit</span>
+                    </button>
+                    <button className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Dupliquer">
+                      <span className="material-symbols-outlined text-lg">content_copy</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(scenario.id)}
+                      className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                      title="Supprimer"
+                    >
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {scenarios.length === 0 && (
+              <div className="text-center py-16 text-slate-500">
+                <span className="material-symbols-outlined text-5xl mb-4 block">settings_suggest</span>
+                <p className="text-lg font-bold mb-2">Aucun scenario</p>
+                <p className="text-sm mb-6">Creez votre premier scenario d&apos;automatisation pour gagner du temps.</p>
+                <button
+                  onClick={() => { resetCreator(); setShowCreator(true); }}
+                  className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all"
+                >
+                  Creer un scenario
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* Historique tab                                                */}
+        {/* ============================================================ */}
+        {sideTab === "historique" && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">history</span>
+              Historique des declenchements
+            </h3>
+            {[
+              { scenario: "Accueil des nouveaux clients", action: "Message envoye a Amadou Diop", time: "Il y a 2 heures", badge: "auto" },
+              { scenario: "Notification de livraison", action: "Email envoye a Claire Beaumont", time: "Il y a 30 min", badge: "auto" },
+              { scenario: "Remerciement avis positif", action: "Message envoye a Moussa Kone", time: "Hier", badge: "auto" },
+              { scenario: "Notification de livraison", action: "Message + Email envoyes a Pierre Martin", time: "Hier", badge: "auto" },
+              { scenario: "Accueil des nouveaux clients", action: "Message envoye a Fatima Ndiaye", time: "Il y a 2 jours", badge: "auto" },
+            ].map((entry, i) => (
+              <div key={i} className="flex items-start gap-4 p-4 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary">bolt</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold">{entry.scenario}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{entry.action}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase">
+                    {entry.badge}
+                  </span>
+                  <p className="text-xs text-slate-400 mt-1">{entry.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* Modeles tab                                                   */}
+        {/* ============================================================ */}
+        {sideTab === "modeles" && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">class</span>
+              Modeles de scenarios
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">Utilisez un modele pre-configure pour demarrer rapidement.</p>
+            {[
+              { name: "Accueil automatique", desc: "Envoie un message de bienvenue a chaque nouveau client qui vous contacte.", icon: "waving_hand", trigger: "Nouveau client", actions: 1 },
+              { name: "Relance client inactif", desc: "Relance automatiquement les clients qui n'ont pas donne de nouvelles depuis 7 jours.", icon: "notifications_active", trigger: "Inactivite 7j", actions: 1 },
+              { name: "Suivi post-livraison", desc: "Envoie un message et un email apres chaque livraison pour demander un avis.", icon: "check_circle", trigger: "Commande livree", actions: 2 },
+              { name: "Remerciement avis", desc: "Remercie automatiquement les clients qui laissent un avis positif (4+ etoiles).", icon: "star", trigger: "Avis >= 4 etoiles", actions: 1 },
+              { name: "Confirmation paiement", desc: "Envoie une confirmation automatique a la reception d'un paiement.", icon: "payments", trigger: "Paiement recu", actions: 2 },
+            ].map((template, i) => (
+              <div key={i} className="flex items-start gap-4 p-5 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark hover:border-primary/30 transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary text-xl">{template.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm mb-1">{template.name}</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">{template.desc}</p>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs text-blue-500">bolt</span>
+                      {template.trigger}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs text-emerald-500">flash_on</span>
+                      {template.actions} action{template.actions > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+                <button className="px-4 py-2 bg-primary/10 text-primary font-bold text-xs rounded-lg hover:bg-primary/20 transition-colors shrink-0">
+                  Utiliser
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

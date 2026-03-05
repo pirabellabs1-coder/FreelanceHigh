@@ -1,26 +1,37 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { usePlatformDataStore, computeClientStats } from "@/store/platform-data";
 
-const STATS = [
-  { label: "Projets Actifs", value: "12", variation: "+2% depuis le mois dernier", variationColor: "text-primary", icon: "folder_copy", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { label: "Messages", value: "4", variation: "Non lus ce matin", variationColor: "text-slate-400", icon: "mail", iconBg: "bg-blue-500/10", iconColor: "text-blue-400" },
-  { label: "Dépenses Mensuelles", value: "2 450,00 €", variation: "-5% budget restant", variationColor: "text-red-400", icon: "photo_camera", iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
-];
-
-const PROJECTS = [
-  { name: "Refonte Site E-commerce", client: "Client: L'Oreal Paris", progress: 75, status: "En cours", statusColor: "text-primary", barColor: "bg-primary", date: "12 Oct 2023", icon: "rocket_launch", iconBg: "bg-primary/20", iconColor: "text-primary" },
-  { name: "Développement API Mobile", client: "Client: TechNova", progress: 32, status: "Phase de test", statusColor: "text-blue-400", barColor: "bg-blue-500", date: "25 Nov 2023", icon: "hub", iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
-  { name: "Identité Visuelle - Startup", client: "Client: SolarFlow", progress: 90, status: "Finalisation", statusColor: "text-orange-400", barColor: "bg-orange-500", date: "05 Oct 2023", icon: "edit", iconBg: "bg-orange-500/20", iconColor: "text-orange-400" },
-];
-
-const ORDERS = [
-  { name: "Pack Maintenance A...", ref: "#CMD-90231", status: "Payé", amount: "890€" },
-  { name: "Audit SEO - Trimestriel", ref: "#CMD-89442", status: "En attente", amount: "450€" },
-];
+// Current demo client = u5 (TechCorp Inc.)
+const CURRENT_CLIENT_ID = "u5";
 
 export default function ClientDashboard() {
+  const state = usePlatformDataStore();
+
+  const clientStats = useMemo(() => computeClientStats(state, CURRENT_CLIENT_ID), [state]);
+
+  const myProjects = useMemo(() => {
+    return state.clientProjects.map(p => ({
+      ...p,
+      icon: p.progress >= 80 ? "rocket_launch" : p.progress >= 50 ? "hub" : "edit",
+      iconBg: p.progress >= 80 ? "bg-orange-500/20" : p.progress >= 50 ? "bg-primary/20" : "bg-blue-500/20",
+      iconColor: p.progress >= 80 ? "text-orange-400" : p.progress >= 50 ? "text-primary" : "text-blue-400",
+    }));
+  }, [state.clientProjects]);
+
+  const myOrders = useMemo(() => {
+    return state.clientOrders;
+  }, [state.clientOrders]);
+
+  const STATS = [
+    { label: "Projets Actifs", value: clientStats.activeProjects.toString(), variation: `${clientStats.completedOrders} terminés`, variationColor: "text-primary", icon: "folder_copy", iconBg: "bg-primary/10", iconColor: "text-primary" },
+    { label: "Freelances", value: clientStats.uniqueFreelances.toString(), variation: "Freelances engagés", variationColor: "text-slate-400", icon: "people", iconBg: "bg-blue-500/10", iconColor: "text-blue-400" },
+    { label: "Dépenses Totales", value: `${clientStats.totalSpent.toLocaleString()} €`, variation: `${clientStats.completedOrders} commandes`, variationColor: "text-emerald-400", icon: "payments", iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -63,15 +74,15 @@ export default function ClientDashboard() {
             </div>
 
             {/* Table rows */}
-            {PROJECTS.map(p => (
-              <div key={p.name} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-border-dark/50 hover:bg-white/[0.02] transition-colors items-center">
+            {myProjects.map(p => (
+              <div key={p.id} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-border-dark/50 hover:bg-white/[0.02] transition-colors items-center">
                 <div className="col-span-5 flex items-center gap-3">
                   <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", p.iconBg)}>
                     <span className={cn("material-symbols-outlined text-lg", p.iconColor)}>{p.icon}</span>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="text-xs text-slate-500">{p.client}</p>
+                    <p className="text-xs text-slate-500">Freelance: {p.freelanceName}</p>
                   </div>
                 </div>
                 <div className="col-span-4 flex items-center gap-3">
@@ -82,7 +93,7 @@ export default function ClientDashboard() {
                   <span className={cn("text-xs font-semibold", p.statusColor)}>{p.status}</span>
                 </div>
                 <div className="col-span-3 text-right text-sm text-slate-400">
-                  {p.date}
+                  {p.dueDate}
                 </div>
               </div>
             ))}
@@ -95,8 +106,8 @@ export default function ClientDashboard() {
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
             <h3 className="text-base font-bold text-white mb-4">Dernières Commandes</h3>
             <div className="space-y-3">
-              {ORDERS.map(o => (
-                <div key={o.ref} className="flex items-center gap-3">
+              {myOrders.map(o => (
+                <div key={o.id} className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-border-dark flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-slate-400 text-lg">description</span>
                   </div>
@@ -104,7 +115,7 @@ export default function ClientDashboard() {
                     <p className="text-sm font-semibold text-white truncate">{o.name}</p>
                     <p className="text-xs text-slate-500">{o.ref} · {o.status}</p>
                   </div>
-                  <span className="text-sm font-bold text-white flex-shrink-0">{o.amount}</span>
+                  <span className="text-sm font-bold text-white flex-shrink-0">€{o.amount.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -113,15 +124,21 @@ export default function ClientDashboard() {
             </Link>
           </div>
 
-          {/* Utilisation Stockage */}
+          {/* Résumé financier */}
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-5 relative overflow-hidden">
-            <p className="text-primary font-bold text-sm mb-2">Utilisation Stockage</p>
-            <p className="text-4xl font-bold text-white">78.4 <span className="text-lg font-normal text-slate-400">GB</span></p>
-            <div className="h-2 bg-border-dark rounded-full mt-3 overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: "78.4%" }} />
+            <p className="text-primary font-bold text-sm mb-2">Total dépensé</p>
+            <p className="text-4xl font-bold text-white">€{clientStats.totalSpent.toLocaleString()}</p>
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Commandes terminées</span>
+                <span className="font-bold text-emerald-400">{clientStats.completedOrders}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Projets actifs</span>
+                <span className="font-bold text-blue-400">{clientStats.activeProjects}</span>
+              </div>
             </div>
-            <p className="text-xs text-primary/60 mt-2">Vous utilisez 78% de votre quota de 100GB.</p>
-            {/* Decorative cloud */}
+            {/* Decorative */}
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-slate-600/20 rounded-full" />
             <div className="absolute -bottom-2 -right-1 w-16 h-16 bg-slate-600/10 rounded-full" />
           </div>

@@ -1,0 +1,662 @@
+// FreelanceHigh — Prisma Schema (Production)
+// Source unique de verite pour tous les types DB
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── Enums ──
+
+enum UserRole {
+  FREELANCE
+  CLIENT
+  AGENCE
+  ADMIN
+}
+
+enum UserPlan {
+  GRATUIT
+  PRO
+  BUSINESS
+  AGENCE
+}
+
+enum UserStatus {
+  ACTIF
+  SUSPENDU
+  BANNI
+}
+
+enum ServiceStatus {
+  BROUILLON
+  EN_ATTENTE
+  ACTIF
+  PAUSE
+  REFUSE
+  VEDETTE
+}
+
+enum OrderStatus {
+  EN_ATTENTE
+  EN_COURS
+  LIVRE
+  REVISION
+  TERMINE
+  ANNULE
+  LITIGE
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  DISPUTED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  EN_ATTENTE
+  COMPLETE
+  ECHOUE
+  REMBOURSE
+}
+
+enum PaymentMethod {
+  CARTE
+  MOBILE_MONEY
+  VIREMENT
+  PAYPAL
+  STRIPE
+}
+
+enum DisputeStatus {
+  OUVERT
+  EN_EXAMEN
+  RESOLU
+}
+
+enum DisputeVerdict {
+  CLIENT
+  FREELANCE
+  PARTIEL
+  ANNULATION
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  ORDER
+  ADMIN
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  SYSTEM
+}
+
+enum NotificationType {
+  ADMIN_ACTION
+  MESSAGE
+  ORDER
+  KYC
+  SYSTEM
+  PAYMENT
+}
+
+enum KycStatus {
+  EN_ATTENTE
+  APPROUVE
+  REFUSE
+}
+
+enum BlogStatus {
+  BROUILLON
+  PROGRAMME
+  PUBLIE
+}
+
+enum BidStatus {
+  EN_ATTENTE
+  ACCEPTE
+  REFUSE
+  EXPIRE
+}
+
+enum ContractStatus {
+  BROUILLON
+  ENVOYE
+  SIGNE
+  EXPIRE
+  ANNULE
+}
+
+enum AutomationStatus {
+  ACTIF
+  PAUSE
+  BROUILLON
+}
+
+// ── Models ──
+
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  emailVerified   DateTime?
+  passwordHash    String
+  name            String
+  image           String?
+  role            UserRole   @default(FREELANCE)
+  plan            UserPlan   @default(GRATUIT)
+  status          UserStatus @default(ACTIF)
+  country         String?
+  countryFlag     String?
+  avatar          String?
+  kyc             Int        @default(1)
+  suspendReason   String?
+
+  // 2FA
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?
+
+  // Tracking
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  loginCount      Int        @default(0)
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  sessions           Session[]
+  auditLogsAsActor   AuditLog[]          @relation("AuditActor")
+  auditLogsAsTarget  AuditLog[]          @relation("AuditTarget")
+  messages           Message[]
+  notifications      Notification[]
+  conversationUsers  ConversationUser[]
+  loginAttempts      LoginAttempt[]
+  freelancerProfile  FreelancerProfile?
+  clientProfile      ClientProfile?
+  agencyProfile      AgencyProfile?
+  services           Service[]
+  ordersAsClient     Order[]             @relation("OrderClient")
+  ordersAsFreelance  Order[]             @relation("OrderFreelance")
+  reviewsGiven       Review[]            @relation("ReviewAuthor")
+  reviewsReceived    Review[]            @relation("ReviewTarget")
+  paymentsAsPayer    Payment[]           @relation("PaymentPayer")
+  paymentsAsPayee    Payment[]           @relation("PaymentPayee")
+  bids               Bid[]
+  contractsSigned    ContractSignature[]
+  automations        AutomationScenario[]
+  affiliationCodes   AffiliationCode[]
+  blogPosts          BlogPost[]
+  kycRequests        KycRequest[]
+  disputesAsClient   Dispute[]           @relation("DisputeClient")
+  disputesAsFreelance Dispute[]          @relation("DisputeFreelance")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model FreelancerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?  @db.Text
+  title       String?
+  skills      String[] @default([])
+  hourlyRate  Float?
+  availability String? // "disponible", "occupe", "vacances"
+  timezone    String?
+  languages   String[] @default([])
+  portfolio   Json?    // Array d'objets { title, description, imageUrl, link }
+  badges      String[] @default([])
+  completionRate Float @default(0)
+  avgResponseTime Int? // en minutes
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClientProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  company     String?
+  sector      String?
+  size        String?  // "1-10", "11-50", "51-200", "200+"
+  website     String?
+  description String?  @db.Text
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AgencyProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  agencyName  String
+  logo        String?
+  sector      String?
+  size        String?
+  description String?  @db.Text
+  website     String?
+  siret       String?
+  verified    Boolean  @default(false)
+  teamMembers Json?    // Array d'objets { userId, role, joinedAt }
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id              String   @id @default(cuid())
+  userId          String
+  token           String   @unique
+  ipAddress       String?
+  userAgent       String?
+  expiresAt       DateTime
+  isImpersonation Boolean  @default(false)
+  impersonatedBy  String?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String?
+  color       String?
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  parentId    String?
+  parent      Category? @relation("CategoryChildren", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryChildren")
+  services    Service[]
+  createdAt   DateTime @default(now())
+
+  @@index([slug])
+  @@index([order])
+}
+
+model Service {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  description   String?       @db.Text
+  categoryId    String
+  userId        String
+  status        ServiceStatus @default(BROUILLON)
+  price         Float
+  deliveryDays  Int           @default(7)
+  revisions     Int           @default(1)
+  tags          String[]      @default([])
+  images        String[]      @default([])
+  packages      Json?         // { basic: {...}, standard: {...}, premium: {...} }
+  faq           Json?         // Array d'objets { question, answer }
+  extras        Json?         // Array d'objets { title, price, deliveryDays }
+  views         Int           @default(0)
+  orderCount    Int           @default(0)
+  rating        Float         @default(0)
+  ratingCount   Int           @default(0)
+  isBoosted     Boolean       @default(false)
+  boostedUntil  DateTime?
+  refuseReason  String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  category      Category      @relation(fields: [categoryId], references: [id])
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  reviews       Review[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([userId])
+  @@index([status])
+  @@index([rating])
+}
+
+model Order {
+  id            String       @id @default(cuid())
+  serviceId     String
+  clientId      String
+  freelanceId   String
+  status        OrderStatus  @default(EN_ATTENTE)
+  escrowStatus  EscrowStatus @default(HELD)
+  amount        Float
+  commission    Float        @default(0)
+  packageType   String?      // "basic", "standard", "premium"
+  requirements  String?      @db.Text
+  deadline      DateTime
+  deliveredAt   DateTime?
+  completedAt   DateTime?
+  progress      Int          @default(0)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  service       Service      @relation(fields: [serviceId], references: [id])
+  client        User         @relation("OrderClient", fields: [clientId], references: [id])
+  freelance     User         @relation("OrderFreelance", fields: [freelanceId], references: [id])
+  payments      Payment[]
+  reviews       Review[]
+  disputes      Dispute[]
+  conversation  Conversation?
+
+  @@index([clientId])
+  @@index([freelanceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  orderId     String
+  serviceId   String
+  authorId    String
+  targetId    String
+  rating      Float
+  comment     String?  @db.Text
+  response    String?  @db.Text // reponse du freelance
+  quality     Float?
+  communication Float?
+  timeliness  Float?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order       Order    @relation(fields: [orderId], references: [id])
+  service     Service  @relation(fields: [serviceId], references: [id])
+  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target      User     @relation("ReviewTarget", fields: [targetId], references: [id])
+
+  @@unique([orderId, authorId])
+  @@index([targetId])
+  @@index([serviceId])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String?
+  payerId         String
+  payeeId         String?
+  amount          Float
+  currency        String        @default("EUR")
+  status          PaymentStatus @default(EN_ATTENTE)
+  method          PaymentMethod?
+  stripePaymentId String?
+  description     String?
+  type            String        @default("paiement") // paiement, commission, retrait, remboursement, abonnement
+
+  createdAt       DateTime      @default(now())
+
+  order           Order?        @relation(fields: [orderId], references: [id])
+  payer           User          @relation("PaymentPayer", fields: [payerId], references: [id])
+  payee           User?         @relation("PaymentPayee", fields: [payeeId], references: [id])
+
+  @@index([orderId])
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([status])
+}
+
+model Dispute {
+  id              String         @id @default(cuid())
+  orderId         String
+  clientId        String
+  freelanceId     String
+  reason          String
+  clientArgument  String?        @db.Text
+  freelanceArgument String?      @db.Text
+  status          DisputeStatus  @default(OUVERT)
+  verdict         DisputeVerdict?
+  verdictNote     String?
+  partialPercent  Int?
+  resolvedAt      DateTime?
+
+  createdAt       DateTime       @default(now())
+
+  order           Order          @relation(fields: [orderId], references: [id])
+  client          User           @relation("DisputeClient", fields: [clientId], references: [id])
+  freelance       User           @relation("DisputeFreelance", fields: [freelanceId], references: [id])
+
+  @@index([status])
+  @@index([orderId])
+}
+
+model Bid {
+  id          String    @id @default(cuid())
+  userId      String
+  projectId   String?   // reference a un projet client (future table)
+  proposal    String?   @db.Text
+  amount      Float
+  deliveryDays Int
+  status      BidStatus @default(EN_ATTENTE)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Contract {
+  id          String         @id @default(cuid())
+  title       String
+  content     String         @db.Text
+  orderId     String?
+  status      ContractStatus @default(BROUILLON)
+  expiresAt   DateTime?
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  signatures  ContractSignature[]
+}
+
+model ContractSignature {
+  id          String   @id @default(cuid())
+  contractId  String
+  userId      String
+  signedAt    DateTime @default(now())
+  ipAddress   String?
+
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([contractId, userId])
+}
+
+model AutomationScenario {
+  id            String           @id @default(cuid())
+  userId        String
+  name          String
+  trigger       String           // "order_accepted", "deadline_24h", "client_inactive_3d"
+  conditions    Json?            // conditions supplementaires
+  actions       Json             // actions a executer
+  status        AutomationStatus @default(BROUILLON)
+  planRequired  UserPlan         @default(PRO) // plan minimum requis
+  executionCount Int             @default(0)
+  lastExecutedAt DateTime?
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AffiliationCode {
+  id          String   @id @default(cuid())
+  userId      String
+  code        String   @unique
+  commission  Float    @default(10) // pourcentage
+  tier        String   @default("standard") // standard, premium
+  usageCount  Int      @default(0)
+  totalEarned Float    @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+}
+
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  content     String     @db.Text
+  excerpt     String?
+  coverImage  String?
+  category    String?
+  tags        String[]   @default([])
+  authorId    String
+  status      BlogStatus @default(BROUILLON)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  views       Int        @default(0)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  author      User       @relation(fields: [authorId], references: [id])
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+}
+
+model KycRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  requestedLevel  Int
+  currentLevel    Int
+  documentType    String
+  documentUrl     String?
+  status          KycStatus @default(EN_ATTENTE)
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  refuseReason    String?
+
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorId       String
+  action        String
+  targetUserId  String?
+  details       Json?
+  ipAddress     String?
+
+  createdAt     DateTime @default(now())
+
+  actor         User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser    User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Conversation {
+  id        String           @id @default(cuid())
+  type      ConversationType @default(DIRECT)
+  title     String?
+  orderId   String?          @unique
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  order     Order?           @relation(fields: [orderId], references: [id])
+  users     ConversationUser[]
+  messages  Message[]
+
+  @@index([type])
+}
+
+model ConversationUser {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id              String       @id @default(cuid())
+  conversationId  String
+  senderId        String
+  content         String       @db.Text
+  type            MessageType  @default(TEXT)
+  fileName        String?
+  fileUrl         String?
+
+  createdAt       DateTime     @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM)
+  read      Boolean          @default(false)
+  link      String?
+
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}

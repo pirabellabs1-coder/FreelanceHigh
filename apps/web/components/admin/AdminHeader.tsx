@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function AdminHeader({ onMobileMenu }: { onMobileMenu: () => void }) {
   return (
@@ -19,10 +20,7 @@ export function AdminHeader({ onMobileMenu }: { onMobileMenu: () => void }) {
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           En ligne
         </span>
-        <Link href="/admin/notifications" className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors relative">
-          <span className="material-symbols-outlined text-lg">notifications</span>
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
-        </Link>
+        <NotificationBell userId="admin-1" notificationsHref="/admin/notifications" />
         <Link href="/admin/configuration" className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors">
           <span className="material-symbols-outlined text-lg">settings</span>
         </Link>

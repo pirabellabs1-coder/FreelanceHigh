@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 type Role = "freelance" | "client" | "agence";
@@ -251,14 +252,56 @@ export default function InscriptionPage() {
     return true;
   }
 
-  function next() {
-    if (step < 3) setStep(step + 1);
-    else {
-      // TODO: Supabase Auth signup
-      console.log("Registration:", { role, ...d });
-      if (role === "client") router.push("/client/dashboard");
-      else if (role === "agence") router.push("/agence/dashboard");
+  const [registerError, setRegisterError] = useState("");
+  const [registerLoading, setRegisterLoading] = useState(false);
+
+  async function next() {
+    if (step < 3) { setStep(step + 1); return; }
+
+    // Etape finale — inscription puis connexion automatique
+    setRegisterLoading(true);
+    setRegisterError("");
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: d.email,
+          password: d.password,
+          name: `${d.prenom} ${d.nom}`.trim(),
+          role,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data.error || "Erreur lors de l'inscription");
+        setRegisterLoading(false);
+        return;
+      }
+
+      // Connexion automatique apres inscription
+      const signInResult = await signIn("credentials", {
+        email: d.email,
+        password: d.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // Inscription reussie mais connexion echouee — rediriger vers connexion
+        router.push("/connexion");
+        return;
+      }
+
+      // Rediriger vers le bon espace
+      if (role === "client") router.push("/client");
+      else if (role === "agence") router.push("/agence");
       else router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setRegisterError("Une erreur est survenue. Veuillez reessayer.");
+      setRegisterLoading(false);
     }
   }
 
@@ -849,6 +892,14 @@ export default function InscriptionPage() {
           {/* Step indicator */}
           <StepIndicator step={step} labels={labels} />
 
+          {/* Registration error */}
+          {registerError && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">error</span>
+              {registerError}
+            </div>
+          )}
+
           {/* Step content */}
           {step === 0 && renderStep0()}
           {step === 1 && renderStep1()}
@@ -869,14 +920,19 @@ export default function InscriptionPage() {
             <button
               type="button"
               onClick={next}
-              disabled={step === 0 && !canProceed()}
-              className={`${step > 0 ? "flex-[2]" : "w-full"} py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+              disabled={(step === 0 && !canProceed()) || registerLoading}
+              className={`${step > 0 ? "flex-[2]" : "w-full"} py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2`}
             >
-              {step < 3 ? "Continuer" : (
+              {registerLoading ? (
                 <>
-                  {role === "freelance" && "Accéder à mon dashboard"}
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Inscription en cours...
+                </>
+              ) : step < 3 ? "Continuer" : (
+                <>
+                  {role === "freelance" && "Acceder a mon dashboard"}
                   {role === "client" && "Explorer le marketplace"}
-                  {role === "agence" && "Accéder à l'espace agence"}
+                  {role === "agence" && "Acceder a l'espace agence"}
                 </>
               )}
             </button>

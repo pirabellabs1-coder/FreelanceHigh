@@ -15,8 +15,10 @@ const NAV_ITEMS = [
   { label: "Plans", href: "/admin/plans", icon: "workspace_premium" },
   { label: "Blog", href: "/admin/blog", icon: "article" },
   { label: "Catégories", href: "/admin/categories", icon: "category" },
+  { label: "Messages", href: "/admin/messages", icon: "chat" },
   { label: "Notifications", href: "/admin/notifications", icon: "notifications" },
   { label: "Analytics", href: "/admin/analytics", icon: "bar_chart" },
+  { label: "Journal d'audit", href: "/admin/audit-log", icon: "history" },
 ];
 
 const BOTTOM_ITEMS = [

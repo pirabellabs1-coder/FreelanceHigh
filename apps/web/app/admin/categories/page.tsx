@@ -1,135 +1,268 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToastStore } from "@/store/dashboard";
+import { usePlatformDataStore, type PlatformCategory } from "@/store/platform-data";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = [
-  { id: "1", name: "Developpement Web", icon: "code", subcategories: ["Frontend", "Backend", "Fullstack", "WordPress", "E-commerce"], services: 2450, order: 1 },
-  { id: "2", name: "Design UI/UX", icon: "palette", subcategories: ["Web Design", "Mobile Design", "Logo", "Branding", "Illustration"], services: 1890, order: 2 },
-  { id: "3", name: "Marketing Digital", icon: "campaign", subcategories: ["SEO", "Google Ads", "Social Media", "Email Marketing", "Content"], services: 1560, order: 3 },
-  { id: "4", name: "Redaction", icon: "edit_note", subcategories: ["Copywriting", "Articles SEO", "Contenu web", "Technique"], services: 980, order: 4 },
-  { id: "5", name: "Traduction", icon: "translate", subcategories: ["FR-EN", "FR-AR", "Localisation", "Sous-titrage"], services: 650, order: 5 },
-  { id: "6", name: "Video & Animation", icon: "videocam", subcategories: ["Montage", "Motion Design", "Animation 2D/3D", "Whiteboard"], services: 780, order: 6 },
-  { id: "7", name: "IA & Data", icon: "psychology", subcategories: ["Machine Learning", "NLP", "Data Analysis", "Chatbots"], services: 420, order: 7 },
-  { id: "8", name: "Mobile", icon: "smartphone", subcategories: ["iOS", "Android", "React Native", "Flutter"], services: 890, order: 8 },
-  { id: "9", name: "SEO", icon: "search", subcategories: ["Audit", "On-page", "Off-page", "Technique", "Local"], services: 1120, order: 9 },
-  { id: "10", name: "Cybersecurite", icon: "security", subcategories: ["Pentest", "Audit", "Conseil", "Formation"], services: 340, order: 10 },
-];
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
-const POPULAR_TAGS = ["react", "wordpress", "python", "figma", "seo", "node.js", "typescript", "photoshop", "mobile", "flutter", "next.js", "vue.js", "tailwind", "django", "shopify", "marketing", "copywriting", "logo", "branding", "devops"];
+const ICON_OPTIONS = ["code", "palette", "campaign", "edit_note", "smartphone", "cloud", "school", "psychology", "movie", "music_note", "translate", "security", "photo_camera", "analytics", "build"];
+const COLOR_OPTIONS = ["#6C2BD9", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#6366F1", "#14B8A6", "#8B5CF6", "#EF4444", "#D946EF", "#F97316", "#06B6D4"];
+
+type ModalMode = null | "add" | "edit";
+
+const emptyForm: { name: string; slug: string; icon: string; color: string; description: string; order: number; status: "actif" | "inactif" } = { name: "", slug: "", icon: "code", color: "#6C2BD9", description: "", order: 1, status: "actif" };
 
 export default function AdminCategories() {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const { addToast } = useToastStore();
+  const { categories, services, addCategory, updateCategory, deleteCategory } = usePlatformDataStore();
 
-  function toggle(id: string) {
-    setExpanded(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) {
-        n.delete(id);
-      } else {
-        n.add(id);
-      }
-      return n;
-    });
+  const [modal, setModal] = useState<ModalMode>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const sorted = useMemo(() => {
+    let list = [...categories].sort((a, b) => a.order - b.order);
+    if (search) list = list.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+    return list;
+  }, [categories, search]);
+
+  function openAdd() {
+    setForm({ ...emptyForm, order: categories.length + 1 });
+    setEditId(null);
+    setModal("add");
   }
+
+  function openEdit(cat: PlatformCategory) {
+    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color, description: cat.description, order: cat.order, status: cat.status });
+    setEditId(cat.id);
+    setModal("edit");
+  }
+
+  function handleSave() {
+    if (!form.name.trim()) { addToast("warning", "Le nom est requis"); return; }
+    const slug = form.slug || slugify(form.name);
+
+    if (modal === "add") {
+      addCategory({ ...form, slug });
+      addToast("success", `Catégorie "${form.name}" créée`);
+    } else if (modal === "edit" && editId) {
+      updateCategory(editId, { ...form, slug });
+      addToast("success", `Catégorie "${form.name}" modifiée`);
+    }
+    setModal(null);
+  }
+
+  function handleDelete(id: string) {
+    const cat = categories.find(c => c.id === id);
+    const linkedServices = services.filter(s => s.category === cat?.name).length;
+    if (linkedServices > 0) {
+      addToast("warning", `${linkedServices} service(s) utilisent cette catégorie. Réassignez-les d'abord.`);
+      setDeleteConfirm(null);
+      return;
+    }
+    deleteCategory(id);
+    addToast("success", `Catégorie "${cat?.name}" supprimée`);
+    setDeleteConfirm(null);
+  }
+
+  function toggleStatus(cat: PlatformCategory) {
+    const next = cat.status === "actif" ? "inactif" : "actif";
+    updateCategory(cat.id, { status: next as PlatformCategory["status"] });
+    addToast("success", `Catégorie "${cat.name}" ${next === "actif" ? "activée" : "désactivée"}`);
+  }
+
+  const activeCount = categories.filter(c => c.status === "actif").length;
+  const totalServices = categories.reduce((s, c) => s + c.servicesCount, 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary">category</span>
-          Categories &amp; Tags
-        </h1>
-        <button
-          onClick={() => addToast("info", "Ajout de categorie bientot disponible")}
-          className="px-4 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-        >
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-white flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">category</span>
+            Catégories
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">{activeCount} actives sur {categories.length} — {totalServices} services au total</p>
+        </div>
+        <button onClick={openAdd} className="px-4 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
           <span className="material-symbols-outlined text-lg">add</span>
-          Nouvelle categorie
+          Nouvelle catégorie
         </button>
       </div>
 
-      {/* Categories tree */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark">
-        <div className="p-5 border-b border-border-dark">
-          <h2 className="font-bold text-white">Categories ({CATEGORIES.length})</h2>
-        </div>
-        <div className="divide-y divide-border-dark">
-          {CATEGORIES.map(c => (
-            <div key={c.id}>
-              <button
-                onClick={() => toggle(c.id)}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-red-500/5 transition-colors text-left"
-              >
-                <span className={cn("material-symbols-outlined text-sm text-slate-400 transition-transform", expanded.has(c.id) && "rotate-90")}>chevron_right</span>
-                <span className="material-symbols-outlined text-primary">{c.icon}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm text-white">{c.name}</p>
-                  <p className="text-xs text-slate-400">{c.subcategories.length} sous-categories &middot; {c.services} services</p>
-                </div>
-                <span className="text-xs text-slate-500">#{c.order}</span>
-                <button
-                  onClick={e => { e.stopPropagation(); addToast("info", "Modification de categorie"); }}
-                  className="p-1 text-slate-400 hover:text-primary"
-                >
-                  <span className="material-symbols-outlined text-lg">edit</span>
-                </button>
-              </button>
-              {expanded.has(c.id) && (
-                <div className="bg-background-dark/50 px-5 py-3 pl-16">
-                  <div className="flex flex-wrap gap-2">
-                    {c.subcategories.map(sub => (
-                      <span key={sub} className="inline-flex items-center gap-1 text-xs text-slate-300 bg-neutral-dark px-3 py-1.5 rounded-lg border border-border-dark">
-                        {sub}
-                        <button
-                          onClick={() => addToast("info", "Sous-categorie modifiee")}
-                          className="text-slate-400 hover:text-primary"
-                        >
-                          <span className="material-symbols-outlined text-xs">edit</span>
-                        </button>
-                      </span>
-                    ))}
-                    <button
-                      onClick={() => addToast("info", "Ajout sous-categorie")}
-                      className="text-xs text-primary hover:underline font-semibold"
-                    >
-                      + Ajouter
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* Recherche */}
+      <div className="relative max-w-md">
+        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une catégorie..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border-dark bg-neutral-dark text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
       </div>
 
-      {/* Tags */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-white">Tags populaires</h2>
-          <button
-            onClick={() => addToast("info", "Ajout de tag")}
-            className="text-sm text-primary font-semibold hover:underline"
-          >
-            + Ajouter un tag
-          </button>
+      {/* Tableau */}
+      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border-dark">
+                <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">#</th>
+                <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Catégorie</th>
+                <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Slug</th>
+                <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Services</th>
+                <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Statut</th>
+                <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(cat => (
+                <tr key={cat.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
+                  <td className="px-5 py-3 text-sm text-slate-500 font-mono">{cat.order}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: cat.color + "20" }}>
+                        <span className="material-symbols-outlined" style={{ color: cat.color }}>{cat.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{cat.name}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{cat.description}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-xs font-mono text-slate-400">{cat.slug}</td>
+                  <td className="px-5 py-3 text-center text-sm font-bold text-white">{cat.servicesCount}</td>
+                  <td className="px-5 py-3 text-center">
+                    <button onClick={() => toggleStatus(cat)} className={cn("text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer transition-colors", cat.status === "actif" ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" : "bg-slate-500/20 text-slate-400 hover:bg-slate-500/30")}>
+                      {cat.status === "actif" ? "Actif" : "Inactif"}
+                    </button>
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex justify-center gap-1">
+                      <button onClick={() => openEdit(cat)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Modifier">
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button onClick={() => setDeleteConfirm(cat.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Supprimer">
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {POPULAR_TAGS.map(tag => (
-            <span key={tag} className="inline-flex items-center gap-1 text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full font-medium">
-              #{tag}
-              <button
-                onClick={() => addToast("info", `Tag "${tag}" modifie`)}
-                className="hover:text-red-300"
-              >
-                <span className="material-symbols-outlined text-xs">close</span>
-              </button>
-            </span>
-          ))}
-        </div>
+        {sorted.length === 0 && (
+          <div className="text-center py-16">
+            <span className="material-symbols-outlined text-5xl text-slate-600">category</span>
+            <p className="text-slate-500 mt-2">Aucune catégorie trouvée</p>
+          </div>
+        )}
       </div>
+
+      {/* Modal Add/Edit */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-lg border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-lg text-white mb-6">{modal === "add" ? "Nouvelle catégorie" : "Modifier la catégorie"}</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Nom *</label>
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value, slug: slugify(e.target.value) }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none focus:ring-2 focus:ring-primary/30" placeholder="ex: Développement Web" />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Slug</label>
+                <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-slate-400 font-mono outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Description</label>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none resize-none focus:ring-2 focus:ring-primary/30" placeholder="Courte description de la catégorie..." />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Icône</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ICON_OPTIONS.map(icon => (
+                      <button key={icon} onClick={() => setForm(f => ({ ...f, icon }))} className={cn("w-9 h-9 rounded-lg flex items-center justify-center border transition-colors", form.icon === icon ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:text-white")}>
+                        <span className="material-symbols-outlined text-lg">{icon}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Couleur</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_OPTIONS.map(color => (
+                      <button key={color} onClick={() => setForm(f => ({ ...f, color }))} className={cn("w-9 h-9 rounded-lg border-2 transition-all", form.color === color ? "border-white scale-110" : "border-transparent")} style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Ordre d&apos;affichage</label>
+                  <input type="number" value={form.order} onChange={e => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none focus:ring-2 focus:ring-primary/30" min={1} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Statut</label>
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as "actif" | "inactif" }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+                    <option value="actif">Actif</option>
+                    <option value="inactif">Inactif</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="mt-6 p-4 rounded-xl border border-border-dark/50 bg-background-dark/30">
+              <p className="text-xs text-slate-500 mb-2">Aperçu :</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: form.color + "20" }}>
+                  <span className="material-symbols-outlined" style={{ color: form.color }}>{form.icon}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{form.name || "Nom de la catégorie"}</p>
+                  <p className="text-xs text-slate-500">{form.slug || "slug-auto-genere"}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
+              <button onClick={handleSave} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">{modal === "add" ? "Créer" : "Enregistrer"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Delete Confirm */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-sm border border-border-dark shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-red-400">warning</span>
+              </div>
+              <h3 className="font-bold text-lg text-white">Supprimer cette catégorie ?</h3>
+            </div>
+            <p className="text-sm text-slate-400 mb-6">Cette action est irréversible. Les services associés devront être réassignés.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

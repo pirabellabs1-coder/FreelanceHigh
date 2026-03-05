@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface ClientHeaderProps {
   onMenuClick: () => void;
@@ -30,10 +31,7 @@ export function ClientHeader({ onMenuClick }: ClientHeaderProps) {
 
       {/* Right: notifications + settings + user */}
       <div className="flex items-center gap-2">
-        <Link href="/client/notifications" className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative">
-          <span className="material-symbols-outlined text-xl">notifications</span>
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-        </Link>
+        <NotificationBell userId="u6" notificationsHref="/client/parametres" />
 
         <Link href="/client/aide" className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
           <span className="material-symbols-outlined text-xl">help</span>

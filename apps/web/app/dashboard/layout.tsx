@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { ToastContainer } from "@/components/ui/toast";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -36,18 +37,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-background-dark p-4 sm:p-6 lg:p-8">
-        {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-4 mb-6 -mt-2">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-lg text-slate-400 hover:bg-white/5 transition-colors"
-          >
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">rocket_launch</span>
-            <span className="font-bold text-lg text-white">FreelanceHigh</span>
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-6 -mt-2">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-white/5 transition-colors"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">rocket_launch</span>
+              <span className="font-bold text-lg text-white">FreelanceHigh</span>
+            </div>
           </div>
+          <NotificationBell userId="u1" notificationsHref="/dashboard/parametres" />
         </div>
 
         {children}

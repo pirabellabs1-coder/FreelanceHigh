@@ -44,9 +44,10 @@ export function Footer() {
           <h4 className="text-white font-bold text-lg mb-8">Plateforme</h4>
           <ul className="space-y-4 text-slate-500 text-base">
             <li><Link href="/explorer" className="hover:text-primary transition-colors">Explorer les services</Link></li>
-            <li><Link href="/projets" className="hover:text-primary transition-colors">Projets en cours</Link></li>
+            <li><Link href="/offres-projets" className="hover:text-primary transition-colors">Projets en cours</Link></li>
             <li><Link href="/inscription" className="hover:text-primary transition-colors">Devenir freelance</Link></li>
             <li><Link href="/tarifs" className="hover:text-primary transition-colors">Nos tarifs</Link></li>
+            <li><Link href="/affiliation" className="hover:text-primary transition-colors">Programme d&apos;affiliation</Link></li>
           </ul>
         </div>
 
@@ -58,6 +59,7 @@ export function Footer() {
             <li><Link href="/comment-ca-marche" className="hover:text-primary transition-colors">Comment ça marche</Link></li>
             <li><Link href="/aide" className="hover:text-primary transition-colors">Centre d&apos;aide</Link></li>
             <li><Link href="/confidentialite" className="hover:text-primary transition-colors">Politique de confidentialité</Link></li>
+            <li><Link href="/cookies" className="hover:text-primary transition-colors">Politique de cookies</Link></li>
           </ul>
         </div>
 
@@ -97,9 +99,10 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-        <p className="text-slate-600 text-xs">© 2026 FreelanceHigh. Tous droits réservés.</p>
-        <div className="flex gap-8 text-xs text-slate-600 font-bold">
+        <p className="text-slate-600 text-xs">© 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.</p>
+        <div className="flex flex-wrap justify-center gap-6 text-xs text-slate-600 font-bold">
           <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>
+          <Link href="/confidentialite" className="hover:text-white transition-colors">CONFIDENTIALITÉ</Link>
           <Link href="/mentions-legales" className="hover:text-white transition-colors">MENTIONS LÉGALES</Link>
           <Link href="/cookies" className="hover:text-white transition-colors">COOKIES</Link>
         </div>

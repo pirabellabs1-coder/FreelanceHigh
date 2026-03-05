@@ -1,45 +1,19 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { usePlatformDataStore, computeAgencyStats } from "@/store/platform-data";
 
-const STATS = [
-  { label: "CA mensuel", value: "€145 200", icon: "trending_up", color: "text-primary", trend: "+12.4%", trendUp: true },
-  { label: "Projets actifs", value: "24", icon: "folder_open", color: "text-blue-400", trend: "+3", trendUp: true },
-  { label: "Membres", value: "12", icon: "groups", color: "text-purple-400" },
-  { label: "Commandes", value: "38", icon: "shopping_cart", color: "text-amber-400", trend: "+5", trendUp: true },
-  { label: "Satisfaction", value: "92%", icon: "sentiment_satisfied", color: "text-emerald-400", trend: "+2%", trendUp: true },
-  { label: "Occupation", value: "75%", icon: "schedule", color: "text-orange-400", trend: "-1.5%", trendUp: false },
-];
-
-const TEAM = [
-  { name: "Amadou D.", role: "Développeur", status: "online", initials: "AD" },
-  { name: "Fatou S.", role: "Designer UI", status: "online", initials: "FS" },
-  { name: "Nadia F.", role: "Marketing", status: "busy", initials: "NF" },
-  { name: "Ibrahim M.", role: "Développeur", status: "online", initials: "IM" },
-  { name: "Yacine D.", role: "DevOps", status: "offline", initials: "YD" },
-  { name: "Kofi A.", role: "Commercial", status: "online", initials: "KA" },
-];
-
-const PROJECTS = [
-  { name: "Refonte e-commerce Dakar Shop", client: "Dakar Shop SARL", member: "Amadou D.", deadline: "2026-03-15", status: "en_cours", progress: 65, budget: "€12 500" },
-  { name: "App mobile livraison", client: "QuickDeliver", member: "Ibrahim M.", deadline: "2026-04-01", status: "conception", progress: 40, budget: "€18 000" },
-  { name: "Campagne ads Q1 2026", client: "FashionAfrik", member: "Nadia F.", deadline: "2026-03-20", status: "actif", progress: 85, budget: "€5 200" },
-  { name: "Audit sécurité cloud", client: "FinTech CI", member: "Yacine D.", deadline: "2026-03-25", status: "en_attente", progress: 10, budget: "€8 000" },
-  { name: "Design système mobile", client: "HealthApp", member: "Fatou S.", deadline: "2026-04-10", status: "en_cours", progress: 30, budget: "€9 500" },
-];
+// Current demo agency = u9 (TechCorp Agency)
+const CURRENT_AGENCY_ID = "u9";
 
 const ACTIVITIES = [
   { member: "Amadou D.", action: "a livré le module panier", time: "Il y a 30min", icon: "check_circle", color: "text-emerald-400" },
   { member: "Fatou S.", action: "a uploadé les maquettes Figma", time: "Il y a 1h", icon: "upload_file", color: "text-blue-400" },
   { member: "Nadia F.", action: "a soumis le rapport SEO", time: "Il y a 2h", icon: "description", color: "text-purple-400" },
-  { member: "Ibrahim M.", action: "a commencé le sprint 3", time: "Il y a 3h", icon: "play_arrow", color: "text-amber-400" },
-  { member: "Yacine D.", action: "a rejoint le projet FinTech", time: "Il y a 5h", icon: "person_add", color: "text-primary" },
-];
-
-const REVENUE = [
-  { month: "Sep", value: 98000 }, { month: "Oct", value: 112000 }, { month: "Nov", value: 125000 },
-  { month: "Déc", value: 118000 }, { month: "Jan", value: 135000 }, { month: "Fév", value: 145200 },
+  { member: "Ibrahim T.", action: "a commencé le sprint 3", time: "Il y a 3h", icon: "play_arrow", color: "text-amber-400" },
+  { member: "Kofi M.", action: "a rejoint le projet FinTech", time: "Il y a 5h", icon: "person_add", color: "text-primary" },
 ];
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -56,11 +30,24 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AgencyDashboard() {
-  const maxRev = Math.max(...REVENUE.map(r => r.value));
+  const state = usePlatformDataStore();
+  const agencyStats = useMemo(() => computeAgencyStats(state, CURRENT_AGENCY_ID), [state]);
+
+  const STATS = [
+    { label: "CA mensuel", value: `€${agencyStats.totalCA.toLocaleString()}`, icon: "trending_up", color: "text-primary", trend: "+12.4%", trendUp: true },
+    { label: "Projets actifs", value: agencyStats.activeProjects.toString(), icon: "folder_open", color: "text-blue-400", trend: `+${agencyStats.activeProjects}`, trendUp: true },
+    { label: "Membres", value: agencyStats.totalMembers.toString(), icon: "groups", color: "text-purple-400" },
+    { label: "Commandes", value: agencyStats.activeOrderCount.toString(), icon: "shopping_cart", color: "text-amber-400", trend: `${agencyStats.activeOrderCount}`, trendUp: true },
+    { label: "Satisfaction", value: `${agencyStats.satisfaction}%`, icon: "sentiment_satisfied", color: "text-emerald-400", trend: "+2%", trendUp: true },
+    { label: "Occupation", value: `${agencyStats.avgOccupation}%`, icon: "schedule", color: "text-orange-400", trend: agencyStats.avgOccupation > 70 ? "+5%" : "-1.5%", trendUp: agencyStats.avgOccupation > 70 },
+  ];
+
+  const revenue = state.agencyRevenue;
+  const maxRev = Math.max(...revenue.map(r => r.value));
   const chartW = 600;
   const chartH = 180;
-  const points = REVENUE.map((r, i) => ({
-    x: (i / (REVENUE.length - 1)) * chartW,
+  const points = revenue.map((r, i) => ({
+    x: (i / (revenue.length - 1)) * chartW,
     y: chartH - (r.value / maxRev) * chartH,
   }));
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
@@ -123,8 +110,8 @@ export default function AgencyDashboard() {
             {points.map((p, i) => (
               <g key={i}>
                 <circle cx={p.x} cy={p.y} r="4" fill="rgb(var(--color-primary))" />
-                <text x={p.x} y={p.y - 10} textAnchor="middle" className="text-[10px] fill-slate-400">€{(REVENUE[i].value / 1000).toFixed(0)}k</text>
-                <text x={p.x} y={chartH + 16} textAnchor="middle" className="text-[10px] fill-slate-500">{REVENUE[i].month}</text>
+                <text x={p.x} y={p.y - 10} textAnchor="middle" className="text-[10px] fill-slate-400">€{(revenue[i].value / 1000).toFixed(0)}k</text>
+                <text x={p.x} y={chartH + 16} textAnchor="middle" className="text-[10px] fill-slate-500">{revenue[i].month}</text>
               </g>
             ))}
           </svg>
@@ -137,10 +124,10 @@ export default function AgencyDashboard() {
             <Link href="/agence/equipe" className="text-xs text-primary font-semibold hover:underline">Voir tout</Link>
           </div>
           <div className="space-y-3">
-            {TEAM.map(m => (
-              <div key={m.name} className="flex items-center gap-3">
+            {state.agencyMembers.map(m => (
+              <div key={m.id} className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{m.initials}</div>
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{m.avatar}</div>
                   <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-neutral-dark", STATUS_COLORS[m.status])} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -174,7 +161,7 @@ export default function AgencyDashboard() {
               </tr>
             </thead>
             <tbody>
-              {PROJECTS.map((p, i) => (
+              {state.agencyProjects.map((p, i) => (
                 <tr key={i} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
                   <td className="px-5 py-3">
                     <p className="text-sm font-semibold text-white">{p.name}</p>
@@ -183,9 +170,9 @@ export default function AgencyDashboard() {
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                        {p.member.split(" ").map(n => n[0]).join("")}
+                        {p.memberName.split(" ").map(n => n[0]).join("")}
                       </div>
-                      <span className="text-sm text-slate-300">{p.member}</span>
+                      <span className="text-sm text-slate-300">{p.memberName}</span>
                     </div>
                   </td>
                   <td className="px-5 py-3">
@@ -199,7 +186,7 @@ export default function AgencyDashboard() {
                       <span className="text-xs font-semibold text-slate-400">{p.progress}%</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-sm font-semibold text-white">{p.budget}</td>
+                  <td className="px-5 py-3 text-sm font-semibold text-white">€{p.budget.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
