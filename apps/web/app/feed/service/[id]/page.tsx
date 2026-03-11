@@ -1,84 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import {
-  getServiceById,
-  getVendorById,
-  getReviewsByService,
-  getSimilarServices,
-} from "@/lib/dev/mock-data";
 import ReviewCard, { type ReviewData } from "@/components/reviews/ReviewCard";
 import ReviewSummary from "@/components/reviews/ReviewSummary";
 
-export default function ServiceDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const { data: session } = useSession();
-  const service = getServiceById(id);
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-  if (!service) {
-    return (
-      <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center gap-4">
-        <span className="material-symbols-outlined text-6xl text-slate-600">search_off</span>
-        <h1 className="text-xl font-bold text-white">Service introuvable</h1>
-        <Link href="/feed" className="text-primary hover:underline text-sm">
-          Retour au feed
-        </Link>
-      </div>
-    );
-  }
+interface PackageTier {
+  name: string;
+  description: string;
+  price: number;
+  deliveryDays: number;
+  revisions: number;
+  features: string[];
+}
 
-  const vendor = getVendorById(service.vendorId);
-  const reviews = getReviewsByService(service.id);
-  const similar = getSimilarServices(service, 4);
+interface ApiReview {
+  id: string;
+  clientName: string;
+  clientAvatar: string;
+  clientCountry: string;
+  qualite: number;
+  communication: number;
+  delai: number;
+  rating: number;
+  comment: string;
+  reply: string | null;
+  repliedAt: string | null;
+  helpful: number;
+  createdAt: string;
+}
 
+interface ApiVendor {
+  name: string;
+  avatar: string;
+  username: string;
+  country: string;
+  badges: string[];
+  rating: number;
+  plan: string;
+  title: string;
+  bio: string;
+  completedOrders: number;
+}
+
+interface ApiSimilarService {
+  id: string;
+  slug: string;
+  title: string;
+  basePrice: number;
+  rating: number;
+  ratingCount: number;
+  image: string;
+  vendorName: string;
+}
+
+interface ApiServiceDetail {
+  id: string;
+  slug: string;
+  title: string;
+  descriptionText: string;
+  categoryId: string;
+  categoryName: string;
+  tags: string[];
+  basePrice: number;
+  deliveryDays: number;
+  revisions: number;
+  packages: {
+    basic: PackageTier;
+    standard: PackageTier;
+    premium: PackageTier;
+  };
+  images: string[];
+  mainImage: string;
+  rating: number;
+  ratingCount: number;
+  orderCount: number;
+  isBoosted: boolean;
+  faq: { question: string; answer: string }[];
+  extras: { label: string; price: number }[];
+  reviews: ApiReview[];
+  vendor: ApiVendor;
+  similarServices: ApiSimilarService[];
+}
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+
+function PageSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0f1117]">
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-4 pb-2">
-        <nav className="flex items-center gap-2 text-xs text-slate-500">
-          <Link href="/feed" className="hover:text-primary transition-colors">
-            Accueil
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/feed?categorie=${service.categorySlug}`}
-            className="hover:text-primary transition-colors"
-          >
-            {service.category}
-          </Link>
-          <span>/</span>
-          <span className="text-slate-300 truncate max-w-xs">{service.title}</span>
-        </nav>
-      </div>
-
+    <div className="min-h-screen bg-[#0f1117] animate-pulse">
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* ─── Colonne gauche (contenu) ─────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-8">
-            <ServiceGallery service={service} />
-            <ServiceDescription service={service} />
-            <ServiceFaq service={service} />
-            <ServiceReviews reviews={reviews} rating={service.rating} reviewCount={service.reviewCount} />
-          </div>
-
-          {/* ─── Colonne droite (sticky) ──────────────────────────────── */}
-          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
-            <div className="sticky top-24 space-y-4">
-              <PackagesCard service={service} session={session} />
-              {vendor && <VendorCard vendor={vendor} serviceVendorType={vendor.type} session={session} />}
+          <div className="flex-1 space-y-6">
+            <div className="h-8 bg-white/5 rounded w-3/4" />
+            <div className="aspect-[16/9] bg-white/5 rounded-2xl" />
+            <div className="space-y-2">
+              <div className="h-4 bg-white/5 rounded" />
+              <div className="h-4 bg-white/5 rounded w-5/6" />
+              <div className="h-4 bg-white/5 rounded w-4/6" />
             </div>
           </div>
+          <div className="w-full lg:w-80 xl:w-96">
+            <div className="bg-white/5 rounded-2xl h-80" />
+          </div>
         </div>
-
-        {/* Services similaires */}
-        {similar.length > 0 && (
-          <SimilarServices services={similar} />
-        )}
       </div>
     </div>
   );
@@ -86,11 +116,10 @@ export default function ServiceDetailPage() {
 
 // ─── Gallery ─────────────────────────────────────────────────────────────────
 
-function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById> }) {
+function ServiceGallery({ service }: { service: ApiServiceDetail }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
-
-  if (!service) return null;
+  const images = service.images.length > 0 ? service.images : service.mainImage ? [service.mainImage] : [];
 
   return (
     <div>
@@ -98,7 +127,6 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
         {service.title}
       </h1>
 
-      {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {service.tags.map((tag) => (
           <span
@@ -110,11 +138,10 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
         ))}
       </div>
 
-      {/* Image principale */}
       <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-white/5 mb-3">
-        {!imgErrors[activeIndex] ? (
+        {images[activeIndex] && !imgErrors[activeIndex] ? (
           <Image
-            src={service.images[activeIndex]}
+            src={images[activeIndex]}
             alt={service.title}
             fill
             className="object-cover"
@@ -128,10 +155,9 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
         )}
       </div>
 
-      {/* Thumbnails */}
-      {service.images.length > 1 && (
+      {images.length > 1 && (
         <div className="flex gap-2">
-          {service.images.map((img, i) => (
+          {images.map((img, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
@@ -153,7 +179,6 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
         </div>
       )}
 
-      {/* Stats */}
       <div className="flex items-center gap-4 mt-4 text-sm text-slate-400">
         <div className="flex items-center gap-1">
           <div className="flex">
@@ -171,7 +196,7 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
             ))}
           </div>
           <span className="font-semibold text-yellow-400">{service.rating.toFixed(1)}</span>
-          <span>({service.reviewCount} avis)</span>
+          <span>({service.ratingCount} avis)</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="material-symbols-outlined text-base">shopping_cart</span>
@@ -184,13 +209,12 @@ function ServiceGallery({ service }: { service: ReturnType<typeof getServiceById
 
 // ─── Description ─────────────────────────────────────────────────────────────
 
-function ServiceDescription({ service }: { service: ReturnType<typeof getServiceById> }) {
-  if (!service) return null;
+function ServiceDescription({ service }: { service: ApiServiceDetail }) {
   return (
     <div>
       <h2 className="text-base font-bold text-white mb-3">À propos de ce service</h2>
       <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-        {service.description}
+        {service.descriptionText}
       </div>
     </div>
   );
@@ -198,19 +222,16 @@ function ServiceDescription({ service }: { service: ReturnType<typeof getService
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────────
 
-function ServiceFaq({ service }: { service: ReturnType<typeof getServiceById> }) {
+function ServiceFaq({ service }: { service: ApiServiceDetail }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  if (!service || service.faq.length === 0) return null;
+  if (!service.faq || service.faq.length === 0) return null;
 
   return (
     <div>
       <h2 className="text-base font-bold text-white mb-3">Questions fréquentes</h2>
       <div className="space-y-2">
         {service.faq.map((item, i) => (
-          <div
-            key={i}
-            className="border border-white/10 rounded-xl overflow-hidden"
-          >
+          <div key={i} className="border border-white/10 rounded-xl overflow-hidden">
             <button
               onClick={() => setOpenIndex(openIndex === i ? null : i)}
               className="w-full flex items-center justify-between p-4 text-left text-sm font-semibold text-white hover:bg-white/5 transition-colors"
@@ -242,41 +263,32 @@ function ServiceFaq({ service }: { service: ReturnType<typeof getServiceById> })
 function ServiceReviews({
   reviews,
   rating,
-  reviewCount,
+  ratingCount,
 }: {
-  reviews: ReturnType<typeof getReviewsByService>;
+  reviews: ApiReview[];
   rating: number;
-  reviewCount: number;
+  ratingCount: number;
 }) {
-  const reviewCards: ReviewData[] = reviews.map((review) => ({
-    id: review.id,
-    clientName: review.reviewer.name,
-    clientAvatar: review.reviewer.avatar,
-    clientCountry:
-      review.reviewer.country === "Sénégal" ? "SN"
-      : review.reviewer.country === "France" ? "FR"
-      : review.reviewer.country === "Côte d'Ivoire" ? "CI"
-      : review.reviewer.country === "Maroc" ? "MA"
-      : review.reviewer.country === "Ghana" ? "GH"
-      : review.reviewer.country === "Belgique" ? "BE"
-      : review.reviewer.country === "Cameroun" ? "CM"
-      : review.reviewer.country,
+  const reviewCards: ReviewData[] = reviews.map((r) => ({
+    id: r.id,
+    clientName: r.clientName,
+    clientAvatar: r.clientAvatar,
+    clientCountry: r.clientCountry,
     serviceTitle: "",
-    qualite: review.qualite,
-    communication: review.communication,
-    delai: review.delai,
-    rating: review.rating,
-    comment: review.comment,
-    reply: review.response || null,
-    repliedAt: review.response ? review.date : null,
-    helpful: review.helpful || 0,
-    createdAt: review.date,
+    qualite: r.qualite,
+    communication: r.communication,
+    delai: r.delai,
+    rating: r.rating,
+    comment: r.comment,
+    reply: r.reply,
+    repliedAt: r.repliedAt,
+    helpful: r.helpful,
+    createdAt: r.createdAt,
   }));
 
   return (
     <div>
       <h2 className="text-base font-bold text-white mb-4">Avis clients</h2>
-
       <div className="space-y-4">
         <ReviewSummary
           reviews={reviews.map((r) => ({
@@ -285,9 +297,8 @@ function ServiceReviews({
             delai: r.delai,
             rating: r.rating,
           }))}
-          totalCount={reviewCount}
+          totalCount={ratingCount}
         />
-
         {reviewCards.length === 0 ? (
           <p className="text-sm text-slate-500">Aucun avis pour l&apos;instant.</p>
         ) : (
@@ -306,12 +317,10 @@ function PackagesCard({
   service,
   session,
 }: {
-  service: ReturnType<typeof getServiceById>;
+  service: ApiServiceDetail;
   session: ReturnType<typeof useSession>["data"];
 }) {
   const [activeTab, setActiveTab] = useState<"basic" | "standard" | "premium">("standard");
-  if (!service) return null;
-
   const pkg = service.packages[activeTab];
   const tabConfig: { key: "basic" | "standard" | "premium"; label: string }[] = [
     { key: "basic", label: "Basique" },
@@ -321,7 +330,6 @@ function PackagesCard({
 
   return (
     <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl overflow-hidden">
-      {/* Tabs */}
       <div className="flex border-b border-white/10">
         {tabConfig.map(({ key, label }) => (
           <button
@@ -339,7 +347,6 @@ function PackagesCard({
         ))}
       </div>
 
-      {/* Package content */}
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -362,9 +369,8 @@ function PackagesCard({
           </div>
         </div>
 
-        {/* Features */}
         <ul className="space-y-2 mb-5">
-          {pkg.features.map((feature, i) => (
+          {(pkg.features || []).map((feature, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
               <span className="material-symbols-outlined text-primary text-base mt-0.5 flex-shrink-0">check</span>
               {feature}
@@ -372,7 +378,6 @@ function PackagesCard({
           ))}
         </ul>
 
-        {/* CTA */}
         {session ? (
           <button className="w-full py-3 bg-primary text-[#0f1117] font-bold rounded-xl hover:brightness-110 transition-all text-sm shadow-lg shadow-primary/20">
             Commander maintenant — €{pkg.price}
@@ -400,44 +405,46 @@ function PackagesCard({
 
 function VendorCard({
   vendor,
-  serviceVendorType,
+  serviceId,
   session,
 }: {
-  vendor: ReturnType<typeof getVendorById>;
-  serviceVendorType: "freelance" | "agence";
+  vendor: ApiVendor;
+  serviceId: string;
   session: ReturnType<typeof useSession>["data"];
 }) {
-  if (!vendor) return null;
-  const profileHref =
-    serviceVendorType === "agence"
-      ? `/agencies/${vendor.id}`
-      : `/freelancers/${vendor.id}`;
+  const profileHref = `/freelancers/${vendor.username || vendor.name.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
     <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-5">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-        {serviceVendorType === "agence" ? "Agence" : "Freelance"}
-      </p>
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Vendeur</p>
 
       <div className="flex items-start gap-3 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
-          <Image
-            src={vendor.avatar}
-            alt={vendor.name}
-            width={48}
-            height={48}
-            className="rounded-full"
-            onError={() => {}}
-            unoptimized
-          />
+          {vendor.avatar ? (
+            <Image
+              src={vendor.avatar}
+              alt={vendor.name}
+              width={48}
+              height={48}
+              className="rounded-full"
+              onError={() => {}}
+              unoptimized
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-xl">person</span>
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <Link href={profileHref} className="text-sm font-bold text-white hover:text-primary transition-colors">
             {vendor.name}
           </Link>
-          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{vendor.title}</p>
+          {vendor.title && (
+            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{vendor.title}</p>
+          )}
           <div className="flex flex-wrap gap-1 mt-1">
-            {vendor.badges.slice(0, 2).map((badge) => (
+            {(vendor.badges || []).slice(0, 2).map((badge) => (
               <span
                 key={badge}
                 className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold"
@@ -451,19 +458,11 @@ function VendorCard({
 
       <div className="grid grid-cols-2 gap-3 mb-4 text-center">
         <div className="bg-white/5 rounded-xl p-2.5">
-          <p className="text-base font-bold text-white">{vendor.rating.toFixed(1)}</p>
+          <p className="text-base font-bold text-white">{(vendor.rating || 0).toFixed(1)}</p>
           <p className="text-[10px] text-slate-500">Note</p>
         </div>
         <div className="bg-white/5 rounded-xl p-2.5">
-          <p className="text-base font-bold text-white">{vendor.completionRate}%</p>
-          <p className="text-[10px] text-slate-500">Completion</p>
-        </div>
-        <div className="bg-white/5 rounded-xl p-2.5">
-          <p className="text-base font-bold text-white">{vendor.responseTime}</p>
-          <p className="text-[10px] text-slate-500">Réponse</p>
-        </div>
-        <div className="bg-white/5 rounded-xl p-2.5">
-          <p className="text-base font-bold text-white">{vendor.totalOrders}</p>
+          <p className="text-base font-bold text-white">{vendor.completedOrders}</p>
           <p className="text-[10px] text-slate-500">Commandes</p>
         </div>
       </div>
@@ -487,32 +486,126 @@ function VendorCard({
 
 // ─── Similar Services ────────────────────────────────────────────────────────
 
-function SimilarServices({ services }: { services: ReturnType<typeof getSimilarServices> }) {
+function SimilarServices({ services }: { services: ApiSimilarService[] }) {
+  if (services.length === 0) return null;
+
   return (
     <div className="mt-12">
       <h2 className="text-base font-bold text-white mb-4">Services similaires</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {services.map((s) => {
-          const vendor = getVendorById(s.vendorId);
-          return (
-            <Link
-              key={s.id}
-              href={`/feed/service/${s.id}`}
-              className="bg-[#1a1f2e] rounded-xl overflow-hidden border border-white/5 hover:border-primary/30 transition-colors"
-            >
-              <div className="relative aspect-[16/9] bg-white/5">
-                <Image src={s.images[0]} alt={s.title} fill className="object-cover" onError={() => {}} unoptimized />
-              </div>
-              <div className="p-3">
-                {vendor && (
-                  <p className="text-[11px] text-slate-500 mb-1">{vendor.name}</p>
-                )}
-                <p className="text-xs font-semibold text-white line-clamp-2 mb-2">{s.title}</p>
-                <p className="text-sm font-bold text-white">À partir de €{s.packages.basic.price}</p>
-              </div>
-            </Link>
-          );
-        })}
+        {services.map((s) => (
+          <Link
+            key={s.id}
+            href={`/feed/service/${s.id}`}
+            className="bg-[#1a1f2e] rounded-xl overflow-hidden border border-white/5 hover:border-primary/30 transition-colors"
+          >
+            <div className="relative aspect-[16/9] bg-white/5">
+              {s.image && (
+                <Image src={s.image} alt={s.title} fill className="object-cover" onError={() => {}} unoptimized />
+              )}
+            </div>
+            <div className="p-3">
+              {s.vendorName && (
+                <p className="text-[11px] text-slate-500 mb-1">{s.vendorName}</p>
+              )}
+              <p className="text-xs font-semibold text-white line-clamp-2 mb-2">{s.title}</p>
+              <p className="text-sm font-bold text-white">À partir de €{s.basePrice}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function ServiceDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: session } = useSession();
+  const [service, setService] = useState<ApiServiceDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/public/services/${id}`)
+      .then((res) => {
+        if (res.status === 404) { setNotFound(true); return null; }
+        return res.ok ? res.json() : null;
+      })
+      .then((data) => {
+        if (data?.service) setService(data.service);
+        else if (!notFound) setNotFound(true);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return <PageSkeleton />;
+
+  if (notFound || !service) {
+    return (
+      <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center gap-4">
+        <span className="material-symbols-outlined text-6xl text-slate-600">search_off</span>
+        <h1 className="text-xl font-bold text-white">Service introuvable</h1>
+        <Link href="/feed" className="text-primary hover:underline text-sm">
+          Retour au feed
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0f1117]">
+      {/* Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-4 pb-2">
+        <nav className="flex items-center gap-2 text-xs text-slate-500">
+          <Link href="/feed" className="hover:text-primary transition-colors">
+            Accueil
+          </Link>
+          <span>/</span>
+          <Link
+            href={`/feed?categorie=${service.categoryId}`}
+            className="hover:text-primary transition-colors"
+          >
+            {service.categoryName}
+          </Link>
+          <span>/</span>
+          <span className="text-slate-300 truncate max-w-xs">{service.title}</span>
+        </nav>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Colonne gauche */}
+          <div className="flex-1 min-w-0 space-y-8">
+            <ServiceGallery service={service} />
+            <ServiceDescription service={service} />
+            <ServiceFaq service={service} />
+            <ServiceReviews
+              reviews={service.reviews || []}
+              rating={service.rating}
+              ratingCount={service.ratingCount}
+            />
+          </div>
+
+          {/* Colonne droite (sticky) */}
+          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
+            <div className="sticky top-24 space-y-4">
+              <PackagesCard service={service} session={session} />
+              {service.vendor && (
+                <VendorCard vendor={service.vendor} serviceId={service.id} session={session} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Services similaires */}
+        {(service.similarServices || []).length > 0 && (
+          <SimilarServices services={service.similarServices} />
+        )}
       </div>
     </div>
   );

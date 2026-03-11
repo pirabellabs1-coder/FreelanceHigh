@@ -8,7 +8,7 @@ export async function GET(
   const { slug } = await params;
   const service = serviceStore
     .getAll()
-    .find((s) => s.slug === slug && s.status === "actif");
+    .find((s) => (s.id === slug || s.slug === slug) && s.status === "actif");
   if (!service)
     return NextResponse.json(
       { error: "Service non trouvé" },

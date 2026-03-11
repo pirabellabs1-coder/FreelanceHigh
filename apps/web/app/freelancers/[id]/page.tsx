@@ -1,28 +1,126 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import {
-  getVendorById,
-  getServicesByVendor,
-  MOCK_REVIEWS,
-} from "@/lib/dev/mock-data";
 import ReviewCard, { type ReviewData } from "@/components/reviews/ReviewCard";
 import ReviewSummary from "@/components/reviews/ReviewSummary";
 
-type Tab = "services" | "portfolio" | "avis";
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ApiReview {
+  id: string;
+  clientName: string;
+  clientAvatar: string;
+  clientCountry: string;
+  serviceTitle: string;
+  qualite: number;
+  communication: number;
+  delai: number;
+  rating: number;
+  comment: string;
+  reply: string | null;
+  repliedAt: string | null;
+  helpful: number;
+  createdAt: string;
+}
+
+interface ApiService {
+  id: string;
+  slug: string;
+  title: string;
+  basePrice: number;
+  rating: number;
+  ratingCount: number;
+  image: string;
+  categoryName: string;
+}
+
+interface FreelancerProfile {
+  title: string;
+  bio: string;
+  photo: string;
+  coverPhoto: string;
+  city: string;
+  country: string;
+  hourlyRate: number;
+  skills: string[];
+  languages: string[];
+  badges: string[];
+}
+
+interface ApiFreelancer {
+  id: string;
+  name: string;
+  role: string;
+  memberSince: string;
+  profile: FreelancerProfile | null;
+  badge: string;
+  services: ApiService[];
+  reviews: ApiReview[];
+  stats: {
+    completedOrders: number;
+    totalOrders: number;
+    completionRate: number;
+    avgRating: number;
+    totalReviews: number;
+    activeServices: number;
+  };
+}
+
+type Tab = "services" | "avis";
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function PageSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0f1117] animate-pulse">
+      <div className="bg-gradient-to-b from-[#1a1f2e] to-[#0f1117] border-b border-white/10 py-8">
+        <div className="max-w-5xl mx-auto px-4 lg:px-6 flex gap-6">
+          <div className="w-24 h-24 rounded-2xl bg-white/5 flex-shrink-0" />
+          <div className="flex-1 space-y-3">
+            <div className="h-7 bg-white/5 rounded w-48" />
+            <div className="h-4 bg-white/5 rounded w-32" />
+            <div className="h-4 bg-white/5 rounded w-64" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function FreelancerProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { data: session } = useSession();
-  const vendor = getVendorById(id);
+  const [freelancer, setFreelancer] = useState<ApiFreelancer | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("services");
 
-  if (!vendor || vendor.type !== "freelance") {
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/public/freelances/${id}`)
+      .then((res) => {
+        if (res.status === 404) { setNotFound(true); return null; }
+        return res.ok ? res.json() : null;
+      })
+      .then((data) => {
+        if (data?.freelance) setFreelancer(data.freelance);
+        else if (!notFound) setNotFound(true);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return <PageSkeleton />;
+
+  if (notFound || !freelancer || freelancer.role !== "freelance") {
     return (
       <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center gap-4">
         <span className="material-symbols-outlined text-6xl text-slate-600">person_off</span>
@@ -34,9 +132,30 @@ export default function FreelancerProfilePage() {
     );
   }
 
-  const services = getServicesByVendor(vendor.id);
-  const reviews = MOCK_REVIEWS.filter((r) => services.some((s) => s.id === r.serviceId));
-  const memberSinceYear = vendor.memberSince.split("-")[0];
+  const { profile, stats, services, reviews } = freelancer;
+  const memberSinceYear = freelancer.memberSince ? new Date(freelancer.memberSince).getFullYear() : "—";
+
+  const reviewCards: ReviewData[] = reviews.map((r) => ({
+    id: r.id,
+    clientName: r.clientName,
+    clientAvatar: r.clientAvatar,
+    clientCountry: r.clientCountry,
+    serviceTitle: r.serviceTitle || "",
+    qualite: r.qualite,
+    communication: r.communication,
+    delai: r.delai,
+    rating: r.rating,
+    comment: r.comment,
+    reply: r.reply,
+    repliedAt: r.repliedAt,
+    helpful: r.helpful,
+    createdAt: r.createdAt,
+  }));
+
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: "services", label: "Services", count: services.length },
+    { key: "avis", label: "Avis", count: reviews.length },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0f1117]">
@@ -45,28 +164,36 @@ export default function FreelancerProfilePage() {
         <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Avatar */}
-            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/20 flex-shrink-0 border-2 border-primary/30">
-              <Image
-                src={vendor.avatar}
-                alt={vendor.name}
-                width={96}
-                height={96}
-                className="rounded-2xl"
-                onError={() => {}}
-                unoptimized
-              />
+            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/20 flex-shrink-0 border-2 border-primary/30 flex items-center justify-center">
+              {profile?.photo ? (
+                <Image
+                  src={profile.photo}
+                  alt={freelancer.name}
+                  width={96}
+                  height={96}
+                  className="rounded-2xl object-cover w-full h-full"
+                  onError={() => {}}
+                  unoptimized
+                />
+              ) : (
+                <span className="material-symbols-outlined text-primary text-4xl">person</span>
+              )}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{vendor.name}</h1>
-                  <p className="text-primary font-medium mt-0.5">{vendor.title}</p>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-slate-400">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>{vendor.location}</span>
-                  </div>
+                  <h1 className="text-2xl font-bold text-white">{freelancer.name}</h1>
+                  {profile?.title && (
+                    <p className="text-primary font-medium mt-0.5">{profile.title}</p>
+                  )}
+                  {(profile?.city || profile?.country) && (
+                    <div className="flex items-center gap-2 mt-1 text-sm text-slate-400">
+                      <span className="material-symbols-outlined text-base">location_on</span>
+                      <span>{[profile.city, profile.country].filter(Boolean).join(", ")}</span>
+                    </div>
+                  )}
                 </div>
 
                 {session && (
@@ -77,34 +204,35 @@ export default function FreelancerProfilePage() {
                 )}
               </div>
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {vendor.badges.map((badge) => (
-                  <span
-                    key={badge}
-                    className="flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-semibold"
-                  >
+              {/* Badge */}
+              {freelancer.badge && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-semibold">
                     <span className="material-symbols-outlined text-sm">verified</span>
-                    {badge}
+                    {freelancer.badge}
                   </span>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Quick stats */}
               <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                <div className="flex items-center gap-1.5 text-slate-300">
-                  <span className="material-symbols-outlined text-yellow-400 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span className="font-bold text-white">{vendor.rating.toFixed(1)}</span>
-                  <span className="text-slate-500">({vendor.reviewCount} avis)</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <span className="material-symbols-outlined text-base">schedule</span>
-                  Répond en {vendor.responseTime}
-                </div>
+                {stats.avgRating > 0 && (
+                  <div className="flex items-center gap-1.5 text-slate-300">
+                    <span className="material-symbols-outlined text-yellow-400 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span className="font-bold text-white">{stats.avgRating.toFixed(1)}</span>
+                    <span className="text-slate-500">({stats.totalReviews} avis)</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 text-slate-400">
                   <span className="material-symbols-outlined text-base">task_alt</span>
-                  {vendor.completionRate}% de completion
+                  {stats.completedOrders} commandes livrées
                 </div>
+                {stats.completionRate > 0 && (
+                  <div className="flex items-center gap-1.5 text-slate-400">
+                    <span className="material-symbols-outlined text-base">check_circle</span>
+                    {stats.completionRate}% de completion
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 text-slate-400">
                   <span className="material-symbols-outlined text-base">calendar_month</span>
                   Membre depuis {memberSinceYear}
@@ -122,11 +250,7 @@ export default function FreelancerProfilePage() {
           <div className="flex-1 min-w-0">
             {/* Tabs */}
             <div className="flex border-b border-white/10 mb-6">
-              {([
-                { key: "services", label: "Services", count: services.length },
-                { key: "portfolio", label: "Portfolio", count: vendor.portfolioImages?.length || 0 },
-                { key: "avis", label: "Avis", count: reviews.length },
-              ] as const).map(({ key, label, count }) => (
+              {tabs.map(({ key, label, count }) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
@@ -161,14 +285,16 @@ export default function FreelancerProfilePage() {
                       className="bg-[#1a1f2e] rounded-xl overflow-hidden border border-white/5 hover:border-primary/30 transition-colors flex flex-col"
                     >
                       <div className="relative aspect-[16/9] bg-white/5">
-                        <Image
-                          src={service.images[0]}
-                          alt={service.title}
-                          fill
-                          className="object-cover"
-                          onError={() => {}}
-                          unoptimized
-                        />
+                        {service.image && (
+                          <Image
+                            src={service.image}
+                            alt={service.title}
+                            fill
+                            className="object-cover"
+                            onError={() => {}}
+                            unoptimized
+                          />
+                        )}
                       </div>
                       <div className="p-3 flex-1 flex flex-col">
                         <p className="text-sm font-semibold text-white line-clamp-2 flex-1 mb-2">
@@ -178,32 +304,14 @@ export default function FreelancerProfilePage() {
                           <div className="flex items-center gap-1">
                             <span className="material-symbols-outlined text-yellow-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                             <span className="text-xs text-yellow-400 font-semibold">{service.rating.toFixed(1)}</span>
-                            <span className="text-xs text-slate-500">({service.reviewCount})</span>
+                            <span className="text-xs text-slate-500">({service.ratingCount})</span>
                           </div>
-                          <span className="text-sm font-bold text-white">€{service.packages.basic.price}</span>
+                          <span className="text-sm font-bold text-white">€{service.basePrice}</span>
                         </div>
                       </div>
                     </Link>
                   ))
                 )}
-              </div>
-            )}
-
-            {/* Portfolio tab */}
-            {activeTab === "portfolio" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(vendor.portfolioImages || []).map((img, i) => (
-                  <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-white/5">
-                    <Image
-                      src={img}
-                      alt={`Portfolio ${i + 1}`}
-                      fill
-                      className="object-cover"
-                      onError={() => {}}
-                      unoptimized
-                    />
-                  </div>
-                ))}
               </div>
             )}
 
@@ -219,35 +327,12 @@ export default function FreelancerProfilePage() {
                   }))}
                   totalCount={reviews.length}
                 />
-                {reviews.length === 0 ? (
+                {reviewCards.length === 0 ? (
                   <p className="text-sm text-slate-500">Aucun avis pour l&apos;instant.</p>
                 ) : (
-                  reviews.map((review) => {
-                    const cardData: ReviewData = {
-                      id: review.id,
-                      clientName: review.reviewer.name,
-                      clientAvatar: review.reviewer.avatar,
-                      clientCountry: review.reviewer.country === "Sénégal" ? "SN"
-                        : review.reviewer.country === "France" ? "FR"
-                        : review.reviewer.country === "Côte d'Ivoire" ? "CI"
-                        : review.reviewer.country === "Maroc" ? "MA"
-                        : review.reviewer.country === "Ghana" ? "GH"
-                        : review.reviewer.country === "Belgique" ? "BE"
-                        : review.reviewer.country === "Cameroun" ? "CM"
-                        : review.reviewer.country,
-                      serviceTitle: "",
-                      qualite: review.qualite,
-                      communication: review.communication,
-                      delai: review.delai,
-                      rating: review.rating,
-                      comment: review.comment,
-                      reply: review.response || null,
-                      repliedAt: review.response ? review.date : null,
-                      helpful: review.helpful || 0,
-                      createdAt: review.date,
-                    };
-                    return <ReviewCard key={review.id} review={cardData} />;
-                  })
+                  reviewCards.map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))
                 )}
               </div>
             )}
@@ -256,22 +341,26 @@ export default function FreelancerProfilePage() {
           {/* Sidebar */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-4">
             {/* Bio */}
-            <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-white mb-2">À propos</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{vendor.bio}</p>
-            </div>
+            {profile?.bio && (
+              <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-sm font-bold text-white mb-2">À propos</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">{profile.bio}</p>
+              </div>
+            )}
 
             {/* Compétences */}
-            <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-white mb-3">Compétences</h3>
-              <div className="flex flex-wrap gap-1.5">
-                {vendor.skills.map((skill) => (
-                  <span key={skill} className="text-xs bg-white/5 border border-white/10 text-slate-300 px-2.5 py-1 rounded-full">
-                    {skill}
-                  </span>
-                ))}
+            {(profile?.skills || []).length > 0 && (
+              <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-sm font-bold text-white mb-3">Compétences</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile!.skills.map((skill) => (
+                    <span key={skill} className="text-xs bg-white/5 border border-white/10 text-slate-300 px-2.5 py-1 rounded-full">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Stats */}
             <div className="bg-[#1a1f2e] border border-white/10 rounded-2xl p-4">
@@ -279,20 +368,24 @@ export default function FreelancerProfilePage() {
               <div className="space-y-2.5">
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Commandes livrées</span>
-                  <span className="text-white font-semibold">{vendor.totalOrders}</span>
+                  <span className="text-white font-semibold">{stats.completedOrders}</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Services actifs</span>
-                  <span className="text-white font-semibold">{vendor.totalServices}</span>
+                  <span className="text-white font-semibold">{stats.activeServices}</span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Tarif horaire</span>
-                  <span className="text-white font-semibold">€{vendor.hourlyRate || "N/A"}/h</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Langues</span>
-                  <span className="text-white font-semibold">{vendor.languages.join(", ")}</span>
-                </div>
+                {profile?.hourlyRate && profile.hourlyRate > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Tarif horaire</span>
+                    <span className="text-white font-semibold">€{profile.hourlyRate}/h</span>
+                  </div>
+                )}
+                {(profile?.languages || []).length > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Langues</span>
+                    <span className="text-white font-semibold">{profile!.languages.join(", ")}</span>
+                  </div>
+                )}
               </div>
             </div>
 
