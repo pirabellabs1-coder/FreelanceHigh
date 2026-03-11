@@ -1,44 +1,5 @@
 [
   {
-    "id": "dev-freelance-1",
-    "email": "freelance@test.com",
-    "passwordHash": "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS",
-    "name": "Jean Dupont",
-    "role": "freelance",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "createdAt": "2026-03-06T00:00:00.000Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-06T19:49:10.522Z"
-  },
-  {
-    "id": "dev-client-1",
-    "email": "client@test.com",
-    "passwordHash": "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS",
-    "name": "Marie Martin",
-    "role": "client",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "createdAt": "2026-03-06T00:00:00.000Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-06T19:49:13.194Z"
-  },
-  {
-    "id": "dev-agence-1",
-    "email": "agence@test.com",
-    "passwordHash": "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS",
-    "name": "Tech Agency",
-    "role": "agence",
-    "plan": "agence",
-    "kyc": 2,
-    "status": "ACTIF",
-    "createdAt": "2026-03-06T00:00:00.000Z",
-    "loginCount": 2,
-    "lastLoginAt": "2026-03-10T15:25:43.195Z"
-  },
-  {
     "id": "dev-admin-1",
     "email": "admin@test.com",
     "passwordHash": "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS",
@@ -47,73 +8,8 @@
     "plan": "business",
     "kyc": 4,
     "status": "ACTIF",
-    "createdAt": "2026-03-06T00:00:00.000Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-06T19:49:18.455Z"
-  },
-  {
-    "email": "gildaslissanon0@gmail.com",
-    "passwordHash": "$2b$12$5QKIBrQIZyK6HHAeYTaxQ.TijEl33mnHOM0cNoqYyeEJfcGg8XAbm",
-    "name": "Gildas LISSANON",
-    "role": "agence",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "id": "dev-1772830312140",
-    "createdAt": "2026-03-06T20:51:52.140Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-06T20:51:54.126Z"
-  },
-  {
-    "email": "contact@pirabellabs.com",
-    "passwordHash": "$2b$12$IwD00ayUrihr.6l3GV6UWeHj28GHF3fGZRRzzPso5CaGI3NowIvJe",
-    "name": "Gildas LISSANON",
-    "role": "freelance",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "id": "dev-1772837012734",
-    "createdAt": "2026-03-06T22:43:32.734Z",
-    "loginCount": 4,
-    "lastLoginAt": "2026-03-10T16:18:21.121Z"
-  },
-  {
-    "email": "pirabellabs@gmail.com",
-    "passwordHash": "$2b$12$rfMfkwgEI4XxniSZOXBJmOuu.rv9PrBv9VaaEHAPC2GbBXMJdXgz6",
-    "name": "Gildas LISSANON",
-    "role": "agence",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "id": "dev-1772897050562",
-    "createdAt": "2026-03-07T15:24:10.562Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-07T15:24:14.376Z"
-  },
-  {
-    "email": "masgarage7@gmail.com",
-    "passwordHash": "$2b$12$9LQDppNx8QpcXXxsczt1bOQbwT.SZdmCHtfvmFsNzdBiV.I5ZNQqm",
-    "name": "Gildas LISSANON",
-    "role": "agence",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "id": "dev-1772957322557",
-    "createdAt": "2026-03-08T08:08:42.557Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-08T08:08:44.938Z"
-  },
-  {
-    "email": "pirabel69@gmail.com",
-    "passwordHash": "$2b$12$fjzb5VnmQv.UuZgDRZjsp.1TDbbi2geYVX/3bH91ENkABvHFmLidG",
-    "name": "Garage mas",
-    "role": "agence",
-    "plan": "gratuit",
-    "kyc": 1,
-    "status": "ACTIF",
-    "id": "dev-1773159936968",
-    "createdAt": "2026-03-10T16:25:36.968Z",
-    "loginCount": 1,
-    "lastLoginAt": "2026-03-10T16:25:39.129Z"
+    "createdAt": "2026-03-11T00:00:00.000Z",
+    "loginCount": 0,
+    "adminRole": "super_admin"
   }
 ]
