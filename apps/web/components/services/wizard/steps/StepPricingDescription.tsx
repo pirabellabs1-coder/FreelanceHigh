@@ -11,6 +11,7 @@ const RichTextEditor = dynamic(
   { ssr: false, loading: () => <div className="h-[400px] bg-white/5 rounded-xl animate-pulse" /> }
 );
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepPricingDescription({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [errors, setErrors] = useState<Record<string, string>>({});

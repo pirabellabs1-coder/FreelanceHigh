@@ -10,12 +10,21 @@ const LANGUAGE_LEVELS = ["Natif", "Courant", "Avancé", "Intermédiaire", "Débu
 const EDUCATION_TYPES = ["diplome", "certificat", "formation"] as const;
 const EDU_TYPE_LABELS: Record<string, string> = { diplome: "Diplôme", certificat: "Certificat", formation: "Formation" };
 const EDU_TYPE_ICONS: Record<string, string> = { diplome: "school", certificat: "workspace_premium", formation: "menu_book" };
+const SKILL_LEVEL_PERCENT: Record<string, number> = { expert: 95, intermediaire: 70, debutant: 40 };
+const SKILL_LEVEL_LABELS: Record<string, string> = { expert: "Expert", intermediaire: "Intermédiaire", debutant: "Débutant" };
+const LINK_ICONS: Record<string, { icon: string; label: string }> = {
+  linkedin: { icon: "work", label: "LinkedIn" },
+  github: { icon: "code", label: "GitHub" },
+  portfolio: { icon: "language", label: "Portfolio" },
+  behance: { icon: "palette", label: "Behance" },
+};
 
 export default function ProfilPage() {
   const { profile, updateProfile, apiSaveProfile } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
   const [form, setForm] = useState(profile);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"edition" | "preview">("edition");
   const [newSkill, setNewSkill] = useState("");
   const [newSkillLevel, setNewSkillLevel] = useState<"debutant" | "intermediaire" | "expert">("intermediaire");
 
@@ -96,10 +105,225 @@ export default function ProfilPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Mon Profil</h2>
-        <p className="text-slate-400 mt-1">Completez votre profil pour attirer plus de clients.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-tight">Mon Profil</h2>
+          <p className="text-slate-400 mt-1">Completez votre profil pour attirer plus de clients.</p>
+        </div>
+        <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 flex-shrink-0">
+          <button
+            onClick={() => setActiveTab("edition")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5",
+              activeTab === "edition" ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
+            )}
+          >
+            <span className="material-symbols-outlined text-base">edit</span>
+            Édition
+          </button>
+          <button
+            onClick={() => setActiveTab("preview")}
+            className={cn("px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5",
+              activeTab === "preview" ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
+            )}
+          >
+            <span className="material-symbols-outlined text-base">visibility</span>
+            Prévisualisation
+          </button>
+        </div>
       </div>
+
+      {/* ================================================================== */}
+      {/* PREVIEW MODE                                                        */}
+      {/* ================================================================== */}
+      {activeTab === "preview" && (
+        <div className="space-y-6">
+          {/* Hero */}
+          <div className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden">
+            <div
+              className="min-h-[200px] bg-cover bg-center relative"
+              style={{ backgroundImage: form.coverPhoto ? `url(${form.coverPhoto})` : undefined, backgroundColor: form.coverPhoto ? undefined : "#1e293b" }}
+            >
+              {!form.coverPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-4xl text-slate-600">image</span>
+                </div>
+              )}
+            </div>
+            <div className="relative px-6 pb-6">
+              <div className="flex items-end gap-5 -mt-12">
+                {form.photo ? (
+                  <img src={form.photo} alt={form.firstName} className="w-24 h-24 rounded-full border-4 border-background-dark object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full border-4 border-background-dark bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl font-black text-primary">{(form.firstName?.[0] || "")}{(form.lastName?.[0] || "")}</span>
+                  </div>
+                )}
+                <div className="pb-1 flex-1 min-w-0">
+                  <h3 className="text-xl font-black text-white">{form.firstName} {form.lastName}</h3>
+                  <p className="text-sm text-primary font-semibold">{form.title || "Titre non renseigné"}</p>
+                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 flex-wrap">
+                    {(form.city || form.country) && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">location_on</span>
+                        {[form.city, form.country].filter(Boolean).join(", ")}
+                      </span>
+                    )}
+                    {form.hourlyRate > 0 && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">payments</span>
+                        €{form.hourlyRate}/h
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          {form.bio && (
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">person</span>
+                À propos
+              </h4>
+              <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{form.bio}</div>
+            </div>
+          )}
+
+          {/* Skills */}
+          {form.skills.length > 0 && (
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">code</span>
+                Compétences
+              </h4>
+              <div className="space-y-3">
+                {form.skills.map((s) => (
+                  <div key={s.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-semibold text-slate-200">{s.name}</span>
+                      <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                        s.level === "expert" ? "bg-emerald-500/10 text-emerald-400" :
+                        s.level === "intermediaire" ? "bg-blue-500/10 text-blue-400" : "bg-slate-500/10 text-slate-400"
+                      )}>{SKILL_LEVEL_LABELS[s.level]}</span>
+                    </div>
+                    <div className="w-full h-2 bg-border-dark rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full transition-all",
+                          s.level === "expert" ? "bg-emerald-500" : s.level === "intermediaire" ? "bg-blue-500" : "bg-slate-500"
+                        )}
+                        style={{ width: `${SKILL_LEVEL_PERCENT[s.level]}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Languages */}
+          {form.languages.length > 0 && (
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">translate</span>
+                Langues
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {form.languages.map((l) => (
+                  <span key={l.name} className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm">
+                    <span className="material-symbols-outlined text-sm text-primary">translate</span>
+                    <span className="font-semibold">{l.name}</span>
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary/80">{l.level}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {(form.education || []).length > 0 && (
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">school</span>
+                Formation & Certifications
+              </h4>
+              <div className="space-y-3">
+                {(form.education || []).map((e, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 bg-neutral-dark rounded-lg border border-border-dark">
+                    <span className={cn("material-symbols-outlined text-xl mt-0.5",
+                      e.type === "diplome" ? "text-blue-400" : e.type === "certificat" ? "text-emerald-400" : "text-amber-400"
+                    )}>{EDU_TYPE_ICONS[e.type]}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-100">{e.title}</p>
+                      <p className="text-xs text-slate-400">{e.school} · {e.year}</p>
+                      <span className={cn("inline-block mt-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                        e.type === "diplome" ? "bg-blue-500/10 text-blue-400" :
+                        e.type === "certificat" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                      )}>{EDU_TYPE_LABELS[e.type]}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Links */}
+          {Object.entries(form.links).some(([, v]) => v) && (
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
+              <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">link</span>
+                Liens
+              </h4>
+              <div className="flex flex-wrap gap-3">
+                {(Object.entries(form.links) as [string, string][])
+                  .filter(([, v]) => v)
+                  .map(([key, url]) => (
+                    <a key={key} href={url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:border-primary/30 hover:text-primary transition-all"
+                    >
+                      <span className="material-symbols-outlined text-lg">{LINK_ICONS[key]?.icon}</span>
+                      {LINK_ICONS[key]?.label}
+                      <span className="material-symbols-outlined text-sm text-slate-500">open_in_new</span>
+                    </a>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Stats summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4 text-center">
+              <span className="material-symbols-outlined text-2xl text-primary mb-1">verified</span>
+              <p className="text-xl font-black text-primary">{form.completionPercent}%</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Profil complété</p>
+            </div>
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4 text-center">
+              <span className="material-symbols-outlined text-2xl text-emerald-400 mb-1">payments</span>
+              <p className="text-xl font-black text-emerald-400">€{form.hourlyRate}/h</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Tarif horaire</p>
+            </div>
+            <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4 text-center">
+              <span className="material-symbols-outlined text-2xl text-blue-400 mb-1">location_on</span>
+              <p className="text-sm font-black text-blue-400">{form.city || "—"}</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{form.country || "Localisation"}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab("edition")}
+            className="w-full py-3 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined">edit</span>
+            Retour à l&apos;édition
+          </button>
+        </div>
+      )}
+
+      {/* ================================================================== */}
+      {/* EDITION MODE                                                        */}
+      {/* ================================================================== */}
+      {activeTab === "edition" && (<>
 
       {/* Cover Photo */}
       <div className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden">
@@ -330,6 +554,8 @@ export default function ProfilPage() {
         {saving && <span className="material-symbols-outlined animate-spin">progress_activity</span>}
         {saving ? "Sauvegarde..." : "Enregistrer les modifications"}
       </button>
+
+      </>)}
     </div>
   );
 }

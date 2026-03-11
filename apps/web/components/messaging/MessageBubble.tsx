@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { UnifiedMessage } from "@/store/messaging";
+import { VoicePlayer } from "./voice/VoicePlayer";
 
 const ROLE_COLORS: Record<string, string> = {
   freelance: "text-emerald-400",
@@ -20,6 +21,13 @@ function formatTime(ts: string) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+function formatCallDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s} sec`;
+  return `${m} min ${s.toString().padStart(2, "0")} sec`;
+}
+
 interface MessageBubbleProps {
   message: UnifiedMessage;
   isOwn: boolean;
@@ -34,6 +42,35 @@ export function MessageBubble({ message, isOwn, showSenderInfo = true }: Message
         <div className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary font-medium flex items-center gap-2">
           <span className="material-symbols-outlined text-xs">info</span>
           {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  // Call entries (system-like messages)
+  if (message.type === "call_audio" || message.type === "call_video" || message.type === "call_missed") {
+    const isMissed = message.type === "call_missed";
+    const isVideo = message.type === "call_video";
+    const icon = isMissed ? "phone_missed" : isVideo ? "videocam" : "call";
+    const duration = message.callDuration ? formatCallDuration(message.callDuration) : "";
+
+    return (
+      <div className="flex justify-center my-2">
+        <div
+          className={cn(
+            "px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 border",
+            isMissed
+              ? "bg-red-500/10 border-red-500/20 text-red-400"
+              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          )}
+        >
+          <span className="material-symbols-outlined text-sm">{icon}</span>
+          <span>
+            {isMissed && "Appel manque"}
+            {message.type === "call_audio" && `Appel audio${duration ? ` - ${duration}` : ""}`}
+            {message.type === "call_video" && `Appel video${duration ? ` - ${duration}` : ""}`}
+          </span>
+          <span className="text-slate-500">{formatTime(message.createdAt)}</span>
         </div>
       </div>
     );
@@ -68,7 +105,15 @@ export function MessageBubble({ message, isOwn, showSenderInfo = true }: Message
               : "bg-neutral-dark border border-border-dark rounded-tl-md"
           )}
         >
-          {message.type === "file" || message.type === "image" ? (
+          {/* Voice message */}
+          {message.type === "voice" && message.audioUrl ? (
+            <VoicePlayer
+              audioUrl={message.audioUrl}
+              duration={message.audioDuration ?? 0}
+              transcription={message.transcription}
+              isOwn={isOwn}
+            />
+          ) : message.type === "file" || message.type === "image" ? (
             <div className="flex items-center gap-3 bg-background-dark/50 rounded-lg px-3 py-2">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <span className="material-symbols-outlined text-primary text-sm">

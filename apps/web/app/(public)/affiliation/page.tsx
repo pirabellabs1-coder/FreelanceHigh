@@ -2,166 +2,32 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Data                                                               */
+/*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-const STEPS = [
-  {
-    icon: "share",
-    title: "Partagez votre lien",
-    description:
-      "Partagez votre lien unique avec vos amis et collegues",
-  },
-  {
-    icon: "person_add",
-    title: "Ils s'inscrivent",
-    description:
-      "Vos filleuls creent un compte et commencent a utiliser la plateforme",
-  },
-  {
-    icon: "payments",
-    title: "Gagnez des commissions",
-    description:
-      "Recevez une commission sur chaque transaction de vos filleuls",
-  },
-];
 
 interface Tier {
   name: string;
   icon: string;
-  range: string;
+  rangeKey: string;
   min: number;
   max: number;
   commission: number;
   gradient: string;
   iconBg: string;
-  features: string[];
+  featuresKeys: string[];
 }
-
-const TIERS: Tier[] = [
-  {
-    name: "Bronze",
-    icon: "military_tech",
-    range: "1 - 5 filleuls",
-    min: 1,
-    max: 5,
-    commission: 10,
-    gradient: "from-amber-700 to-amber-900",
-    iconBg: "bg-amber-700/20 text-amber-500",
-    features: ["10% de commission", "Badge bronze", "Acces communaute"],
-  },
-  {
-    name: "Silver",
-    icon: "workspace_premium",
-    range: "6 - 20 filleuls",
-    min: 6,
-    max: 20,
-    commission: 15,
-    gradient: "from-slate-400 to-slate-600",
-    iconBg: "bg-slate-400/20 text-slate-300",
-    features: [
-      "15% de commission",
-      "Badge argent",
-      "Support prioritaire",
-      "Bonus mensuel",
-    ],
-  },
-  {
-    name: "Gold",
-    icon: "emoji_events",
-    range: "21 - 50 filleuls",
-    min: 21,
-    max: 50,
-    commission: 20,
-    gradient: "from-accent to-yellow-600",
-    iconBg: "bg-accent/20 text-accent",
-    features: [
-      "20% de commission",
-      "Badge or",
-      "Webinaires VIP",
-      "Cashback",
-    ],
-  },
-  {
-    name: "Platinum",
-    icon: "diamond",
-    range: "50+ filleuls",
-    min: 51,
-    max: Infinity,
-    commission: 25,
-    gradient: "from-primary to-emerald-400",
-    iconBg: "bg-primary/20 text-primary",
-    features: [
-      "25% de commission",
-      "Badge platine",
-      "Evenements exclusifs",
-      "Manager dedie",
-    ],
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "Grace au programme, je gagne \u20AC500/mois en plus. C'est un complement de revenu incroyable.",
-    name: "Marie K.",
-    tier: "Gold",
-    earnings: "\u20AC500/mois",
-  },
-  {
-    quote:
-      "J'ai recommande FreelanceHigh a mes collegues developpeurs et les commissions tombent chaque mois.",
-    name: "Abdoulaye D.",
-    tier: "Silver",
-    earnings: "\u20AC280/mois",
-  },
-  {
-    quote:
-      "Le programme d'affiliation est transparent et fiable. Les paiements sont toujours a l'heure.",
-    name: "Sophie L.",
-    tier: "Platinum",
-    earnings: "\u20AC1 200/mois",
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    question: "Comment fonctionne le programme ?",
-    answer:
-      "Inscrivez-vous au programme d'affiliation, partagez votre lien unique et gagnez une commission sur chaque transaction generee par vos filleuls. Plus vous parrainez, plus votre taux de commission augmente.",
-  },
-  {
-    question: "Quand suis-je paye ?",
-    answer:
-      "Les commissions sont versees automatiquement chaque mois, le 15 du mois suivant. Vous pouvez choisir de recevoir vos gains par virement SEPA, PayPal, Wise ou Mobile Money.",
-  },
-  {
-    question: "Y a-t-il un minimum de retrait ?",
-    answer:
-      "Le minimum de retrait est de \u20AC10. Des que votre solde atteint ce seuil, vous pouvez demander un virement a tout moment ou attendre le versement automatique mensuel.",
-  },
-  {
-    question: "Puis-je parrainer des agences ?",
-    answer:
-      "Absolument ! Vous pouvez parrainer des freelances, des clients et des agences. Les commissions sur les parrainages d'agences sont particulierement interessantes car leurs volumes de transactions sont plus eleves.",
-  },
-  {
-    question: "Comment suivre mes parrainages ?",
-    answer:
-      "Vous disposez d'un tableau de bord complet avec le nombre de filleuls, les commissions generees, l'historique des paiements et des statistiques detaillees sur vos performances.",
-  },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function getTierForReferrals(count: number): Tier {
+function getTierForReferrals(count: number, tiers: Tier[]): Tier {
   return (
-    TIERS.find((t) => count >= t.min && count <= t.max) ?? TIERS[0]
+    tiers.find((t) => count >= t.min && count <= t.max) ?? tiers[0]
   );
 }
 
@@ -170,12 +36,81 @@ function getTierForReferrals(count: number): Tier {
 /* ------------------------------------------------------------------ */
 
 export default function AffiliationPage() {
+  const t = useTranslations("affiliation");
+
+  const STEPS = [
+    { icon: "share", titleKey: "step1_title", descKey: "step1_desc" },
+    { icon: "person_add", titleKey: "step2_title", descKey: "step2_desc" },
+    { icon: "payments", titleKey: "step3_title", descKey: "step3_desc" },
+  ];
+
+  const TIERS: Tier[] = [
+    {
+      name: "Bronze",
+      icon: "military_tech",
+      rangeKey: "tier_bronze_range",
+      min: 1,
+      max: 5,
+      commission: 10,
+      gradient: "from-amber-700 to-amber-900",
+      iconBg: "bg-amber-700/20 text-amber-500",
+      featuresKeys: ["tier_bronze_feat1", "tier_bronze_feat2", "tier_bronze_feat3"],
+    },
+    {
+      name: "Silver",
+      icon: "workspace_premium",
+      rangeKey: "tier_silver_range",
+      min: 6,
+      max: 20,
+      commission: 15,
+      gradient: "from-slate-400 to-slate-600",
+      iconBg: "bg-slate-400/20 text-slate-300",
+      featuresKeys: ["tier_silver_feat1", "tier_silver_feat2", "tier_silver_feat3", "tier_silver_feat4"],
+    },
+    {
+      name: "Gold",
+      icon: "emoji_events",
+      rangeKey: "tier_gold_range",
+      min: 21,
+      max: 50,
+      commission: 20,
+      gradient: "from-accent to-yellow-600",
+      iconBg: "bg-accent/20 text-accent",
+      featuresKeys: ["tier_gold_feat1", "tier_gold_feat2", "tier_gold_feat3", "tier_gold_feat4"],
+    },
+    {
+      name: "Platinum",
+      icon: "diamond",
+      rangeKey: "tier_platinum_range",
+      min: 51,
+      max: Infinity,
+      commission: 25,
+      gradient: "from-primary to-emerald-400",
+      iconBg: "bg-primary/20 text-primary",
+      featuresKeys: ["tier_platinum_feat1", "tier_platinum_feat2", "tier_platinum_feat3", "tier_platinum_feat4"],
+    },
+  ];
+
+  const TESTIMONIALS = [
+    { quoteKey: "testimonial1_quote", name: "Marie K.", tier: "Gold", earnings: "\u20AC500/mois" },
+    { quoteKey: "testimonial2_quote", name: "Abdoulaye D.", tier: "Silver", earnings: "\u20AC280/mois" },
+    { quoteKey: "testimonial3_quote", name: "Sophie L.", tier: "Platinum", earnings: "\u20AC1 200/mois" },
+  ];
+
+  const FAQ_ITEMS = [
+    { qKey: "faq1_q", aKey: "faq1_a" },
+    { qKey: "faq2_q", aKey: "faq2_a" },
+    { qKey: "faq3_q", aKey: "faq3_a" },
+    { qKey: "faq4_q", aKey: "faq4_a" },
+    { qKey: "faq5_q", aKey: "faq5_a" },
+  ];
+
   const [referrals, setReferrals] = useState(10);
   const [avgRevenue, setAvgRevenue] = useState(150);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const calculatedTier = useMemo(
-    () => getTierForReferrals(referrals),
+    () => getTierForReferrals(referrals, TIERS),
     [referrals],
   );
 
@@ -199,18 +134,16 @@ export default function AffiliationPage() {
             <div className="relative z-10 max-w-3xl mx-auto space-y-8">
               <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-accent/20 text-accent text-xs font-bold uppercase tracking-wider border border-accent/30">
                 <span className="material-symbols-outlined text-base">auto_awesome</span>
-                Programme d&apos;Affiliation
+                {t("hero_badge")}
               </span>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
-                Gagnez de l&apos;argent en recommandant{" "}
+                {t("hero_title")}{" "}
                 <span className="text-primary">FreelanceHigh</span>
               </h1>
 
               <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                Rejoignez notre programme d&apos;affiliation et touchez des
-                commissions sur chaque transaction de vos filleuls. Simple,
-                transparent et sans limite de gains.
+                {t("hero_subtitle")}
               </p>
 
               <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
@@ -219,13 +152,13 @@ export default function AffiliationPage() {
                   className="inline-flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white rounded-2xl px-10 py-5 text-lg font-bold shadow-xl shadow-primary/20 transition-all"
                 >
                   <span className="material-symbols-outlined">person_add</span>
-                  S&apos;inscrire au programme
+                  {t("hero_cta_signup")}
                 </Link>
                 <a
                   href="#comment-ca-marche"
                   className="inline-flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl px-10 py-5 text-lg font-bold transition-all backdrop-blur-sm"
                 >
-                  En savoir plus
+                  {t("hero_cta_learn_more")}
                 </a>
               </div>
             </div>
@@ -240,17 +173,17 @@ export default function AffiliationPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Comment ca <span className="text-primary">marche</span> ?
+              {t("how_title_prefix")} <span className="text-primary">{t("how_title_highlight")}</span> ?
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-              Trois etapes simples pour commencer a gagner des commissions.
+              {t("how_subtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {STEPS.map((step, i) => (
               <div
-                key={step.title}
+                key={step.titleKey}
                 className="relative bg-white dark:bg-neutral-dark p-10 rounded-3xl border border-slate-200 dark:border-border-dark text-center space-y-6 hover:shadow-xl transition-shadow"
               >
                 {/* Step number */}
@@ -264,9 +197,9 @@ export default function AffiliationPage() {
                   </span>
                 </div>
 
-                <h4 className="text-xl font-bold">{step.title}</h4>
+                <h4 className="text-xl font-bold">{t(step.titleKey)}</h4>
                 <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {step.description}
+                  {t(step.descKey)}
                 </p>
               </div>
             ))}
@@ -281,10 +214,10 @@ export default function AffiliationPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Niveaux de <span className="text-accent">commission</span>
+              {t("tiers_title_prefix")} <span className="text-accent">{t("tiers_title_highlight")}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-              Plus vous parrainez, plus votre taux de commission augmente. Grimpez les echelons et maximisez vos gains.
+              {t("tiers_subtitle")}
             </p>
           </div>
 
@@ -311,7 +244,7 @@ export default function AffiliationPage() {
                       {tier.name}
                     </h4>
                     <p className="text-white/70 text-sm font-semibold">
-                      {tier.range}
+                      {t(tier.rangeKey)}
                     </p>
                   </div>
                 </div>
@@ -323,20 +256,20 @@ export default function AffiliationPage() {
                       {tier.commission}%
                     </span>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-                      de commission
+                      {t("of_commission")}
                     </p>
                   </div>
 
                   <ul className="space-y-3">
-                    {tier.features.map((feature) => (
+                    {tier.featuresKeys.map((featureKey) => (
                       <li
-                        key={feature}
+                        key={featureKey}
                         className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300"
                       >
                         <span className="material-symbols-outlined text-primary text-lg">
                           check_circle
                         </span>
-                        {feature}
+                        {t(featureKey)}
                       </li>
                     ))}
                   </ul>
@@ -345,7 +278,7 @@ export default function AffiliationPage() {
                     href="/inscription"
                     className="block text-center text-sm font-bold text-primary hover:text-primary/80 transition-colors pt-2"
                   >
-                    En savoir plus &rarr;
+                    {t("learn_more")} &rarr;
                   </Link>
                 </div>
               </div>
@@ -361,10 +294,10 @@ export default function AffiliationPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Simulez vos <span className="text-primary">gains</span>
+              {t("calc_title_prefix")} <span className="text-primary">{t("calc_title_highlight")}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-              Deplacez les curseurs pour estimer vos revenus mensuels d&apos;affiliation.
+              {t("calc_subtitle")}
             </p>
           </div>
 
@@ -373,7 +306,7 @@ export default function AffiliationPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="font-bold text-lg">
-                  Nombre de filleuls
+                  {t("calc_referrals_label")}
                 </label>
                 <span className="text-2xl font-extrabold text-primary">
                   {referrals}
@@ -400,7 +333,7 @@ export default function AffiliationPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="font-bold text-lg">
-                  Revenu moyen par filleul / mois
+                  {t("calc_avg_revenue_label")}
                 </label>
                 <span className="text-2xl font-extrabold text-primary">
                   {avgRevenue}&nbsp;&euro;
@@ -430,7 +363,7 @@ export default function AffiliationPage() {
             {/* Result */}
             <div className="text-center space-y-4">
               <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-                Vos gains mensuels estimes
+                {t("calc_result_label")}
               </p>
 
               <div className="relative inline-block">
@@ -452,17 +385,15 @@ export default function AffiliationPage() {
                   <span className="material-symbols-outlined text-base">
                     {calculatedTier.icon}
                   </span>
-                  Niveau {calculatedTier.name}
+                  {t("level")} {calculatedTier.name}
                 </span>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-semibold">
-                  {calculatedTier.commission}% de commission
+                  {calculatedTier.commission}% {t("of_commission")}
                 </span>
               </div>
 
               <p className="text-xs text-slate-400 dark:text-slate-500 max-w-md mx-auto leading-relaxed pt-2">
-                Estimation basee sur {referrals} filleuls avec un revenu moyen
-                de {avgRevenue}&nbsp;&euro;/mois et un taux de commission de{" "}
-                {calculatedTier.commission}%.
+                {t("calc_estimate_note", { referrals, avgRevenue, commission: calculatedTier.commission })}
               </p>
             </div>
           </div>
@@ -476,17 +407,17 @@ export default function AffiliationPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Ils parrainent et <span className="text-primary">gagnent</span>
+              {t("testimonials_title_prefix")} <span className="text-primary">{t("testimonials_title_highlight")}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-              Decouvrez les temoignages de nos affilies les plus actifs.
+              {t("testimonials_subtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t) => (
+            {TESTIMONIALS.map((item) => (
               <div
-                key={t.name}
+                key={item.name}
                 className="bg-white dark:bg-neutral-dark p-10 rounded-3xl border border-slate-200 dark:border-border-dark shadow-sm hover:shadow-xl transition-shadow"
               >
                 <div className="flex items-center gap-2 mb-6">
@@ -496,19 +427,19 @@ export default function AffiliationPage() {
                 </div>
 
                 <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed mb-8 italic">
-                  &ldquo;{t.quote}&rdquo;
+                  &ldquo;{t(item.quoteKey)}&rdquo;
                 </p>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-lg">{t.name}</p>
-                    <p className="text-sm text-slate-500">Affilie {t.tier}</p>
+                    <p className="font-bold text-lg">{item.name}</p>
+                    <p className="text-sm text-slate-500">{t("affiliate")} {item.tier}</p>
                   </div>
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-bold">
                     <span className="material-symbols-outlined text-base">
                       payments
                     </span>
-                    {t.earnings}
+                    {item.earnings}
                   </span>
                 </div>
               </div>
@@ -524,7 +455,7 @@ export default function AffiliationPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Questions <span className="text-primary">frequentes</span>
+              {t("faq_title_prefix")} <span className="text-primary">{t("faq_title_highlight")}</span>
             </h2>
           </div>
 
@@ -539,7 +470,7 @@ export default function AffiliationPage() {
                   className="w-full flex items-center justify-between p-6 text-left"
                 >
                   <span className="font-bold text-lg pr-4">
-                    {item.question}
+                    {t(item.qKey)}
                   </span>
                   <span
                     className={cn(
@@ -558,7 +489,7 @@ export default function AffiliationPage() {
                   )}
                 >
                   <p className="px-6 text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {item.answer}
+                    {t(item.aKey)}
                   </p>
                 </div>
               </div>
@@ -577,13 +508,12 @@ export default function AffiliationPage() {
           <div className="absolute -bottom-24 -left-24 size-96 bg-accent/10 blur-[150px] rounded-full" />
 
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white max-w-4xl mx-auto leading-[1.1] relative z-10">
-            Rejoignez le programme{" "}
-            <span className="text-primary">maintenant</span>
+            {t("cta_title_prefix")}{" "}
+            <span className="text-primary">{t("cta_title_highlight")}</span>
           </h2>
 
           <p className="text-slate-400 text-xl max-w-2xl mx-auto relative z-10 leading-relaxed">
-            Commencez a gagner des commissions des aujourd&apos;hui. Inscription
-            gratuite, paiements mensuels, aucune limite de gains.
+            {t("cta_subtitle")}
           </p>
 
           <div className="relative z-10">
@@ -592,14 +522,14 @@ export default function AffiliationPage() {
               className="inline-flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all shadow-xl shadow-primary/30"
             >
               <span className="material-symbols-outlined">person_add</span>
-              S&apos;inscrire au programme
+              {t("hero_cta_signup")}
             </Link>
           </div>
 
           <div className="pt-4 relative z-10">
             <p className="text-sm text-slate-500 font-bold uppercase tracking-widest flex items-center justify-center gap-4">
               <span className="w-8 h-px bg-slate-800" />
-              Gratuit &middot; Sans engagement &middot; Paiements mensuels
+              {t("cta_footer")}
               <span className="w-8 h-px bg-slate-800" />
             </p>
           </div>

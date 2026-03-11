@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { ToastContainer } from "@/components/ui/toast";
+import { useClientStore } from "@/store/client";
 
 const CLIENT_CSS_VARS = {
   "--color-primary": "25 230 66",
@@ -13,8 +14,26 @@ const CLIENT_CSS_VARS = {
   "--color-border-dark": "42 63 46",
 } as React.CSSProperties;
 
+const NOTIFICATION_POLL_INTERVAL = 30_000; // 30 seconds
+
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const syncAll = useClientStore((s) => s.syncAll);
+  const syncNotifications = useClientStore((s) => s.syncNotifications);
+
+  // Initialize store data on layout mount so sidebar badges are populated
+  useEffect(() => {
+    syncAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Poll notifications every 30s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncNotifications();
+    }, NOTIFICATION_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [syncNotifications]);
 
   return (
     <div style={CLIENT_CSS_VARS} className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark font-sans">

@@ -1,56 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToastStore } from "@/store/dashboard";
+import { feedApi, type ApiService } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────
 type ViewTab = "services" | "offres" | "freelances";
 
-// ─── Demo Data ──────────────────────────────────────────
-
-const CATEGORIES = [
-  "Toutes", "Développement", "Design", "Marketing", "Rédaction", "SEO", "Mobile", "Data", "Vidéo",
-];
-
-const SERVICES = [
-  { id: "s1", title: "Site web e-commerce Next.js", seller: "Awa Diop", sellerType: "freelance" as const, rating: 4.9, reviews: 127, price: 1200, tags: ["Next.js", "React", "E-commerce"], category: "Développement", image: "code" },
-  { id: "s2", title: "Identité visuelle complète", seller: "Studio Créa", sellerType: "agence" as const, rating: 4.8, reviews: 89, price: 800, tags: ["Branding", "Logo", "Charte graphique"], category: "Design", image: "palette" },
-  { id: "s3", title: "Campagne Google Ads optimisée", seller: "Salimata Traoré", sellerType: "freelance" as const, rating: 4.7, reviews: 64, price: 450, tags: ["Google Ads", "SEA", "Analytics"], category: "Marketing", image: "campaign" },
-  { id: "s4", title: "Rédaction articles SEO (x10)", seller: "Léa Dupont", sellerType: "freelance" as const, rating: 4.6, reviews: 52, price: 350, tags: ["SEO", "Copywriting", "Blog"], category: "Rédaction", image: "edit_note" },
-  { id: "s5", title: "Application mobile React Native", seller: "DevMobile Agency", sellerType: "agence" as const, rating: 4.9, reviews: 156, price: 3500, tags: ["React Native", "iOS", "Android"], category: "Mobile", image: "smartphone" },
-  { id: "s6", title: "Dashboard analytics sur mesure", seller: "Omar Bah", sellerType: "freelance" as const, rating: 4.8, reviews: 73, price: 1800, tags: ["Python", "Data Viz", "Tableau"], category: "Data", image: "analytics" },
-  { id: "s7", title: "Vidéo promotionnelle 60 sec", seller: "Clip Factory", sellerType: "agence" as const, rating: 4.5, reviews: 41, price: 600, tags: ["Motion", "After Effects", "Publicité"], category: "Vidéo", image: "videocam" },
-  { id: "s8", title: "API REST & microservices Node.js", seller: "Moussa Keita", sellerType: "freelance" as const, rating: 4.9, reviews: 98, price: 2200, tags: ["Node.js", "Express", "MongoDB"], category: "Développement", image: "api" },
-  { id: "s9", title: "Audit SEO complet + plan d'action", seller: "SEO Masters", sellerType: "agence" as const, rating: 4.7, reviews: 85, price: 500, tags: ["SEO", "Audit", "Stratégie"], category: "SEO", image: "troubleshoot" },
-  { id: "s10", title: "Maquettes UI/UX Figma", seller: "Fatima Benali", sellerType: "freelance" as const, rating: 4.8, reviews: 112, price: 950, tags: ["Figma", "UI/UX", "Prototype"], category: "Design", image: "draw" },
-];
-
-const CLIENT_OFFERS = [
-  { id: "o1", title: "Refonte complète site vitrine", client: "Dakar Shop SARL", budget: "€2 000 - €4 000", deadline: "2026-04-15", skills: ["Next.js", "Tailwind CSS", "TypeScript"], urgency: "normale" as const, candidates: 8, description: "Refonte d'un site vitrine existant vers une stack moderne avec Next.js et Tailwind CSS." },
-  { id: "o2", title: "Application mobile de livraison", client: "QuickDeliver", budget: "€5 000 - €8 000", deadline: "2026-05-01", skills: ["React Native", "Node.js", "PostgreSQL"], urgency: "urgente" as const, candidates: 12, description: "Développement d'une application mobile complète pour la gestion de livraisons en Afrique de l'Ouest." },
-  { id: "o3", title: "Stratégie marketing digital Q2 2026", client: "FashionAfrik", budget: "€1 500 - €3 000", deadline: "2026-03-30", skills: ["Marketing digital", "Meta Ads", "Google Ads"], urgency: "tres_urgente" as const, candidates: 5, description: "Mise en place d'une stratégie complète de marketing digital pour le lancement d'une nouvelle collection." },
-  { id: "o4", title: "Développement plateforme e-learning", client: "EduTech SN", budget: "€8 000 - €15 000", deadline: "2026-06-30", skills: ["Next.js", "Socket.io", "Stripe", "Prisma"], urgency: "normale" as const, candidates: 15, description: "Création d'une plateforme e-learning avec système de visioconférence, paiements et suivi des élèves." },
-  { id: "o5", title: "Identité visuelle startup fintech", client: "FinTech CI", budget: "€800 - €1 500", deadline: "2026-04-10", skills: ["Branding", "Logo", "Figma"], urgency: "urgente" as const, candidates: 9, description: "Création de l'identité visuelle complète pour une nouvelle startup fintech basée à Abidjan." },
-  { id: "o6", title: "Migration base de données legacy", client: "MediaGroup CI", budget: "€3 000 - €5 000", deadline: "2026-05-15", skills: ["PostgreSQL", "Python", "ETL", "Docker"], urgency: "normale" as const, candidates: 3, description: "Migration d'une base de données MySQL legacy vers PostgreSQL avec nettoyage des données et scripts ETL." },
-];
-
-const FREELANCERS = [
-  { id: "f1", name: "Awa Diop", title: "Développeuse React/Next.js", initials: "AD", rating: 4.9, hourlyRate: 45, country: "Sénégal", flag: "🇸🇳", skills: ["React", "Next.js", "TypeScript", "Node.js"], available: true, completedOrders: 127 },
-  { id: "f2", name: "Moussa Keita", title: "Designer UI/UX Senior", initials: "MK", rating: 4.8, hourlyRate: 50, country: "Côte d'Ivoire", flag: "🇨🇮", skills: ["Figma", "Sketch", "Adobe XD", "Prototyping"], available: true, completedOrders: 89 },
-  { id: "f3", name: "Léa Dupont", title: "Rédactrice SEO & Copywriter", initials: "LD", rating: 4.7, hourlyRate: 30, country: "France", flag: "🇫🇷", skills: ["SEO", "Copywriting", "WordPress", "Rédaction web"], available: false, completedOrders: 64 },
-  { id: "f4", name: "Omar Bah", title: "Développeur Python/Django", initials: "OB", rating: 4.9, hourlyRate: 55, country: "Guinée", flag: "🇬🇳", skills: ["Python", "Django", "PostgreSQL", "Docker"], available: true, completedOrders: 98 },
-  { id: "f5", name: "Salimata Traoré", title: "Experte Marketing Digital", initials: "ST", rating: 4.6, hourlyRate: 40, country: "Mali", flag: "🇲🇱", skills: ["Google Ads", "Meta Ads", "Analytics", "Stratégie"], available: true, completedOrders: 52 },
-  { id: "f6", name: "Fatima Benali", title: "Designer Produit", initials: "FB", rating: 4.8, hourlyRate: 48, country: "Maroc", flag: "🇲🇦", skills: ["Figma", "UI/UX", "Design System", "Webflow"], available: true, completedOrders: 112 },
-  { id: "f7", name: "Jean Kouamé", title: "Développeur Mobile React Native", initials: "JK", rating: 4.7, hourlyRate: 52, country: "Côte d'Ivoire", flag: "🇨🇮", skills: ["React Native", "Flutter", "iOS", "Android"], available: false, completedOrders: 76 },
-  { id: "f8", name: "Claire Martin", title: "Data Analyst & BI", initials: "CM", rating: 4.5, hourlyRate: 42, country: "Belgique", flag: "🇧🇪", skills: ["Python", "Tableau", "SQL", "Power BI"], available: true, completedOrders: 41 },
-];
-
-const URGENCY_MAP: Record<string, { label: string; cls: string }> = {
-  normale: { label: "Normale", cls: "bg-slate-500/20 text-slate-400" },
-  urgente: { label: "Urgente", cls: "bg-amber-500/20 text-amber-400" },
-  tres_urgente: { label: "Très urgente", cls: "bg-red-500/20 text-red-400" },
-};
+interface DerivedFreelancer {
+  id: string;
+  name: string;
+  initials: string;
+  avatar: string;
+  rating: number;
+  serviceCount: number;
+  tags: string[];
+  categories: string[];
+}
 
 // ─── Component ──────────────────────────────────────────
 
@@ -66,34 +33,107 @@ export default function AgenceExplorer() {
   const [contactMessage, setContactMessage] = useState("");
   const { addToast } = useToastStore();
 
-  // Filters
-  const filteredServices = SERVICES.filter((s) => {
-    const matchSearch =
-      !search ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.seller.toLowerCase().includes(search.toLowerCase()) ||
-      s.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchCategory = categoryFilter === "Toutes" || s.category === categoryFilter;
-    return matchSearch && matchCategory;
-  });
+  // ─── Data loading ───
+  const [services, setServices] = useState<ApiService[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredOffers = CLIENT_OFFERS.filter((o) => {
-    const matchSearch =
-      !search ||
-      o.title.toLowerCase().includes(search.toLowerCase()) ||
-      o.client.toLowerCase().includes(search.toLowerCase()) ||
-      o.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()));
-    return matchSearch;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    feedApi
+      .list()
+      .then((res) => {
+        if (!cancelled) {
+          setServices(res.services ?? []);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erreur de chargement");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const filteredFreelancers = FREELANCERS.filter((f) => {
-    const matchSearch =
-      !search ||
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      f.title.toLowerCase().includes(search.toLowerCase()) ||
-      f.skills.some((s) => s.toLowerCase().includes(search.toLowerCase()));
-    return matchSearch;
-  });
+  // ─── Derived data ───
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(services.map((s) => s.categoryName).filter(Boolean)));
+    cats.sort((a, b) => a.localeCompare(b, "fr"));
+    return ["Toutes", ...cats];
+  }, [services]);
+
+  const freelancers = useMemo<DerivedFreelancer[]>(() => {
+    const map = new Map<string, DerivedFreelancer>();
+    for (const s of services) {
+      const key = s.vendorName;
+      if (!key) continue;
+      const existing = map.get(key);
+      if (existing) {
+        existing.serviceCount += 1;
+        existing.rating = Math.max(existing.rating, s.rating);
+        for (const tag of s.tags) {
+          if (!existing.tags.includes(tag)) existing.tags.push(tag);
+        }
+        if (s.categoryName && !existing.categories.includes(s.categoryName)) {
+          existing.categories.push(s.categoryName);
+        }
+      } else {
+        const parts = key.trim().split(/\s+/);
+        const initials =
+          parts.length >= 2
+            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+            : key.slice(0, 2).toUpperCase();
+        map.set(key, {
+          id: `vendor-${key}`,
+          name: key,
+          initials,
+          avatar: s.vendorAvatar || "",
+          rating: s.rating,
+          serviceCount: 1,
+          tags: [...s.tags],
+          categories: s.categoryName ? [s.categoryName] : [],
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [services]);
+
+  // ─── Filters ───
+  const filteredServices = useMemo(() => {
+    return services.filter((s) => {
+      const q = search.toLowerCase();
+      const matchSearch =
+        !search ||
+        s.title.toLowerCase().includes(q) ||
+        s.vendorName.toLowerCase().includes(q) ||
+        s.tags.some((t) => t.toLowerCase().includes(q));
+      const matchCategory =
+        categoryFilter === "Toutes" || s.categoryName === categoryFilter;
+      return matchSearch && matchCategory;
+    });
+  }, [services, search, categoryFilter]);
+
+  const filteredFreelancers = useMemo(() => {
+    return freelancers.filter((f) => {
+      const q = search.toLowerCase();
+      return (
+        !search ||
+        f.name.toLowerCase().includes(q) ||
+        f.tags.some((t) => t.toLowerCase().includes(q)) ||
+        f.categories.some((c) => c.toLowerCase().includes(q))
+      );
+    });
+  }, [freelancers, search]);
+
+  // Offres clients tab: no endpoint available yet, always empty
+  const filteredOffers: never[] = [];
 
   const tabs: { key: ViewTab; label: string; icon: string; count: number }[] = [
     { key: "services", label: "Services", icon: "storefront", count: filteredServices.length },
@@ -121,6 +161,21 @@ export default function AgenceExplorer() {
     addToast("success", "Message envoyé !");
     setShowContact(null);
     setContactMessage("");
+  }
+
+  // ─── Icon helper: pick a material icon based on category ───
+  function categoryIcon(cat: string): string {
+    const map: Record<string, string> = {
+      "Développement": "code",
+      "Design": "palette",
+      "Marketing": "campaign",
+      "Rédaction": "edit_note",
+      "SEO": "troubleshoot",
+      "Mobile": "smartphone",
+      "Data": "analytics",
+      "Vidéo": "videocam",
+    };
+    return map[cat] || "storefront";
   }
 
   return (
@@ -175,9 +230,9 @@ export default function AgenceExplorer() {
             className="w-full pl-10 pr-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50"
           />
         </div>
-        {tab === "services" && (
+        {tab === "services" && categories.length > 1 && (
           <div className="flex gap-2 flex-wrap">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
@@ -195,13 +250,55 @@ export default function AgenceExplorer() {
         )}
       </div>
 
+      {/* ────── Loading State ────── */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
+          <p className="text-sm text-slate-500">Chargement des données...</p>
+        </div>
+      )}
+
+      {/* ────── Error State ────── */}
+      {!loading && error && (
+        <div className="text-center py-16">
+          <span className="material-symbols-outlined text-5xl text-red-500/60 mb-3">error</span>
+          <p className="text-slate-400 font-semibold mb-2">Erreur de chargement</p>
+          <p className="text-xs text-slate-500 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              feedApi
+                .list()
+                .then((res) => setServices(res.services ?? []))
+                .catch((err) => setError(err instanceof Error ? err.message : "Erreur"))
+                .finally(() => setLoading(false));
+            }}
+            className="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
       {/* ────── Services View ────── */}
-      {tab === "services" && (
+      {!loading && !error && tab === "services" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredServices.length === 0 ? (
             <div className="col-span-full text-center py-16">
-              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">search_off</span>
-              <p className="text-slate-500 font-semibold">Aucun service trouvé</p>
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">
+                {services.length === 0 ? "storefront" : "search_off"}
+              </span>
+              <p className="text-slate-500 font-semibold">
+                {services.length === 0
+                  ? "Aucun service disponible pour le moment"
+                  : "Aucun service trouvé"}
+              </p>
+              {services.length === 0 && (
+                <p className="text-xs text-slate-600 mt-1">
+                  Les services apparaitront ici une fois publiés sur le marketplace.
+                </p>
+              )}
             </div>
           ) : (
             filteredServices.map((service) => (
@@ -212,7 +309,7 @@ export default function AgenceExplorer() {
                 {/* Service icon header */}
                 <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                   <span className="material-symbols-outlined text-5xl text-primary/40 group-hover:text-primary/60 transition-colors">
-                    {service.image}
+                    {categoryIcon(service.categoryName)}
                   </span>
                 </div>
                 <div className="p-4 space-y-3">
@@ -220,21 +317,16 @@ export default function AgenceExplorer() {
                   <div>
                     <h3 className="text-sm font-bold text-white line-clamp-2 leading-tight">{service.title}</h3>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <p className="text-xs text-slate-500">{service.seller}</p>
-                      <span className={cn(
-                        "text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider",
-                        service.sellerType === "agence"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : "bg-emerald-500/20 text-emerald-400"
-                      )}>
-                        {service.sellerType === "agence" ? "Agence" : "Freelance"}
+                      <p className="text-xs text-slate-500">{service.vendorName}</p>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-400">
+                        {service.categoryName}
                       </span>
                     </div>
                   </div>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1.5">
-                    {service.tags.map((tag) => (
+                    {service.tags.slice(0, 4).map((tag) => (
                       <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
                         {tag}
                       </span>
@@ -245,12 +337,18 @@ export default function AgenceExplorer() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-yellow-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                      <span className="text-xs font-semibold text-white">{service.rating}</span>
-                      <span className="text-xs text-slate-500">({service.reviews})</span>
+                      <span className="text-xs font-semibold text-white">{service.rating.toFixed(1)}</span>
+                      <span className="text-xs text-slate-500">({service.ratingCount})</span>
                     </div>
                     <p className="text-sm font-black text-white">
-                      {service.price.toLocaleString("fr-FR")}&nbsp;€
+                      {service.basePrice.toLocaleString("fr-FR")}&nbsp;&euro;
                     </p>
+                  </div>
+
+                  {/* Delivery info */}
+                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                    <span className="material-symbols-outlined text-sm">schedule</span>
+                    {service.deliveryDays} jour{service.deliveryDays > 1 ? "s" : ""} de livraison
                   </div>
 
                   {/* Actions */}
@@ -263,7 +361,7 @@ export default function AgenceExplorer() {
                       Voir
                     </button>
                     <button
-                      onClick={() => setShowContact(service.seller)}
+                      onClick={() => setShowContact(service.vendorName)}
                       className="flex-1 py-2 bg-neutral-dark border border-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:text-white hover:border-primary/30 transition-colors flex items-center justify-center gap-1"
                     >
                       <span className="material-symbols-outlined text-sm">mail</span>
@@ -278,85 +376,36 @@ export default function AgenceExplorer() {
       )}
 
       {/* ────── Offres Clients View ────── */}
-      {tab === "offres" && (
+      {!loading && !error && tab === "offres" && (
         <div className="space-y-3">
-          {filteredOffers.length === 0 ? (
-            <div className="text-center py-16">
-              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">search_off</span>
-              <p className="text-slate-500 font-semibold">Aucune offre trouvée</p>
-            </div>
-          ) : (
-            filteredOffers.map((offer) => (
-              <div
-                key={offer.id}
-                className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/20 transition-all"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                  {/* Main info */}
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-start gap-3 flex-wrap">
-                      <h3 className="text-sm font-bold text-white">{offer.title}</h3>
-                      <span className={cn(
-                        "text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0",
-                        URGENCY_MAP[offer.urgency]?.cls
-                      )}>
-                        {URGENCY_MAP[offer.urgency]?.label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 line-clamp-2">{offer.description}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {offer.skills.map((skill) => (
-                        <span key={skill} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">business</span>
-                        {offer.client}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">group</span>
-                        {offer.candidates} candidatures
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right side */}
-                  <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-black text-white">{offer.budget}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Budget estimé</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">schedule</span>
-                        {new Date(offer.deadline).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowApply(offer.id)}
-                      className="px-4 py-2 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-sm">send</span>
-                      Postuler
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+          <div className="text-center py-16">
+            <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">assignment</span>
+            <p className="text-slate-500 font-semibold">Aucune offre disponible pour le moment</p>
+            <p className="text-xs text-slate-600 mt-1">
+              Les offres clients apparaitront ici lorsque des projets seront publiés.
+            </p>
+          </div>
         </div>
       )}
 
       {/* ────── Freelances View ────── */}
-      {tab === "freelances" && (
+      {!loading && !error && tab === "freelances" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {filteredFreelancers.length === 0 ? (
             <div className="col-span-full text-center py-16">
-              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">search_off</span>
-              <p className="text-slate-500 font-semibold">Aucun freelance trouvé</p>
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">
+                {freelancers.length === 0 ? "person_search" : "search_off"}
+              </span>
+              <p className="text-slate-500 font-semibold">
+                {freelancers.length === 0
+                  ? "Aucun freelance disponible pour le moment"
+                  : "Aucun freelance trouvé"}
+              </p>
+              {freelancers.length === 0 && (
+                <p className="text-xs text-slate-600 mt-1">
+                  Les freelances apparaitront ici une fois des services publiés.
+                </p>
+              )}
             </div>
           ) : (
             filteredFreelancers.map((freelancer) => (
@@ -372,47 +421,37 @@ export default function AgenceExplorer() {
                     </div>
                     <div>
                       <p className="font-bold text-white text-sm">{freelancer.name}</p>
-                      <p className="text-[11px] text-slate-500 leading-tight">{freelancer.title}</p>
+                      <p className="text-[11px] text-slate-500 leading-tight">
+                        {freelancer.categories.join(", ") || "Freelance"}
+                      </p>
                     </div>
                   </div>
-                  <span className={cn(
-                    "text-[9px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 mt-1",
-                    freelancer.available
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "bg-slate-500/20 text-slate-400"
-                  )}>
-                    {freelancer.available ? "Disponible" : "Occupé"}
-                  </span>
                 </div>
 
-                {/* Country + Rating */}
+                {/* Rating + Services count */}
                 <div className="flex items-center gap-3 mb-3 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <span className="text-sm">{freelancer.flag}</span>
-                    {freelancer.country}
-                  </span>
                   <span className="flex items-center gap-0.5">
                     <span className="material-symbols-outlined text-yellow-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    <span className="font-semibold text-white">{freelancer.rating}</span>
+                    <span className="font-semibold text-white">{freelancer.rating.toFixed(1)}</span>
                   </span>
                   <span className="flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                    {freelancer.completedOrders}
+                    <span className="material-symbols-outlined text-sm">storefront</span>
+                    {freelancer.serviceCount} service{freelancer.serviceCount > 1 ? "s" : ""}
                   </span>
                 </div>
 
                 {/* Skills */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {freelancer.skills.slice(0, 4).map((skill) => (
-                    <span key={skill} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-                      {skill}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {freelancer.tags.slice(0, 4).map((tag) => (
+                    <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
+                      {tag}
                     </span>
                   ))}
-                </div>
-
-                {/* Hourly Rate */}
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-black text-white">{freelancer.hourlyRate}&nbsp;€<span className="text-xs font-normal text-slate-500">/h</span></p>
+                  {freelancer.tags.length > 4 && (
+                    <span className="text-[10px] bg-slate-500/10 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
+                      +{freelancer.tags.length - 4}
+                    </span>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -493,25 +532,10 @@ export default function AgenceExplorer() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowApply(null); setApplyLetter(""); setApplyPrice(""); setApplyDeadline(""); }} />
           <div className="relative bg-neutral-dark rounded-2xl border border-border-dark p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">
-                Postuler : {CLIENT_OFFERS.find((o) => o.id === showApply)?.title}
-              </h3>
+              <h3 className="text-lg font-bold text-white">Postuler</h3>
               <button onClick={() => { setShowApply(null); setApplyLetter(""); setApplyPrice(""); setApplyDeadline(""); }} className="text-slate-500 hover:text-white transition-colors">
                 <span className="material-symbols-outlined">close</span>
               </button>
-            </div>
-
-            {/* Offer summary */}
-            <div className="bg-background-dark rounded-xl border border-border-dark p-4 mb-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">business</span>
-                  {CLIENT_OFFERS.find((o) => o.id === showApply)?.client}
-                </span>
-                <span className="font-bold text-white text-sm">
-                  {CLIENT_OFFERS.find((o) => o.id === showApply)?.budget}
-                </span>
-              </div>
             </div>
 
             <div className="space-y-4">
@@ -530,7 +554,7 @@ export default function AgenceExplorer() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1.5 block">
-                    Prix proposé (€)
+                    Prix proposé (&euro;)
                   </label>
                   <input
                     value={applyPrice}

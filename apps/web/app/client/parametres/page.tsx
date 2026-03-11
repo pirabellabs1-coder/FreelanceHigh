@@ -1,34 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useClientStore } from "@/store/client";
+import { profileApi } from "@/lib/api-client";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_ITEMS = [
   { key: "profil", label: "Profil Public", icon: "person" },
-  { key: "securite", label: "Sécurité", icon: "lock" },
+  { key: "securite", label: "Securite", icon: "lock" },
   { key: "paiements", label: "Paiements & Facturation", icon: "payments" },
   { key: "langues", label: "Langues & Devises", icon: "language" },
   { key: "notifications", label: "Notifications", icon: "notifications_active" },
 ];
 
-const NOTIFICATION_ITEMS = [
+const NOTIFICATION_ITEMS_DEFAULT = [
   { id: "1", label: "Nouvelles candidatures", desc: "Quand un freelance postule sur vos projets", email: true, push: true },
-  { id: "2", label: "Messages reçus", desc: "Quand vous recevez un message", email: true, push: true },
+  { id: "2", label: "Messages recus", desc: "Quand vous recevez un message", email: true, push: true },
   { id: "3", label: "Livraison commande", desc: "Quand un freelance livre une commande", email: true, push: false },
-  { id: "4", label: "Paiement effectué", desc: "Confirmation de paiement", email: true, push: false },
-  { id: "5", label: "Rappels de délais", desc: "Quand une deadline approche", email: false, push: true },
-  { id: "6", label: "Newsletter", desc: "Actualités et conseils FreelanceHigh", email: false, push: false },
+  { id: "4", label: "Paiement effectue", desc: "Confirmation de paiement", email: true, push: false },
+  { id: "5", label: "Rappels de delais", desc: "Quand une deadline approche", email: false, push: true },
+  { id: "6", label: "Newsletter", desc: "Actualites et conseils FreelanceHigh", email: false, push: false },
 ];
 
 export default function ClientSettings() {
   const [activeSection, setActiveSection] = useState("profil");
   const { addToast } = useToastStore();
+  const { updateSettings } = useClientStore();
+  const [fetching, setFetching] = useState(true);
 
   const [profileForm, setProfileForm] = useState({
-    fullName: "Jean Dupont",
-    email: "jean.dupont@email.sn",
-    bio: "Entrepreneur passionné par le digital. Je dirige une agence de transformation digitale spécialisée dans les solutions innovantes pour les entreprises africaines.",
+    fullName: "",
+    email: "",
+    bio: "",
   });
 
   const [securityForm, setSecurityForm] = useState({
@@ -41,24 +45,51 @@ export default function ClientSettings() {
   const [language, setLanguage] = useState("fr");
   const [currency, setCurrency] = useState("FCFA");
 
-  const [notifications, setNotifications] = useState(NOTIFICATION_ITEMS);
+  const [notifications, setNotifications] = useState(NOTIFICATION_ITEMS_DEFAULT);
+
+  // Fetch profile on mount to pre-fill forms
+  useEffect(() => {
+    setFetching(true);
+    profileApi
+      .get()
+      .then((profile) => {
+        setProfileForm({
+          fullName: [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "",
+          email: profile.email || "",
+          bio: profile.bio || "",
+        });
+      })
+      .catch(() => {
+        // Keep default empty values on error
+      })
+      .finally(() => setFetching(false));
+  }, []);
 
   function toggleNotif(id: string, type: "email" | "push") {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, [type]: !n[type] } : n));
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, [type]: !n[type] } : n));
+  }
+
+  async function saveSection(section: string, data: Record<string, unknown>) {
+    const success = await updateSettings(data);
+    if (success) {
+      addToast("success", `${section} mis a jour`);
+    } else {
+      addToast("error", `Erreur lors de la mise a jour de ${section.toLowerCase()}`);
+    }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-white">Paramètres</h1>
-        <p className="text-slate-400 text-sm mt-1">Configurez votre compte, votre sécurité et vos préférences.</p>
+        <h1 className="text-3xl font-black text-white">Parametres</h1>
+        <p className="text-slate-400 text-sm mt-1">Configurez votre compte, votre securite et vos preferences.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
         <div className="w-full lg:w-64 flex-shrink-0">
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-2 space-y-1">
-            {SIDEBAR_ITEMS.map(item => (
+            {SIDEBAR_ITEMS.map((item) => (
               <button
                 key={item.key}
                 onClick={() => setActiveSection(item.key)}
@@ -93,69 +124,95 @@ export default function ClientSettings() {
                 Profil Public
               </h2>
 
-              {/* Avatar */}
-              <div className="flex items-center gap-5">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black ring-4 ring-primary/20">
-                    JD
+              {fetching ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="flex items-center gap-5">
+                    <div className="w-24 h-24 rounded-full bg-border-dark" />
+                    <div className="space-y-2">
+                      <div className="h-5 w-40 bg-border-dark rounded" />
+                      <div className="h-4 w-32 bg-border-dark rounded" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-10 bg-border-dark rounded-xl" />
+                    <div className="h-10 bg-border-dark rounded-xl" />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Avatar */}
+                  <div className="flex items-center gap-5">
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black ring-4 ring-primary/20">
+                        {profileForm.fullName.split(/\s+/).map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "??"}
+                      </div>
+                      <button
+                        onClick={() => addToast("info", "Upload photo bientot disponible")}
+                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-lg"
+                      >
+                        <span className="material-symbols-outlined text-sm">photo_camera</span>
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-white">{profileForm.fullName || "Votre nom"}</p>
+                      <p className="text-sm text-slate-400">Client FreelanceHigh</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Nom Complet</label>
+                      <input
+                        value={profileForm.fullName}
+                        onChange={(e) => setProfileForm((p) => ({ ...p, fullName: e.target.value }))}
+                        className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Email</label>
+                      <input
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))}
+                        type="email"
+                        className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Bio Professionnelle</label>
+                    <textarea
+                      value={profileForm.bio}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, bio: e.target.value }))}
+                      rows={4}
+                      className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 resize-none"
+                    />
                   </div>
                   <button
-                    onClick={() => addToast("info", "Upload photo bientôt disponible")}
-                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-lg"
+                    onClick={() => {
+                      const nameParts = profileForm.fullName.trim().split(/\s+/);
+                      saveSection("Profil", {
+                        firstName: nameParts[0] || "",
+                        lastName: nameParts.slice(1).join(" ") || "",
+                        email: profileForm.email,
+                        bio: profileForm.bio,
+                      });
+                    }}
+                    className="px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
                   >
-                    <span className="material-symbols-outlined text-sm">photo_camera</span>
+                    Enregistrer les modifications
                   </button>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-white">{profileForm.fullName}</p>
-                  <p className="text-sm text-slate-400">Développeur Fullstack · Dakar, Sénégal</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Nom Complet</label>
-                  <input
-                    value={profileForm.fullName}
-                    onChange={e => setProfileForm(p => ({ ...p, fullName: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Email</label>
-                  <input
-                    value={profileForm.email}
-                    onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))}
-                    type="email"
-                    className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Bio Professionnelle</label>
-                <textarea
-                  value={profileForm.bio}
-                  onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 resize-none"
-                />
-              </div>
-              <button
-                onClick={() => addToast("success", "Profil mis à jour")}
-                className="px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
-              >
-                Enregistrer les modifications
-              </button>
+                </>
+              )}
             </div>
           )}
 
-          {/* Sécurité */}
+          {/* Securite */}
           {activeSection === "securite" && (
             <div className="space-y-6">
               <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 space-y-5">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">lock</span>
-                  Sécurité du compte
+                  Securite du compte
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -163,8 +220,8 @@ export default function ClientSettings() {
                     <input
                       type="password"
                       value={securityForm.currentPassword}
-                      onChange={e => setSecurityForm(s => ({ ...s, currentPassword: e.target.value }))}
-                      placeholder="••••••••"
+                      onChange={(e) => setSecurityForm((s) => ({ ...s, currentPassword: e.target.value }))}
+                      placeholder="--------"
                       className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
@@ -173,17 +230,23 @@ export default function ClientSettings() {
                     <input
                       type="password"
                       value={securityForm.newPassword}
-                      onChange={e => setSecurityForm(s => ({ ...s, newPassword: e.target.value }))}
-                      placeholder="••••••••"
+                      onChange={(e) => setSecurityForm((s) => ({ ...s, newPassword: e.target.value }))}
+                      placeholder="--------"
                       className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                   <div className="flex items-end">
                     <button
-                      onClick={() => { addToast("success", "Mot de passe mis à jour"); setSecurityForm(s => ({ ...s, currentPassword: "", newPassword: "" })); }}
+                      onClick={() => {
+                        saveSection("Securite", {
+                          currentPassword: securityForm.currentPassword,
+                          newPassword: securityForm.newPassword,
+                        });
+                        setSecurityForm((s) => ({ ...s, currentPassword: "", newPassword: "" }));
+                      }}
                       className="w-full px-4 py-2.5 bg-primary/10 text-primary text-sm font-bold rounded-xl hover:bg-primary hover:text-background-dark transition-all"
                     >
-                      Mettre à jour
+                      Mettre a jour
                     </button>
                   </div>
                 </div>
@@ -192,10 +255,14 @@ export default function ClientSettings() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-white text-sm">Double authentification (2FA)</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Protection supplémentaire via Google Authenticator ou SMS</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Protection supplementaire via Google Authenticator ou SMS</p>
                     </div>
                     <button
-                      onClick={() => { setSecurityForm(s => ({ ...s, twoFactor: !s.twoFactor })); addToast("success", "2FA mis à jour"); }}
+                      onClick={() => {
+                        const newValue = !securityForm.twoFactor;
+                        setSecurityForm((s) => ({ ...s, twoFactor: newValue }));
+                        saveSection("2FA", { twoFactor: newValue });
+                      }}
                       className={cn("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", securityForm.twoFactor ? "bg-primary" : "bg-slate-600")}
                     >
                       <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", securityForm.twoFactor ? "left-6" : "left-0.5")} />
@@ -207,25 +274,25 @@ export default function ClientSettings() {
                   <p className="font-bold text-white text-sm mb-3">Sessions actives</p>
                   <div className="space-y-2">
                     {[
-                      { device: "Chrome · Windows", location: "Dakar, Sénégal", time: "Actuellement actif", current: true },
-                      { device: "Safari · iPhone", location: "Dakar, Sénégal", time: "Il y a 2 heures", current: false },
+                      { device: "Chrome - Windows", location: "Dakar, Senegal", time: "Actuellement actif", current: true },
+                      { device: "Safari - iPhone", location: "Dakar, Senegal", time: "Il y a 2 heures", current: false },
                     ].map((s, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-background-dark rounded-lg border border-border-dark">
                         <div className="flex items-center gap-3">
                           <span className="material-symbols-outlined text-slate-400">{s.device.includes("iPhone") ? "phone_iphone" : "laptop"}</span>
                           <div>
                             <p className="text-sm font-medium text-white">{s.device}</p>
-                            <p className="text-xs text-slate-500">{s.location} · {s.time}</p>
+                            <p className="text-xs text-slate-500">{s.location} &middot; {s.time}</p>
                           </div>
                         </div>
                         {s.current ? (
                           <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Session actuelle</span>
                         ) : (
                           <button
-                            onClick={() => addToast("success", "Session révoquée")}
+                            onClick={() => addToast("success", "Session revoquee")}
                             className="text-xs text-red-400 hover:text-red-300 font-semibold"
                           >
-                            Révoquer
+                            Revoquer
                           </button>
                         )}
                       </div>
@@ -243,11 +310,11 @@ export default function ClientSettings() {
                 <span className="material-symbols-outlined text-primary">payments</span>
                 Paiements & Facturation
               </h2>
-              <p className="text-sm text-slate-400">Vos méthodes de paiement enregistrées</p>
+              <p className="text-sm text-slate-400">Vos methodes de paiement enregistrees</p>
               <div className="space-y-3">
                 {[
-                  { icon: "credit_card", name: "Visa •••• 4242", detail: "Expire 12/28", isDefault: true },
-                  { icon: "smartphone", name: "Orange Money", detail: "+221 77 ••• •• 67", isDefault: false },
+                  { icon: "credit_card", name: "Visa ---- 4242", detail: "Expire 12/28", isDefault: true },
+                  { icon: "smartphone", name: "Orange Money", detail: "+221 77 --- -- 67", isDefault: false },
                 ].map((m, i) => (
                   <div key={i} className="flex items-center gap-4 p-4 bg-background-dark rounded-xl border border-border-dark">
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", i === 0 ? "bg-blue-500/10" : "bg-primary/10")}>
@@ -257,7 +324,7 @@ export default function ClientSettings() {
                       <p className="text-sm font-bold text-white">{m.name}</p>
                       <p className="text-xs text-slate-500">{m.detail}</p>
                     </div>
-                    {m.isDefault && <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">Par défaut</span>}
+                    {m.isDefault && <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">Par defaut</span>}
                     <button className="text-slate-500 hover:text-red-400 transition-colors">
                       <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
@@ -269,7 +336,7 @@ export default function ClientSettings() {
                 className="w-full py-3 border-2 border-dashed border-border-dark rounded-xl text-sm font-semibold text-slate-400 hover:border-primary/40 hover:text-primary transition-colors flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg">add</span>
-                Ajouter une méthode de paiement
+                Ajouter une methode de paiement
               </button>
             </div>
           )}
@@ -289,9 +356,9 @@ export default function ClientSettings() {
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { code: "fr", label: "Français" },
+                      { code: "fr", label: "Francais" },
                       { code: "en", label: "English" },
-                    ].map(l => (
+                    ].map((l) => (
                       <button
                         key={l.code}
                         onClick={() => setLanguage(l.code)}
@@ -313,27 +380,27 @@ export default function ClientSettings() {
                 <div>
                   <label className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
                     <span className="material-symbols-outlined text-sm">monetization_on</span>
-                    Devise préférée
+                    Devise preferee
                   </label>
                   <select
                     value={currency}
-                    onChange={e => setCurrency(e.target.value)}
+                    onChange={(e) => setCurrency(e.target.value)}
                     className="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="FCFA">FCFA (Franc CFA)</option>
-                    <option value="EUR">EUR (€ Euro)</option>
-                    <option value="USD">USD ($ US Dollar)</option>
-                    <option value="GBP">GBP (£ Livre sterling)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="GBP">GBP (Livre sterling)</option>
                     <option value="MAD">MAD (Dirham marocain)</option>
                   </select>
-                  <p className="text-[11px] text-slate-500 mt-2">Note : Les conversions sont approximatives et basées sur le taux du marché en temps réel.</p>
+                  <p className="text-[11px] text-slate-500 mt-2">Note : Les conversions sont approximatives et basees sur le taux du marche en temps reel.</p>
                 </div>
               </div>
               <button
-                onClick={() => addToast("success", "Préférences mises à jour")}
+                onClick={() => saveSection("Preferences", { language, currency })}
                 className="px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
               >
-                Enregistrer les préférences
+                Enregistrer les preferences
               </button>
             </div>
           )}
@@ -352,7 +419,7 @@ export default function ClientSettings() {
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Email</span>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Push</span>
                 </div>
-                {notifications.map(n => (
+                {notifications.map((n) => (
                   <div key={n.id} className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-background-dark/30 transition-colors">
                     <div>
                       <p className="text-sm font-medium text-white">{n.label}</p>
@@ -376,7 +443,14 @@ export default function ClientSettings() {
                 ))}
               </div>
               <button
-                onClick={() => addToast("success", "Notifications mises à jour")}
+                onClick={() => {
+                  const notifSettings = notifications.reduce((acc, n) => {
+                    acc[`notif_${n.id}_email`] = n.email;
+                    acc[`notif_${n.id}_push`] = n.push;
+                    return acc;
+                  }, {} as Record<string, boolean>);
+                  saveSection("Notifications", notifSettings);
+                }}
                 className="px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
               >
                 Enregistrer les notifications
@@ -388,16 +462,16 @@ export default function ClientSettings() {
           <div className="bg-red-500/5 rounded-xl border border-red-500/20 p-6">
             <h3 className="font-bold text-red-400 flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-red-400">warning</span>
-              Désactiver le compte
+              Desactiver le compte
             </h3>
             <p className="text-sm text-slate-400 mb-4">
-              Ceci masquera votre profil de la plateforme jusqu&apos;à votre prochaine connexion.
+              Ceci masquera votre profil de la plateforme jusqu&apos;a votre prochaine connexion.
             </p>
             <button
-              onClick={() => addToast("info", "Veuillez contacter le support pour désactiver votre compte")}
+              onClick={() => addToast("info", "Veuillez contacter le support pour desactiver votre compte")}
               className="px-5 py-2 border border-red-500/40 text-red-400 text-sm font-semibold rounded-lg hover:bg-red-500 hover:text-white transition-all"
             >
-              Désactiver
+              Desactiver
             </button>
           </div>
         </div>

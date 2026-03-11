@@ -79,7 +79,10 @@ export default function CandidaturesPage() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [contrat, setContrat] = useState(CONTRATS[0]);
 
-  // Modal state
+  // Detail modal state
+  const [detailProject, setDetailProject] = useState<Project | null>(null);
+
+  // Apply modal state
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [motivation, setMotivation] = useState("");
   const [proposedPrice, setProposedPrice] = useState("");
@@ -393,18 +396,131 @@ export default function CandidaturesPage() {
                           {p.proposals} candidature{p.proposals !== 1 ? "s" : ""}
                         </span>
                       </div>
-                      <button
-                        onClick={() => setSelectedProject(p)}
-                        className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm shadow-primary/20"
-                      >
-                        Postuler
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setDetailProject(p)}
+                          className="px-4 py-2 bg-primary/10 text-primary text-sm font-bold rounded-lg hover:bg-primary/20 transition-all"
+                        >
+                          Voir détails
+                        </button>
+                        <button
+                          onClick={() => setSelectedProject(p)}
+                          className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm shadow-primary/20"
+                        >
+                          Postuler
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================================================================== */}
+      {/* MODAL: Détails de l'offre                                          */}
+      {/* ================================================================== */}
+      {detailProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDetailProject(null)} />
+          <div className="relative bg-[#0d1b16] border border-border-dark rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-black text-slate-100">Détails de l&apos;offre</h3>
+              <button onClick={() => setDetailProject(null)} className="text-slate-500 hover:text-slate-300">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Title + client info */}
+            <div>
+              <h4 className="text-xl font-black text-white">{detailProject.title}</h4>
+              <div className="flex items-center gap-2 mt-2 text-sm text-slate-400">
+                <span className="material-symbols-outlined text-base">person</span>
+                <span className="font-semibold text-slate-300">{detailProject.clientName}</span>
+                <span>·</span>
+                <span>{detailProject.clientCountry}</span>
+                <span>·</span>
+                <span className="flex items-center gap-0.5 text-amber-400">
+                  <span className="material-symbols-outlined text-sm">star</span>
+                  {detailProject.clientRating}
+                </span>
+              </div>
+            </div>
+
+            {/* Stats cards */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Budget", value: `€${detailProject.budgetMin.toLocaleString("fr-FR")} – €${detailProject.budgetMax.toLocaleString("fr-FR")}`, icon: "payments", color: "text-primary" },
+                { label: "Deadline", value: new Date(detailProject.deadline).toLocaleDateString("fr-FR"), icon: "calendar_today", color: "text-amber-400" },
+                { label: "Contrat", value: detailProject.contractType === "ponctuel" ? "Ponctuel" : detailProject.contractType === "long_terme" ? "Long terme" : "Récurrent", icon: "description", color: "text-blue-400" },
+              ].map((s) => (
+                <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={cn("material-symbols-outlined text-base", s.color)}>{s.icon}</span>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</span>
+                  </div>
+                  <p className={cn("text-sm font-black", s.color)}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Description */}
+            <div>
+              <h5 className="text-sm font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-base">description</span>
+                Description
+              </h5>
+              <p className="text-sm text-slate-400 leading-relaxed">{detailProject.description}</p>
+            </div>
+
+            {/* Skills */}
+            <div>
+              <h5 className="text-sm font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-primary text-base">code</span>
+                Compétences requises
+              </h5>
+              <div className="flex flex-wrap gap-2">
+                {detailProject.skills.map((skill) => (
+                  <span key={skill} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full border border-primary/20">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Meta */}
+            <div className="flex items-center gap-4 text-xs text-slate-500 pt-2 border-t border-border-dark">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">group</span>
+                {detailProject.proposals} candidature{detailProject.proposals !== 1 ? "s" : ""}
+              </span>
+              <span className={cn("font-bold",
+                detailProject.urgency === "tres_urgente" ? "text-red-400" :
+                detailProject.urgency === "urgente" ? "text-amber-400" : "text-slate-400"
+              )}>
+                {URGENCY_CFG[detailProject.urgency].label}
+              </span>
+              <span className="text-slate-600 ml-auto">
+                Publié le {new Date(detailProject.postedAt).toLocaleDateString("fr-FR")}
+              </span>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={() => {
+                const p = detailProject;
+                setDetailProject(null);
+                setSelectedProject(p);
+              }}
+              className="w-full py-3 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+            >
+              <span className="material-symbols-outlined text-lg">send</span>
+              Postuler à cette offre
+            </button>
+          </div>
         </div>
       )}
 

@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { usePlatformDataStore } from "@/store/platform-data";
 
 export default function BlogArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const { blogArticles } = usePlatformDataStore();
+  const t = useTranslations("blog");
 
   const article = blogArticles.find(a => a.slug === slug && a.status === "publie");
   const related = blogArticles.filter(a => a.status === "publie" && a.id !== article?.id && a.category === article?.category).slice(0, 3);
@@ -16,9 +18,9 @@ export default function BlogArticlePage() {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
         <div className="text-center">
           <span className="material-symbols-outlined text-7xl text-slate-600">article</span>
-          <h1 className="text-2xl font-bold text-white mt-4">Article non trouvé</h1>
-          <p className="text-slate-500 mt-2">Cet article n&apos;existe pas ou n&apos;est pas encore publié.</p>
-          <Link href="/blog" className="inline-block mt-6 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors">Retour au blog</Link>
+          <h1 className="text-2xl font-bold text-white mt-4">{t("not_found_title")}</h1>
+          <p className="text-slate-500 mt-2">{t("not_found_description")}</p>
+          <Link href="/blog" className="inline-block mt-6 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors">{t("back_to_blog")}</Link>
         </div>
       </div>
     );
@@ -41,7 +43,7 @@ export default function BlogArticlePage() {
         <div className="max-w-3xl mx-auto">
           <Link href="/blog" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary transition-colors mb-6">
             <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Retour au blog
+            {t("back")}
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{article.category}</span>
@@ -57,7 +59,7 @@ export default function BlogArticlePage() {
               <p className="text-sm font-semibold text-white">{article.author}</p>
               <p className="text-xs text-slate-500">
                 {article.publishedAt && new Date(article.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                {" · "}{article.views.toLocaleString()} vues
+                {" · "}{t("views", { count: article.views.toLocaleString() })}
               </p>
             </div>
           </div>
@@ -84,13 +86,13 @@ export default function BlogArticlePage() {
         {/* Related */}
         {related.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-white mb-6">Articles similaires</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">{t("similar_articles")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {related.map(r => (
                 <Link key={r.id} href={`/blog/${r.slug}`} className="group bg-white/5 rounded-xl border border-white/10 p-5 hover:border-primary/30 transition-all">
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{r.category}</span>
                   <h3 className="text-sm font-bold text-white mt-2 group-hover:text-primary transition-colors line-clamp-2">{r.title}</h3>
-                  <p className="text-xs text-slate-500 mt-2">{r.author} · {r.views.toLocaleString()} vues</p>
+                  <p className="text-xs text-slate-500 mt-2">{r.author} · {t("views", { count: r.views.toLocaleString() })}</p>
                 </Link>
               ))}
             </div>

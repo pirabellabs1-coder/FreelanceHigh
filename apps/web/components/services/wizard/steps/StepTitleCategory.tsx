@@ -18,6 +18,7 @@ interface SubCategory {
   slug: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepTitleCategory({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [categories, setCategories] = useState<Category[]>([]);

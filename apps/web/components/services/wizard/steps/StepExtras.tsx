@@ -80,6 +80,7 @@ function SortableOption({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepExtras({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [showForm, setShowForm] = useState(false);

@@ -1,1 +1,1174 @@
-[]
+[
+  {
+    "id": "svc_nextjs_web_001",
+    "userId": "dev-freelance-1",
+    "slug": "developpement-site-web-nextjs-professionnel",
+    "title": "Développement site web Next.js professionnel",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Développement de sites web performants avec Next.js\n\nJe crée des sites web modernes et performants avec **Next.js 14**, le framework React de référence. Chaque projet est optimisé pour le SEO, le temps de chargement et l'expérience utilisateur.\n\nMon approche inclut une architecture propre avec **Server Components**, une intégration API robuste et un design responsive pixel-perfect. Que ce soit un site vitrine, une plateforme SaaS ou un portail d'entreprise, je livre un code maintenable et documenté.\n\nJe travaille avec TypeScript, Tailwind CSS et les meilleures pratiques du développement web moderne. Chaque livraison inclut les tests, le déploiement sur Vercel et une documentation technique complète."
+    },
+    "descriptionText": "Je crée des sites web modernes et performants avec Next.js 14, le framework React de référence. Chaque projet est optimisé pour le SEO, le temps de chargement et l'expérience utilisateur. Mon approche inclut une architecture propre avec Server Components, une intégration API robuste et un design responsive pixel-perfect. Que ce soit un site vitrine, une plateforme SaaS ou un portail d'entreprise, je livre un code maintenable et documenté. Je travaille avec TypeScript, Tailwind CSS et les meilleures pratiques du développement web moderne.",
+    "categoryId": "cat_dev",
+    "categoryName": "Développement",
+    "subCategoryId": "sub_web",
+    "subCategoryName": "Développement Web",
+    "tags": ["next.js", "react", "typescript", "tailwind", "vercel", "site web"],
+    "basePrice": 350,
+    "deliveryDays": 14,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 350,
+        "deliveryDays": 14,
+        "revisions": 2,
+        "description": "Site vitrine 1-3 pages, design responsive, SEO de base, déploiement Vercel inclus."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 650,
+        "deliveryDays": 21,
+        "revisions": 3,
+        "description": "Site complet 5-8 pages, formulaire de contact, blog intégré, analytics et optimisation SEO avancée."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 1200,
+        "deliveryDays": 30,
+        "revisions": 5,
+        "description": "Application web complète, authentification, dashboard admin, intégration API, base de données, déploiement CI/CD."
+      },
+      "features": [
+        { "id": "feat_responsive", "label": "Design responsive mobile-first", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_seo", "label": "Optimisation SEO avancée", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_cms", "label": "Système de gestion de contenu (CMS)", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_auth", "label": "Authentification et espace membre", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 150,
+    "expressDaysReduction": 5,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800",
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800",
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": true,
+    "boostedUntil": "2026-04-15T00:00:00.000Z",
+    "boostTier": "standard",
+    "metaTitle": "Développement site web Next.js professionnel | FreelanceHigh",
+    "metaDescription": "Création de sites web modernes et performants avec Next.js 14, TypeScript et Tailwind CSS. SEO optimisé, responsive, déploiement inclus.",
+    "seoScore": 88,
+    "faq": [
+      {
+        "question": "Quelles technologies utilisez-vous ?",
+        "answer": "Je travaille principalement avec Next.js 14, React, TypeScript, Tailwind CSS et Prisma. Pour le déploiement, j'utilise Vercel ou Railway selon les besoins du projet."
+      },
+      {
+        "question": "Proposez-vous la maintenance après livraison ?",
+        "answer": "Oui, je propose un support de 30 jours inclus après la livraison. Au-delà, je peux mettre en place un contrat de maintenance mensuel adapté à vos besoins."
+      },
+      {
+        "question": "Combien de temps pour un site vitrine simple ?",
+        "answer": "Un site vitrine de 3 à 5 pages est généralement livré en 10 à 14 jours ouvrés, selon la complexité du design et des intégrations demandées."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Jean Dupont",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-freelance-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["verified"],
+    "vendorRating": 4.8,
+    "vendorPlan": "gratuit",
+    "views": 342,
+    "clicks": 187,
+    "orderCount": 23,
+    "revenue": 12450,
+    "rating": 4.8,
+    "ratingCount": 19,
+    "createdAt": "2026-02-05T10:30:00.000Z",
+    "updatedAt": "2026-03-08T14:22:00.000Z"
+  },
+  {
+    "id": "svc_uiux_mobile_002",
+    "userId": "dev-freelance-1",
+    "slug": "design-ui-ux-complet-application-mobile",
+    "title": "Design UI/UX complet pour application mobile",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Design UI/UX pour applications mobiles iOS et Android\n\nJe conçois des interfaces mobiles intuitives et esthétiques en suivant les guidelines **Material Design** et **Human Interface Guidelines**. Mon processus couvre la recherche utilisateur, les wireframes, les maquettes haute fidélité et le prototypage interactif.\n\nChaque projet commence par une phase de découverte pour comprendre vos utilisateurs et vos objectifs business. Je livre des fichiers Figma organisés avec un design system réutilisable, des composants interactifs et des spécifications techniques pour les développeurs.\n\nMon objectif : créer des expériences mobiles qui convertissent et fidélisent vos utilisateurs."
+    },
+    "descriptionText": "Je conçois des interfaces mobiles intuitives et esthétiques en suivant les guidelines Material Design et Human Interface Guidelines. Mon processus couvre la recherche utilisateur, les wireframes, les maquettes haute fidélité et le prototypage interactif. Chaque projet commence par une phase de découverte pour comprendre vos utilisateurs et vos objectifs business. Je livre des fichiers Figma organisés avec un design system réutilisable.",
+    "categoryId": "cat_design",
+    "categoryName": "Design",
+    "subCategoryId": "sub_uiux",
+    "subCategoryName": "UI/UX Design",
+    "tags": ["ui/ux", "figma", "mobile", "design", "prototype", "application"],
+    "basePrice": 250,
+    "deliveryDays": 10,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 250,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "Wireframes + maquettes pour 5 écrans mobiles, fichier Figma livré."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 450,
+        "deliveryDays": 15,
+        "revisions": 3,
+        "description": "Maquettes haute fidélité pour 10 écrans, prototype interactif Figma, design system de base."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 800,
+        "deliveryDays": 25,
+        "revisions": 5,
+        "description": "Design complet 20+ écrans, design system complet, prototype cliquable, spécifications techniques pour développeurs, animations."
+      },
+      "features": [
+        { "id": "feat_wireframes", "label": "Wireframes basse fidélité", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_prototype", "label": "Prototype interactif Figma", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_designsystem", "label": "Design system réutilisable", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_devspecs", "label": "Spécifications techniques développeur", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 100,
+    "expressDaysReduction": 3,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800",
+      "https://images.unsplash.com/photo-1616469829941-c7200edec809?w=800",
+      "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Design UI/UX complet pour application mobile | FreelanceHigh",
+    "metaDescription": "Conception d'interfaces mobiles intuitives : wireframes, maquettes Figma haute fidélité, prototypage interactif et design system.",
+    "seoScore": 82,
+    "faq": [
+      {
+        "question": "Sur quel outil travaillez-vous ?",
+        "answer": "Je travaille exclusivement sur Figma, ce qui vous permet de collaborer en temps réel et d'accéder facilement à tous les fichiers du projet."
+      },
+      {
+        "question": "Livrez-vous aussi les assets pour les développeurs ?",
+        "answer": "Oui, dans le forfait Premium, je livre les spécifications techniques complètes : tailles, espacements, couleurs en code, icônes SVG exportées et guide d'implémentation."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Jean Dupont",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-freelance-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["verified"],
+    "vendorRating": 4.8,
+    "vendorPlan": "gratuit",
+    "views": 215,
+    "clicks": 98,
+    "orderCount": 12,
+    "revenue": 4800,
+    "rating": 4.7,
+    "ratingCount": 10,
+    "createdAt": "2026-02-10T08:15:00.000Z",
+    "updatedAt": "2026-03-06T11:45:00.000Z"
+  },
+  {
+    "id": "svc_logo_identite_003",
+    "userId": "dev-agence-1",
+    "slug": "creation-logo-identite-visuelle",
+    "title": "Création de logo et identité visuelle",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Création de logos et identités visuelles mémorables\n\nNotre agence conçoit des identités visuelles fortes qui marquent les esprits. Du logo aux supports de communication, nous créons une image de marque cohérente et professionnelle adaptée à votre secteur d'activité.\n\nNotre processus créatif commence par un brief détaillé pour comprendre votre positionnement, vos valeurs et votre audience cible. Nous proposons ensuite plusieurs directions créatives avant de finaliser le logo et de décliner l'identité sur tous vos supports.\n\nChaque livraison inclut un guide de marque (brand book) avec les règles d'utilisation du logo, la palette de couleurs, la typographie et les éléments graphiques secondaires."
+    },
+    "descriptionText": "Notre agence conçoit des identités visuelles fortes qui marquent les esprits. Du logo aux supports de communication, nous créons une image de marque cohérente et professionnelle adaptée à votre secteur d'activité. Notre processus créatif commence par un brief détaillé pour comprendre votre positionnement, vos valeurs et votre audience cible. Chaque livraison inclut un guide de marque avec les règles d'utilisation.",
+    "categoryId": "cat_design",
+    "categoryName": "Design",
+    "subCategoryId": "sub_logo",
+    "subCategoryName": "Logo & Identité Visuelle",
+    "tags": ["logo", "branding", "identité visuelle", "charte graphique", "design"],
+    "basePrice": 150,
+    "deliveryDays": 7,
+    "revisions": 3,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 150,
+        "deliveryDays": 7,
+        "revisions": 3,
+        "description": "1 logo avec 3 propositions, fichiers PNG/SVG/PDF, déclinaison couleur et noir & blanc."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 350,
+        "deliveryDays": 10,
+        "revisions": 5,
+        "description": "Logo + charte graphique (couleurs, typographies, règles d'utilisation), carte de visite, papier en-tête."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 700,
+        "deliveryDays": 15,
+        "revisions": 8,
+        "description": "Identité visuelle complète : logo, charte graphique, supports print et digital, réseaux sociaux, brand book complet."
+      },
+      "features": [
+        { "id": "feat_logo_concepts", "label": "3 propositions de logo", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_charte", "label": "Charte graphique complète", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_supports", "label": "Supports print (carte, en-tête)", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_brandbook", "label": "Brand book complet", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 80,
+    "expressDaysReduction": 3,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800",
+      "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800",
+      "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": true,
+    "boostedUntil": "2026-04-01T00:00:00.000Z",
+    "boostTier": "premium",
+    "metaTitle": "Création de logo et identité visuelle | Tech Agency | FreelanceHigh",
+    "metaDescription": "Conception de logos professionnels et identités visuelles complètes. Charte graphique, brand book et supports de communication inclus.",
+    "seoScore": 85,
+    "faq": [
+      {
+        "question": "Combien de propositions de logo recevrai-je ?",
+        "answer": "Vous recevrez 3 propositions créatives distinctes. Après votre choix, nous affinons la direction retenue jusqu'à satisfaction complète dans la limite des révisions du forfait."
+      },
+      {
+        "question": "Quels formats de fichiers sont livrés ?",
+        "answer": "Nous livrons les fichiers en PNG (fond transparent), SVG (vectoriel), PDF et les sources Illustrator (AI). Tous les formats sont prêts pour l'impression et le digital."
+      },
+      {
+        "question": "Puis-je utiliser le logo sur tous mes supports ?",
+        "answer": "Absolument. Vous recevez une cession complète des droits d'utilisation. Le logo est à vous pour tous vos supports : web, print, réseaux sociaux, signalétique, etc."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Tech Agency",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-agence-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["agence_verifiee"],
+    "vendorRating": 4.7,
+    "vendorPlan": "agence",
+    "views": 478,
+    "clicks": 234,
+    "orderCount": 30,
+    "revenue": 8250,
+    "rating": 4.7,
+    "ratingCount": 26,
+    "createdAt": "2026-02-01T09:00:00.000Z",
+    "updatedAt": "2026-03-10T16:30:00.000Z"
+  },
+  {
+    "id": "svc_api_nodejs_004",
+    "userId": "dev-freelance-1",
+    "slug": "developpement-api-rest-nodejs-express",
+    "title": "Développement API REST Node.js / Express",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## APIs REST robustes et scalables avec Node.js\n\nJe développe des APIs backend performantes avec **Node.js**, **Express** ou **Fastify**, structurées selon les meilleures pratiques REST. Chaque API est documentée avec Swagger/OpenAPI, testée unitairement et prête pour la production.\n\nMes APIs incluent l'authentification JWT, la validation des données avec Zod, la gestion des erreurs centralisée et une architecture en couches (controllers, services, repositories). Je travaille avec **Prisma** comme ORM et **PostgreSQL** comme base de données principale.\n\nQue vous ayez besoin d'une API pour votre application mobile, votre SaaS ou une intégration tierce, je livre un code propre, typé avec TypeScript et accompagné d'une documentation complète."
+    },
+    "descriptionText": "Je développe des APIs backend performantes avec Node.js, Express ou Fastify, structurées selon les meilleures pratiques REST. Chaque API est documentée avec Swagger/OpenAPI, testée unitairement et prête pour la production. Mes APIs incluent l'authentification JWT, la validation des données avec Zod et une architecture en couches. Je livre un code propre, typé avec TypeScript.",
+    "categoryId": "cat_dev",
+    "categoryName": "Développement",
+    "subCategoryId": "sub_backend",
+    "subCategoryName": "Backend & API",
+    "tags": ["node.js", "express", "api rest", "typescript", "prisma", "backend"],
+    "basePrice": 400,
+    "deliveryDays": 10,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 400,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "API REST avec 5-10 endpoints, authentification JWT, documentation Swagger, déploiement Railway inclus."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 750,
+        "deliveryDays": 18,
+        "revisions": 3,
+        "description": "API complète 15-25 endpoints, auth + rôles, upload fichiers, envoi emails, tests unitaires, CI/CD."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 1400,
+        "deliveryDays": 30,
+        "revisions": 5,
+        "description": "Architecture microservices, WebSocket temps réel, queue de jobs, cache Redis, monitoring Sentry, documentation technique complète."
+      },
+      "features": [
+        { "id": "feat_auth_jwt", "label": "Authentification JWT complète", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_swagger", "label": "Documentation Swagger/OpenAPI", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_tests", "label": "Tests unitaires et d'intégration", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_realtime", "label": "WebSocket temps réel", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 200,
+    "expressDaysReduction": 4,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
+      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800",
+      "https://images.unsplash.com/photo-1607799279861-4dd421887fc9?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Développement API REST Node.js / Express | FreelanceHigh",
+    "metaDescription": "Création d'APIs REST performantes avec Node.js, Express/Fastify, TypeScript et Prisma. Documentation Swagger, tests et déploiement inclus.",
+    "seoScore": 84,
+    "faq": [
+      {
+        "question": "Quelle base de données recommandez-vous ?",
+        "answer": "Je recommande PostgreSQL avec Prisma comme ORM pour la majorité des projets. Pour les cas spécifiques nécessitant un schéma flexible, MongoDB est une alternative que je maîtrise également."
+      },
+      {
+        "question": "L'API sera-t-elle documentée ?",
+        "answer": "Oui, chaque endpoint est documenté avec Swagger/OpenAPI. Vous recevez une interface interactive pour tester les routes et une documentation technique complète."
+      },
+      {
+        "question": "Proposez-vous l'hébergement ?",
+        "answer": "Je configure le déploiement sur Railway, Render ou AWS selon vos préférences. Le déploiement initial est inclus dans tous les forfaits."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Jean Dupont",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-freelance-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["verified"],
+    "vendorRating": 4.8,
+    "vendorPlan": "gratuit",
+    "views": 189,
+    "clicks": 102,
+    "orderCount": 15,
+    "revenue": 8750,
+    "rating": 4.9,
+    "ratingCount": 13,
+    "createdAt": "2026-02-12T14:00:00.000Z",
+    "updatedAt": "2026-03-09T09:15:00.000Z"
+  },
+  {
+    "id": "svc_redaction_seo_005",
+    "userId": "dev-1772837012734",
+    "slug": "redaction-articles-seo-francais",
+    "title": "Rédaction d'articles SEO en français",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Articles SEO optimisés pour le référencement naturel\n\nJe rédige des articles de blog et des contenus web optimisés pour le référencement naturel en français. Chaque texte est structuré avec des titres H2/H3, des mots-clés stratégiquement placés et un maillage interne cohérent.\n\nSpécialisé dans les marchés francophones africains et européens, je comprends les nuances culturelles et linguistiques qui font la différence. Mes articles sont recherchés, originaux et rédigés pour engager votre audience tout en plaisant aux moteurs de recherche.\n\nJe couvre les thématiques tech, business, finance, santé et lifestyle. Chaque article est livré avec une analyse de mots-clés et des suggestions de meta descriptions."
+    },
+    "descriptionText": "Je rédige des articles de blog et des contenus web optimisés pour le référencement naturel en français. Chaque texte est structuré avec des titres H2/H3, des mots-clés stratégiquement placés et un maillage interne cohérent. Spécialisé dans les marchés francophones africains et européens, je comprends les nuances culturelles qui font la différence.",
+    "categoryId": "cat_redaction",
+    "categoryName": "Rédaction",
+    "subCategoryId": "sub_articles",
+    "subCategoryName": "Articles & Blog",
+    "tags": ["rédaction", "seo", "articles", "blog", "contenu web", "français"],
+    "basePrice": 80,
+    "deliveryDays": 5,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 80,
+        "deliveryDays": 5,
+        "revisions": 2,
+        "description": "1 article SEO de 800-1000 mots, recherche de mots-clés, structure H2/H3, meta description."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 200,
+        "deliveryDays": 7,
+        "revisions": 3,
+        "description": "3 articles SEO de 1000-1500 mots, recherche approfondie, maillage interne, images libres de droits suggérées."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 450,
+        "deliveryDays": 14,
+        "revisions": 5,
+        "description": "5 articles SEO de 1500-2000 mots + stratégie éditoriale mensuelle, calendrier de publication, analyse concurrentielle."
+      },
+      "features": [
+        { "id": "feat_keywords", "label": "Recherche de mots-clés", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_meta", "label": "Meta title et meta description", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_maillage", "label": "Stratégie de maillage interne", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_editorial", "label": "Stratégie éditoriale mensuelle", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 30,
+    "expressDaysReduction": 2,
+    "instructionsRequired": false,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800",
+      "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800",
+      "https://images.unsplash.com/photo-1542435503-956c469947f6?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Rédaction d'articles SEO en français | FreelanceHigh",
+    "metaDescription": "Articles de blog optimisés SEO en français. Recherche de mots-clés, structure optimisée et contenu engageant pour les marchés francophones.",
+    "seoScore": 90,
+    "faq": [
+      {
+        "question": "Êtes-vous spécialisé dans certains domaines ?",
+        "answer": "Je suis particulièrement à l'aise avec les thématiques tech, business, finance personnelle, startup et lifestyle. Je peux cependant m'adapter à d'autres domaines après une phase de recherche."
+      },
+      {
+        "question": "Les articles sont-ils uniques et originaux ?",
+        "answer": "Absolument. Chaque article est rédigé à la main, sans IA générative. Je fournis un rapport de plagiat Copyscape sur demande pour garantir l'originalité du contenu."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Gildas LISSANON",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-1772837012734",
+    "vendorCountry": "Sénégal",
+    "vendorBadges": [],
+    "vendorRating": 4.5,
+    "vendorPlan": "gratuit",
+    "views": 156,
+    "clicks": 67,
+    "orderCount": 8,
+    "revenue": 1240,
+    "rating": 4.5,
+    "ratingCount": 7,
+    "createdAt": "2026-02-18T11:00:00.000Z",
+    "updatedAt": "2026-03-07T15:30:00.000Z"
+  },
+  {
+    "id": "svc_video_promo_006",
+    "userId": "dev-agence-1",
+    "slug": "creation-video-promotionnelle",
+    "title": "Création de vidéo promotionnelle",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Vidéos promotionnelles percutantes pour votre marque\n\nNotre équipe produit des vidéos promotionnelles qui captent l'attention et convertissent. Du script au montage final, nous gérons l'ensemble du processus de production vidéo avec un rendu professionnel adapté à vos canaux de diffusion.\n\nNous travaillons avec **After Effects**, **Premiere Pro** et **DaVinci Resolve** pour garantir une qualité broadcast. Chaque vidéo est optimisée pour les réseaux sociaux (Instagram, TikTok, YouTube, LinkedIn) avec les formats et durées adaptés.\n\nQue ce soit pour un lancement de produit, une présentation d'entreprise ou une campagne publicitaire, nous créons du contenu vidéo qui raconte votre histoire de manière impactante."
+    },
+    "descriptionText": "Notre équipe produit des vidéos promotionnelles qui captent l'attention et convertissent. Du script au montage final, nous gérons l'ensemble du processus de production vidéo avec un rendu professionnel. Nous travaillons avec After Effects, Premiere Pro et DaVinci Resolve pour garantir une qualité broadcast.",
+    "categoryId": "cat_video",
+    "categoryName": "Vidéo",
+    "subCategoryId": "sub_promo",
+    "subCategoryName": "Vidéo Promotionnelle",
+    "tags": ["vidéo", "montage", "after effects", "promotion", "réseaux sociaux", "motion design"],
+    "basePrice": 300,
+    "deliveryDays": 10,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 300,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "Vidéo promotionnelle 30-60 secondes, montage professionnel, musique libre de droits, sous-titres."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 600,
+        "deliveryDays": 15,
+        "revisions": 3,
+        "description": "Vidéo 1-2 minutes avec motion design, voix-off professionnelle, déclinaisons réseaux sociaux (3 formats)."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 1200,
+        "deliveryDays": 21,
+        "revisions": 5,
+        "description": "Pack vidéo complet : film principal 2-3 min + 5 déclinaisons réseaux sociaux + storyboard + voix-off + animations 3D."
+      },
+      "features": [
+        { "id": "feat_music", "label": "Musique et effets sonores libres de droits", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_voiceover", "label": "Voix-off professionnelle", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_social_formats", "label": "Déclinaisons réseaux sociaux", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_3d", "label": "Animations 3D et motion design avancé", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": false,
+    "expressPrice": 0,
+    "expressDaysReduction": 0,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800",
+      "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800",
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Création de vidéo promotionnelle | Tech Agency | FreelanceHigh",
+    "metaDescription": "Production de vidéos promotionnelles professionnelles : montage, motion design, voix-off et déclinaisons réseaux sociaux.",
+    "seoScore": 79,
+    "faq": [
+      {
+        "question": "Dois-je fournir les images et vidéos sources ?",
+        "answer": "Vous pouvez fournir vos propres médias ou nous utilisons des banques d'images et vidéos premium (Shutterstock, Artgrid). Le coût des licences est inclus dans le forfait Standard et Premium."
+      },
+      {
+        "question": "Dans quels formats livrez-vous la vidéo ?",
+        "answer": "Nous livrons en MP4 haute qualité (1080p ou 4K selon le forfait) ainsi que dans les formats optimisés pour chaque plateforme sociale demandée."
+      },
+      {
+        "question": "Combien de temps dure le processus ?",
+        "answer": "Le processus complet prend 10 à 21 jours selon le forfait. Il inclut la rédaction du script, la validation du storyboard, le montage et les révisions."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Tech Agency",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-agence-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["agence_verifiee"],
+    "vendorRating": 4.7,
+    "vendorPlan": "agence",
+    "views": 267,
+    "clicks": 121,
+    "orderCount": 9,
+    "revenue": 5100,
+    "rating": 4.6,
+    "ratingCount": 8,
+    "createdAt": "2026-02-08T16:00:00.000Z",
+    "updatedAt": "2026-03-05T10:00:00.000Z"
+  },
+  {
+    "id": "svc_traduction_fr_en_007",
+    "userId": "dev-1772837012734",
+    "slug": "traduction-professionnelle-francais-anglais",
+    "title": "Traduction professionnelle français-anglais",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Traductions français-anglais de qualité professionnelle\n\nBilingue français-anglais avec une solide expérience en traduction, je propose des traductions fidèles et naturelles qui respectent le ton et l'intention du texte original. Mes domaines de spécialisation incluent le juridique, le commercial, la tech et le marketing.\n\nChaque traduction passe par un processus de relecture et de vérification pour garantir la précision terminologique et la fluidité du texte. Je m'adapte au registre souhaité : formel, corporate, décontracté ou technique.\n\nJe traduis dans les deux sens (FR → EN et EN → FR) avec une attention particulière aux expressions idiomatiques et aux différences culturelles entre l'Afrique francophone, la France et le monde anglophone."
+    },
+    "descriptionText": "Bilingue français-anglais avec une solide expérience en traduction, je propose des traductions fidèles et naturelles qui respectent le ton et l'intention du texte original. Mes domaines de spécialisation incluent le juridique, le commercial, la tech et le marketing. Chaque traduction passe par un processus de relecture et de vérification.",
+    "categoryId": "cat_traduction",
+    "categoryName": "Traduction",
+    "subCategoryId": "sub_fr_en",
+    "subCategoryName": "Français-Anglais",
+    "tags": ["traduction", "français", "anglais", "localisation", "relecture"],
+    "basePrice": 50,
+    "deliveryDays": 3,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 50,
+        "deliveryDays": 3,
+        "revisions": 2,
+        "description": "Traduction de 1000 mots (FR → EN ou EN → FR), relecture incluse, livraison Word/PDF."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 120,
+        "deliveryDays": 5,
+        "revisions": 3,
+        "description": "Traduction de 3000 mots avec adaptation culturelle, glossaire terminologique, double relecture."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 280,
+        "deliveryDays": 10,
+        "revisions": 5,
+        "description": "Traduction de 8000 mots + localisation complète, adaptation marketing, glossaire bilingue, certification de conformité."
+      },
+      "features": [
+        { "id": "feat_proofread", "label": "Relecture et correction", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_glossary", "label": "Glossaire terminologique", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_localization", "label": "Localisation et adaptation culturelle", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_certified", "label": "Certification de conformité", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 25,
+    "expressDaysReduction": 1,
+    "instructionsRequired": false,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800",
+      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800",
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Traduction professionnelle français-anglais | FreelanceHigh",
+    "metaDescription": "Traductions FR-EN et EN-FR de qualité professionnelle. Spécialisé juridique, tech et marketing. Relecture et localisation incluses.",
+    "seoScore": 76,
+    "faq": [
+      {
+        "question": "Quels types de documents traduisez-vous ?",
+        "answer": "Je traduis tous types de documents : sites web, contrats, brochures commerciales, articles de blog, documentation technique, présentations et contenus marketing."
+      },
+      {
+        "question": "Utilisez-vous des outils de traduction automatique ?",
+        "answer": "Non. Chaque traduction est réalisée manuellement pour garantir la qualité et la nuance. J'utilise des mémoires de traduction (SDL Trados) pour la cohérence terminologique sur les projets récurrents."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Gildas LISSANON",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-1772837012734",
+    "vendorCountry": "Sénégal",
+    "vendorBadges": [],
+    "vendorRating": 4.5,
+    "vendorPlan": "gratuit",
+    "views": 98,
+    "clicks": 43,
+    "orderCount": 11,
+    "revenue": 980,
+    "rating": 4.4,
+    "ratingCount": 9,
+    "createdAt": "2026-02-20T09:30:00.000Z",
+    "updatedAt": "2026-03-08T13:00:00.000Z"
+  },
+  {
+    "id": "svc_marketing_digital_008",
+    "userId": "dev-agence-1",
+    "slug": "strategie-marketing-digital-complete",
+    "title": "Stratégie marketing digital complète",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Stratégie marketing digital sur mesure pour votre croissance\n\nNotre agence élabore des stratégies marketing digital complètes pour accélérer votre croissance en ligne. Nous combinons SEO, publicité payante, content marketing et réseaux sociaux pour maximiser votre retour sur investissement.\n\nChaque stratégie commence par un audit approfondi de votre présence digitale actuelle, une analyse de votre marché et de vos concurrents. Nous définissons ensuite un plan d'action concret avec des KPIs mesurables et un calendrier de déploiement.\n\nNous avons une expertise particulière sur les marchés francophones africains et européens, avec une connaissance fine des comportements d'achat, des canaux de communication privilégiés et des tendances locales."
+    },
+    "descriptionText": "Notre agence élabore des stratégies marketing digital complètes pour accélérer votre croissance en ligne. Nous combinons SEO, publicité payante, content marketing et réseaux sociaux pour maximiser votre retour sur investissement. Nous avons une expertise particulière sur les marchés francophones africains et européens.",
+    "categoryId": "cat_marketing",
+    "categoryName": "Marketing",
+    "subCategoryId": "sub_strategie",
+    "subCategoryName": "Stratégie Digitale",
+    "tags": ["marketing digital", "stratégie", "seo", "réseaux sociaux", "publicité", "growth"],
+    "basePrice": 500,
+    "deliveryDays": 14,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 500,
+        "deliveryDays": 14,
+        "revisions": 2,
+        "description": "Audit digital complet + stratégie marketing sur 3 mois, recommandations SEO et réseaux sociaux, rapport PDF détaillé."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 900,
+        "deliveryDays": 21,
+        "revisions": 3,
+        "description": "Stratégie 6 mois + mise en place des campagnes publicitaires (Google Ads, Meta Ads), calendrier éditorial, KPIs et tableaux de bord."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 1800,
+        "deliveryDays": 30,
+        "revisions": 5,
+        "description": "Stratégie 12 mois + accompagnement mensuel, gestion complète des campagnes, reporting hebdomadaire, optimisation continue."
+      },
+      "features": [
+        { "id": "feat_audit", "label": "Audit digital complet", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_campaigns", "label": "Configuration campagnes publicitaires", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_kpis", "label": "Tableaux de bord et KPIs", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_accompagnement", "label": "Accompagnement mensuel continu", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": false,
+    "expressPrice": 0,
+    "expressDaysReduction": 0,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+      "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=800",
+      "https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": true,
+    "boostedUntil": "2026-04-10T00:00:00.000Z",
+    "boostTier": "premium",
+    "metaTitle": "Stratégie marketing digital complète | Tech Agency | FreelanceHigh",
+    "metaDescription": "Stratégie marketing digital sur mesure : audit, SEO, publicité payante, réseaux sociaux. Expertise marchés francophones Afrique et Europe.",
+    "seoScore": 87,
+    "faq": [
+      {
+        "question": "Quels canaux couvrez-vous ?",
+        "answer": "Nous couvrons l'ensemble des canaux digitaux : SEO (référencement naturel), SEA (Google Ads, Bing Ads), réseaux sociaux (Meta, LinkedIn, TikTok), email marketing et content marketing."
+      },
+      {
+        "question": "Gérez-vous aussi les budgets publicitaires ?",
+        "answer": "Oui, dans les forfaits Standard et Premium. Nous configurons, optimisons et pilotons vos campagnes publicitaires. Le budget média est à votre charge, mais nous vous conseillons sur les montants optimaux."
+      },
+      {
+        "question": "Comment mesurez-vous les résultats ?",
+        "answer": "Nous mettons en place des tableaux de bord avec Google Analytics, Google Search Console et les outils natifs de chaque plateforme. Vous recevez des rapports réguliers avec les KPIs clés : trafic, conversions, coût d'acquisition, ROI."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Tech Agency",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-agence-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["agence_verifiee"],
+    "vendorRating": 4.7,
+    "vendorPlan": "agence",
+    "views": 312,
+    "clicks": 156,
+    "orderCount": 7,
+    "revenue": 7800,
+    "rating": 4.8,
+    "ratingCount": 6,
+    "createdAt": "2026-02-03T12:00:00.000Z",
+    "updatedAt": "2026-03-10T08:45:00.000Z"
+  },
+  {
+    "id": "svc_flutter_mobile_009",
+    "userId": "dev-freelance-1",
+    "slug": "developpement-application-mobile-flutter",
+    "title": "Développement application mobile Flutter",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Applications mobiles natives iOS et Android avec Flutter\n\nJe développe des applications mobiles performantes et élégantes avec **Flutter**, le framework de Google qui permet de créer des apps iOS et Android à partir d'un seul code source. Chaque application est conçue pour offrir une expérience utilisateur fluide et native.\n\nMon expertise couvre l'ensemble du cycle de développement : architecture clean, gestion d'état avec Riverpod ou Bloc, intégration d'APIs REST et GraphQL, notifications push, paiements in-app et publication sur l'App Store et le Google Play Store.\n\nJe porte une attention particulière à la performance, à l'accessibilité et au respect des guidelines Material Design et iOS Human Interface Guidelines. Chaque livraison inclut les fichiers source complets et une documentation technique."
+    },
+    "descriptionText": "Je développe des applications mobiles performantes et élégantes avec Flutter, le framework de Google qui permet de créer des apps iOS et Android à partir d'un seul code source. Mon expertise couvre l'ensemble du cycle de développement : architecture clean, gestion d'état, intégration d'APIs, notifications push et publication sur les stores.",
+    "categoryId": "cat_dev",
+    "categoryName": "Développement",
+    "subCategoryId": "sub_mobile",
+    "subCategoryName": "Développement Mobile",
+    "tags": ["flutter", "dart", "mobile", "ios", "android", "application"],
+    "basePrice": 600,
+    "deliveryDays": 21,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 600,
+        "deliveryDays": 21,
+        "revisions": 2,
+        "description": "Application mobile simple 3-5 écrans, design Material, intégration API de base, build Android + iOS."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 1200,
+        "deliveryDays": 35,
+        "revisions": 3,
+        "description": "Application complète 8-12 écrans, authentification, base de données Firebase, notifications push, publication stores."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 2500,
+        "deliveryDays": 60,
+        "revisions": 5,
+        "description": "Application complexe 15+ écrans, paiements in-app, chat en temps réel, géolocalisation, analytics, CI/CD, support 60 jours post-livraison."
+      },
+      "features": [
+        { "id": "feat_crossplatform", "label": "Application iOS + Android (code unique)", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_push", "label": "Notifications push", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_store_publish", "label": "Publication App Store + Google Play", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_realtime_chat", "label": "Chat en temps réel et géolocalisation", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": false,
+    "expressPrice": 0,
+    "expressDaysReduction": 0,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1526498460520-4c246339dccb?w=800",
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800",
+      "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1526498460520-4c246339dccb?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Développement application mobile Flutter | FreelanceHigh",
+    "metaDescription": "Création d'applications mobiles iOS et Android avec Flutter. Code unique, performances natives, publication stores incluse.",
+    "seoScore": 83,
+    "faq": [
+      {
+        "question": "Pourquoi Flutter plutôt que React Native ?",
+        "answer": "Flutter offre de meilleures performances grâce à sa compilation native et un rendu graphique plus fluide. Le hot reload accélère le développement et les widgets personnalisés permettent un design pixel-perfect sur les deux plateformes."
+      },
+      {
+        "question": "Gérez-vous la publication sur les stores ?",
+        "answer": "Oui, dans les forfaits Standard et Premium. Je m'occupe de la configuration des comptes développeur, de la soumission et du suivi jusqu'à l'approbation sur l'App Store et le Google Play Store."
+      },
+      {
+        "question": "Puis-je faire évoluer l'application après livraison ?",
+        "answer": "Absolument. Le code est structuré avec une architecture clean et documenté. Vous pouvez le faire évoluer en interne ou me confier les futures itérations."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Jean Dupont",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-freelance-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["verified"],
+    "vendorRating": 4.8,
+    "vendorPlan": "gratuit",
+    "views": 203,
+    "clicks": 89,
+    "orderCount": 5,
+    "revenue": 5400,
+    "rating": 4.9,
+    "ratingCount": 4,
+    "createdAt": "2026-02-15T13:00:00.000Z",
+    "updatedAt": "2026-03-09T17:00:00.000Z"
+  },
+  {
+    "id": "svc_wordpress_ecommerce_010",
+    "userId": "dev-1772837012734",
+    "slug": "creation-site-wordpress-ecommerce",
+    "title": "Création de site WordPress e-commerce",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Sites e-commerce WordPress / WooCommerce clé en main\n\nJe crée des boutiques en ligne complètes avec **WordPress** et **WooCommerce**, la solution e-commerce la plus populaire au monde. Chaque site est optimisé pour la conversion, le référencement et la facilité de gestion au quotidien.\n\nMon offre inclut l'installation, la configuration du thème, l'intégration des moyens de paiement (Stripe, PayPal, Mobile Money via CinetPay), la gestion des stocks et des livraisons. Je configure également les emails automatiques de confirmation de commande et de suivi.\n\nSpécialisé dans les marchés africains, je maîtrise l'intégration des solutions de paiement locales et les spécificités logistiques de la zone UEMOA et CEMAC."
+    },
+    "descriptionText": "Je crée des boutiques en ligne complètes avec WordPress et WooCommerce. Chaque site est optimisé pour la conversion, le référencement et la facilité de gestion au quotidien. Mon offre inclut l'installation, la configuration, l'intégration des moyens de paiement et la gestion des stocks. Spécialisé dans les marchés africains.",
+    "categoryId": "cat_dev",
+    "categoryName": "Développement",
+    "subCategoryId": "sub_wordpress",
+    "subCategoryName": "WordPress",
+    "tags": ["wordpress", "woocommerce", "e-commerce", "boutique en ligne", "cinetpay"],
+    "basePrice": 200,
+    "deliveryDays": 10,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 200,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "Boutique WooCommerce jusqu'à 20 produits, thème professionnel, paiement Stripe, pages légales, SSL."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 400,
+        "deliveryDays": 15,
+        "revisions": 3,
+        "description": "Boutique complète 50+ produits, paiement multi-méthodes (Stripe + PayPal + Mobile Money), blog intégré, SEO de base, formation admin."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 750,
+        "deliveryDays": 25,
+        "revisions": 5,
+        "description": "E-commerce avancé : produits illimités, multi-devises, multi-langues, zones de livraison personnalisées, emails automatiques, analytics, support 30 jours."
+      },
+      "features": [
+        { "id": "feat_woo_setup", "label": "Installation et configuration WooCommerce", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_mobile_money", "label": "Intégration paiement Mobile Money", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_training", "label": "Formation administration du site", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_multilang", "label": "Multi-langues et multi-devises", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 80,
+    "expressDaysReduction": 3,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800",
+      "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=800",
+      "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Création de site WordPress e-commerce | FreelanceHigh",
+    "metaDescription": "Boutique en ligne WordPress WooCommerce clé en main. Intégration Stripe, PayPal et Mobile Money. Spécialiste marchés africains.",
+    "seoScore": 81,
+    "faq": [
+      {
+        "question": "L'hébergement est-il inclus ?",
+        "answer": "L'hébergement n'est pas inclus, mais je vous recommande et configure un hébergement adapté (OVH, Hostinger ou un hébergeur local). Je m'occupe de l'installation complète sur votre serveur."
+      },
+      {
+        "question": "Pouvez-vous intégrer Orange Money et Wave ?",
+        "answer": "Oui, j'intègre CinetPay qui prend en charge Orange Money, Wave, MTN Mobile Money et d'autres méthodes de paiement africaines. C'est inclus dans les forfaits Standard et Premium."
+      },
+      {
+        "question": "Puis-je gérer le site moi-même après livraison ?",
+        "answer": "Absolument. WordPress est conçu pour être géré sans compétences techniques. J'inclus une formation vidéo de 30 minutes pour vous guider dans la gestion quotidienne de votre boutique."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Gildas LISSANON",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-1772837012734",
+    "vendorCountry": "Sénégal",
+    "vendorBadges": [],
+    "vendorRating": 4.5,
+    "vendorPlan": "gratuit",
+    "views": 287,
+    "clicks": 134,
+    "orderCount": 18,
+    "revenue": 5600,
+    "rating": 4.6,
+    "ratingCount": 15,
+    "createdAt": "2026-02-07T10:00:00.000Z",
+    "updatedAt": "2026-03-10T12:00:00.000Z"
+  },
+  {
+    "id": "svc_powerpoint_design_011",
+    "userId": "dev-agence-1",
+    "slug": "design-presentation-powerpoint",
+    "title": "Design de présentation PowerPoint",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Présentations PowerPoint professionnelles et impactantes\n\nNotre agence crée des présentations visuellement frappantes qui captivent votre audience et renforcent votre message. Que ce soit pour un pitch investisseur, une conférence, un rapport annuel ou une formation, nous concevons des slides qui marquent les esprits.\n\nChaque présentation est créée sur mesure avec un design cohérent, des infographies claires et des animations fluides. Nous travaillons sur PowerPoint, Google Slides et Keynote selon vos préférences.\n\nNotre équipe maîtrise l'art de synthétiser des données complexes en visuels percutants. Nous livrons des fichiers entièrement modifiables pour que vous puissiez les adapter et les réutiliser à l'avenir."
+    },
+    "descriptionText": "Notre agence crée des présentations visuellement frappantes qui captivent votre audience et renforcent votre message. Chaque présentation est créée sur mesure avec un design cohérent, des infographies claires et des animations fluides. Nous travaillons sur PowerPoint, Google Slides et Keynote.",
+    "categoryId": "cat_design",
+    "categoryName": "Design",
+    "subCategoryId": "sub_presentation",
+    "subCategoryName": "Présentation & Slides",
+    "tags": ["powerpoint", "présentation", "slides", "pitch deck", "keynote", "google slides"],
+    "basePrice": 100,
+    "deliveryDays": 5,
+    "revisions": 3,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 100,
+        "deliveryDays": 5,
+        "revisions": 3,
+        "description": "Présentation 10-15 slides, design professionnel, mise en forme de votre contenu existant, fichier modifiable."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 200,
+        "deliveryDays": 7,
+        "revisions": 4,
+        "description": "Présentation 20-30 slides, infographies personnalisées, animations, modèle réutilisable, versions PowerPoint et PDF."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 450,
+        "deliveryDays": 10,
+        "revisions": 6,
+        "description": "Pitch deck complet 30-50 slides, storytelling structuré, data visualisation avancée, animations professionnelles, coaching présentation."
+      },
+      "features": [
+        { "id": "feat_custom_design", "label": "Design sur mesure à votre charte", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_infographics", "label": "Infographies et data visualisation", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_animations", "label": "Animations et transitions", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_coaching", "label": "Coaching présentation orale", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 50,
+    "expressDaysReduction": 2,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800",
+      "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800",
+      "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Design de présentation PowerPoint | Tech Agency | FreelanceHigh",
+    "metaDescription": "Création de présentations PowerPoint professionnelles : pitch deck, rapports, formations. Design sur mesure, infographies et animations.",
+    "seoScore": 74,
+    "faq": [
+      {
+        "question": "Sur quels logiciels travaillez-vous ?",
+        "answer": "Nous travaillons principalement sur PowerPoint et Google Slides. Nous pouvons aussi livrer en format Keynote pour les utilisateurs Apple. Le fichier est toujours entièrement modifiable."
+      },
+      {
+        "question": "Dois-je fournir le contenu ?",
+        "answer": "Oui, vous fournissez le contenu textuel et les données. Nous nous occupons de la mise en forme, du design, de la création des infographies et de la structuration du storytelling."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Tech Agency",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-agence-1",
+    "vendorCountry": "France",
+    "vendorBadges": ["agence_verifiee"],
+    "vendorRating": 4.7,
+    "vendorPlan": "agence",
+    "views": 145,
+    "clicks": 78,
+    "orderCount": 22,
+    "revenue": 3400,
+    "rating": 4.5,
+    "ratingCount": 18,
+    "createdAt": "2026-02-14T11:30:00.000Z",
+    "updatedAt": "2026-03-06T09:00:00.000Z"
+  },
+  {
+    "id": "svc_audit_seo_012",
+    "userId": "dev-1772837012734",
+    "slug": "audit-seo-optimisation-site-web",
+    "title": "Audit SEO et optimisation de site web",
+    "language": "fr",
+    "description": {
+      "type": "markdown",
+      "text": "## Audit SEO complet et plan d'optimisation actionnable\n\nJe réalise des audits SEO approfondis pour identifier les freins à votre référencement naturel et vous fournir un plan d'action concret pour améliorer votre visibilité sur Google. Mon analyse couvre les aspects techniques, sémantiques et off-site de votre site web.\n\nChaque audit inclut une analyse de votre architecture technique (vitesse, mobile-friendliness, Core Web Vitals), une étude de vos contenus (mots-clés, structure, balises), un examen de votre profil de liens et une analyse concurrentielle détaillée.\n\nBasé au Sénégal avec une clientèle francophone internationale, j'ai une expertise particulière sur le référencement des sites ciblant l'Afrique de l'Ouest, la France et le marché francophone mondial."
+    },
+    "descriptionText": "Je réalise des audits SEO approfondis pour identifier les freins à votre référencement naturel et fournir un plan d'action concret. Mon analyse couvre les aspects techniques, sémantiques et off-site. J'ai une expertise particulière sur le référencement des sites ciblant l'Afrique de l'Ouest et le marché francophone mondial.",
+    "categoryId": "cat_marketing",
+    "categoryName": "Marketing",
+    "subCategoryId": "sub_seo",
+    "subCategoryName": "SEO & Référencement",
+    "tags": ["seo", "audit", "référencement", "google", "optimisation", "core web vitals"],
+    "basePrice": 180,
+    "deliveryDays": 7,
+    "revisions": 1,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 180,
+        "deliveryDays": 7,
+        "revisions": 1,
+        "description": "Audit SEO technique de base : analyse de 20 pages, rapport des erreurs critiques, liste de recommandations prioritaires."
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 350,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "Audit complet : technique + sémantique + backlinks, analyse de 50 pages, étude concurrentielle 3 concurrents, plan d'action détaillé."
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 650,
+        "deliveryDays": 15,
+        "revisions": 3,
+        "description": "Audit exhaustif + implémentation : analyse complète du site, corrections techniques appliquées, optimisation on-page de 10 pages clés, suivi 30 jours."
+      },
+      "features": [
+        { "id": "feat_technical_audit", "label": "Audit technique complet (vitesse, mobile, Core Web Vitals)", "includedInBasic": true, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_competitor", "label": "Analyse concurrentielle", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_backlinks", "label": "Analyse du profil de liens (backlinks)", "includedInBasic": false, "includedInStandard": true, "includedInPremium": true },
+        { "id": "feat_implementation", "label": "Implémentation des corrections techniques", "includedInBasic": false, "includedInStandard": false, "includedInPremium": true }
+      ]
+    },
+    "options": [],
+    "expressEnabled": true,
+    "expressPrice": 60,
+    "expressDaysReduction": 3,
+    "instructionsRequired": true,
+    "instructionsContent": null,
+    "images": [
+      "https://images.unsplash.com/photo-1562577309-4932fdd64cd1?w=800",
+      "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800",
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800"
+    ],
+    "mainImage": "https://images.unsplash.com/photo-1562577309-4932fdd64cd1?w=800",
+    "videoUrl": "",
+    "status": "actif",
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "Audit SEO et optimisation de site web | FreelanceHigh",
+    "metaDescription": "Audit SEO complet : analyse technique, sémantique et backlinks. Plan d'action concret pour améliorer votre référencement sur Google.",
+    "seoScore": 92,
+    "faq": [
+      {
+        "question": "Quels outils utilisez-vous pour l'audit ?",
+        "answer": "J'utilise une combinaison d'outils professionnels : Screaming Frog pour le crawl technique, Ahrefs pour les backlinks, Google Search Console pour les données de recherche, et PageSpeed Insights pour les Core Web Vitals."
+      },
+      {
+        "question": "En combien de temps les résultats SEO sont-ils visibles ?",
+        "answer": "Les premières améliorations techniques (vitesse, erreurs 404) sont visibles en quelques jours. Les gains de positionnement sur les mots-clés prennent généralement 2 à 4 mois selon la concurrence."
+      },
+      {
+        "question": "Travaillez-vous avec des sites en plusieurs langues ?",
+        "answer": "Oui, je gère les configurations hreflang, les structures de domaines multilingues et les stratégies de contenu par marché. J'ai une expertise spécifique sur les sites ciblant le français africain et le français européen."
+      }
+    ],
+    "extras": [],
+    "vendorName": "Gildas LISSANON",
+    "vendorAvatar": "",
+    "vendorUsername": "dev-1772837012734",
+    "vendorCountry": "Sénégal",
+    "vendorBadges": [],
+    "vendorRating": 4.5,
+    "vendorPlan": "gratuit",
+    "views": 124,
+    "clicks": 58,
+    "orderCount": 6,
+    "revenue": 1680,
+    "rating": 4.3,
+    "ratingCount": 5,
+    "createdAt": "2026-02-22T15:00:00.000Z",
+    "updatedAt": "2026-03-09T11:30:00.000Z"
+  }
+]

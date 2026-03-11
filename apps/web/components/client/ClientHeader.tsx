@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface ClientHeaderProps {
@@ -8,6 +9,9 @@ interface ClientHeaderProps {
 }
 
 export function ClientHeader({ onMenuClick }: ClientHeaderProps) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? "";
+
   return (
     <header className="h-16 flex-shrink-0 flex items-center justify-between px-6 lg:px-8 border-b border-border-dark bg-background-dark/80 backdrop-blur-md sticky top-0 z-30">
       {/* Left: mobile menu + search */}
@@ -31,7 +35,7 @@ export function ClientHeader({ onMenuClick }: ClientHeaderProps) {
 
       {/* Right: notifications + settings + user */}
       <div className="flex items-center gap-2">
-        <NotificationBell userId="u6" notificationsHref="/client/parametres" />
+        <NotificationBell userId={userId} notificationsHref="/client/parametres" />
 
         <Link href="/client/aide" className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
           <span className="material-symbols-outlined text-xl">help</span>

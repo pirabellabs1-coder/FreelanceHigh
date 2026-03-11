@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useToastStore } from "@/store/dashboard";
-import { usePlatformDataStore, type PlatformUser } from "@/store/platform-data";
+import { useAdminStore, type AdminUser } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
 const ROLE_MAP: Record<string, { label: string; cls: string }> = {
@@ -28,20 +28,57 @@ const PLAN_MAP: Record<string, { label: string; cls: string }> = {
 
 type ModalAction = null | "suspend" | "ban" | "role" | "plan" | "kyc";
 
+function getInitials(name: string): string {
+  return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-border-dark/50">
+      <td className="px-5 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-border-dark animate-pulse" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-28 bg-border-dark rounded animate-pulse" />
+            <div className="h-3 w-36 bg-border-dark/60 rounded animate-pulse" />
+          </div>
+        </div>
+      </td>
+      <td className="px-5 py-3"><div className="h-5 w-16 bg-border-dark rounded-full animate-pulse" /></td>
+      <td className="px-5 py-3"><div className="h-5 w-16 bg-border-dark rounded-full animate-pulse" /></td>
+      <td className="px-5 py-3"><div className="h-4 w-20 bg-border-dark rounded animate-pulse" /></td>
+      <td className="px-5 py-3 text-center"><div className="h-5 w-10 bg-border-dark rounded-full animate-pulse mx-auto" /></td>
+      <td className="px-5 py-3 text-center"><div className="h-5 w-14 bg-border-dark rounded-full animate-pulse mx-auto" /></td>
+      <td className="px-5 py-3"><div className="h-4 w-20 bg-border-dark rounded animate-pulse" /></td>
+      <td className="px-5 py-3"><div className="h-6 w-20 bg-border-dark rounded animate-pulse mx-auto" /></td>
+    </tr>
+  );
+}
+
 export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const { addToast } = useToastStore();
-  const { users, suspendUser, banUser, reactivateUser, changeUserRole, changeUserPlan, verifyUserKyc } = usePlatformDataStore();
+  const {
+    users, loading, syncUsers,
+    suspendUser, banUser, reactivateUser,
+    changeUserRole, changeUserPlan, approveKyc,
+  } = useAdminStore();
 
   const [modalAction, setModalAction] = useState<ModalAction>(null);
-  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [suspendReason, setSuspendReason] = useState("");
-  const [newRole, setNewRole] = useState<PlatformUser["role"]>("freelance");
-  const [newPlan, setNewPlan] = useState<PlatformUser["plan"]>("gratuit");
+  const [newRole, setNewRole] = useState("freelance");
+  const [newPlan, setNewPlan] = useState("gratuit");
   const [newKyc, setNewKyc] = useState(1);
+
+  useEffect(() => {
+    syncUsers();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isLoading = loading.users;
 
   const filtered = useMemo(() => {
     return users.filter(u => {
@@ -53,52 +90,58 @@ export default function AdminUsers() {
     });
   }, [search, roleFilter, statusFilter, planFilter, users]);
 
-  function openModal(user: PlatformUser, action: ModalAction) {
+  function openModal(user: AdminUser, action: ModalAction) {
     setSelectedUser(user);
     setModalAction(action);
     setSuspendReason("");
     setNewRole(user.role);
     setNewPlan(user.plan);
-    setNewKyc(user.kyc);
+    setNewKyc(user.kycLevel);
   }
 
-  function handleSuspend() {
+  async function handleSuspend() {
     if (!selectedUser || !suspendReason.trim()) { addToast("warning", "Veuillez indiquer un motif"); return; }
-    suspendUser(selectedUser.id, suspendReason);
-    addToast("success", `${selectedUser.name} suspendu — ses services ont été mis en pause`);
+    const ok = await suspendUser(selectedUser.id);
+    if (ok) addToast("success", `${selectedUser.name} suspendu — ses services ont ete mis en pause`);
+    else addToast("error", "Erreur lors de la suspension");
     setModalAction(null);
   }
 
-  function handleBan() {
+  async function handleBan() {
     if (!selectedUser) return;
-    banUser(selectedUser.id);
-    addToast("success", `${selectedUser.name} banni — tous ses services sont désactivés`);
+    const ok = await banUser(selectedUser.id);
+    if (ok) addToast("success", `${selectedUser.name} banni — tous ses services sont desactives`);
+    else addToast("error", "Erreur lors du bannissement");
     setModalAction(null);
   }
 
-  function handleReactivate(user: PlatformUser) {
-    reactivateUser(user.id);
-    addToast("success", `${user.name} réactivé`);
+  async function handleReactivate(user: AdminUser) {
+    const ok = await reactivateUser(user.id);
+    if (ok) addToast("success", `${user.name} reactive`);
+    else addToast("error", "Erreur lors de la reactivation");
   }
 
-  function handleChangeRole() {
+  async function handleChangeRole() {
     if (!selectedUser) return;
-    changeUserRole(selectedUser.id, newRole);
-    addToast("success", `Rôle de ${selectedUser.name} changé en ${ROLE_MAP[newRole]?.label}`);
+    const ok = await changeUserRole(selectedUser.id, newRole);
+    if (ok) addToast("success", `Role de ${selectedUser.name} change en ${ROLE_MAP[newRole]?.label}`);
+    else addToast("error", "Erreur lors du changement de role");
     setModalAction(null);
   }
 
-  function handleChangePlan() {
+  async function handleChangePlan() {
     if (!selectedUser) return;
-    changeUserPlan(selectedUser.id, newPlan);
-    addToast("success", `Plan de ${selectedUser.name} changé en ${PLAN_MAP[newPlan]?.label}`);
+    const ok = await changeUserPlan(selectedUser.id, newPlan);
+    if (ok) addToast("success", `Plan de ${selectedUser.name} change en ${PLAN_MAP[newPlan]?.label}`);
+    else addToast("error", "Erreur lors du changement de plan");
     setModalAction(null);
   }
 
-  function handleChangeKyc() {
+  async function handleChangeKyc() {
     if (!selectedUser) return;
-    verifyUserKyc(selectedUser.id, newKyc);
-    addToast("success", `KYC de ${selectedUser.name} mis à niveau ${newKyc}`);
+    const ok = await approveKyc(selectedUser.id, newKyc);
+    if (ok) addToast("success", `KYC de ${selectedUser.name} mis a niveau ${newKyc}`);
+    else addToast("error", "Erreur lors de la mise a jour du KYC");
     setModalAction(null);
   }
 
@@ -116,7 +159,7 @@ export default function AdminUsers() {
           <span className="material-symbols-outlined text-primary">people</span>
           Utilisateurs
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Gérez les {stats.total} comptes de la plateforme.</p>
+        <p className="text-slate-400 text-sm mt-1">Gerez les {stats.total} comptes de la plateforme.</p>
       </div>
 
       {/* Stats rapides */}
@@ -144,7 +187,7 @@ export default function AdminUsers() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher par nom ou email..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border-dark bg-neutral-dark text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-4 py-2.5 rounded-xl border border-border-dark bg-neutral-dark text-sm text-white outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
-          <option value="">Tous les rôles</option>
+          <option value="">Tous les roles</option>
           <option value="freelance">Freelance</option>
           <option value="client">Client</option>
           <option value="agence">Agence</option>
@@ -171,7 +214,7 @@ export default function AdminUsers() {
             <thead>
               <tr className="border-b border-border-dark">
                 <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Utilisateur</th>
-                <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Rôle</th>
+                <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Role</th>
                 <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Plan</th>
                 <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Pays</th>
                 <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">KYC</th>
@@ -181,82 +224,92 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(u => (
-                <tr key={u.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
-                  <td className="px-5 py-3">
-                    <Link href={`/admin/utilisateurs/${u.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{u.avatar}</div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{u.name}</p>
-                        <p className="text-xs text-slate-400">{u.email}</p>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3">
-                    <button onClick={() => openModal(u, "role")} className={cn("text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80", ROLE_MAP[u.role]?.cls)}>
-                      {ROLE_MAP[u.role]?.label}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3">
-                    <button onClick={() => openModal(u, "plan")} className={cn("text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80", PLAN_MAP[u.plan]?.cls)}>
-                      {PLAN_MAP[u.plan]?.label}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-300">{u.countryFlag} {u.country}</td>
-                  <td className="px-5 py-3 text-center">
-                    <button onClick={() => openModal(u, "kyc")} className="text-xs font-bold bg-border-dark text-slate-300 px-2 py-0.5 rounded-full cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors">
-                      Niv. {u.kyc}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[u.status]?.cls)}>
-                      {STATUS_MAP[u.status]?.label}
-                    </span>
-                    {u.suspendReason && <p className="text-[10px] text-amber-400/60 mt-0.5 truncate max-w-[120px]">{u.suspendReason}</p>}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-400">{new Date(u.registeredAt).toLocaleDateString("fr-FR")}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex justify-center gap-1">
-                      <Link href={`/admin/utilisateurs/${u.id}`} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Voir profil">
-                        <span className="material-symbols-outlined text-lg">visibility</span>
+              {isLoading && users.length === 0 ? (
+                <>
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                </>
+              ) : (
+                filtered.map(u => (
+                  <tr key={u.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <Link href={`/admin/utilisateurs/${u.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{getInitials(u.name)}</div>
+                        <div>
+                          <p className="text-sm font-semibold text-white">{u.name}</p>
+                          <p className="text-xs text-slate-400">{u.email}</p>
+                        </div>
                       </Link>
-                      {u.status === "actif" && (
-                        <>
-                          <button onClick={() => openModal(u, "suspend")} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors" title="Suspendre">
-                            <span className="material-symbols-outlined text-lg">block</span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <button onClick={() => openModal(u, "role")} className={cn("text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80", ROLE_MAP[u.role]?.cls)}>
+                        {ROLE_MAP[u.role]?.label}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3">
+                      <button onClick={() => openModal(u, "plan")} className={cn("text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80", PLAN_MAP[u.plan]?.cls)}>
+                        {PLAN_MAP[u.plan]?.label}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-300">{u.country}</td>
+                    <td className="px-5 py-3 text-center">
+                      <button onClick={() => openModal(u, "kyc")} className="text-xs font-bold bg-border-dark text-slate-300 px-2 py-0.5 rounded-full cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors">
+                        Niv. {u.kycLevel}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[u.status]?.cls)}>
+                        {STATUS_MAP[u.status]?.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex justify-center gap-1">
+                        <Link href={`/admin/utilisateurs/${u.id}`} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Voir profil">
+                          <span className="material-symbols-outlined text-lg">visibility</span>
+                        </Link>
+                        {u.status === "actif" && (
+                          <>
+                            <button onClick={() => openModal(u, "suspend")} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors" title="Suspendre">
+                              <span className="material-symbols-outlined text-lg">block</span>
+                            </button>
+                            <button onClick={() => openModal(u, "ban")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Bannir">
+                              <span className="material-symbols-outlined text-lg">person_off</span>
+                            </button>
+                          </>
+                        )}
+                        {u.status === "suspendu" && (
+                          <button onClick={() => handleReactivate(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors" title="Reactiver">
+                            <span className="material-symbols-outlined text-lg">check_circle</span>
                           </button>
-                          <button onClick={() => openModal(u, "ban")} className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Bannir">
-                            <span className="material-symbols-outlined text-lg">person_off</span>
+                        )}
+                        {u.status === "banni" && (
+                          <button onClick={() => handleReactivate(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors" title="Debannir">
+                            <span className="material-symbols-outlined text-lg">lock_open</span>
                           </button>
-                        </>
-                      )}
-                      {u.status === "suspendu" && (
-                        <button onClick={() => handleReactivate(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors" title="Réactiver">
-                          <span className="material-symbols-outlined text-lg">check_circle</span>
-                        </button>
-                      )}
-                      {u.status === "banni" && (
-                        <button onClick={() => handleReactivate(u)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors" title="Débannir">
-                          <span className="material-symbols-outlined text-lg">lock_open</span>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      <p className="text-sm text-slate-500 text-center">{filtered.length} utilisateur{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}</p>
+      <p className="text-sm text-slate-500 text-center">{filtered.length} utilisateur{filtered.length > 1 ? "s" : ""} affiche{filtered.length > 1 ? "s" : ""}</p>
 
       {/* Modal Suspendre */}
       {modalAction === "suspend" && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
           <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
             <h3 className="font-bold text-lg text-white mb-2">Suspendre {selectedUser.name}</h3>
-            <p className="text-sm text-slate-400 mb-4">L&apos;utilisateur ne pourra plus accéder à la plateforme. Ses services seront mis en pause.</p>
+            <p className="text-sm text-slate-400 mb-4">L&apos;utilisateur ne pourra plus acceder a la plateforme. Ses services seront mis en pause.</p>
             <textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)} rows={3} placeholder="Motif de la suspension (obligatoire)..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />
             <div className="flex gap-3">
               <button onClick={() => setModalAction(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
@@ -274,7 +327,7 @@ export default function AdminUsers() {
               <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center"><span className="material-symbols-outlined text-red-400">warning</span></div>
               <h3 className="font-bold text-lg text-white">Bannir {selectedUser.name} ?</h3>
             </div>
-            <p className="text-sm text-slate-400 mb-6">Cette action bannira l&apos;utilisateur et désactivera tous ses services. Cette action est réversible via le bouton Débannir.</p>
+            <p className="text-sm text-slate-400 mb-6">Cette action bannira l&apos;utilisateur et desactivera tous ses services. Cette action est reversible via le bouton Debannir.</p>
             <div className="flex gap-3">
               <button onClick={() => setModalAction(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
               <button onClick={handleBan} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors">Confirmer le ban</button>
@@ -283,11 +336,11 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* Modal Changer Rôle */}
+      {/* Modal Changer Role */}
       {modalAction === "role" && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
           <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
-            <h3 className="font-bold text-lg text-white mb-4">Changer le rôle de {selectedUser.name}</h3>
+            <h3 className="font-bold text-lg text-white mb-4">Changer le role de {selectedUser.name}</h3>
             <div className="grid grid-cols-2 gap-2 mb-6">
               {(["freelance", "client", "agence", "admin"] as const).map(r => (
                 <button key={r} onClick={() => setNewRole(r)} className={cn("py-3 rounded-xl text-sm font-bold border-2 transition-all", newRole === r ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:border-slate-500")}>
@@ -311,7 +364,7 @@ export default function AdminUsers() {
             <div className="grid grid-cols-2 gap-2 mb-6">
               {(["gratuit", "pro", "business", "agence"] as const).map(p => (
                 <button key={p} onClick={() => setNewPlan(p)} className={cn("py-3 rounded-xl text-sm font-bold border-2 transition-all", newPlan === p ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:border-slate-500")}>
-                  {PLAN_MAP[p]?.label} {p !== "gratuit" && <span className="block text-xs font-normal text-slate-500">({p === "pro" ? "15€" : p === "business" ? "45€" : "99€"}/mois)</span>}
+                  {PLAN_MAP[p]?.label} {p !== "gratuit" && <span className="block text-xs font-normal text-slate-500">({p === "pro" ? "15EUR" : p === "business" ? "45EUR" : "99EUR"}/mois)</span>}
                 </button>
               ))}
             </div>
@@ -328,7 +381,7 @@ export default function AdminUsers() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
           <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
             <h3 className="font-bold text-lg text-white mb-4">KYC de {selectedUser.name}</h3>
-            <p className="text-sm text-slate-400 mb-4">Niveau actuel : <span className="font-bold text-white">Niveau {selectedUser.kyc}</span></p>
+            <p className="text-sm text-slate-400 mb-4">Niveau actuel : <span className="font-bold text-white">Niveau {selectedUser.kycLevel}</span></p>
             <div className="grid grid-cols-4 gap-2 mb-6">
               {[1, 2, 3, 4].map(lvl => (
                 <button key={lvl} onClick={() => setNewKyc(lvl)} className={cn("py-3 rounded-xl text-sm font-bold border-2 transition-all", newKyc === lvl ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:border-slate-500")}>
@@ -337,10 +390,10 @@ export default function AdminUsers() {
               ))}
             </div>
             <div className="text-xs text-slate-500 mb-4 space-y-1">
-              <p>Niv. 1 : Email vérifié — accès de base</p>
-              <p>Niv. 2 : Téléphone vérifié — commander, postuler</p>
-              <p>Niv. 3 : Identité vérifiée — retirer, publier</p>
-              <p>Niv. 4 : Vérification pro — badge Elite</p>
+              <p>Niv. 1 : Email verifie — acces de base</p>
+              <p>Niv. 2 : Telephone verifie — commander, postuler</p>
+              <p>Niv. 3 : Identite verifiee — retirer, publier</p>
+              <p>Niv. 4 : Verification pro — badge Elite</p>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setModalAction(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>

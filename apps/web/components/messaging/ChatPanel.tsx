@@ -1,17 +1,31 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./MessageBubble";
-import type { UnifiedConversation } from "@/store/messaging";
+import { VoiceRecorder } from "./voice/VoiceRecorder";
+import type { UnifiedConversation, MessageContentType } from "@/store/messaging";
 
 interface ChatPanelProps {
   conversation: UnifiedConversation | null;
   currentUserId: string;
-  onSendMessage: (content: string, type?: "text" | "file", fileName?: string, fileSize?: string) => void;
+  onSendMessage: (content: string, type?: MessageContentType, fileName?: string, fileSize?: string, audioUrl?: string, audioDuration?: number) => void;
   onMarkRead: () => void;
   showAdminActions?: boolean;
   onSendSystemMessage?: (content: string) => void;
+  onStartAudioCall?: () => void;
+  onStartVideoCall?: () => void;
+}
+
+// Simulated Cloudinary upload (demo mode)
+async function uploadAudioToCloudinary(blob: Blob): Promise<string> {
+  // In production, this would upload to Cloudinary via an API route:
+  // const formData = new FormData();
+  // formData.append("file", blob);
+  // formData.append("upload_preset", "voice_messages");
+  // const res = await fetch("https://api.cloudinary.com/v1_1/<cloud>/auto/upload", { method: "POST", body: formData });
+  // return (await res.json()).secure_url;
+  return URL.createObjectURL(blob);
 }
 
 export function ChatPanel({
@@ -21,8 +35,12 @@ export function ChatPanel({
   onMarkRead,
   showAdminActions = false,
   onSendSystemMessage,
+  onStartAudioCall,
+  onStartVideoCall,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [messageFilter, setMessageFilter] = useState<"all" | "voice" | "calls" | "files">("all");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -47,13 +65,25 @@ export function ChatPanel({
     });
   }
 
+  const handleVoiceSend = useCallback(async (blob: Blob, duration: number) => {
+    setIsRecording(false);
+    try {
+      const url = await uploadAudioToCloudinary(blob);
+      onSendMessage("Message vocal", "voice", undefined, undefined, url, duration);
+    } catch {
+      // Upload failed — silently handle in demo
+    }
+  }, [onSendMessage]);
+
   if (!conversation) {
     return (
       <div className="flex-1 flex items-center justify-center text-slate-500">
         <div className="text-center">
-          <span className="material-symbols-outlined text-4xl mb-3">chat_bubble_outline</span>
-          <p className="font-medium">Selectionnez une conversation</p>
-          <p className="text-xs mt-1 text-slate-600">Choisissez une discussion pour commencer a echanger.</p>
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-4xl text-primary/40">forum</span>
+          </div>
+          <p className="font-medium text-slate-400">Aucun message pour le moment</p>
+          <p className="text-xs mt-2 text-slate-600">Vos conversations avec vos clients apparaitront ici</p>
         </div>
       </div>
     );
@@ -62,6 +92,15 @@ export function ChatPanel({
   const otherParticipants = conversation.participants.filter((p) => p.id !== currentUserId);
   const displayName = conversation.title || otherParticipants.map((p) => p.name).join(", ") || "Conversation";
   const isOnline = otherParticipants.some((p) => p.online);
+
+  // Filter messages
+  const filteredMessages = conversation.messages.filter((msg) => {
+    if (messageFilter === "all") return true;
+    if (messageFilter === "voice") return msg.type === "voice";
+    if (messageFilter === "calls") return msg.type === "call_audio" || msg.type === "call_video" || msg.type === "call_missed";
+    if (messageFilter === "files") return msg.type === "file" || msg.type === "image";
+    return true;
+  });
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -95,6 +134,23 @@ export function ChatPanel({
               Voir la commande <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </a>
           )}
+
+          {/* Call buttons */}
+          <button
+            onClick={onStartAudioCall}
+            className="p-2 text-slate-400 hover:text-emerald-400 rounded-lg hover:bg-emerald-500/10 transition-colors"
+            title="Appel audio"
+          >
+            <span className="material-symbols-outlined text-lg">call</span>
+          </button>
+          <button
+            onClick={onStartVideoCall}
+            className="p-2 text-slate-400 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors"
+            title="Appel video"
+          >
+            <span className="material-symbols-outlined text-lg">videocam</span>
+          </button>
+
           {showAdminActions && onSendSystemMessage && (
             <button
               onClick={() => {
@@ -113,12 +169,39 @@ export function ChatPanel({
         </div>
       </div>
 
+      {/* Message filter bar */}
+      <div className="flex items-center gap-1 px-4 py-2 border-b border-border-dark/50">
+        {(["all", "voice", "calls", "files"] as const).map((filter) => {
+          const labels = {
+            all: { label: "Tous", icon: "forum" },
+            voice: { label: "Vocaux", icon: "mic" },
+            calls: { label: "Appels", icon: "call" },
+            files: { label: "Fichiers", icon: "attach_file" },
+          };
+          const { label, icon } = labels[filter];
+          return (
+            <button
+              key={filter}
+              onClick={() => setMessageFilter(filter)}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                messageFilter === filter
+                  ? "bg-primary/10 text-primary"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-border-dark/50"
+              )}
+            >
+              <span className="material-symbols-outlined text-sm">{icon}</span>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {conversation.messages.map((msg, i) => {
+        {filteredMessages.map((msg, i) => {
           const isOwn = msg.senderId === currentUserId;
-          // Show sender info if sender changed from previous message
-          const prevMsg = i > 0 ? conversation.messages[i - 1] : null;
+          const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
           const showSenderInfo = !isOwn && (!prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.type === "system");
 
           return (
@@ -149,31 +232,39 @@ export function ChatPanel({
             className="hidden"
             onChange={(e) => handleFileUpload(e.target.files)}
           />
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Tapez votre message..."
-            className="flex-1 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim()}
-            className={cn(
-              "px-4 py-2.5 rounded-lg font-semibold text-sm transition-all",
-              input.trim()
-                ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-border-dark text-slate-500"
-            )}
-          >
-            <span className="material-symbols-outlined">send</span>
-          </button>
+
+          {isRecording ? (
+            <VoiceRecorder onSend={handleVoiceSend} />
+          ) : (
+            <>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="Tapez votre message..."
+                className="flex-1 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
+              />
+              <VoiceRecorder onSend={handleVoiceSend} />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim()}
+                className={cn(
+                  "px-4 py-2.5 rounded-lg font-semibold text-sm transition-all",
+                  input.trim()
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-border-dark text-slate-500"
+                )}
+              >
+                <span className="material-symbols-outlined">send</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

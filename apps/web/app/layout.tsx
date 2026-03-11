@@ -1,28 +1,31 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import Script from "next/script";
 import { Providers } from "./providers";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://freelancehigh.com"),
-  title: {
-    default: "FreelanceHigh — La plateforme freelance qui eleve votre carriere",
-    template: "%s | FreelanceHigh",
-  },
-  description:
-    "Connectez-vous avec les meilleurs freelances d'Afrique francophone, de la diaspora et du monde entier. Marketplace premium pour vos projets digitaux.",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    siteName: "FreelanceHigh",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+
+  return {
+    metadataBase: new URL("https://freelancehigh.com"),
+    title: {
+      default: t("default_title"),
+      template: "%s | FreelanceHigh",
+    },
+    description: t("default_description"),
+    icons: {
+      icon: "/favicon.ico",
+    },
+    openGraph: {
+      type: "website",
+      locale: "fr_FR",
+      siteName: "FreelanceHigh",
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

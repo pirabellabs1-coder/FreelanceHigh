@@ -1,19 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useClientStore } from "@/store/client";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
-
-const REVIEWS = [
-  { id: "1", freelance: "Jean-Luc S.", service: "Développement API REST", date: "2026-02-28", rating: 5, quality: 5, communication: 5, delay: 4, comment: "Excellent travail ! L'API a été livrée avant le délai avec une documentation complète. Je recommande vivement.", response: "Merci beaucoup Marc ! Ce fut un plaisir de travailler sur ce projet." },
-  { id: "2", freelance: "Marie Koffi", service: "Audit SEO Complet", date: "2026-02-20", rating: 4, quality: 4, communication: 5, delay: 4, comment: "Bon audit SEO avec des recommandations pertinentes. Quelques points auraient pu être plus détaillés.", response: null },
-  { id: "3", freelance: "Sophie Design", service: "Logo & Branding", date: "2026-02-10", rating: 3, quality: 3, communication: 4, delay: 2, comment: "Le logo est correct mais le délai n'a pas été respecté. La communication aurait pu être meilleure pendant les retards.", response: "Je m'excuse pour le retard, j'ai eu un imprévu. Le résultat final est conforme au brief." },
-  { id: "4", freelance: "Thomas Weber", service: "Design UI/UX Mobile", date: "2026-01-15", rating: 5, quality: 5, communication: 5, delay: 5, comment: "Parfait ! Design moderne, livraison rapide, excellent suivi. Thomas est un freelance d'exception.", response: null },
-];
-
-const PENDING_REVIEWS = [
-  { orderId: "ORD-7815", service: "Développement Frontend React", freelance: "Amadou D.", completedDate: "2026-03-01", deadline: "2026-03-08" },
-];
+import { EmptyState } from "@/components/client/EmptyState";
 
 function StarRating({ rating, size = "text-sm" }: { rating: number; size?: string }) {
   return (
@@ -31,199 +22,367 @@ function StarRating({ rating, size = "text-sm" }: { rating: number; size?: strin
   );
 }
 
+function StarInput({ value, onChange, size = "text-xl" }: { value: number; onChange: (v: number) => void; size?: string }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(i => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onChange(i)}
+          className={cn(
+            "material-symbols-outlined transition-colors",
+            size,
+            i <= value ? "text-yellow-400" : "text-slate-600 hover:text-yellow-400/50"
+          )}
+          style={{ fontVariationSettings: i <= value ? "'FILL' 1" : "'FILL' 0" }}
+        >
+          star
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-neutral-dark rounded-xl border border-border-dark p-5 animate-pulse">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-border-dark" />
+          <div className="space-y-2">
+            <div className="h-3 w-28 bg-border-dark rounded" />
+            <div className="h-2 w-40 bg-border-dark rounded" />
+          </div>
+        </div>
+        <div className="h-4 w-24 bg-border-dark rounded" />
+      </div>
+      <div className="h-3 w-full bg-border-dark rounded mb-2" />
+      <div className="h-3 w-3/4 bg-border-dark rounded" />
+    </div>
+  );
+}
+
 export default function ClientReviews() {
   const [tab, setTab] = useState<"donnes" | "en_attente">("donnes");
-  const [editingReview, setEditingReview] = useState<string | null>(null);
-  const [newRating, setNewRating] = useState({ quality: 0, communication: 0, delay: 0, comment: "" });
+  const [newRating, setNewRating] = useState<Record<string, { qualite: number; communication: number; delai: number; comment: string }>>({});
+  const [submittingOrderId, setSubmittingOrderId] = useState<string | null>(null);
   const { addToast } = useToastStore();
 
-  function submitReview() {
-    if (newRating.quality === 0 || newRating.communication === 0 || newRating.delay === 0) {
-      addToast("error", "Veuillez attribuer une note pour chaque critère");
+  const {
+    reviews,
+    reviewSummary,
+    orders,
+    loading,
+    syncReviews,
+    syncOrders,
+    submitReview,
+  } = useClientStore();
+
+  useEffect(() => {
+    syncReviews();
+    syncOrders();
+  }, [syncReviews, syncOrders]);
+
+  const isLoading = loading.reviews || loading.orders;
+
+  // Completed orders that do not have a review yet
+  const pendingReviewOrders = useMemo(() => {
+    return orders.filter(
+      o => o.status === "termine" && !reviews.find(r => r.orderId === o.id)
+    );
+  }, [orders, reviews]);
+
+  // Reviews that are less than 7 days old can be edited
+  const isEditable = (createdAt: string) => {
+    const diff = Date.now() - new Date(createdAt).getTime();
+    return diff < 7 * 24 * 60 * 60 * 1000;
+  };
+
+  function getRatingForm(orderId: string) {
+    return newRating[orderId] || { qualite: 0, communication: 0, delai: 0, comment: "" };
+  }
+
+  function updateRatingForm(orderId: string, field: string, value: number | string) {
+    setNewRating(prev => ({
+      ...prev,
+      [orderId]: { ...getRatingForm(orderId), [field]: value },
+    }));
+  }
+
+  async function handleSubmitReview(orderId: string) {
+    const form = getRatingForm(orderId);
+    if (form.qualite === 0 || form.communication === 0 || form.delai === 0) {
+      addToast("error", "Veuillez attribuer une note pour chaque critere");
       return;
     }
-    addToast("success", "Avis publié avec succès !");
-    setNewRating({ quality: 0, communication: 0, delay: 0, comment: "" });
+    setSubmittingOrderId(orderId);
+    const ok = await submitReview({
+      orderId,
+      qualite: form.qualite,
+      communication: form.communication,
+      delai: form.delai,
+      comment: form.comment || undefined,
+    });
+    setSubmittingOrderId(null);
+    if (ok) {
+      addToast("success", "Avis publie avec succes !");
+      setNewRating(prev => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+    } else {
+      addToast("error", "Erreur lors de la publication de l'avis");
+    }
   }
+
+  const avgRating = reviewSummary?.avgRating ?? 0;
+  const totalReviews = reviewSummary?.totalReviews ?? reviews.length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black text-white">Mes Avis</h1>
-        <p className="text-slate-400 text-sm mt-1">Consultez vos évaluations et laissez des avis sur vos collaborations.</p>
+        <p className="text-slate-400 text-sm mt-1">Consultez vos evaluations et laissez des avis sur vos collaborations.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-          <span className="material-symbols-outlined text-xl text-yellow-400">star</span>
-          <div>
-            <p className="text-xl font-black text-white">4.3</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Note moyenne</p>
-          </div>
-        </div>
-        <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-          <span className="material-symbols-outlined text-xl text-primary">rate_review</span>
-          <div>
-            <p className="text-xl font-black text-white">{REVIEWS.length}</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avis donnés</p>
-          </div>
-        </div>
-        <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-          <span className="material-symbols-outlined text-xl text-amber-400">schedule</span>
-          <div>
-            <p className="text-xl font-black text-amber-400">{PENDING_REVIEWS.length}</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">En attente</p>
-          </div>
-        </div>
-        <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-          <span className="material-symbols-outlined text-xl text-primary">thumb_up</span>
-          <div>
-            <p className="text-xl font-black text-white">92%</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Satisfaction</p>
-          </div>
-        </div>
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-border-dark" />
+                <div className="space-y-2">
+                  <div className="h-5 w-10 bg-border-dark rounded" />
+                  <div className="h-2 w-20 bg-border-dark rounded" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-yellow-400">star</span>
+              <div>
+                <p className="text-xl font-black text-white">{avgRating > 0 ? avgRating.toFixed(1) : "-"}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Note moyenne</p>
+              </div>
+            </div>
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-primary">rate_review</span>
+              <div>
+                <p className="text-xl font-black text-white">{totalReviews}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avis donnes</p>
+              </div>
+            </div>
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-amber-400">schedule</span>
+              <div>
+                <p className="text-xl font-black text-amber-400">{pendingReviewOrders.length}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">En attente</p>
+              </div>
+            </div>
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-primary">thumb_up</span>
+              <div>
+                <p className="text-xl font-black text-white">
+                  {totalReviews > 0 ? `${Math.round((reviews.filter(r => r.rating >= 4).length / totalReviews) * 100)}%` : "-"}
+                </p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Satisfaction</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2">
-        <button onClick={() => setTab("donnes")} className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-colors", tab === "donnes" ? "bg-primary text-background-dark" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white")}>
-          Avis donnés ({REVIEWS.length})
+        <button
+          onClick={() => setTab("donnes")}
+          className={cn(
+            "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+            tab === "donnes"
+              ? "bg-primary text-background-dark"
+              : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
+          )}
+        >
+          Avis donnes ({totalReviews})
         </button>
-        <button onClick={() => setTab("en_attente")} className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2", tab === "en_attente" ? "bg-primary text-background-dark" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white")}>
-          En attente ({PENDING_REVIEWS.length})
-          {PENDING_REVIEWS.length > 0 && <span className="w-2 h-2 bg-amber-400 rounded-full" />}
+        <button
+          onClick={() => setTab("en_attente")}
+          className={cn(
+            "px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2",
+            tab === "en_attente"
+              ? "bg-primary text-background-dark"
+              : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
+          )}
+        >
+          En attente ({pendingReviewOrders.length})
+          {pendingReviewOrders.length > 0 && <span className="w-2 h-2 bg-amber-400 rounded-full" />}
         </button>
       </div>
 
       {/* Given Reviews */}
       {tab === "donnes" && (
         <div className="space-y-4">
-          {REVIEWS.map(r => (
-            <div key={r.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
-                    {r.freelance.split(" ").map(n => n[0]).join("")}
+          {isLoading ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : reviews.length === 0 ? (
+            <EmptyState
+              icon="rate_review"
+              title="Aucun avis donne"
+              description="Vos avis apparaitront ici apres vos premieres commandes terminees."
+              actionLabel="Voir mes commandes"
+              actionHref="/client/commandes"
+            />
+          ) : (
+            reviews.map(r => (
+              <div key={r.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold overflow-hidden">
+                      {r.clientAvatar ? (
+                        <img src={r.clientAvatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        r.clientName.split(" ").map(n => n[0]).join("").slice(0, 2)
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">{r.clientName}</p>
+                      <p className="text-xs text-slate-500">{r.serviceTitle} &middot; {new Date(r.createdAt).toLocaleDateString("fr-FR")}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-white text-sm">{r.freelance}</p>
-                    <p className="text-xs text-slate-500">{r.service} · {new Date(r.date).toLocaleDateString("fr-FR")}</p>
+                  <div className="flex items-center gap-3">
+                    <StarRating rating={r.rating} />
+                    <span className="text-sm font-bold text-white">{r.rating.toFixed(1)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <StarRating rating={r.rating} />
-                  <span className="text-sm font-bold text-white">{r.rating}.0</span>
+
+                {r.comment && <p className="text-sm text-slate-300 mb-3">{r.comment}</p>}
+
+                {/* Detail ratings */}
+                <div className="flex gap-6 text-xs mb-3 flex-wrap">
+                  <span className="text-slate-500 flex items-center gap-1">Qualite : <StarRating rating={r.qualite} size="text-[10px]" /></span>
+                  <span className="text-slate-500 flex items-center gap-1">Communication : <StarRating rating={r.communication} size="text-[10px]" /></span>
+                  <span className="text-slate-500 flex items-center gap-1">Delai : <StarRating rating={r.delai} size="text-[10px]" /></span>
+                </div>
+
+                {r.reply && (
+                  <div className="bg-background-dark rounded-lg p-3 border border-border-dark">
+                    <p className="text-xs text-primary font-semibold mb-1">Reponse du freelance</p>
+                    <p className="text-xs text-slate-400">{r.reply}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border-dark">
+                  {isEditable(r.createdAt) && (
+                    <button className="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">edit</span>
+                      Modifier
+                    </button>
+                  )}
+                  {isEditable(r.createdAt) && (
+                    <span className="text-slate-600">&middot;</span>
+                  )}
+                  <button
+                    onClick={() => addToast("info", "Signalement envoye")}
+                    className="text-xs text-slate-500 hover:text-red-400 flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-xs">flag</span>
+                    Signaler
+                  </button>
                 </div>
               </div>
-
-              <p className="text-sm text-slate-300 mb-3">{r.comment}</p>
-
-              {/* Detail ratings */}
-              <div className="flex gap-6 text-xs mb-3">
-                <span className="text-slate-500">Qualité : <StarRating rating={r.quality} size="text-[10px]" /></span>
-                <span className="text-slate-500">Communication : <StarRating rating={r.communication} size="text-[10px]" /></span>
-                <span className="text-slate-500">Délai : <StarRating rating={r.delay} size="text-[10px]" /></span>
-              </div>
-
-              {r.response && (
-                <div className="bg-background-dark rounded-lg p-3 border border-border-dark">
-                  <p className="text-xs text-primary font-semibold mb-1">Réponse de {r.freelance}</p>
-                  <p className="text-xs text-slate-400">{r.response}</p>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border-dark">
-                <button
-                  onClick={() => { setEditingReview(editingReview === r.id ? null : r.id); }}
-                  className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-xs">edit</span>
-                  Modifier
-                </button>
-                <span className="text-slate-600">·</span>
-                <button
-                  onClick={() => addToast("info", "Signalement envoyé")}
-                  className="text-xs text-slate-500 hover:text-red-400 flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-xs">flag</span>
-                  Signaler
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
       {/* Pending Reviews */}
       {tab === "en_attente" && (
         <div className="space-y-4">
-          {PENDING_REVIEWS.map(p => (
-            <div key={p.orderId} className="bg-neutral-dark rounded-xl border border-border-dark p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
-                    <span className="material-symbols-outlined">rate_review</span>
-                  </div>
-                  <div>
-                    <p className="font-bold text-white">{p.service}</p>
-                    <p className="text-xs text-slate-500">Freelance : {p.freelance} · Terminée le {new Date(p.completedDate).toLocaleDateString("fr-FR")}</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full font-semibold">
-                  Expire le {new Date(p.deadline).toLocaleDateString("fr-FR")}
-                </span>
-              </div>
-
-              {/* Rating form */}
-              <div className="space-y-4 bg-background-dark rounded-xl p-5 border border-border-dark">
-                <p className="text-sm font-bold text-white">Évaluer cette commande</p>
-                {[
-                  { key: "quality", label: "Qualité du travail" },
-                  { key: "communication", label: "Communication" },
-                  { key: "delay", label: "Respect des délais" },
-                ].map(c => (
-                  <div key={c.key} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">{c.label}</span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <button
-                          key={i}
-                          onClick={() => setNewRating(r => ({ ...r, [c.key]: i }))}
-                          className={cn(
-                            "material-symbols-outlined text-xl transition-colors",
-                            i <= (newRating[c.key as keyof typeof newRating] as number) ? "text-yellow-400" : "text-slate-600 hover:text-yellow-400/50"
-                          )}
-                          style={{ fontVariationSettings: i <= (newRating[c.key as keyof typeof newRating] as number) ? "'FILL' 1" : "'FILL' 0" }}
-                        >
-                          star
-                        </button>
-                      ))}
+          {isLoading ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : pendingReviewOrders.length === 0 ? (
+            <EmptyState
+              icon="rate_review"
+              title="Aucun avis en attente"
+              description="Vous avez evalue toutes vos commandes terminees."
+            />
+          ) : (
+            pendingReviewOrders.map(order => {
+              const form = getRatingForm(order.id);
+              const isSubmitting = submittingOrderId === order.id;
+              return (
+                <div key={order.id} className="bg-neutral-dark rounded-xl border border-border-dark p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+                        <span className="material-symbols-outlined">rate_review</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{order.serviceTitle}</p>
+                        <p className="text-xs text-slate-500">
+                          Freelance : {order.clientName} &middot; Terminee le {new Date(order.completedAt || order.updatedAt).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">schedule</span>
+                      En attente
+                    </span>
                   </div>
-                ))}
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Commentaire (optionnel)</label>
-                  <textarea
-                    value={newRating.comment}
-                    onChange={e => setNewRating(r => ({ ...r, comment: e.target.value }))}
-                    rows={3}
-                    placeholder="Partagez votre expérience avec ce freelance..."
-                    className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 resize-none"
-                  />
+
+                  {/* Rating form */}
+                  <div className="space-y-4 bg-background-dark rounded-xl p-5 border border-border-dark">
+                    <p className="text-sm font-bold text-white">Evaluer cette commande</p>
+                    {[
+                      { key: "qualite", label: "Qualite du travail" },
+                      { key: "communication", label: "Communication" },
+                      { key: "delai", label: "Respect des delais" },
+                    ].map(c => (
+                      <div key={c.key} className="flex items-center justify-between">
+                        <span className="text-sm text-slate-400">{c.label}</span>
+                        <StarInput
+                          value={form[c.key as keyof typeof form] as number}
+                          onChange={(v) => updateRatingForm(order.id, c.key, v)}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Commentaire (optionnel)</label>
+                      <textarea
+                        value={form.comment}
+                        onChange={e => updateRatingForm(order.id, "comment", e.target.value)}
+                        rows={3}
+                        placeholder="Partagez votre experience avec ce freelance..."
+                        className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 resize-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleSubmitReview(order.id)}
+                      disabled={isSubmitting}
+                      className={cn(
+                        "px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all",
+                        isSubmitting && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isSubmitting ? "Publication..." : "Publier l'avis"}
+                    </button>
+                  </div>
                 </div>
-                <button onClick={submitReview} className="px-6 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all">
-                  Publier l&apos;avis
-                </button>
-              </div>
-            </div>
-          ))}
-          {PENDING_REVIEWS.length === 0 && (
-            <div className="text-center py-16">
-              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">rate_review</span>
-              <p className="text-slate-500 font-semibold">Aucun avis en attente</p>
-            </div>
+              );
+            })
           )}
         </div>
       )}

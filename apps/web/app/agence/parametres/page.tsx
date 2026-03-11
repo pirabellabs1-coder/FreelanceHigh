@@ -1,94 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { profileApi } from "@/lib/api-client";
+import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
   { key: "agence", label: "Informations", icon: "business" },
-  { key: "roles", label: "Rôles & Permissions", icon: "shield" },
+  { key: "roles", label: "Roles & Permissions", icon: "shield" },
   { key: "plan", label: "Abonnement", icon: "loyalty" },
   { key: "paiements", label: "Paiements", icon: "credit_card" },
   { key: "notifications", label: "Notifications", icon: "notifications" },
   { key: "danger", label: "Zone danger", icon: "warning" },
 ];
-
-const PERMISSIONS = [
-  "Voir projets",
-  "Créer projets",
-  "Gérer équipe",
-  "Voir finances",
-  "Retirer fonds",
-  "Modifier paramètres",
-  "Supprimer contenu",
-];
-
-const ROLE_DEFAULTS: Record<string, boolean[]> = {
+const PERMISSIONS = ["Voir projets", "Creer projets", "Gerer equipe", "Voir finances", "Retirer fonds", "Modifier parametres", "Supprimer contenu"];
+const DEFAULT_PERMS: Record<string, boolean[]> = {
   Admin: [true, true, true, true, true, true, true],
   Manager: [true, true, true, true, false, false, false],
   Membre: [true, true, false, false, false, false, false],
   Commercial: [true, false, false, true, false, false, false],
 };
-
-const PLAN_FEATURES = [
-  "Membres : jusqu'à 20",
-  "Commission : 8%",
-  "Services actifs : illimité",
-  "Boosts publicitaires : 10/mois",
-  "Certification IA",
-  "Clés API & Webhooks",
-  "Stockage ressources : 50 GB",
-  "Support prioritaire",
+const PLAN_FEATURES = ["Membres : jusqu'a 20", "Commission : 8%", "Services actifs : illimite", "Boosts publicitaires : 10/mois", "Certification IA", "Cles API & Webhooks", "Stockage ressources : 50 GB", "Support prioritaire"];
+const NOTIF_TYPES = [
+  { id: "new_order", label: "Nouvelle commande" },
+  { id: "member_joined", label: "Membre rejoint l'agence" },
+  { id: "payment_received", label: "Paiement recu" },
+  { id: "dispute_opened", label: "Litige ouvert" },
+  { id: "weekly_report", label: "Rapport hebdomadaire" },
+  { id: "deadline_near", label: "Delai de livraison proche" },
+  { id: "new_client_message", label: "Nouveau message client" },
 ];
+
+interface NotifSetting { id: string; label: string; email: boolean; push: boolean; sms: boolean }
+const inputCls = "w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50";
+const labelCls = "block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5";
+const saveBtnCls = "px-6 py-2.5 bg-primary text-background-dark rounded-xl text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50";
 
 export default function AgenceParametres() {
   const [section, setSection] = useState("agence");
+  const { data: session } = useSession();
+  const { members } = useAgencyStore();
   const { addToast } = useToastStore();
-  const [agency, setAgency] = useState({
-    name: "TechCorp Agency",
-    description: "Agence digitale spécialisée en développement web et mobile pour l'Afrique francophone.",
-    sector: "Technologie",
-    website: "https://techcorp.sn",
-    country: "Sénégal",
-    siret: "",
-  });
-  const [notifs, setNotifs] = useState([
-    { id: "1", label: "Nouvelle commande", email: true, push: true, sms: false },
-    { id: "2", label: "Membre rejoint l'agence", email: true, push: false, sms: false },
-    { id: "3", label: "Paiement reçu", email: true, push: true, sms: true },
-    { id: "4", label: "Litige ouvert", email: true, push: true, sms: true },
-    { id: "5", label: "Rapport hebdomadaire", email: true, push: false, sms: false },
-    { id: "6", label: "Délai de livraison proche", email: true, push: true, sms: false },
-    { id: "7", label: "Nouveau message client", email: false, push: true, sms: false },
-  ]);
-  const [permissions, setPermissions] = useState(ROLE_DEFAULTS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const togglePerm = (role: string, idx: number) => {
-    setPermissions(prev => ({
-      ...prev,
-      [role]: prev[role].map((v, i) => i === idx ? !v : v),
-    }));
+  const [agency, setAgency] = useState({ name: "", description: "", sector: "", website: "", country: "", siret: "" });
+  const [payments, setPayments] = useState({ iban: "", paypalEmail: "", orangeMoney: "", waveMoney: "" });
+  const [permissions, setPermissions] = useState<Record<string, boolean[]>>(DEFAULT_PERMS);
+  const [notifs, setNotifs] = useState<NotifSetting[]>(NOTIF_TYPES.map((n) => ({ ...n, email: false, push: false, sms: false })));
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const profile = await profileApi.get();
+      const raw = profile as unknown as Record<string, unknown>;
+      setAgency({
+        name: session?.user?.name || (raw.agencyName as string) || "",
+        description: (raw.bio as string) || "",
+        sector: (raw.sector as string) || "",
+        website: (raw.website as string) || (raw.links as Record<string, string>)?.portfolio || "",
+        country: (raw.country as string) || "",
+        siret: (raw.siret as string) || "",
+      });
+      if (raw.paymentInfo) {
+        const pi = raw.paymentInfo as Record<string, string>;
+        setPayments({ iban: pi.iban || "", paypalEmail: pi.paypalEmail || "", orangeMoney: pi.orangeMoney || "", waveMoney: pi.waveMoney || "" });
+      }
+      if (raw.permissions) setPermissions(raw.permissions as Record<string, boolean[]>);
+      if (raw.notificationSettings && Array.isArray(raw.notificationSettings)) setNotifs(raw.notificationSettings as NotifSetting[]);
+    } catch { /* New agency or API unavailable — keep defaults */ } finally { setLoading(false); }
+  }, [session?.user?.name]);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const saveToApi = async (data: Record<string, unknown>, msg: string) => {
+    setSaving(true);
+    try { await profileApi.update(data); addToast("success", msg); }
+    catch { addToast("error", "Erreur lors de la sauvegarde"); }
+    finally { setSaving(false); }
   };
+
+  const togglePerm = (role: string, idx: number) => {
+    setPermissions((prev) => ({ ...prev, [role]: prev[role].map((v, i) => (i === idx ? !v : v)) }));
+  };
+  const toggleNotif = (id: string, ch: "email" | "push" | "sms") => {
+    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, [ch]: !n[ch] } : n)));
+  };
+
+  const initials = agency.name ? agency.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "AG";
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96"><span className="material-symbols-outlined text-primary animate-spin text-3xl">progress_activity</span></div>;
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-white">Paramètres</h1>
-        <p className="text-slate-400 text-sm mt-1">Configurez votre agence, les rôles et les préférences.</p>
+        <h1 className="text-3xl font-black text-white">Parametres</h1>
+        <p className="text-slate-400 text-sm mt-1">Configurez votre agence, les roles et les preferences.{members.length > 0 && <span className="ml-2 text-slate-500">({members.length} membres)</span>}</p>
       </div>
-
       <div className="flex gap-6">
         {/* Left menu */}
         <div className="w-56 shrink-0 space-y-1">
-          {SECTIONS.map(s => (
+          {SECTIONS.map((s) => (
             <button key={s.key} onClick={() => setSection(s.key)} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors text-left", section === s.key ? "bg-primary text-background-dark" : "text-slate-400 hover:text-white hover:bg-neutral-dark")}>
-              <span className="material-symbols-outlined text-lg">{s.icon}</span>
-              {s.label}
+              <span className="material-symbols-outlined text-lg">{s.icon}</span>{s.label}
             </button>
           ))}
         </div>
-
         {/* Content */}
         <div className="flex-1 bg-neutral-dark rounded-xl border border-border-dark p-6">
           {/* Informations agence */}
@@ -96,108 +118,69 @@ export default function AgenceParametres() {
             <div className="space-y-5 max-w-lg">
               <h2 className="text-lg font-bold text-white mb-4">Informations de l&apos;agence</h2>
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Logo</label>
+                <label className={labelCls}>Logo</label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl font-black">TC</div>
-                  <button onClick={() => addToast("info", "Upload de logo bientôt disponible")} className="text-xs text-primary font-semibold hover:underline">Changer le logo</button>
+                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xl font-black">{initials}</div>
+                  <button onClick={() => addToast("info", "Upload de logo bientot disponible")} className="text-xs text-primary font-semibold hover:underline">Changer le logo</button>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Nom de l&apos;agence</label>
-                <input value={agency.name} onChange={e => setAgency(a => ({ ...a, name: e.target.value }))} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50" />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Description</label>
-                <textarea value={agency.description} onChange={e => setAgency(a => ({ ...a, description: e.target.value }))} rows={3} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 resize-none" />
-              </div>
+              <div><label className={labelCls}>Nom de l&apos;agence</label><input value={agency.name} onChange={(e) => setAgency((a) => ({ ...a, name: e.target.value }))} className={inputCls} /></div>
+              <div><label className={labelCls}>Description</label><textarea value={agency.description} onChange={(e) => setAgency((a) => ({ ...a, description: e.target.value }))} rows={3} className={cn(inputCls, "resize-none")} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Secteur</label>
-                  <input value={agency.sector} onChange={e => setAgency(a => ({ ...a, sector: e.target.value }))} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50" />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Pays</label>
-                  <input value={agency.country} onChange={e => setAgency(a => ({ ...a, country: e.target.value }))} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50" />
-                </div>
+                <div><label className={labelCls}>Secteur</label><input value={agency.sector} onChange={(e) => setAgency((a) => ({ ...a, sector: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>Pays</label><input value={agency.country} onChange={(e) => setAgency((a) => ({ ...a, country: e.target.value }))} className={inputCls} /></div>
               </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Site web</label>
-                <input value={agency.website} onChange={e => setAgency(a => ({ ...a, website: e.target.value }))} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50" />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">SIRET (optionnel)</label>
-                <input value={agency.siret} onChange={e => setAgency(a => ({ ...a, siret: e.target.value }))} placeholder="XXX XXX XXX XXXXX" className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50" />
-              </div>
-              <button onClick={() => addToast("success", "Paramètres sauvegardés")} className="px-6 py-2.5 bg-primary text-background-dark rounded-xl text-sm font-bold hover:brightness-110 transition-all">Enregistrer</button>
+              <div><label className={labelCls}>Site web</label><input value={agency.website} onChange={(e) => setAgency((a) => ({ ...a, website: e.target.value }))} className={inputCls} /></div>
+              <div><label className={labelCls}>SIRET (optionnel)</label><input value={agency.siret} onChange={(e) => setAgency((a) => ({ ...a, siret: e.target.value }))} placeholder="XXX XXX XXX XXXXX" className={inputCls} /></div>
+              <button disabled={saving} onClick={() => saveToApi({ agencyName: agency.name, bio: agency.description, sector: agency.sector, website: agency.website, country: agency.country, siret: agency.siret }, "Informations sauvegardees")} className={saveBtnCls}>{saving ? "Enregistrement..." : "Enregistrer"}</button>
             </div>
           )}
 
-          {/* Rôles & Permissions */}
+          {/* Roles & Permissions */}
           {section === "roles" && (
             <div className="space-y-5">
-              <h2 className="text-lg font-bold text-white mb-4">Rôles & Permissions</h2>
-              <p className="text-sm text-slate-400">Définissez les permissions pour chaque rôle de l&apos;agence.</p>
+              <h2 className="text-lg font-bold text-white mb-4">Roles & Permissions</h2>
+              <p className="text-sm text-slate-400">Definissez les permissions pour chaque role de l&apos;agence.</p>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                      <th className="px-4 py-3 text-left font-semibold">Permission</th>
-                      {Object.keys(permissions).map(role => (
-                        <th key={role} className="px-4 py-3 text-center font-semibold">{role}</th>
+                  <thead><tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
+                    <th className="px-4 py-3 text-left font-semibold">Permission</th>
+                    {Object.keys(permissions).map((r) => <th key={r} className="px-4 py-3 text-center font-semibold">{r}</th>)}
+                  </tr></thead>
+                  <tbody>{PERMISSIONS.map((perm, idx) => (
+                    <tr key={perm} className="border-b border-border-dark/50">
+                      <td className="px-4 py-3 text-sm text-white font-medium">{perm}</td>
+                      {Object.keys(permissions).map((role) => (
+                        <td key={role} className="px-4 py-3 text-center">
+                          <button onClick={() => togglePerm(role, idx)} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", permissions[role][idx] ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500 hover:text-slate-300")}>
+                            <span className="material-symbols-outlined text-lg">{permissions[role][idx] ? "check" : "close"}</span>
+                          </button>
+                        </td>
                       ))}
                     </tr>
-                  </thead>
-                  <tbody>
-                    {PERMISSIONS.map((perm, idx) => (
-                      <tr key={perm} className="border-b border-border-dark/50">
-                        <td className="px-4 py-3 text-sm text-white font-medium">{perm}</td>
-                        {Object.keys(permissions).map(role => (
-                          <td key={role} className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => togglePerm(role, idx)}
-                              className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", permissions[role][idx] ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500 hover:text-slate-300")}
-                            >
-                              <span className="material-symbols-outlined text-lg">{permissions[role][idx] ? "check" : "close"}</span>
-                            </button>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
+                  ))}</tbody>
                 </table>
               </div>
-              <button onClick={() => addToast("success", "Permissions mises à jour")} className="px-6 py-2.5 bg-primary text-background-dark rounded-xl text-sm font-bold hover:brightness-110 transition-all">Enregistrer</button>
+              <button disabled={saving} onClick={() => saveToApi({ permissions }, "Permissions mises a jour")} className={saveBtnCls}>{saving ? "Enregistrement..." : "Enregistrer"}</button>
             </div>
           )}
 
-          {/* Plan d'abonnement */}
+          {/* Plan */}
           {section === "plan" && (
             <div className="space-y-5">
               <h2 className="text-lg font-bold text-white mb-4">Abonnement</h2>
               <div className="bg-primary/10 rounded-xl border border-primary/20 p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-xl font-black text-white">Plan Agence</p>
-                    <p className="text-sm text-slate-400">€99/mois · Commission 8%</p>
-                  </div>
+                  <div><p className="text-xl font-black text-white">Plan Agence</p><p className="text-sm text-slate-400">99/mois - Commission 8%</p></div>
                   <span className="text-xs bg-primary text-background-dark px-3 py-1.5 rounded-full font-bold">Actif</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {PLAN_FEATURES.map(f => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-slate-300">
-                      <span className="material-symbols-outlined text-primary text-sm">check_circle</span>
-                      {f}
-                    </div>
-                  ))}
+                  {PLAN_FEATURES.map((f) => <div key={f} className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check_circle</span>{f}</div>)}
                 </div>
               </div>
-              <div className="bg-background-dark/50 rounded-xl border border-border-dark p-5">
-                <p className="text-sm font-bold text-white mb-2">Prochain renouvellement</p>
-                <p className="text-sm text-slate-400">4 avril 2026 — €99,00</p>
-              </div>
               <div className="flex gap-3">
-                <button onClick={() => addToast("info", "Changement de plan à venir")} className="px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white font-semibold hover:bg-border-dark transition-colors">Changer de plan</button>
-                <button onClick={() => addToast("info", "Annulation du plan à venir")} className="px-4 py-2.5 text-red-400 text-sm font-semibold hover:text-red-300 transition-colors">Annuler l&apos;abonnement</button>
+                <button onClick={() => addToast("info", "Changement de plan a venir")} className="px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white font-semibold hover:bg-border-dark transition-colors">Changer de plan</button>
+                <button onClick={() => addToast("info", "Annulation du plan a venir")} className="px-4 py-2.5 text-red-400 text-sm font-semibold hover:text-red-300 transition-colors">Annuler l&apos;abonnement</button>
               </div>
             </div>
           )}
@@ -205,46 +188,14 @@ export default function AgenceParametres() {
           {/* Paiements */}
           {section === "paiements" && (
             <div className="space-y-5 max-w-lg">
-              <h2 className="text-lg font-bold text-white mb-4">Méthodes de paiement</h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 p-4 bg-background-dark/50 rounded-xl border border-border-dark">
-                  <span className="material-symbols-outlined text-primary text-xl">credit_card</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">Visa •••• 5678</p>
-                    <p className="text-xs text-slate-500">Expire 06/28</p>
-                  </div>
-                  <span className="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">Par défaut</span>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-background-dark/50 rounded-xl border border-border-dark">
-                  <span className="material-symbols-outlined text-amber-400 text-xl">account_balance</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">Virement SEPA</p>
-                    <p className="text-xs text-slate-500">FR76 •••• •••• 4921</p>
-                  </div>
-                  <button className="text-xs text-slate-400 hover:text-white transition-colors">Définir par défaut</button>
-                </div>
+              <h2 className="text-lg font-bold text-white mb-4">Methodes de paiement & retrait</h2>
+              <div><label className={labelCls}>IBAN</label><input value={payments.iban} onChange={(e) => setPayments((p) => ({ ...p, iban: e.target.value }))} placeholder="FR76 XXXX XXXX XXXX XXXX XXX" className={inputCls} /></div>
+              <div><label className={labelCls}>Email PayPal</label><input value={payments.paypalEmail} onChange={(e) => setPayments((p) => ({ ...p, paypalEmail: e.target.value }))} placeholder="agence@exemple.com" className={inputCls} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className={labelCls}>Orange Money</label><input value={payments.orangeMoney} onChange={(e) => setPayments((p) => ({ ...p, orangeMoney: e.target.value }))} placeholder="+221 77 XXX XX XX" className={inputCls} /></div>
+                <div><label className={labelCls}>Wave</label><input value={payments.waveMoney} onChange={(e) => setPayments((p) => ({ ...p, waveMoney: e.target.value }))} placeholder="+221 76 XXX XX XX" className={inputCls} /></div>
               </div>
-              <button onClick={() => addToast("info", "Ajout de méthode bientôt disponible")} className="flex items-center gap-2 text-sm text-primary font-semibold hover:underline">
-                <span className="material-symbols-outlined text-lg">add</span>
-                Ajouter une méthode
-              </button>
-              <div className="pt-4 border-t border-border-dark">
-                <h3 className="text-sm font-bold text-white mb-3">Méthodes de retrait</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: "Virement SEPA", detail: "FR76 •••• •••• 4921", icon: "account_balance" },
-                    { label: "Orange Money", detail: "+221 77 •••• 456", icon: "phone_iphone" },
-                  ].map(m => (
-                    <div key={m.label} className="flex items-center gap-4 p-4 bg-background-dark/50 rounded-xl border border-border-dark">
-                      <span className="material-symbols-outlined text-slate-400 text-xl">{m.icon}</span>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{m.label}</p>
-                        <p className="text-xs text-slate-500">{m.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <button disabled={saving} onClick={() => saveToApi({ paymentInfo: payments }, "Methodes de paiement sauvegardees")} className={saveBtnCls}>{saving ? "Enregistrement..." : "Enregistrer"}</button>
             </div>
           )}
 
@@ -254,39 +205,27 @@ export default function AgenceParametres() {
               <h2 className="text-lg font-bold text-white mb-4">Notifications</h2>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                      <th className="px-4 py-3 text-left font-semibold">Événement</th>
-                      <th className="px-4 py-3 text-center font-semibold">Email</th>
-                      <th className="px-4 py-3 text-center font-semibold">Push</th>
-                      <th className="px-4 py-3 text-center font-semibold">SMS</th>
+                  <thead><tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
+                    <th className="px-4 py-3 text-left font-semibold">Evenement</th>
+                    <th className="px-4 py-3 text-center font-semibold">Email</th>
+                    <th className="px-4 py-3 text-center font-semibold">Push</th>
+                    <th className="px-4 py-3 text-center font-semibold">SMS</th>
+                  </tr></thead>
+                  <tbody>{notifs.map((n) => (
+                    <tr key={n.id} className="border-b border-border-dark/50">
+                      <td className="px-4 py-3 text-sm text-white font-medium">{n.label}</td>
+                      {(["email", "push", "sms"] as const).map((ch) => (
+                        <td key={ch} className="px-4 py-3 text-center">
+                          <button onClick={() => toggleNotif(n.id, ch)} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", n[ch] ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500")}>
+                            <span className="material-symbols-outlined text-lg">{n[ch] ? "check" : "close"}</span>
+                          </button>
+                        </td>
+                      ))}
                     </tr>
-                  </thead>
-                  <tbody>
-                    {notifs.map(n => (
-                      <tr key={n.id} className="border-b border-border-dark/50">
-                        <td className="px-4 py-3 text-sm text-white font-medium">{n.label}</td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setNotifs(prev => prev.map(nn => nn.id === n.id ? { ...nn, email: !nn.email } : nn))} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", n.email ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500")}>
-                            <span className="material-symbols-outlined text-lg">{n.email ? "check" : "close"}</span>
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setNotifs(prev => prev.map(nn => nn.id === n.id ? { ...nn, push: !nn.push } : nn))} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", n.push ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500")}>
-                            <span className="material-symbols-outlined text-lg">{n.push ? "check" : "close"}</span>
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setNotifs(prev => prev.map(nn => nn.id === n.id ? { ...nn, sms: !nn.sms } : nn))} className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-colors", n.sms ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500")}>
-                            <span className="material-symbols-outlined text-lg">{n.sms ? "check" : "close"}</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  ))}</tbody>
                 </table>
               </div>
-              <button onClick={() => addToast("success", "Notifications mises à jour")} className="px-6 py-2.5 bg-primary text-background-dark rounded-xl text-sm font-bold hover:brightness-110 transition-all">Enregistrer</button>
+              <button disabled={saving} onClick={() => saveToApi({ notificationSettings: notifs }, "Notifications mises a jour")} className={saveBtnCls}>{saving ? "Enregistrement..." : "Enregistrer"}</button>
             </div>
           )}
 
@@ -296,13 +235,13 @@ export default function AgenceParametres() {
               <h2 className="text-lg font-bold text-white mb-4">Zone danger</h2>
               <div className="p-5 bg-red-500/5 rounded-xl border border-red-500/20">
                 <h3 className="text-sm font-bold text-red-400 mb-2">Suspendre l&apos;agence</h3>
-                <p className="text-xs text-slate-400 mb-3">Mettre l&apos;agence en pause désactive tous les services et rend le profil invisible. Les commandes en cours seront maintenues.</p>
-                <button onClick={() => addToast("info", "Suspension à venir")} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Suspendre l&apos;agence</button>
+                <p className="text-xs text-slate-400 mb-3">Mettre l&apos;agence en pause desactive tous les services et rend le profil invisible. Les commandes en cours seront maintenues.</p>
+                <button onClick={() => addToast("info", "Suspension a venir")} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Suspendre l&apos;agence</button>
               </div>
               <div className="p-5 bg-red-500/5 rounded-xl border border-red-500/20">
                 <h3 className="text-sm font-bold text-red-400 mb-2">Supprimer l&apos;agence</h3>
-                <p className="text-xs text-slate-400 mb-3">Cette action est irréversible. Toutes les données, services, historiques et accès des membres seront définitivement supprimés.</p>
-                <button onClick={() => setShowDeleteConfirm(true)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition-colors">Supprimer définitivement</button>
+                <p className="text-xs text-slate-400 mb-3">Cette action est irreversible. Toutes les donnees, services, historiques et acces des membres seront definitivement supprimes.</p>
+                <button onClick={() => setShowDeleteConfirm(true)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition-colors">Supprimer definitivement</button>
               </div>
             </div>
           )}
@@ -315,15 +254,13 @@ export default function AgenceParametres() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative bg-neutral-dark rounded-2xl border border-red-500/30 p-6 w-full max-w-md">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-red-400">warning</span>
-              </div>
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center"><span className="material-symbols-outlined text-red-400">warning</span></div>
               <h3 className="text-lg font-bold text-white">Confirmer la suppression</h3>
             </div>
-            <p className="text-sm text-slate-400 mb-4">Êtes-vous sûr de vouloir supprimer définitivement votre agence ? Cette action est irréversible.</p>
+            <p className="text-sm text-slate-400 mb-4">Etes-vous sur de vouloir supprimer definitivement votre agence ? Cette action est irreversible.</p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 text-slate-400 text-sm font-semibold hover:text-white transition-colors">Annuler</button>
-              <button onClick={() => { addToast("error", "Agence supprimée"); setShowDeleteConfirm(false); }} className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-all">Supprimer</button>
+              <button onClick={async () => { try { await profileApi.update({ deleted: true }); addToast("error", "Agence supprimee"); } catch { addToast("error", "Erreur lors de la suppression"); } setShowDeleteConfirm(false); }} className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-all">Supprimer</button>
             </div>
           </div>
         </div>

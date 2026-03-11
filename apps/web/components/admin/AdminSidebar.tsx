@@ -4,6 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { hasPermission, ADMIN_NAV_PERMISSIONS, ADMIN_ROLE_LABELS, type AdminRole, type AdminPermission } from "@/lib/admin-permissions";
+
+// Current admin role — in production this would come from session/JWT
+// For now, default to super_admin; individual pages can override
+function useAdminRole(): AdminRole {
+  // In dev mode, always super_admin. In production, this would
+  // read from the session's adminRole claim.
+  return "super_admin";
+}
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
@@ -20,6 +29,7 @@ const NAV_ITEMS = [
   { label: "Notifications", href: "/admin/notifications", icon: "notifications" },
   { label: "Analytics", href: "/admin/analytics", icon: "bar_chart" },
   { label: "Journal d'audit", href: "/admin/audit-log", icon: "history" },
+  { label: "Equipe", href: "/admin/equipe", icon: "group" },
 ];
 
 const BOTTOM_ITEMS = [
@@ -28,11 +38,21 @@ const BOTTOM_ITEMS = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const adminRole = useAdminRole();
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
     return pathname === href || pathname.startsWith(href + "/");
   }
+
+  function canAccess(href: string): boolean {
+    const requiredPermission = ADMIN_NAV_PERMISSIONS[href];
+    if (!requiredPermission) return true;
+    return hasPermission(adminRole, requiredPermission as AdminPermission);
+  }
+
+  const visibleNav = NAV_ITEMS.filter((item) => canAccess(item.href));
+  const visibleBottom = BOTTOM_ITEMS.filter((item) => canAccess(item.href));
 
   return (
     <aside className="w-64 flex-shrink-0 bg-neutral-dark border-r border-border-dark flex flex-col h-screen overflow-hidden">
@@ -57,7 +77,7 @@ export function AdminSidebar() {
         </Link>
         <div className="border-b border-border-dark mb-2" />
 
-        {NAV_ITEMS.map(({ label, href, icon, exact }) => {
+        {visibleNav.map(({ label, href, icon, exact }) => {
           const active = isActive(href, exact);
           return (
             <Link key={href} href={href} className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors", active ? "bg-primary/10 text-primary" : "text-slate-400 hover:text-white hover:bg-border-dark/50")}>
@@ -69,7 +89,7 @@ export function AdminSidebar() {
       </nav>
 
       <div className="px-3 py-2 border-t border-border-dark">
-        {BOTTOM_ITEMS.map(({ label, href, icon }) => (
+        {visibleBottom.map(({ label, href, icon }) => (
           <Link key={href} href={href} className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors", isActive(href) ? "bg-primary/10 text-primary" : "text-slate-400 hover:text-white hover:bg-border-dark/50")}>
             <span className="material-symbols-outlined text-lg">{icon}</span>
             <span>{label}</span>
@@ -82,7 +102,7 @@ export function AdminSidebar() {
           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">AP</div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white truncate">Admin Principal</p>
-            <p className="text-[10px] text-primary font-semibold">Super Admin</p>
+            <p className="text-[10px] text-primary font-semibold">{ADMIN_ROLE_LABELS[adminRole]}</p>
           </div>
         </div>
         <button

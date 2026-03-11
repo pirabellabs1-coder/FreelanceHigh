@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore } from "@/store/currency";
 
@@ -23,316 +24,95 @@ interface Project {
   contractType: ContractType;
   skills: string[];
   clientName: string;
+  clientCountry: string;
   clientRating: number;
-  clientReviews: number;
   proposals: number;
+  status: string;
   postedAt: string;
-  country: string;
 }
 
-// ---------------------------------------------------------------------------
-// Demo data
-// ---------------------------------------------------------------------------
-
-const DEMO_PROJECTS: Project[] = [
-  {
-    id: "proj-1",
-    title: "Refonte UI/UX Dashboard SaaS",
-    description:
-      "Recherche designer UI/UX pour refonte complete d'un dashboard SaaS existant. Nous avons besoin d'un redesign moderne, intuitif et accessible qui ameliore l'experience utilisateur globale de notre produit.",
-    category: "Design UI/UX",
-    budgetMin: 1500,
-    budgetMax: 3000,
-    deadline: "2026-04-01",
-    urgency: "normale",
-    contractType: "ponctuel",
-    skills: ["Figma", "React", "UI Design"],
-    clientName: "NexGen Solutions",
-    clientRating: 4.9,
-    clientReviews: 12,
-    proposals: 8,
-    postedAt: "2026-02-26",
-    country: "France",
-  },
-  {
-    id: "proj-2",
-    title: "Developpement API REST Node.js",
-    description:
-      "Creation API RESTful avec authentification JWT, gestion des roles utilisateurs, et integration base de donnees PostgreSQL. Architecture scalable requise avec documentation Swagger.",
-    category: "Developpement Web",
-    budgetMin: 2000,
-    budgetMax: 4000,
-    deadline: "2026-04-15",
-    urgency: "urgente",
-    contractType: "ponctuel",
-    skills: ["Node.js", "TypeScript", "PostgreSQL"],
-    clientName: "DataFlow Corp",
-    clientRating: 4.7,
-    clientReviews: 8,
-    proposals: 3,
-    postedAt: "2026-03-01",
-    country: "Senegal",
-  },
-  {
-    id: "proj-3",
-    title: "Logo et Charte Graphique Fintech",
-    description:
-      "Creation logo et charte graphique complete pour startup fintech. Livrables attendus : logo vectoriel, palette couleurs, typographies, guide d'utilisation et templates reseaux sociaux.",
-    category: "Identite Visuelle",
-    budgetMin: 500,
-    budgetMax: 1000,
-    deadline: "2026-03-20",
-    urgency: "normale",
-    contractType: "ponctuel",
-    skills: ["Logo Design", "Branding", "Illustrator"],
-    clientName: "FinPay Startup",
-    clientRating: 4.5,
-    clientReviews: 5,
-    proposals: 12,
-    postedAt: "2026-03-02",
-    country: "Cote d'Ivoire",
-  },
-  {
-    id: "proj-4",
-    title: "Application Mobile E-commerce",
-    description:
-      "Developpement app mobile React Native pour plateforme e-commerce panafricaine. Integration paiements mobiles (Orange Money, Wave, MTN MoMo), gestion catalogue et suivi commandes en temps reel.",
-    category: "Application Mobile",
-    budgetMin: 3000,
-    budgetMax: 6000,
-    deadline: "2026-05-01",
-    urgency: "normale",
-    contractType: "long_terme",
-    skills: ["React Native", "TypeScript", "Firebase"],
-    clientName: "AfriShop Ltd",
-    clientRating: 4.8,
-    clientReviews: 15,
-    proposals: 6,
-    postedAt: "2026-02-20",
-    country: "Cameroun",
-  },
-  {
-    id: "proj-5",
-    title: "Campagne Marketing Digital",
-    description:
-      "Strategie marketing complete pour lancement produit SaaS sur le marche africain. SEO, Google Ads, campagnes reseaux sociaux, email marketing et suivi KPIs de performance.",
-    category: "Marketing Digital",
-    budgetMin: 1000,
-    budgetMax: 2500,
-    deadline: "2026-03-25",
-    urgency: "tres_urgente",
-    contractType: "ponctuel",
-    skills: ["SEO", "Google Ads", "Social Media"],
-    clientName: "TechAfrica Inc",
-    clientRating: 4.6,
-    clientReviews: 9,
-    proposals: 4,
-    postedAt: "2026-03-01",
-    country: "Maroc",
-  },
-  {
-    id: "proj-6",
-    title: "Traduction Site Web FR/EN/AR",
-    description:
-      "Traduction complete d'un site e-commerce multilingue. Environ 150 pages a traduire du francais vers l'anglais et l'arabe avec adaptation culturelle et respect du ton de marque.",
-    category: "Traduction",
-    budgetMin: 400,
-    budgetMax: 800,
-    deadline: "2026-03-15",
-    urgency: "urgente",
-    contractType: "ponctuel",
-    skills: ["Francais", "Anglais", "Arabe"],
-    clientName: "MedConnect",
-    clientRating: 4.4,
-    clientReviews: 3,
-    proposals: 9,
-    postedAt: "2026-02-28",
-    country: "France",
-  },
-  {
-    id: "proj-7",
-    title: "Video Promotionnelle 60s",
-    description:
-      "Creation video animee professionnelle pour presentation produit tech. Style flat design / motion graphics. Script fourni. Livrables en 1080p et format carre pour reseaux sociaux.",
-    category: "Video & Animation",
-    budgetMin: 800,
-    budgetMax: 1500,
-    deadline: "2026-04-10",
-    urgency: "normale",
-    contractType: "ponctuel",
-    skills: ["After Effects", "Motion Design", "Animation"],
-    clientName: "GreenTech CI",
-    clientRating: 4.3,
-    clientReviews: 6,
-    proposals: 2,
-    postedAt: "2026-03-02",
-    country: "Cote d'Ivoire",
-  },
-  {
-    id: "proj-8",
-    title: "Redaction 20 Articles Blog SEO",
-    description:
-      "Redaction optimisee SEO pour blog tech. 20 articles de 1500 mots minimum sur les thematiques IA, cloud computing et cybersecurite. Publication WordPress incluse.",
-    category: "Redaction & SEO",
-    budgetMin: 600,
-    budgetMax: 1200,
-    deadline: "2026-04-20",
-    urgency: "normale",
-    contractType: "recurrent",
-    skills: ["Redaction Web", "SEO", "WordPress"],
-    clientName: "BlogMaster SN",
-    clientRating: 4.7,
-    clientReviews: 11,
-    proposals: 7,
-    postedAt: "2026-02-25",
-    country: "Senegal",
-  },
-  {
-    id: "proj-9",
-    title: "Integration Systeme de Paiement Mobile",
-    description:
-      "Integration CinetPay et Stripe dans une application web existante. Gestion des webhooks, reconciliation automatique et tableaux de bord financier pour l'administrateur.",
-    category: "Developpement Web",
-    budgetMin: 1800,
-    budgetMax: 3500,
-    deadline: "2026-04-05",
-    urgency: "urgente",
-    contractType: "ponctuel",
-    skills: ["Node.js", "Stripe API", "CinetPay", "React"],
-    clientName: "PaySmart Africa",
-    clientRating: 4.8,
-    clientReviews: 7,
-    proposals: 5,
-    postedAt: "2026-02-27",
-    country: "Senegal",
-  },
-  {
-    id: "proj-10",
-    title: "Design System Complet pour Startup",
-    description:
-      "Creation d'un design system complet avec composants Figma, tokens de design, documentation et implementation Storybook. Plus de 50 composants requis avec variantes.",
-    category: "Design UI/UX",
-    budgetMin: 2500,
-    budgetMax: 5000,
-    deadline: "2026-05-15",
-    urgency: "normale",
-    contractType: "long_terme",
-    skills: ["Figma", "Storybook", "Design Tokens", "React"],
-    clientName: "InnoTech Labs",
-    clientRating: 4.9,
-    clientReviews: 20,
-    proposals: 10,
-    postedAt: "2026-03-03",
-    country: "France",
-  },
-  {
-    id: "proj-11",
-    title: "Chatbot IA Service Client",
-    description:
-      "Developpement d'un chatbot intelligent base sur GPT pour le service client d'une plateforme e-commerce. Integration WhatsApp Business API et tableau de bord analytics.",
-    category: "Intelligence Artificielle",
-    budgetMin: 3500,
-    budgetMax: 7000,
-    deadline: "2026-06-01",
-    urgency: "normale",
-    contractType: "long_terme",
-    skills: ["Python", "OpenAI API", "NLP", "WhatsApp API"],
-    clientName: "CommerceAI",
-    clientRating: 4.6,
-    clientReviews: 4,
-    proposals: 3,
-    postedAt: "2026-03-02",
-    country: "Cameroun",
-  },
-  {
-    id: "proj-12",
-    title: "Audit Securite Application Web",
-    description:
-      "Audit complet de securite d'une application web SaaS : tests de penetration, analyse des vulnerabilites OWASP Top 10, rapport detaille et recommandations de remediation.",
-    category: "Cybersecurite",
-    budgetMin: 2000,
-    budgetMax: 4500,
-    deadline: "2026-03-30",
-    urgency: "tres_urgente",
-    contractType: "ponctuel",
-    skills: ["Pentest", "OWASP", "Burp Suite", "Securite Web"],
-    clientName: "SecureBank CI",
-    clientRating: 4.9,
-    clientReviews: 14,
-    proposals: 1,
-    postedAt: "2026-03-03",
-    country: "Cote d'Ivoire",
-  },
-];
+interface ProjectsApiResponse {
+  projects: Project[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const CATEGORIES = [
-  "Toutes les categories",
-  "Design UI/UX",
-  "Developpement Web",
-  "Identite Visuelle",
-  "Application Mobile",
-  "Marketing Digital",
-  "Traduction",
-  "Video & Animation",
-  "Redaction & SEO",
-  "Intelligence Artificielle",
-  "Cybersecurite",
+const CATEGORY_KEYS = [
+  "all",
+  "design_ui_ux",
+  "developpement_web",
+  "developpement_web_2",
+  "developpement",
+  "identite_visuelle",
+  "application_mobile",
+  "marketing_digital",
+  "marketing",
+  "traduction",
+  "video_animation",
+  "redaction_seo",
+  "redaction",
+  "intelligence_artificielle",
+  "cybersecurite",
+] as const;
+
+const CATEGORY_API_VALUES: Record<string, string> = {
+  all: "",
+  design_ui_ux: "Design UI/UX",
+  developpement_web: "Developpement Web",
+  developpement_web_2: "Développement Web",
+  developpement: "Développement",
+  identite_visuelle: "Identite Visuelle",
+  application_mobile: "Application Mobile",
+  marketing_digital: "Marketing Digital",
+  marketing: "Marketing",
+  traduction: "Traduction",
+  video_animation: "Video & Animation",
+  redaction_seo: "Redaction & SEO",
+  redaction: "Rédaction",
+  intelligence_artificielle: "Intelligence Artificielle",
+  cybersecurite: "Cybersecurite",
+};
+
+const NIVEAU_KEYS = ["all", "debutant", "intermediaire", "expert"] as const;
+
+const CONTRACT_TYPE_KEYS = ["tous", "ponctuel", "long_terme", "recurrent"] as const;
+
+const URGENCY_OPTION_KEYS = ["toutes", "normale", "urgente", "tres_urgente"] as const;
+
+const SORT_OPTION_KEYS: { value: string; icon: string }[] = [
+  { value: "recent", icon: "schedule" },
+  { value: "budget_desc", icon: "trending_down" },
+  { value: "budget_asc", icon: "trending_up" },
+  { value: "deadline", icon: "priority_high" },
 ];
 
-const NIVEAUX = [
-  "Tous les niveaux",
-  "Debutant",
-  "Intermediaire",
-  "Expert",
-];
-
-const CONTRACT_TYPES: { value: string; label: string }[] = [
-  { value: "tous", label: "Tous les types" },
-  { value: "ponctuel", label: "Ponctuel" },
-  { value: "long_terme", label: "Long terme" },
-  { value: "recurrent", label: "Recurrent" },
-];
-
-const URGENCY_OPTIONS: { value: string; label: string }[] = [
-  { value: "toutes", label: "Toutes les urgences" },
-  { value: "normale", label: "Normale" },
-  { value: "urgente", label: "Urgente" },
-  { value: "tres_urgente", label: "Tres urgente" },
-];
-
-const SORT_OPTIONS: { value: string; label: string; icon: string }[] = [
-  { value: "recommandes", label: "Recommandes", icon: "thumb_up" },
-  { value: "budget_desc", label: "Budget decroissant", icon: "trending_down" },
-  { value: "recents", label: "Plus recents", icon: "schedule" },
-  { value: "urgents", label: "Urgents d'abord", icon: "priority_high" },
-];
-
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 12;
 
 const URGENCY_CONFIG: Record<
   Urgency,
-  { label: string; bgClass: string; textClass: string; borderClass: string; icon: string }
+  { tKey: string; bgClass: string; textClass: string; borderClass: string; icon: string }
 > = {
   normale: {
-    label: "Normale",
+    tKey: "urgency_badge.normale",
     bgClass: "bg-slate-100 dark:bg-slate-700/50",
     textClass: "text-slate-600 dark:text-slate-300",
     borderClass: "border-slate-200 dark:border-slate-600",
     icon: "schedule",
   },
   urgente: {
-    label: "Urgent",
+    tKey: "urgency_badge.urgente",
     bgClass: "bg-amber-50 dark:bg-amber-900/30",
     textClass: "text-amber-700 dark:text-amber-400",
     borderClass: "border-amber-200 dark:border-amber-700/50",
     icon: "warning",
   },
   tres_urgente: {
-    label: "Tres urgent",
+    tKey: "urgency_badge.tres_urgente",
     bgClass: "bg-red-50 dark:bg-red-900/30",
     textClass: "text-red-700 dark:text-red-400",
     borderClass: "border-red-200 dark:border-red-700/50",
@@ -340,32 +120,60 @@ const URGENCY_CONFIG: Record<
   },
 };
 
-const CONTRACT_LABELS: Record<ContractType, string> = {
-  ponctuel: "Ponctuel",
-  long_terme: "Long terme",
-  recurrent: "Recurrent",
+const CONTRACT_LABEL_KEYS: Record<ContractType, string> = {
+  ponctuel: "contract_label.ponctuel",
+  long_terme: "contract_label.long_terme",
+  recurrent: "contract_label.recurrent",
 };
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function daysAgo(dateStr: string): string {
+function daysAgo(dateStr: string, t: ReturnType<typeof useTranslations>): string {
   const diff = Math.floor(
     (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
   );
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return "Hier";
-  return `Il y a ${diff} jours`;
+  if (diff === 0) return t("today");
+  if (diff === 1) return t("yesterday");
+  return t("days_ago", { count: diff });
 }
 
-function daysUntil(dateStr: string): string {
+function daysUntil(dateStr: string, t: ReturnType<typeof useTranslations>): string {
   const diff = Math.ceil(
     (new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
   );
-  if (diff <= 0) return "Expire";
-  if (diff === 1) return "1 jour restant";
-  return `${diff} jours restants`;
+  if (diff <= 0) return t("expired");
+  if (diff === 1) return t("days_remaining_one");
+  return t("days_remaining", { count: diff });
+}
+
+// ---------------------------------------------------------------------------
+// Loading Skeleton
+// ---------------------------------------------------------------------------
+
+function ProjectsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="animate-pulse p-5 rounded-2xl bg-white dark:bg-neutral-dark border border-slate-200 dark:border-border-dark">
+          <div className="flex gap-2 mb-3">
+            <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-full" />
+            <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-full" />
+          </div>
+          <div className="h-5 w-full bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+          <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-3" />
+          <div className="flex gap-1.5 mb-4">
+            <div className="h-5 w-16 bg-slate-200 dark:bg-slate-700 rounded-md" />
+            <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded-md" />
+            <div className="h-5 w-14 bg-slate-200 dark:bg-slate-700 rounded-md" />
+          </div>
+          <div className="h-5 w-40 bg-slate-200 dark:bg-slate-700 rounded mb-4" />
+          <div className="h-8 w-full bg-slate-200 dark:bg-slate-700 rounded-xl" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -375,9 +183,11 @@ function daysUntil(dateStr: string): string {
 function SearchBar({
   value,
   onChange,
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
+  placeholder: string;
 }) {
   return (
     <div className="relative w-full">
@@ -386,7 +196,7 @@ function SearchBar({
       </span>
       <input
         type="text"
-        placeholder="Rechercher un projet par titre, competence, categorie..."
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
@@ -428,6 +238,7 @@ function FilterSidebar({
   setUrgency,
   onReset,
   hasFilters,
+  t,
 }: {
   category: string;
   setCategory: (v: string) => void;
@@ -445,6 +256,7 @@ function FilterSidebar({
   setUrgency: (v: string) => void;
   onReset: () => void;
   hasFilters: boolean;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <aside className="space-y-6">
@@ -454,7 +266,7 @@ function FilterSidebar({
           <span className="material-symbols-outlined text-primary text-lg">
             tune
           </span>
-          Filtres
+          {t("filters")}
         </h3>
         {hasFilters && (
           <button
@@ -464,13 +276,13 @@ function FilterSidebar({
             <span className="material-symbols-outlined text-sm">
               restart_alt
             </span>
-            Reinitialiser
+            {t("reset_filters")}
           </button>
         )}
       </div>
 
       {/* Category */}
-      <FilterGroup label="Categorie" icon="category">
+      <FilterGroup label={t("filter_category")} icon="category">
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -483,16 +295,16 @@ function FilterSidebar({
             "transition-all cursor-pointer"
           )}
         >
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+          {CATEGORY_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {t(`cat.${key}`)}
             </option>
           ))}
         </select>
       </FilterGroup>
 
       {/* Budget */}
-      <FilterGroup label="Budget (EUR)" icon="payments">
+      <FilterGroup label={t("filter_budget")} icon="payments">
         <div className="flex gap-2">
           <input
             type="number"
@@ -528,7 +340,7 @@ function FilterSidebar({
       </FilterGroup>
 
       {/* Deadline */}
-      <FilterGroup label="Delai" icon="event">
+      <FilterGroup label={t("filter_deadline")} icon="event">
         <input
           type="date"
           value={deadline}
@@ -545,7 +357,7 @@ function FilterSidebar({
       </FilterGroup>
 
       {/* Niveau requis */}
-      <FilterGroup label="Niveau requis" icon="school">
+      <FilterGroup label={t("filter_level")} icon="school">
         <select
           value={niveau}
           onChange={(e) => setNiveau(e.target.value)}
@@ -558,23 +370,23 @@ function FilterSidebar({
             "transition-all cursor-pointer"
           )}
         >
-          {NIVEAUX.map((n) => (
-            <option key={n} value={n}>
-              {n}
+          {NIVEAU_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {t(`level.${key}`)}
             </option>
           ))}
         </select>
       </FilterGroup>
 
       {/* Type de contrat */}
-      <FilterGroup label="Type de contrat" icon="description">
+      <FilterGroup label={t("filter_contract_type")} icon="description">
         <div className="space-y-2">
-          {CONTRACT_TYPES.map((ct) => (
+          {CONTRACT_TYPE_KEYS.map((key) => (
             <label
-              key={ct.value}
+              key={key}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm font-medium",
-                contractType === ct.value
+                contractType === key
                   ? "bg-primary/10 text-primary border border-primary/20"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-dark border border-transparent"
               )}
@@ -582,30 +394,30 @@ function FilterSidebar({
               <div
                 className={cn(
                   "size-4 rounded-full border-2 flex items-center justify-center transition-all",
-                  contractType === ct.value
+                  contractType === key
                     ? "border-primary"
                     : "border-slate-300 dark:border-slate-600"
                 )}
               >
-                {contractType === ct.value && (
+                {contractType === key && (
                   <div className="size-2 rounded-full bg-primary" />
                 )}
               </div>
-              {ct.label}
+              {t(`contract.${key}`)}
             </label>
           ))}
         </div>
       </FilterGroup>
 
       {/* Urgence */}
-      <FilterGroup label="Urgence" icon="priority_high">
+      <FilterGroup label={t("filter_urgency")} icon="priority_high">
         <div className="space-y-2">
-          {URGENCY_OPTIONS.map((u) => (
+          {URGENCY_OPTION_KEYS.map((key) => (
             <label
-              key={u.value}
+              key={key}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all text-sm font-medium",
-                urgency === u.value
+                urgency === key
                   ? "bg-primary/10 text-primary border border-primary/20"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-dark border border-transparent"
               )}
@@ -613,16 +425,16 @@ function FilterSidebar({
               <div
                 className={cn(
                   "size-4 rounded-full border-2 flex items-center justify-center transition-all",
-                  urgency === u.value
+                  urgency === key
                     ? "border-primary"
                     : "border-slate-300 dark:border-slate-600"
                 )}
               >
-                {urgency === u.value && (
+                {urgency === key && (
                   <div className="size-2 rounded-full bg-primary" />
                 )}
               </div>
-              {u.label}
+              {t(`urgency.${key}`)}
             </label>
           ))}
         </div>
@@ -655,21 +467,31 @@ function SortBar({
   sort,
   setSort,
   total,
+  loading,
+  t,
 }: {
   sort: string;
   setSort: (v: string) => void;
   total: number;
+  loading: boolean;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-        <span className="text-slate-900 dark:text-slate-100 font-bold">
-          {total}
-        </span>{" "}
-        {total === 1 ? "projet trouve" : "projets trouves"}
+        {loading ? (
+          <span className="inline-block h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+        ) : (
+          <>
+            <span className="text-slate-900 dark:text-slate-100 font-bold">
+              {total}
+            </span>{" "}
+            {t("results_count", { count: total })}
+          </>
+        )}
       </p>
       <div className="flex gap-2 flex-wrap">
-        {SORT_OPTIONS.map((opt) => (
+        {SORT_OPTION_KEYS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => setSort(opt.value)}
@@ -683,7 +505,7 @@ function SortBar({
             <span className="material-symbols-outlined text-sm">
               {opt.icon}
             </span>
-            {opt.label}
+            {t(`sort.${opt.value}`)}
           </button>
         ))}
       </div>
@@ -694,9 +516,11 @@ function SortBar({
 function ProjectCard({
   project,
   onSelect,
+  t,
 }: {
   project: Project;
   onSelect: (p: Project) => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const { format } = useCurrencyStore();
   const urgConfig = URGENCY_CONFIG[project.urgency];
@@ -737,7 +561,7 @@ function ProjectCard({
             <span className="material-symbols-outlined text-sm">
               {urgConfig.icon}
             </span>
-            {urgConfig.label}
+            {t(urgConfig.tKey)}
           </span>
         )}
       </div>
@@ -795,17 +619,16 @@ function ProjectCard({
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
             {project.clientName}
           </span>
-          <div className="flex items-center gap-0.5">
-            <span className="material-symbols-outlined text-amber-500 text-sm">
-              star
-            </span>
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              {project.clientRating}
-            </span>
-            <span className="text-xs text-slate-400">
-              ({project.clientReviews})
-            </span>
-          </div>
+          {project.clientRating > 0 && (
+            <div className="flex items-center gap-0.5">
+              <span className="material-symbols-outlined text-amber-500 text-sm">
+                star
+              </span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                {project.clientRating}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -814,17 +637,17 @@ function ProjectCard({
         <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-sm">group</span>
-            {project.proposals} propositions
+            {project.proposals} {t("proposals")}
           </span>
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-sm">
               calendar_today
             </span>
-            {daysUntil(project.deadline)}
+            {daysUntil(project.deadline, t)}
           </span>
         </div>
         <span className="text-xs text-slate-400 dark:text-slate-500">
-          {daysAgo(project.postedAt)}
+          {daysAgo(project.postedAt, t)}
         </span>
       </div>
 
@@ -841,7 +664,7 @@ function ProjectCard({
         )}
       >
         <span className="material-symbols-outlined text-sm">send</span>
-        Postuler
+        {t("apply")}
       </button>
     </div>
   );
@@ -937,9 +760,13 @@ function Pagination({
 function ProjectDetailPanel({
   project,
   onClose,
+  t,
+  locale,
 }: {
   project: Project;
   onClose: () => void;
+  t: ReturnType<typeof useTranslations>;
+  locale: string;
 }) {
   const { format } = useCurrencyStore();
   const urgConfig = URGENCY_CONFIG[project.urgency];
@@ -974,7 +801,7 @@ function ProjectDetailPanel({
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-border-dark px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate pr-4">
-            Detail du projet
+            {t("detail_title")}
           </h2>
           <button
             onClick={onClose}
@@ -1009,7 +836,7 @@ function ProjectDetailPanel({
               <span className="material-symbols-outlined text-sm">
                 {urgConfig.icon}
               </span>
-              {urgConfig.label}
+              {t(urgConfig.tKey)}
             </span>
             <span
               className={cn(
@@ -1020,7 +847,7 @@ function ProjectDetailPanel({
               <span className="material-symbols-outlined text-sm">
                 description
               </span>
-              {CONTRACT_LABELS[project.contractType]}
+              {t(CONTRACT_LABEL_KEYS[project.contractType])}
             </span>
           </div>
 
@@ -1041,20 +868,21 @@ function ProjectDetailPanel({
                 {project.clientName}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className="flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-amber-500 text-sm">
-                    star
+                {project.clientRating > 0 && (
+                  <div className="flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-amber-500 text-sm">
+                      star
+                    </span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {project.clientRating}
+                    </span>
+                  </div>
+                )}
+                {project.clientCountry && (
+                  <span className="text-xs text-slate-400">
+                    {project.clientCountry}
                   </span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                    {project.clientRating}
-                  </span>
-                </div>
-                <span className="text-xs text-slate-400">
-                  ({project.clientReviews} avis)
-                </span>
-                <span className="text-xs text-slate-400">
-                  {project.country}
-                </span>
+                )}
               </div>
             </div>
           </div>
@@ -1065,7 +893,7 @@ function ProjectDetailPanel({
               <span className="material-symbols-outlined text-primary text-lg">
                 article
               </span>
-              Description du projet
+              {t("detail_description")}
             </h4>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               {project.description}
@@ -1078,7 +906,7 @@ function ProjectDetailPanel({
               <span className="material-symbols-outlined text-primary text-lg">
                 construction
               </span>
-              Competences requises
+              {t("detail_skills")}
             </h4>
             <div className="flex flex-wrap gap-2">
               {project.skills.map((skill) => (
@@ -1099,14 +927,14 @@ function ProjectDetailPanel({
           <div className="grid grid-cols-1 gap-3">
             <DetailInfoRow
               icon="payments"
-              label="Budget"
+              label={t("budget")}
               value={`${format(project.budgetMin)} - ${format(project.budgetMax)}`}
               valueClass="text-primary font-extrabold"
             />
             <DetailInfoRow
               icon="event"
-              label="Deadline"
-              value={new Date(project.deadline).toLocaleDateString("fr-FR", {
+              label={t("deadline")}
+              value={new Date(project.deadline).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -1114,28 +942,30 @@ function ProjectDetailPanel({
             />
             <DetailInfoRow
               icon="schedule"
-              label="Temps restant"
-              value={daysUntil(project.deadline)}
+              label={t("detail_time_remaining")}
+              value={daysUntil(project.deadline, t)}
             />
             <DetailInfoRow
               icon="description"
-              label="Type de contrat"
-              value={CONTRACT_LABELS[project.contractType]}
+              label={t("filter_contract_type")}
+              value={t(CONTRACT_LABEL_KEYS[project.contractType])}
             />
-            <DetailInfoRow
-              icon="location_on"
-              label="Pays"
-              value={project.country}
-            />
+            {project.clientCountry && (
+              <DetailInfoRow
+                icon="location_on"
+                label={t("detail_country")}
+                value={project.clientCountry}
+              />
+            )}
             <DetailInfoRow
               icon="group"
-              label="Propositions recues"
-              value={`${project.proposals} candidatures`}
+              label={t("detail_proposals_received")}
+              value={`${project.proposals} ${t("detail_applications")}`}
             />
             <DetailInfoRow
               icon="calendar_today"
-              label="Publie"
-              value={daysAgo(project.postedAt)}
+              label={t("detail_posted")}
+              value={daysAgo(project.postedAt, t)}
             />
           </div>
 
@@ -1150,7 +980,7 @@ function ProjectDetailPanel({
               )}
             >
               <span className="material-symbols-outlined text-lg">send</span>
-              Soumettre une proposition
+              {t("submit_proposal")}
             </a>
             <button
               onClick={onClose}
@@ -1162,7 +992,7 @@ function ProjectDetailPanel({
                 "hover:bg-slate-200 dark:hover:bg-border-dark transition-all"
               )}
             >
-              Fermer
+              {t("close")}
             </button>
           </div>
         </div>
@@ -1212,10 +1042,12 @@ function MobileFiltersDrawer({
   open,
   onClose,
   children,
+  t,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  t: ReturnType<typeof useTranslations>;
 }) {
   useEffect(() => {
     if (open) {
@@ -1237,7 +1069,7 @@ function MobileFiltersDrawer({
       <div className="absolute inset-y-0 left-0 w-full max-w-sm bg-white dark:bg-background-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in overflow-y-auto">
         <div className="sticky top-0 z-10 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-border-dark px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Filtres
+            {t("filters")}
           </h2>
           <button
             onClick={onClose}
@@ -1259,51 +1091,94 @@ function MobileFiltersDrawer({
 // ---------------------------------------------------------------------------
 
 export default function OffresProjectsPage() {
+  const t = useTranslations("projects");
+  const locale = useLocale();
+
   // Search & filters
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(CATEGORY_KEYS[0]);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [niveau, setNiveau] = useState(NIVEAUX[0]);
+  const [niveau, setNiveau] = useState<string>(NIVEAU_KEYS[0]);
   const [contractType, setContractType] = useState("tous");
   const [urgency, setUrgency] = useState("toutes");
 
   // Sort & pagination
-  const [sort, setSort] = useState("recommandes");
+  const [sort, setSort] = useState("recent");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // API data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [totalFromApi, setTotalFromApi] = useState(0);
+  const [totalPagesFromApi, setTotalPagesFromApi] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   // UI
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const hasFilters =
-    category !== CATEGORIES[0] ||
+    category !== CATEGORY_KEYS[0] ||
     budgetMin !== "" ||
     budgetMax !== "" ||
     deadline !== "" ||
-    niveau !== NIVEAUX[0] ||
+    niveau !== NIVEAU_KEYS[0] ||
     contractType !== "tous" ||
     urgency !== "toutes" ||
     search !== "";
 
   const resetFilters = useCallback(() => {
     setSearch("");
-    setCategory(CATEGORIES[0]);
+    setCategory(CATEGORY_KEYS[0]);
     setBudgetMin("");
     setBudgetMax("");
     setDeadline("");
-    setNiveau(NIVEAUX[0]);
+    setNiveau(NIVEAU_KEYS[0]);
     setContractType("tous");
     setUrgency("toutes");
     setCurrentPage(1);
   }, []);
 
-  // Filter + sort logic
-  const filteredProjects = useMemo(() => {
-    let result = [...DEMO_PROJECTS];
+  // Fetch projects from API
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
 
-    // Search
+    // Map category filter to API param
+    const categoryApiValue = CATEGORY_API_VALUES[category];
+    if (categoryApiValue) {
+      params.set("category", categoryApiValue);
+    }
+    // Map urgency filter to API param
+    if (urgency !== "toutes") {
+      params.set("urgency", urgency);
+    }
+    params.set("sort", sort);
+    params.set("page", currentPage.toString());
+    params.set("limit", ITEMS_PER_PAGE.toString());
+
+    fetch(`/api/public/projects?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data: ProjectsApiResponse) => {
+        setProjects(data.projects || []);
+        setTotalFromApi(data.total || 0);
+        setTotalPagesFromApi(data.totalPages || 1);
+        setLoading(false);
+      })
+      .catch(() => {
+        setProjects([]);
+        setTotalFromApi(0);
+        setTotalPagesFromApi(1);
+        setLoading(false);
+      });
+  }, [category, urgency, sort, currentPage]);
+
+  // Apply client-side filters that the API doesn't handle
+  const filteredProjects = useMemo(() => {
+    let result = [...projects];
+
+    // Search (client-side because the API doesn't support text search)
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -1316,12 +1191,7 @@ export default function OffresProjectsPage() {
       );
     }
 
-    // Category
-    if (category !== CATEGORIES[0]) {
-      result = result.filter((p) => p.category === category);
-    }
-
-    // Budget min
+    // Budget min (client-side)
     if (budgetMin) {
       const min = parseFloat(budgetMin);
       if (!isNaN(min)) {
@@ -1329,7 +1199,7 @@ export default function OffresProjectsPage() {
       }
     }
 
-    // Budget max
+    // Budget max (client-side)
     if (budgetMax) {
       const max = parseFloat(budgetMax);
       if (!isNaN(max)) {
@@ -1337,74 +1207,25 @@ export default function OffresProjectsPage() {
       }
     }
 
-    // Deadline
+    // Deadline (client-side)
     if (deadline) {
       result = result.filter(
         (p) => new Date(p.deadline) <= new Date(deadline)
       );
     }
 
-    // Contract type
+    // Contract type (client-side)
     if (contractType !== "tous") {
       result = result.filter((p) => p.contractType === contractType);
     }
 
-    // Urgency
-    if (urgency !== "toutes") {
-      result = result.filter((p) => p.urgency === urgency);
-    }
-
-    // Sort
-    switch (sort) {
-      case "budget_desc":
-        result.sort((a, b) => b.budgetMax - a.budgetMax);
-        break;
-      case "recents":
-        result.sort(
-          (a, b) =>
-            new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()
-        );
-        break;
-      case "urgents":
-        {
-          const urgencyOrder: Record<string, number> = {
-            tres_urgente: 0,
-            urgente: 1,
-            normale: 2,
-          };
-          result.sort(
-            (a, b) =>
-              (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2)
-          );
-        }
-        break;
-      case "recommandes":
-      default:
-        result.sort(
-          (a, b) =>
-            b.clientRating * b.clientReviews -
-            a.clientRating * a.clientReviews
-        );
-        break;
-    }
-
     return result;
-  }, [search, category, budgetMin, budgetMax, deadline, contractType, urgency, sort]);
+  }, [projects, search, budgetMin, budgetMax, deadline, contractType]);
 
-  // Pagination
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProjects.length / ITEMS_PER_PAGE)
-  );
-  const paginatedProjects = filteredProjects.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Reset page when filters change
+  // Reset page when server-side filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, category, budgetMin, budgetMax, deadline, contractType, urgency, sort]);
+  }, [category, urgency, sort]);
 
   const handleSelectProject = useCallback((project: Project) => {
     setSelectedProject(project);
@@ -1413,6 +1234,11 @@ export default function OffresProjectsPage() {
   const handleCloseDetail = useCallback(() => {
     setSelectedProject(null);
   }, []);
+
+  // Determine what total to show (API total vs filtered count)
+  const displayTotal = hasFilters && (search || budgetMin || budgetMax || deadline || contractType !== "tous")
+    ? filteredProjects.length
+    : totalFromApi;
 
   const sidebarContent = (
     <FilterSidebar
@@ -1432,6 +1258,7 @@ export default function OffresProjectsPage() {
       setUrgency={setUrgency}
       onReset={resetFilters}
       hasFilters={hasFilters}
+      t={t}
     />
   );
 
@@ -1446,12 +1273,10 @@ export default function OffresProjectsPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  Offres de Projets
+                  {t("title")}
                 </h1>
                 <p className="text-base text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-                  Explorez les missions publiees par nos clients et trouvez le
-                  projet qui correspond a vos competences. Postulez directement
-                  et commencez a collaborer.
+                  {t("subtitle")}
                 </p>
               </div>
               {/* Mobile filter toggle */}
@@ -1468,7 +1293,7 @@ export default function OffresProjectsPage() {
                 <span className="material-symbols-outlined text-primary text-lg">
                   tune
                 </span>
-                Filtres
+                {t("filters")}
                 {hasFilters && (
                   <span className="size-5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
                     !
@@ -1478,7 +1303,7 @@ export default function OffresProjectsPage() {
             </div>
 
             {/* Search bar */}
-            <SearchBar value={search} onChange={setSearch} />
+            <SearchBar value={search} onChange={setSearch} placeholder={t("search_placeholder")} />
           </div>
 
           {/* ---------------------------------------------------------------- */}
@@ -1487,7 +1312,9 @@ export default function OffresProjectsPage() {
           <SortBar
             sort={sort}
             setSort={setSort}
-            total={filteredProjects.length}
+            total={displayTotal}
+            loading={loading}
+            t={t}
           />
 
           {/* ---------------------------------------------------------------- */}
@@ -1503,13 +1330,16 @@ export default function OffresProjectsPage() {
 
             {/* Projects grid */}
             <div className="flex-1 min-w-0">
-              {paginatedProjects.length > 0 ? (
+              {loading ? (
+                <ProjectsSkeleton />
+              ) : filteredProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {paginatedProjects.map((project) => (
+                  {filteredProjects.map((project) => (
                     <ProjectCard
                       key={project.id}
                       project={project}
                       onSelect={handleSelectProject}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -1522,12 +1352,10 @@ export default function OffresProjectsPage() {
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
-                    Aucun projet trouve
+                    {t("empty_title")}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mb-6">
-                    Aucun projet ne correspond a vos criteres de recherche.
-                    Essayez de modifier vos filtres ou effectuez une nouvelle
-                    recherche.
+                    {t("empty_description")}
                   </p>
                   <button
                     onClick={resetFilters}
@@ -1540,17 +1368,19 @@ export default function OffresProjectsPage() {
                     <span className="material-symbols-outlined text-sm">
                       restart_alt
                     </span>
-                    Reinitialiser les filtres
+                    {t("reset_all_filters")}
                   </button>
                 </div>
               )}
 
               {/* Pagination */}
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onChange={setCurrentPage}
-              />
+              {!loading && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPagesFromApi}
+                  onChange={setCurrentPage}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1560,6 +1390,7 @@ export default function OffresProjectsPage() {
       <MobileFiltersDrawer
         open={mobileFiltersOpen}
         onClose={() => setMobileFiltersOpen(false)}
+        t={t}
       >
         {sidebarContent}
       </MobileFiltersDrawer>
@@ -1569,6 +1400,8 @@ export default function OffresProjectsPage() {
         <ProjectDetailPanel
           project={selectedProject}
           onClose={handleCloseDetail}
+          t={t}
+          locale={locale}
         />
       )}
     </>

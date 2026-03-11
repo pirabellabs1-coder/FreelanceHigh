@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToastStore } from "@/store/dashboard";
-import { usePlatformDataStore, type PlatformCategory } from "@/store/platform-data";
+import { useAdminStore, type AdminCategory } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
 function slugify(text: string) {
@@ -18,17 +18,59 @@ const COLOR_OPTIONS = ["#6C2BD9", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#
 
 type ModalMode = null | "add" | "edit";
 
-const emptyForm: { name: string; slug: string; icon: string; color: string; description: string; order: number; status: "actif" | "inactif" } = { name: "", slug: "", icon: "code", color: "#6C2BD9", description: "", order: 1, status: "actif" };
+const emptyForm: { name: string; slug: string; icon: string; color: string; description: string; order: number; status: string } = { name: "", slug: "", icon: "code", color: "#6C2BD9", description: "", order: 1, status: "actif" };
+
+function CategoriesSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-40 bg-border-dark rounded-lg" />
+          <div className="h-4 w-56 bg-border-dark rounded-lg mt-2" />
+        </div>
+        <div className="h-10 w-44 bg-border-dark rounded-lg" />
+      </div>
+      <div className="h-10 w-72 bg-border-dark rounded-xl" />
+      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+        <div className="space-y-0">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border-dark/50">
+              <div className="h-4 w-6 bg-border-dark rounded" />
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-9 h-9 bg-border-dark rounded-lg" />
+                <div className="space-y-1.5">
+                  <div className="h-4 w-36 bg-border-dark rounded" />
+                  <div className="h-3 w-48 bg-border-dark rounded" />
+                </div>
+              </div>
+              <div className="h-4 w-24 bg-border-dark rounded" />
+              <div className="h-5 w-10 bg-border-dark rounded" />
+              <div className="h-6 w-14 bg-border-dark rounded-full" />
+              <div className="flex gap-1">
+                <div className="h-8 w-8 bg-border-dark rounded-lg" />
+                <div className="h-8 w-8 bg-border-dark rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminCategories() {
   const { addToast } = useToastStore();
-  const { categories, services, addCategory, updateCategory, deleteCategory } = usePlatformDataStore();
+  const { categories, loading, syncCategories } = useAdminStore();
 
   const [modal, setModal] = useState<ModalMode>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    syncCategories();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sorted = useMemo(() => {
     let list = [...categories].sort((a, b) => a.order - b.order);
@@ -42,47 +84,38 @@ export default function AdminCategories() {
     setModal("add");
   }
 
-  function openEdit(cat: PlatformCategory) {
-    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color, description: cat.description, order: cat.order, status: cat.status });
+  function openEdit(cat: AdminCategory) {
+    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color, description: "", order: cat.order, status: cat.status });
     setEditId(cat.id);
     setModal("edit");
   }
 
   function handleSave() {
     if (!form.name.trim()) { addToast("warning", "Le nom est requis"); return; }
-    const slug = form.slug || slugify(form.name);
-
-    if (modal === "add") {
-      addCategory({ ...form, slug });
-      addToast("success", `Catégorie "${form.name}" créée`);
-    } else if (modal === "edit" && editId) {
-      updateCategory(editId, { ...form, slug });
-      addToast("success", `Catégorie "${form.name}" modifiée`);
-    }
+    addToast("info", "Fonctionnalité bientôt disponible");
     setModal(null);
   }
 
   function handleDelete(id: string) {
     const cat = categories.find(c => c.id === id);
-    const linkedServices = services.filter(s => s.category === cat?.name).length;
+    const linkedServices = cat?.servicesCount ?? 0;
     if (linkedServices > 0) {
       addToast("warning", `${linkedServices} service(s) utilisent cette catégorie. Réassignez-les d'abord.`);
       setDeleteConfirm(null);
       return;
     }
-    deleteCategory(id);
-    addToast("success", `Catégorie "${cat?.name}" supprimée`);
+    addToast("info", "Fonctionnalité bientôt disponible");
     setDeleteConfirm(null);
   }
 
-  function toggleStatus(cat: PlatformCategory) {
-    const next = cat.status === "actif" ? "inactif" : "actif";
-    updateCategory(cat.id, { status: next as PlatformCategory["status"] });
-    addToast("success", `Catégorie "${cat.name}" ${next === "actif" ? "activée" : "désactivée"}`);
+  function toggleStatus(cat: AdminCategory) {
+    addToast("info", "Fonctionnalité bientôt disponible");
   }
 
   const activeCount = categories.filter(c => c.status === "actif").length;
   const totalServices = categories.reduce((s, c) => s + c.servicesCount, 0);
+
+  if (loading.categories) return <CategoriesSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -131,7 +164,6 @@ export default function AdminCategories() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-white">{cat.name}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{cat.description}</p>
                       </div>
                     </div>
                   </td>
@@ -215,7 +247,7 @@ export default function AdminCategories() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Statut</label>
-                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as "actif" | "inactif" }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary/30">
                     <option value="actif">Actif</option>
                     <option value="inactif">Inactif</option>
                   </select>

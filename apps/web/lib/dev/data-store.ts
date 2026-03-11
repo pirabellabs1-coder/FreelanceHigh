@@ -162,7 +162,7 @@ export interface StoredTransaction {
   type: "vente" | "retrait" | "commission" | "remboursement" | "bonus" | "boost";
   description: string;
   amount: number;
-  status: "complete" | "en_attente" | "echoue";
+  status: "complete" | "en_attente" | "echoue" | "bloque";
   date: string;
   orderId?: string;
   method?: string;
@@ -388,6 +388,7 @@ function getDefaultServices(): StoredService[] {
   return [];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function createSeedService(
   id: string, userId: string, title: string, catId: string, subId: string,
   price: number, days: number, status: StoredService["status"],
@@ -725,6 +726,20 @@ export const orderStore = {
     return this.getAll().find((o) => o.id === id) ?? null;
   },
 
+  create(data: Omit<StoredOrder, "id" | "createdAt" | "updatedAt">): StoredOrder {
+    const orders = this.getAll();
+    const now = new Date().toISOString();
+    const order: StoredOrder = {
+      ...data,
+      id: `ORD-${Date.now().toString(36).toUpperCase()}`,
+      createdAt: now,
+      updatedAt: now,
+    };
+    orders.unshift(order);
+    writeJson(ORDERS_FILE, orders);
+    return order;
+  },
+
   update(id: string, updates: Partial<StoredOrder>): StoredOrder | null {
     const orders = this.getAll();
     const idx = orders.findIndex((o) => o.id === id);
@@ -831,6 +846,15 @@ export const transactionStore = {
     transactions.unshift(newTx);
     writeJson(TRANSACTIONS_FILE, transactions);
     return newTx;
+  },
+
+  update(id: string, updates: Partial<StoredTransaction>): StoredTransaction | null {
+    const transactions = this.getAll();
+    const idx = transactions.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+    transactions[idx] = { ...transactions[idx], ...updates };
+    writeJson(TRANSACTIONS_FILE, transactions);
+    return transactions[idx];
   },
 
   getSummary(userId: string): { available: number; pending: number; totalEarned: number; commissionThisMonth: number } {
@@ -1081,6 +1105,7 @@ export function calculateStats(userId: string) {
   const summary = transactionStore.getSummary(userId);
 
   const now = new Date();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // Revenue by month (last 12 months)

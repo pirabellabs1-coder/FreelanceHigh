@@ -1,16 +1,25 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata = {
-  title: "Politique de Cookies — FreelanceHigh",
-  description: "Politique de cookies de FreelanceHigh. Informations sur les cookies utilisés et comment les gérer.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("cookies_meta_title"),
+    description: t("cookies_meta_description"),
+  };
+}
 
-export default function CookiesPage() {
+export default async function CookiesPage() {
+  const t = await getTranslations("legal");
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="max-w-4xl mx-auto px-6 py-20">
-        <h1 className="text-4xl font-black text-white mb-4">Politique de Cookies</h1>
-        <p className="text-sm text-slate-500 mb-2">Dernière mise à jour : 1er mars 2026</p>
+        <h1 className="text-4xl font-black text-white mb-4">{t("cookies_title")}</h1>
+        <p className="text-sm text-slate-500 mb-2">{t("last_updated", { date: "1er mars 2026" })}</p>
+        {t("french_only_notice") && (
+          <p className="text-sm text-amber-400/80 mb-2 italic">{t("french_only_notice")}</p>
+        )}
         <p className="text-sm text-slate-500 mb-12">
           La présente Politique de Cookies explique comment FreelanceHigh (accessible à l&apos;adresse https://www.freelancehigh.com) utilise les cookies et technologies similaires pour vous reconnaître lorsque vous visitez notre plateforme. Elle explique ce que sont ces technologies, pourquoi nous les utilisons, et comment vous pouvez gérer vos préférences.
         </p>
@@ -401,7 +410,7 @@ export default function CookiesPage() {
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">
-          © 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.
+          {t("copyright")}
         </p>
       </div>
     </div>

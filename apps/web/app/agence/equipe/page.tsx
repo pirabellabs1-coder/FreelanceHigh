@@ -1,193 +1,497 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useAgencyStore, type AgencyMember } from "@/store/agency";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
 
-const MEMBERS = [
-  { id: "1", name: "Thomas Martin", role: "admin", title: "Directeur Agence", skills: ["Stratégie", "Management"], occupation: 45, projects: 5, rating: 4.9, access: "Complet", initials: "TM" },
-  { id: "2", name: "Amadou Diallo", role: "manager", title: "Lead Développeur", skills: ["React", "Node.js", "TypeScript"], occupation: 82, projects: 4, rating: 4.8, access: "Projets + Finances", initials: "AD" },
-  { id: "3", name: "Fatou Sow", role: "membre", title: "Designer UI/UX", skills: ["Figma", "UI Design", "Branding"], occupation: 70, projects: 3, rating: 4.7, access: "Projets", initials: "FS" },
-  { id: "4", name: "Nadia Fofana", role: "commercial", title: "Responsable Commercial", skills: ["Vente", "SEO", "Marketing"], occupation: 55, projects: 2, rating: 4.6, access: "Clients + Projets", initials: "NF" },
-  { id: "5", name: "Ibrahim Mbaye", role: "membre", title: "Développeur Full-Stack", skills: ["Python", "Django", "React"], occupation: 90, projects: 4, rating: 4.9, access: "Projets", initials: "IM" },
-  { id: "6", name: "Yacine Diop", role: "membre", title: "DevOps Engineer", skills: ["AWS", "Docker", "CI/CD"], occupation: 60, projects: 2, rating: 4.5, access: "Projets", initials: "YD" },
-  { id: "7", name: "Kofi Asante", role: "commercial", title: "Business Developer", skills: ["CRM", "Négociation"], occupation: 40, projects: 3, rating: 4.4, access: "Clients", initials: "KA" },
-  { id: "8", name: "Marie Koffi", role: "membre", title: "Rédactrice Web", skills: ["SEO", "Copywriting", "Blog"], occupation: 65, projects: 3, rating: 4.7, access: "Projets", initials: "MK" },
-];
+// ── Role config ──
 
-const PENDING_REQUESTS = [
-  { name: "Aïssatou Ba", email: "aissatou@email.com", role: "Développeuse Frontend", date: "2026-03-02" },
-  { name: "Moussa Camara", email: "moussa@email.com", role: "Designer 3D", date: "2026-03-01" },
-  { name: "Léa Dubois", email: "lea@email.com", role: "Chef de projet", date: "2026-02-28" },
-];
-
-const ROLE_BADGES: Record<string, { label: string; cls: string }> = {
-  admin: { label: "Admin", cls: "bg-red-500/20 text-red-400" },
+const ROLE_MAP: Record<AgencyMember["role"], { label: string; cls: string }> = {
+  proprietaire: { label: "Proprietaire", cls: "bg-red-500/20 text-red-400" },
   manager: { label: "Manager", cls: "bg-purple-500/20 text-purple-400" },
-  membre: { label: "Membre", cls: "bg-blue-500/20 text-blue-400" },
+  freelance: { label: "Freelance", cls: "bg-blue-500/20 text-blue-400" },
   commercial: { label: "Commercial", cls: "bg-amber-500/20 text-amber-400" },
 };
 
+const STATUS_INDICATOR: Record<AgencyMember["status"], { label: string; dotCls: string; textCls: string }> = {
+  actif: { label: "Actif", dotCls: "bg-emerald-400", textCls: "text-emerald-400" },
+  inactif: { label: "Inactif", dotCls: "bg-slate-500", textCls: "text-slate-500" },
+  invite: { label: "Invite", dotCls: "bg-amber-400", textCls: "text-amber-400" },
+};
+
+// ── Role filter tabs ──
+
+const ROLE_TABS: { key: string; label: string }[] = [
+  { key: "tous", label: "Tous" },
+  { key: "proprietaire", label: "Proprietaire" },
+  { key: "manager", label: "Manager" },
+  { key: "freelance", label: "Freelance" },
+  { key: "commercial", label: "Commercial" },
+];
+
+// ── Helpers ──
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ── Component ──
+
 export default function AgenceEquipe() {
-  const [tab, setTab] = useState<"tous" | "dispo" | "demandes">("tous");
-  const [roleFilter, setRoleFilter] = useState("tous");
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "membre", message: "" });
+  const { members, syncAll, isLoading } = useAgencyStore();
   const { addToast } = useToastStore();
 
-  const filtered = roleFilter === "tous" ? MEMBERS : MEMBERS.filter(m => m.role === roleFilter);
-  const avgOccupation = Math.round(MEMBERS.reduce((s, m) => s + m.occupation, 0) / MEMBERS.length);
+  const [roleFilter, setRoleFilter] = useState("tous");
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<AgencyMember["role"]>("freelance");
+  const [confirmRemove, setConfirmRemove] = useState<AgencyMember | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Sync on mount
+  useEffect(() => {
+    syncAll();
+  }, [syncAll]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = () => setOpenMenuId(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [openMenuId]);
+
+  // ── Computed values ──
+
+  const filteredMembers = useMemo(() => {
+    if (roleFilter === "tous") return members;
+    return members.filter((m) => m.role === roleFilter);
+  }, [members, roleFilter]);
+
+  const totalMembers = members.length;
+  const activeMembers = members.filter((m) => m.status === "actif").length;
+  const totalRevenue = members.reduce((sum, m) => sum + m.revenue, 0);
+  const totalActiveOrders = members.reduce((sum, m) => sum + m.activeOrders, 0);
+
+  // Tab counts
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = { tous: members.length };
+    for (const m of members) {
+      counts[m.role] = (counts[m.role] || 0) + 1;
+    }
+    return counts;
+  }, [members]);
+
+  // ── Handlers ──
+
+  function handleInvite() {
+    if (!inviteEmail.trim()) {
+      addToast("warning", "Veuillez entrer une adresse email.");
+      return;
+    }
+    // In production this would call an API
+    addToast("success", `Invitation envoyee a ${inviteEmail} en tant que ${ROLE_MAP[inviteRole].label}.`);
+    setInviteEmail("");
+    setInviteRole("freelance");
+    setShowInvite(false);
+  }
+
+  function handleRemoveMember(member: AgencyMember) {
+    // In production this would call an API to remove the member
+    addToast("success", `${member.name} a ete retire de l'agence.`);
+    setConfirmRemove(null);
+  }
+
+  function handleChangeRole(member: AgencyMember) {
+    // In production this would open a role change modal / call API
+    addToast("info", `Modification du role de ${member.name}...`);
+    setOpenMenuId(null);
+  }
+
+  // ── Stats cards ──
+
+  const STATS_CARDS = [
+    { label: "Total membres", value: totalMembers.toString(), icon: "groups", color: "text-primary" },
+    { label: "Membres actifs", value: activeMembers.toString(), icon: "person_check", color: "text-emerald-400" },
+    { label: "CA total equipe", value: formatCurrency(totalRevenue), icon: "trending_up", color: "text-blue-400" },
+    { label: "Commandes en cours", value: totalActiveOrders.toString(), icon: "shopping_cart", color: "text-amber-400" },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Membres de l&apos;Agence</h1>
-          <p className="text-slate-400 text-sm mt-1">Gérez votre équipe et les accès des collaborateurs.</p>
+          <h1 className="text-3xl font-black text-white">Equipe</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Gerez les membres de votre agence et leurs acces.
+          </p>
         </div>
-        <button onClick={() => setShowInvite(true)} className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+        <button
+          onClick={() => setShowInvite(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+        >
           <span className="material-symbols-outlined text-lg">person_add</span>
-          Ajouter un membre
+          Inviter un membre
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Charge Moyenne", value: `${avgOccupation}%`, icon: "speed", color: "text-primary" },
-          { label: "Taux d'Activité", value: "92%", icon: "trending_up", color: "text-emerald-400" },
-          { label: "Projets Actifs", value: "24", icon: "folder_open", color: "text-blue-400" },
-        ].map(s => (
-          <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-            <span className={cn("material-symbols-outlined text-xl", s.color)}>{s.icon}</span>
-            <div>
-              <p className="text-xl font-black text-white">{s.value}</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {STATS_CARDS.map((s) => (
+          <div
+            key={s.label}
+            className="bg-neutral-dark rounded-xl border border-border-dark p-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className={cn("material-symbols-outlined text-xl", s.color)}>
+                {s.icon}
+              </span>
             </div>
+            <p className="text-xl font-black text-white">
+              {isLoading && members.length === 0 ? "..." : s.value}
+            </p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-1">
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        <button onClick={() => setTab("tous")} className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-colors", tab === "tous" ? "bg-primary text-background-dark" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white")}>
-          Tous les membres ({MEMBERS.length})
-        </button>
-        <button onClick={() => setTab("dispo")} className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-colors", tab === "dispo" ? "bg-primary text-background-dark" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white")}>
-          Disponibilité
-        </button>
-        <button onClick={() => setTab("demandes")} className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2", tab === "demandes" ? "bg-primary text-background-dark" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white")}>
-          Demandes d&apos;accès ({PENDING_REQUESTS.length})
-          {PENDING_REQUESTS.length > 0 && <span className="w-2 h-2 bg-amber-400 rounded-full" />}
-        </button>
+      {/* Role filter tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {ROLE_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setRoleFilter(tab.key)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+              roleFilter === tab.key
+                ? "bg-primary text-background-dark"
+                : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
+            )}
+          >
+            {tab.label}
+            {(tabCounts[tab.key] ?? 0) > 0 && (
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                  roleFilter === tab.key
+                    ? "bg-background-dark/20 text-background-dark"
+                    : "bg-border-dark text-slate-400"
+                )}
+              >
+                {tabCounts[tab.key]}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Role filters */}
-      {(tab === "tous" || tab === "dispo") && (
-        <div className="flex gap-2">
-          {[{ key: "tous", label: "Tous" }, { key: "admin", label: "Admin" }, { key: "manager", label: "Manager" }, { key: "membre", label: "Membre" }, { key: "commercial", label: "Commercial" }].map(f => (
-            <button key={f.key} onClick={() => setRoleFilter(f.key)} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors", roleFilter === f.key ? "bg-primary/10 text-primary border border-primary/20" : "bg-neutral-dark text-slate-500 border border-border-dark hover:text-white")}>
-              {f.label}
-            </button>
-          ))}
+      {/* Loading state */}
+      {isLoading && members.length === 0 && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-3">
+          <span className="material-symbols-outlined text-4xl text-primary animate-spin">
+            progress_activity
+          </span>
+          <p className="text-slate-400 text-sm">Chargement de l&apos;equipe...</p>
         </div>
       )}
 
-      {/* Members table */}
-      {(tab === "tous" || tab === "dispo") && (
-        <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                <th className="px-5 py-3 text-left font-semibold">Collaborateur</th>
-                <th className="px-5 py-3 text-left font-semibold">Rôle</th>
-                <th className="px-5 py-3 text-left font-semibold">Accès</th>
-                <th className="px-5 py-3 text-left font-semibold">Charge de travail</th>
-                <th className="px-5 py-3 text-left font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(m => (
-                <tr key={m.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">{m.initials}</div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{m.name}</p>
-                        <p className="text-xs text-slate-500">{m.title}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3"><span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", ROLE_BADGES[m.role]?.cls)}>{ROLE_BADGES[m.role]?.label}</span></td>
-                  <td className="px-5 py-3 text-sm text-slate-400">{m.access}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-border-dark rounded-full max-w-[100px]">
-                        <div className={cn("h-full rounded-full", m.occupation > 80 ? "bg-red-400" : m.occupation > 60 ? "bg-amber-400" : "bg-primary")} style={{ width: `${m.occupation}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-400">{m.occupation}%</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => addToast("info", `Profil de ${m.name}`)} className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>
-                      <button onClick={() => addToast("info", `Retirer ${m.name} ?`)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"><span className="material-symbols-outlined text-lg">person_remove</span></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Empty state */}
+      {!isLoading && members.length === 0 && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-4">
+          <span className="material-symbols-outlined text-5xl text-slate-600">
+            group_off
+          </span>
+          <div className="text-center">
+            <p className="text-white font-semibold text-lg">
+              Vous etes le seul membre
+            </p>
+            <p className="text-slate-500 text-sm mt-1">
+              Invitez votre equipe pour collaborer sur vos projets.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
+            Inviter votre equipe
+          </button>
         </div>
       )}
 
-      {/* Pending requests */}
-      {tab === "demandes" && (
-        <div className="space-y-3">
-          {PENDING_REQUESTS.map((r, i) => (
-            <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400"><span className="material-symbols-outlined">person</span></div>
-                <div>
-                  <p className="font-bold text-white">{r.name}</p>
-                  <p className="text-xs text-slate-500">{r.email} · {r.role} · Demandé le {new Date(r.date).toLocaleDateString("fr-FR")}</p>
+      {/* Filtered empty state */}
+      {!isLoading && members.length > 0 && filteredMembers.length === 0 && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-3">
+          <span className="material-symbols-outlined text-5xl text-slate-600">
+            filter_list_off
+          </span>
+          <p className="text-slate-400 text-sm">
+            Aucun membre avec le role &quot;{ROLE_TABS.find((t) => t.key === roleFilter)?.label}&quot;.
+          </p>
+          <button
+            onClick={() => setRoleFilter("tous")}
+            className="text-primary text-sm font-semibold hover:underline"
+          >
+            Afficher tous les membres
+          </button>
+        </div>
+      )}
+
+      {/* Member cards grid */}
+      {!isLoading && filteredMembers.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredMembers.map((member) => {
+            const role = ROLE_MAP[member.role];
+            const status = STATUS_INDICATOR[member.status];
+
+            return (
+              <div
+                key={member.id}
+                className="bg-neutral-dark rounded-xl border border-border-dark p-5 flex flex-col gap-4 hover:border-border-dark/80 transition-colors"
+              >
+                {/* Top: avatar + name + role + actions */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {member.avatar ? (
+                      <Image
+                        src={member.avatar}
+                        alt={member.name}
+                        width={44}
+                        height={44}
+                        className="w-11 h-11 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
+                        {getInitials(member.name)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-bold text-white">{member.name}</p>
+                      <p className="text-xs text-slate-500 truncate max-w-[160px]">
+                        {member.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === member.id ? null : member.id);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-background-dark transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-lg">more_vert</span>
+                    </button>
+
+                    {openMenuId === member.id && (
+                      <div
+                        className="absolute right-0 top-full mt-1 w-48 bg-background-dark rounded-xl border border-border-dark shadow-xl z-20 py-1 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => handleChangeRole(member)}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-slate-300 hover:bg-neutral-dark hover:text-white transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+                          Modifier role
+                        </button>
+                        <Link
+                          href={`/agence/commandes?member=${member.id}`}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-slate-300 hover:bg-neutral-dark hover:text-white transition-colors"
+                          onClick={() => setOpenMenuId(null)}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+                          Voir commandes
+                        </Link>
+                        <div className="border-t border-border-dark my-1" />
+                        <button
+                          onClick={() => {
+                            setConfirmRemove(member);
+                            setOpenMenuId(null);
+                          }}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">person_remove</span>
+                          Retirer de l&apos;agence
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Role badge + Status */}
+                <div className="flex items-center gap-2">
+                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", role.cls)}>
+                    {role.label}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className={cn("w-2 h-2 rounded-full", status.dotCls)} />
+                    <span className={cn("text-xs font-medium", status.textCls)}>
+                      {status.label}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border-dark/50">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-0.5">Commandes</p>
+                    <p className="text-sm font-bold text-white">{member.activeOrders}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-0.5">CA genere</p>
+                    <p className="text-sm font-bold text-white">{formatCurrency(member.revenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-0.5">Depuis le</p>
+                    <p className="text-sm font-bold text-white">{formatDate(member.joinedAt)}</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => addToast("success", `${r.name} accepté(e)`)} className="px-4 py-2 bg-primary text-background-dark text-sm font-bold rounded-lg hover:brightness-110 transition-all">Accepter</button>
-                <button onClick={() => addToast("info", `${r.name} refusé(e)`)} className="px-4 py-2 bg-neutral-dark border border-border-dark text-slate-400 text-sm font-semibold rounded-lg hover:text-white transition-colors">Refuser</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Invite modal */}
+      {/* ── Invite modal ── */}
       {showInvite && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowInvite(false)} />
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowInvite(false)}
+          />
           <div className="relative bg-neutral-dark rounded-2xl border border-border-dark p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">Inviter un membre</h3>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-white">Inviter un membre</h3>
+              <button
+                onClick={() => setShowInvite(false)}
+                className="p-1 rounded-lg text-slate-500 hover:text-white hover:bg-background-dark transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Email</label>
-                <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="collaborateur@email.com" className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50" />
+                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">
+                  Adresse email
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="collaborateur@email.com"
+                  className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleInvite();
+                  }}
+                />
               </div>
+
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Rôle</label>
-                <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50">
-                  <option value="membre">Membre</option>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">
+                  Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as AgencyMember["role"])}
+                  className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 transition-colors"
+                >
+                  <option value="proprietaire">Proprietaire</option>
                   <option value="manager">Manager</option>
+                  <option value="freelance">Freelance</option>
                   <option value="commercial">Commercial</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Message (optionnel)</label>
-                <textarea value={inviteForm.message} onChange={e => setInviteForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Bienvenue dans l'équipe !" className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 resize-none" />
-              </div>
+
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowInvite(false)} className="flex-1 py-2.5 text-slate-400 text-sm font-semibold hover:text-white transition-colors">Annuler</button>
-                <button onClick={() => { addToast("success", "Invitation envoyée !"); setShowInvite(false); setInviteForm({ email: "", role: "membre", message: "" }); }} className="flex-1 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all">Envoyer</button>
+                <button
+                  onClick={() => setShowInvite(false)}
+                  className="flex-1 py-2.5 text-slate-400 text-sm font-semibold hover:text-white transition-colors rounded-xl border border-border-dark"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleInvite}
+                  className="flex-1 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">send</span>
+                  Envoyer l&apos;invitation
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation dialog for removing a member ── */}
+      {confirmRemove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setConfirmRemove(null)}
+          />
+          <div className="relative bg-neutral-dark rounded-2xl border border-border-dark p-6 w-full max-w-sm">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-3xl text-red-400">
+                  person_remove
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Retirer ce membre ?</h3>
+                <p className="text-sm text-slate-400 mt-2">
+                  Etes-vous sur de vouloir retirer <span className="text-white font-semibold">{confirmRemove.name}</span> de
+                  l&apos;agence ? Cette action est irreversible.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full pt-2">
+                <button
+                  onClick={() => setConfirmRemove(null)}
+                  className="flex-1 py-2.5 text-slate-400 text-sm font-semibold hover:text-white transition-colors rounded-xl border border-border-dark"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => handleRemoveMember(confirmRemove)}
+                  className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-colors"
+                >
+                  Retirer
+                </button>
               </div>
             </div>
           </div>

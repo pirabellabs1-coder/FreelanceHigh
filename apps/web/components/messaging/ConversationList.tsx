@@ -133,9 +133,12 @@ export function ConversationList({
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-slate-500">
-            <span className="material-symbols-outlined text-2xl mb-2">chat_bubble_outline</span>
-            <p className="text-xs">Aucune conversation</p>
+          <div className="flex flex-col items-center justify-center h-full text-slate-500 px-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-3xl text-primary/40">forum</span>
+            </div>
+            <p className="text-sm font-medium text-slate-400">Aucun message pour le moment</p>
+            <p className="text-xs text-slate-600 mt-1 text-center">Vos conversations avec vos clients apparaitront ici</p>
           </div>
         ) : (
           filtered.map((conv) => {
@@ -175,7 +178,19 @@ export function ConversationList({
                     <span className="text-[10px] text-slate-500 flex-shrink-0">{formatTime(conv.lastMessageTime)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <p className={cn("text-xs truncate", conv.unreadCount > 0 ? "text-slate-200 font-medium" : "text-slate-500")}>
+                    <p className={cn("text-xs truncate flex items-center gap-1", conv.unreadCount > 0 ? "text-slate-200 font-medium" : "text-slate-500")}>
+                      {conv.lastMessage === "Message vocal" && (
+                        <span className="material-symbols-outlined text-xs">mic</span>
+                      )}
+                      {conv.lastMessage === "Appel audio" && (
+                        <span className="material-symbols-outlined text-xs text-emerald-400">call</span>
+                      )}
+                      {conv.lastMessage === "Appel video" && (
+                        <span className="material-symbols-outlined text-xs text-blue-400">videocam</span>
+                      )}
+                      {conv.lastMessage === "Appel manque" && (
+                        <span className="material-symbols-outlined text-xs text-red-400">phone_missed</span>
+                      )}
                       {conv.lastMessage}
                     </p>
                     {conv.unreadCount > 0 && (

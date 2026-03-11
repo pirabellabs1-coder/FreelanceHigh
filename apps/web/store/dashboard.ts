@@ -3,16 +3,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  DEMO_SERVICES, DEMO_ORDERS, DEMO_TRANSACTIONS, DEMO_CONVERSATIONS,
-  DEMO_PORTFOLIO, DEMO_PROFILE, DEMO_AVAILABILITY, DEMO_NOTIFICATION_SETTINGS,
+  INITIAL_SERVICES, INITIAL_ORDERS, INITIAL_TRANSACTIONS, INITIAL_CONVERSATIONS,
+  INITIAL_PORTFOLIO, DEMO_PROFILE, DEMO_AVAILABILITY, DEMO_NOTIFICATION_SETTINGS,
   type Service, type Order, type Transaction, type Conversation, type ChatMessage,
   type PortfolioProject, type FreelancerProfile, type AvailabilitySlot,
   type NotificationSetting, type OrderMessage, type OrderFile,
 } from "@/lib/demo-data";
 import {
   servicesApi, ordersApi, financesApi, profileApi, notificationsApi, conversationsApi, statsApi, reviewsApi,
+  affiliationApi, automationApi,
   mapApiServiceToLocal, mapApiOrderToLocal, mapApiTransactionToLocal, mapApiConversationToLocal,
   type ApiNotification, type ApiReview, type ApiReviewSummary, type ApiStats,
+  type ApiAffiliationData, type ApiAutomationData, type ApiAutomationScenario,
 } from "@/lib/api-client";
 
 // ============================================================
@@ -135,6 +137,20 @@ interface DashboardState {
   // Subscription
   currentPlan: string;
   changePlan: (planId: string) => void;
+
+  // Affiliation
+  affiliation: ApiAffiliationData | null;
+  affiliationLoading: boolean;
+  syncAffiliation: () => Promise<void>;
+  sendInvite: (email: string, message?: string) => Promise<boolean>;
+
+  // Automation
+  automation: ApiAutomationData | null;
+  automationLoading: boolean;
+  syncAutomation: () => Promise<void>;
+  createScenario: (scenario: Omit<ApiAutomationScenario, "id" | "triggerCount" | "createdAt">) => Promise<boolean>;
+  toggleScenario: (id: string, active: boolean) => Promise<boolean>;
+  deleteScenario: (id: string) => Promise<boolean>;
 }
 
 export const useDashboardStore = create<DashboardState>()(
@@ -257,7 +273,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Services
-      services: DEMO_SERVICES,
+      services: INITIAL_SERVICES,
       addService: (service) => {
         const id = "s" + (Date.now().toString(36));
         const newService: Service = {
@@ -321,7 +337,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Orders
-      orders: DEMO_ORDERS,
+      orders: INITIAL_ORDERS,
       updateOrderStatus: (id, status) =>
         set((s) => ({
           orders: s.orders.map((o) => {
@@ -405,7 +421,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Transactions
-      transactions: DEMO_TRANSACTIONS,
+      transactions: INITIAL_TRANSACTIONS,
       addTransaction: (tx) => {
         const id = "tx" + Date.now();
         set((s) => ({ transactions: [{ ...tx, id }, ...s.transactions] }));
@@ -424,7 +440,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Conversations
-      conversations: DEMO_CONVERSATIONS,
+      conversations: INITIAL_CONVERSATIONS,
       sendMessage: (convId, content, type = "text", fileName, fileSize) =>
         set((s) => ({
           conversations: s.conversations.map((c) => {
@@ -490,7 +506,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Portfolio
-      portfolio: DEMO_PORTFOLIO,
+      portfolio: INITIAL_PORTFOLIO,
       addPortfolioProject: (project) => {
         const id = "p" + Date.now();
         const order = get().portfolio.length;
@@ -646,6 +662,99 @@ export const useDashboardStore = create<DashboardState>()(
       // Subscription
       currentPlan: "pro",
       changePlan: (planId) => set({ currentPlan: planId }),
+
+      // Affiliation
+      affiliation: null,
+      affiliationLoading: false,
+      syncAffiliation: async () => {
+        set({ affiliationLoading: true });
+        try {
+          const data = await affiliationApi.get();
+          set({ affiliation: data, affiliationLoading: false });
+        } catch (err) {
+          console.error("[Affiliation sync] Error:", err);
+          set({ affiliationLoading: false });
+        }
+      },
+      sendInvite: async (email, message) => {
+        try {
+          await affiliationApi.invite(email, message);
+          return true;
+        } catch (err) {
+          console.error("[Affiliation invite] Error:", err);
+          return false;
+        }
+      },
+
+      // Automation
+      automation: null,
+      automationLoading: false,
+      syncAutomation: async () => {
+        set({ automationLoading: true });
+        try {
+          const data = await automationApi.get();
+          set({ automation: data, automationLoading: false });
+        } catch (err) {
+          console.error("[Automation sync] Error:", err);
+          set({ automationLoading: false });
+        }
+      },
+      createScenario: async (scenario) => {
+        try {
+          const result = await automationApi.createScenario(scenario);
+          set((s) => {
+            if (!s.automation) return s;
+            return {
+              automation: {
+                ...s.automation,
+                scenarios: [...s.automation.scenarios, result.scenario],
+              },
+            };
+          });
+          return true;
+        } catch (err) {
+          console.error("[Automation create] Error:", err);
+          return false;
+        }
+      },
+      toggleScenario: async (id, active) => {
+        try {
+          await automationApi.toggleScenario(id, active);
+          set((s) => {
+            if (!s.automation) return s;
+            return {
+              automation: {
+                ...s.automation,
+                scenarios: s.automation.scenarios.map((sc) =>
+                  sc.id === id ? { ...sc, active } : sc
+                ),
+              },
+            };
+          });
+          return true;
+        } catch (err) {
+          console.error("[Automation toggle] Error:", err);
+          return false;
+        }
+      },
+      deleteScenario: async (id) => {
+        try {
+          await automationApi.deleteScenario(id);
+          set((s) => {
+            if (!s.automation) return s;
+            return {
+              automation: {
+                ...s.automation,
+                scenarios: s.automation.scenarios.filter((sc) => sc.id !== id),
+              },
+            };
+          });
+          return true;
+        } catch (err) {
+          console.error("[Automation delete] Error:", err);
+          return false;
+        }
+      },
     }),
     {
       name: "freelancehigh-dashboard-v2",

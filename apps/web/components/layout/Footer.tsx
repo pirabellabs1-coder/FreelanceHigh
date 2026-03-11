@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function Footer() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const t = useTranslations("footer");
 
   function handleNewsletter(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +26,7 @@ export function Footer() {
             <h2 className="text-2xl font-extrabold text-white tracking-tight">FreelanceHigh</h2>
           </Link>
           <p className="text-slate-500 text-base leading-relaxed">
-            La plateforme freelance qui élève votre carrière au plus haut niveau. Trouvez les meilleurs experts pour vos projets.
+            {t("description")}
           </p>
           <div className="flex gap-4">
             {["language", "grid_view", "alternate_email"].map((icon) => (
@@ -41,38 +43,38 @@ export function Footer() {
 
         {/* Plateforme */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">Plateforme</h4>
+          <h4 className="text-white font-bold text-lg mb-8">{t("platform")}</h4>
           <ul className="space-y-4 text-slate-500 text-base">
-            <li><Link href="/explorer" className="hover:text-primary transition-colors">Explorer les services</Link></li>
-            <li><Link href="/offres-projets" className="hover:text-primary transition-colors">Projets en cours</Link></li>
-            <li><Link href="/inscription" className="hover:text-primary transition-colors">Devenir freelance</Link></li>
-            <li><Link href="/tarifs" className="hover:text-primary transition-colors">Nos tarifs</Link></li>
-            <li><Link href="/affiliation" className="hover:text-primary transition-colors">Programme d&apos;affiliation</Link></li>
+            <li><Link href="/explorer" className="hover:text-primary transition-colors">{t("links.explore_services")}</Link></li>
+            <li><Link href="/offres-projets" className="hover:text-primary transition-colors">{t("links.ongoing_projects")}</Link></li>
+            <li><Link href="/inscription" className="hover:text-primary transition-colors">{t("links.become_freelance")}</Link></li>
+            <li><Link href="/tarifs" className="hover:text-primary transition-colors">{t("links.pricing")}</Link></li>
+            <li><Link href="/affiliation" className="hover:text-primary transition-colors">{t("links.affiliation")}</Link></li>
           </ul>
         </div>
 
         {/* Support & Sécurité */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">Support &amp; Sécurité</h4>
+          <h4 className="text-white font-bold text-lg mb-8">{t("support_security")}</h4>
           <ul className="space-y-4 text-slate-500 text-base">
-            <li><Link href="/confiance-securite" className="hover:text-primary transition-colors">Protection des paiements</Link></li>
-            <li><Link href="/comment-ca-marche" className="hover:text-primary transition-colors">Comment ça marche</Link></li>
-            <li><Link href="/aide" className="hover:text-primary transition-colors">Centre d&apos;aide</Link></li>
-            <li><Link href="/confidentialite" className="hover:text-primary transition-colors">Politique de confidentialité</Link></li>
-            <li><Link href="/cookies" className="hover:text-primary transition-colors">Politique de cookies</Link></li>
+            <li><Link href="/confiance-securite" className="hover:text-primary transition-colors">{t("links.payment_protection")}</Link></li>
+            <li><Link href="/comment-ca-marche" className="hover:text-primary transition-colors">{t("links.how_it_works")}</Link></li>
+            <li><Link href="/aide" className="hover:text-primary transition-colors">{t("links.help_center")}</Link></li>
+            <li><Link href="/confidentialite" className="hover:text-primary transition-colors">{t("links.privacy")}</Link></li>
+            <li><Link href="/cookies" className="hover:text-primary transition-colors">{t("links.cookies")}</Link></li>
           </ul>
         </div>
 
         {/* Newsletter */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">Newsletter</h4>
+          <h4 className="text-white font-bold text-lg mb-8">{t("newsletter_title")}</h4>
           <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-            Recevez les meilleures opportunités et conseils freelance directement dans votre boîte mail.
+            {t("newsletter_desc")}
           </p>
           {submitted ? (
             <p className="text-sm font-bold flex items-center gap-2 text-accent">
               <span className="material-symbols-outlined text-sm">check_circle</span>
-              Merci pour votre inscription !
+              {t("newsletter_success")}
             </p>
           ) : (
             <form onSubmit={handleNewsletter} className="flex flex-col gap-3">
@@ -81,7 +83,7 @@ export function Footer() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="votre@email.com"
+                  placeholder={t("newsletter_placeholder")}
                   required
                   className="bg-transparent border-none outline-none text-sm text-white w-full px-3 placeholder:text-slate-500"
                 />
@@ -99,12 +101,12 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-        <p className="text-slate-600 text-xs">© 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.</p>
+        <p className="text-slate-600 text-xs">{t("copyright")}</p>
         <div className="flex flex-wrap justify-center gap-6 text-xs text-slate-600 font-bold">
-          <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>
-          <Link href="/confidentialite" className="hover:text-white transition-colors">CONFIDENTIALITÉ</Link>
-          <Link href="/mentions-legales" className="hover:text-white transition-colors">MENTIONS LÉGALES</Link>
-          <Link href="/cookies" className="hover:text-white transition-colors">COOKIES</Link>
+          <Link href="/cgu" className="hover:text-white transition-colors">{t("links.terms")}</Link>
+          <Link href="/confidentialite" className="hover:text-white transition-colors">{t("links.confidentiality")}</Link>
+          <Link href="/mentions-legales" className="hover:text-white transition-colors">{t("links.legal_notices")}</Link>
+          <Link href="/cookies" className="hover:text-white transition-colors">{t("links.cookies_upper")}</Link>
         </div>
       </div>
     </footer>

@@ -1,54 +1,64 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { feedApi, type ApiService } from "@/lib/api-client";
+import { useClientStore } from "@/store/client";
 
 /* ------------------------------------------------------------------ */
-/* Demo Data                                                           */
+/* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
 const CATEGORIES = [
-  { key: "tous", label: "Tous", icon: "apps" },
-  { key: "dev", label: "Développement", icon: "code" },
-  { key: "design", label: "Design", icon: "palette" },
-  { key: "marketing", label: "Marketing", icon: "campaign" },
-  { key: "redaction", label: "Rédaction", icon: "edit_note" },
-  { key: "video", label: "Vidéo", icon: "videocam" },
-  { key: "data", label: "Data & IA", icon: "psychology" },
-];
-
-const SERVICES = [
-  { id: "s1", title: "Développement d\u2019application React / Next.js", seller: "Amadou Diallo", sellerType: "freelance" as const, avatar: "AD", rating: 4.9, reviews: 127, price: 1500, delivery: "14 jours", category: "dev", tags: ["React", "Next.js", "TypeScript"], featured: true },
-  { id: "s2", title: "Design UI/UX mobile-first", seller: "TechCorp Agency", sellerType: "agence" as const, avatar: "TC", rating: 4.8, reviews: 89, price: 2200, delivery: "10 jours", category: "design", tags: ["Figma", "UI/UX", "Mobile"], featured: true },
-  { id: "s3", title: "Campagne publicitaire Facebook & Instagram", seller: "Fatou Sow", sellerType: "freelance" as const, avatar: "FS", rating: 4.7, reviews: 65, price: 800, delivery: "7 jours", category: "marketing", tags: ["Meta Ads", "Social Media", "ROI"] },
-  { id: "s4", title: "Logo & identité visuelle complète", seller: "Ibrahim Koné", sellerType: "freelance" as const, avatar: "IK", rating: 5.0, reviews: 42, price: 600, delivery: "5 jours", category: "design", tags: ["Illustrator", "Branding", "Logo"] },
-  { id: "s5", title: "Rédaction SEO 10 articles optimisés", seller: "Marie Dupont", sellerType: "freelance" as const, avatar: "MD", rating: 4.6, reviews: 38, price: 450, delivery: "12 jours", category: "redaction", tags: ["SEO", "Copywriting", "Français"] },
-  { id: "s6", title: "API Backend & Intégration (Node.js / Python)", seller: "WebPro Agency", sellerType: "agence" as const, avatar: "WP", rating: 4.9, reviews: 104, price: 3500, delivery: "21 jours", category: "dev", tags: ["Node.js", "Python", "API REST"] },
-  { id: "s7", title: "Montage vidéo professionnel & motion design", seller: "Ousmane Ba", sellerType: "freelance" as const, avatar: "OB", rating: 4.8, reviews: 56, price: 700, delivery: "7 jours", category: "video", tags: ["Premiere Pro", "After Effects", "Motion"] },
-  { id: "s8", title: "Dashboard analytics & data visualisation", seller: "DataForge Agency", sellerType: "agence" as const, avatar: "DF", rating: 4.7, reviews: 31, price: 2800, delivery: "15 jours", category: "data", tags: ["Python", "Tableau", "SQL", "IA"] },
-  { id: "s9", title: "Application mobile Flutter cross-platform", seller: "Kofi Mensah", sellerType: "freelance" as const, avatar: "KM", rating: 4.9, reviews: 73, price: 2000, delivery: "20 jours", category: "dev", tags: ["Flutter", "Dart", "Firebase"] },
-  { id: "s10", title: "Stratégie marketing digital complète", seller: "GrowthLab Agency", sellerType: "agence" as const, avatar: "GL", rating: 4.6, reviews: 47, price: 1800, delivery: "14 jours", category: "marketing", tags: ["SEO", "SEA", "Social Media", "Email"] },
-  { id: "s11", title: "Traduction FR/EN professionnelle", seller: "Aïssatou Diop", sellerType: "freelance" as const, avatar: "AD", rating: 4.8, reviews: 92, price: 300, delivery: "3 jours", category: "redaction", tags: ["Traduction", "FR", "EN"] },
-  { id: "s12", title: "Site WordPress e-commerce clé en main", seller: "Moussa Traoré", sellerType: "freelance" as const, avatar: "MT", rating: 4.5, reviews: 58, price: 1200, delivery: "10 jours", category: "dev", tags: ["WordPress", "WooCommerce", "PHP"] },
-];
-
-const FREELANCERS = [
-  { id: "f1", name: "Amadou Diallo", title: "Développeur Full-Stack Senior", avatar: "AD", rating: 4.9, reviews: 127, hourly: 85, country: "Sénégal", flag: "🇸🇳", skills: ["React", "Node.js", "TypeScript"], available: true, verified: true, topRated: true },
-  { id: "f2", name: "Fatou Sow", title: "Spécialiste Marketing Digital", avatar: "FS", rating: 4.7, reviews: 65, hourly: 60, country: "Côte d\u2019Ivoire", flag: "🇨🇮", skills: ["Meta Ads", "Google Ads", "SEO"], available: true, verified: true },
-  { id: "f3", name: "Ibrahim Koné", title: "Designer UI/UX & Branding", avatar: "IK", rating: 5.0, reviews: 42, hourly: 70, country: "France", flag: "🇫🇷", skills: ["Figma", "Illustrator", "UI/UX"], available: false, verified: true, topRated: true },
-  { id: "f4", name: "Kofi Mensah", title: "Développeur Mobile Flutter", avatar: "KM", rating: 4.9, reviews: 73, hourly: 75, country: "Cameroun", flag: "🇨🇲", skills: ["Flutter", "Dart", "Firebase"], available: true, verified: true },
-  { id: "f5", name: "Aïssatou Diop", title: "Rédactrice & Traductrice", avatar: "AD", rating: 4.8, reviews: 92, hourly: 45, country: "Sénégal", flag: "🇸🇳", skills: ["Rédaction SEO", "Traduction", "Copywriting"], available: true, verified: true },
-  { id: "f6", name: "Ousmane Ba", title: "Vidéaste & Motion Designer", avatar: "OB", rating: 4.8, reviews: 56, hourly: 55, country: "Mali", flag: "🇲🇱", skills: ["Premiere Pro", "After Effects", "DaVinci"], available: true, verified: false },
-];
-
-const AGENCIES = [
-  { id: "a1", name: "TechCorp Agency", desc: "Agence de développement digital full-service", avatar: "TC", rating: 4.8, reviews: 89, members: 12, country: "Sénégal", flag: "🇸🇳", specialities: ["Dev Web", "Mobile", "UI/UX"], verified: true, premium: true },
-  { id: "a2", name: "WebPro Agency", desc: "Expert backend et intégration API", avatar: "WP", rating: 4.9, reviews: 104, members: 8, country: "France", flag: "🇫🇷", specialities: ["Backend", "API", "DevOps"], verified: true },
-  { id: "a3", name: "DataForge Agency", desc: "Data science et solutions IA", avatar: "DF", rating: 4.7, reviews: 31, members: 6, country: "Côte d\u2019Ivoire", flag: "🇨🇮", specialities: ["Data", "IA", "Analytics"], verified: true },
-  { id: "a4", name: "GrowthLab Agency", desc: "Marketing digital et croissance", avatar: "GL", rating: 4.6, reviews: 47, members: 10, country: "Cameroun", flag: "🇨🇲", specialities: ["SEO", "SEA", "Social Media"], verified: false },
+  { key: "", label: "Tous", icon: "apps" },
+  { key: "cat-dev-web", label: "Développement", icon: "code" },
+  { key: "cat-design", label: "Design", icon: "palette" },
+  { key: "cat-marketing", label: "Marketing", icon: "campaign" },
+  { key: "cat-redaction", label: "Rédaction", icon: "edit_note" },
+  { key: "cat-video", label: "Vidéo", icon: "videocam" },
+  { key: "cat-formation", label: "Formation", icon: "school" },
 ];
 
 type ViewType = "services" | "freelances" | "agences";
+
+/* ------------------------------------------------------------------ */
+/* Skeleton Cards                                                      */
+/* ------------------------------------------------------------------ */
+
+function ServiceCardSkeleton() {
+  return (
+    <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden animate-pulse">
+      <div className="h-32 bg-border-dark" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-border-dark rounded w-3/4" />
+        <div className="h-3 bg-border-dark rounded w-1/2" />
+        <div className="flex gap-1">
+          <div className="h-5 bg-border-dark rounded-full w-14" />
+          <div className="h-5 bg-border-dark rounded-full w-14" />
+        </div>
+        <div className="flex items-center justify-between pt-3 border-t border-border-dark">
+          <div className="h-6 bg-border-dark rounded w-16" />
+          <div className="h-8 bg-border-dark rounded w-24" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FreelanceCardSkeleton() {
+  return (
+    <div className="bg-neutral-dark rounded-xl border border-border-dark p-5 animate-pulse">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-full bg-border-dark flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-border-dark rounded w-1/3" />
+          <div className="h-3 bg-border-dark rounded w-1/2" />
+          <div className="h-3 bg-border-dark rounded w-1/4" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -56,35 +66,162 @@ type ViewType = "services" | "freelances" | "agences";
 
 export default function ClientExplorer() {
   const [view, setView] = useState<ViewType>("services");
-  const [category, setCategory] = useState("tous");
+  const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [sortBy, setSortBy] = useState("pertinence");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [contactModal, setContactModal] = useState<string | null>(null);
   const [proposalModal, setProposalModal] = useState<string | null>(null);
   const [proposalForm, setProposalForm] = useState({ title: "", description: "", budget: "", deadline: "" });
 
-  const filteredServices = useMemo(() => {
-    let list = SERVICES;
-    if (category !== "tous") list = list.filter(s => s.category === category);
-    if (search) list = list.filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.tags.some(t => t.toLowerCase().includes(search.toLowerCase())));
-    list = list.filter(s => s.price >= priceRange[0] && s.price <= priceRange[1]);
-    if (sortBy === "prix-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sortBy === "prix-desc") list = [...list].sort((a, b) => b.price - a.price);
-    if (sortBy === "note") list = [...list].sort((a, b) => b.rating - a.rating);
-    if (sortBy === "populaire") list = [...list].sort((a, b) => b.reviews - a.reviews);
+  // API state
+  const [services, setServices] = useState<ApiService[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Favorites from client store
+  const { favorites, toggleFavorite } = useClientStore();
+
+  // Fetch services from API
+  const fetchServices = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: { q?: string; category?: string; sort?: string } = {};
+      if (search) params.q = search;
+      if (category) params.category = category;
+      if (sortBy !== "pertinence") params.sort = sortBy;
+      const { services: result } = await feedApi.list(params);
+      setServices(result);
+    } catch {
+      setError("Impossible de charger les services. Veuillez réessayer.");
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, category, sortBy]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Client-side sort for services (API handles it, but also sort locally for instant feedback)
+  const sortedServices = useMemo(() => {
+    const list = [...services];
+    if (sortBy === "prix-asc") list.sort((a, b) => a.basePrice - b.basePrice);
+    if (sortBy === "prix-desc") list.sort((a, b) => b.basePrice - a.basePrice);
+    if (sortBy === "note") list.sort((a, b) => b.rating - a.rating);
     return list;
-  }, [category, search, sortBy, priceRange]);
+  }, [services, sortBy]);
 
-  const filteredFreelancers = useMemo(() => {
-    if (!search) return FREELANCERS;
-    return FREELANCERS.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || f.skills.some(s => s.toLowerCase().includes(search.toLowerCase())));
-  }, [search]);
+  // Derive freelances from services (group by vendor)
+  const freelances = useMemo(() => {
+    const vendorMap = new Map<string, {
+      id: string; name: string; avatar: string; country: string;
+      rating: number; ratingCount: number; serviceCount: number;
+      skills: string[]; badges: string[];
+    }>();
+    for (const s of services) {
+      const key = s.vendorUsername || s.vendorName;
+      const existing = vendorMap.get(key);
+      if (existing) {
+        existing.serviceCount++;
+        existing.rating = Math.max(existing.rating, s.rating);
+        existing.ratingCount += s.ratingCount;
+        for (const tag of s.tags.slice(0, 3)) {
+          if (!existing.skills.includes(tag)) existing.skills.push(tag);
+        }
+      } else {
+        vendorMap.set(key, {
+          id: s.userId,
+          name: s.vendorName,
+          avatar: s.vendorAvatar,
+          country: s.vendorCountry,
+          rating: s.rating,
+          ratingCount: s.ratingCount,
+          serviceCount: 1,
+          skills: s.tags.slice(0, 4),
+          badges: s.vendorBadges || [],
+        });
+      }
+    }
+    let result = Array.from(vendorMap.values());
+    if (searchInput) {
+      const q = searchInput.toLowerCase();
+      result = result.filter(f =>
+        f.name.toLowerCase().includes(q) || f.skills.some(s => s.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [services, searchInput]);
 
-  const filteredAgencies = useMemo(() => {
-    if (!search) return AGENCIES;
-    return AGENCIES.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || a.specialities.some(s => s.toLowerCase().includes(search.toLowerCase())));
-  }, [search]);
+  // Derive agences (filter vendors that look like agencies, or show all for now)
+  const agences = useMemo(() => {
+    const vendorMap = new Map<string, {
+      id: string; name: string; avatar: string; country: string;
+      rating: number; ratingCount: number; serviceCount: number;
+      specialities: string[]; badges: string[];
+    }>();
+    for (const s of services) {
+      const key = s.vendorUsername || s.vendorName;
+      const isAgency = s.vendorPlan === "agence" || s.vendorName.toLowerCase().includes("agency") || s.vendorName.toLowerCase().includes("agence") || s.vendorName.toLowerCase().includes("studio");
+      if (!isAgency) continue;
+      const existing = vendorMap.get(key);
+      if (existing) {
+        existing.serviceCount++;
+        existing.rating = Math.max(existing.rating, s.rating);
+        existing.ratingCount += s.ratingCount;
+        if (!existing.specialities.includes(s.categoryName)) existing.specialities.push(s.categoryName);
+      } else {
+        vendorMap.set(key, {
+          id: s.userId,
+          name: s.vendorName,
+          avatar: s.vendorAvatar,
+          country: s.vendorCountry,
+          rating: s.rating,
+          ratingCount: s.ratingCount,
+          serviceCount: 1,
+          specialities: [s.categoryName],
+          badges: s.vendorBadges || [],
+        });
+      }
+    }
+    let result = Array.from(vendorMap.values());
+    if (searchInput) {
+      const q = searchInput.toLowerCase();
+      result = result.filter(a =>
+        a.name.toLowerCase().includes(q) || a.specialities.some(s => s.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [services, searchInput]);
+
+  // Check if a service is favorited
+  const isFavorited = (serviceId: string) => {
+    return favorites.some(f => f.id === serviceId && f.type === "service");
+  };
+
+  const isFreelanceFavorited = (vendorId: string) => {
+    return favorites.some(f => f.id === vendorId && f.type === "freelance");
+  };
+
+  const isAgenceFavorited = (vendorId: string) => {
+    return favorites.some(f => f.id === vendorId && f.type === "agence");
+  };
+
+  // Get initials from name
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
 
   return (
     <div className="space-y-6">
@@ -98,26 +235,26 @@ export default function ClientExplorer() {
       <div className="relative">
         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">search</span>
         <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher un service, un freelance, une agence ou une compétence..."
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+          placeholder="Rechercher un service, un freelance, une agence ou une competence..."
           className="w-full pl-12 pr-4 py-3.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 transition-colors"
         />
-        {search && (
-          <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+        {searchInput && (
+          <button onClick={() => { setSearchInput(""); setSearch(""); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
         )}
       </div>
 
-      {/* View Tabs + Sort */}
+      {/* View Tabs + Sort + View Mode */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex gap-1 bg-neutral-dark border border-border-dark rounded-xl p-1">
           {([
-            { key: "services", label: "Services", icon: "work", count: filteredServices.length },
-            { key: "freelances", label: "Freelances", icon: "person", count: filteredFreelancers.length },
-            { key: "agences", label: "Agences", icon: "apartment", count: filteredAgencies.length },
-          ] as { key: ViewType; label: string; icon: string; count: number }[]).map(v => (
+            { key: "services" as ViewType, label: "Services", icon: "work", count: sortedServices.length },
+            { key: "freelances" as ViewType, label: "Freelances", icon: "person", count: freelances.length },
+            { key: "agences" as ViewType, label: "Agences", icon: "apartment", count: agences.length },
+          ]).map(v => (
             <button
               key={v.key}
               onClick={() => setView(v.key)}
@@ -132,17 +269,34 @@ export default function ClientExplorer() {
             </button>
           ))}
         </div>
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
-          className="px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm text-white outline-none"
-        >
-          <option value="pertinence">Pertinence</option>
-          <option value="prix-asc">Prix croissant</option>
-          <option value="prix-desc">Prix décroissant</option>
-          <option value="note">Meilleure note</option>
-          <option value="populaire">Plus populaire</option>
-        </select>
+        <div className="flex items-center gap-2">
+          {/* View mode toggle */}
+          <div className="flex gap-0.5 bg-neutral-dark border border-border-dark rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn("p-1.5 rounded-md transition-colors", viewMode === "grid" ? "bg-primary/20 text-primary" : "text-slate-500 hover:text-white")}
+            >
+              <span className="material-symbols-outlined text-lg">grid_view</span>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn("p-1.5 rounded-md transition-colors", viewMode === "list" ? "bg-primary/20 text-primary" : "text-slate-500 hover:text-white")}
+            >
+              <span className="material-symbols-outlined text-lg">view_list</span>
+            </button>
+          </div>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm text-white outline-none"
+          >
+            <option value="pertinence">Pertinence</option>
+            <option value="prix-asc">Prix croissant</option>
+            <option value="prix-desc">Prix decroissant</option>
+            <option value="note">Meilleure note</option>
+            <option value="popularite">Plus populaire</option>
+          </select>
+        </div>
       </div>
 
       {/* Category filter (services view only) */}
@@ -164,183 +318,338 @@ export default function ClientExplorer() {
         </div>
       )}
 
+      {/* Error state */}
+      {error && (
+        <div className="text-center py-12">
+          <span className="material-symbols-outlined text-5xl text-red-400 mb-3">error</span>
+          <p className="text-slate-400 mb-4">{error}</p>
+          <button onClick={fetchServices} className="px-4 py-2 bg-primary text-background-dark text-sm font-bold rounded-lg hover:brightness-110 transition-all">
+            Reessayer
+          </button>
+        </div>
+      )}
+
       {/* ===== SERVICES VIEW ===== */}
-      {view === "services" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredServices.map(s => (
-            <div key={s.id} className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden hover:border-primary/40 transition-all group">
-              {/* Service header */}
-              <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
-                <span className="material-symbols-outlined text-5xl text-primary/30">
-                  {s.category === "dev" ? "code" : s.category === "design" ? "palette" : s.category === "marketing" ? "campaign" : s.category === "redaction" ? "edit_note" : s.category === "video" ? "videocam" : "psychology"}
-                </span>
-                {s.featured && (
-                  <span className="absolute top-3 left-3 bg-amber-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">star</span> Vedette
-                  </span>
-                )}
-                {s.sellerType === "agence" && (
-                  <span className="absolute top-3 right-3 bg-primary/90 text-white text-[10px] font-bold px-2 py-0.5 rounded">Agence</span>
-                )}
-              </div>
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">{s.title}</h3>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold">{s.avatar}</div>
-                  <span className="text-xs text-slate-400">{s.seller}</span>
-                  <div className="flex items-center gap-0.5 ml-auto">
-                    <span className="material-symbols-outlined text-amber-400 text-sm">star</span>
-                    <span className="text-xs font-bold text-white">{s.rating}</span>
-                    <span className="text-[10px] text-slate-500">({s.reviews})</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {s.tags.slice(0, 3).map(t => (
-                    <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-border-dark">
-                  <div>
-                    <p className="text-[10px] text-slate-500">À partir de</p>
-                    <p className="text-lg font-black text-primary">€{s.price.toLocaleString("fr-FR")}</p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => setContactModal(s.seller)}
-                      className="px-3 py-2 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                      Contacter
-                    </button>
-                    <button className="px-3 py-2 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
-                      Commander
-                    </button>
-                  </div>
-                </div>
-              </div>
+      {view === "services" && !error && (
+        <>
+          {loading ? (
+            <div className={cn(
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                : "flex flex-col gap-4"
+            )}>
+              {Array.from({ length: 6 }).map((_, i) => <ServiceCardSkeleton key={i} />)}
             </div>
-          ))}
-          {filteredServices.length === 0 && (
-            <div className="col-span-full text-center py-16">
+          ) : sortedServices.length === 0 ? (
+            <div className="text-center py-16">
               <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">search_off</span>
-              <p className="text-slate-400">Aucun service trouvé pour ces critères.</p>
+              <p className="text-white font-semibold mb-1">Aucun service trouve</p>
+              <p className="text-slate-400 text-sm">Essayez de modifier vos criteres de recherche ou de changer de categorie.</p>
+            </div>
+          ) : (
+            <div className={cn(
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                : "flex flex-col gap-3"
+            )}>
+              {sortedServices.map(s => (
+                viewMode === "grid" ? (
+                  /* Grid Card */
+                  <div key={s.id} className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden hover:border-primary/40 transition-all group">
+                    {/* Service image / header */}
+                    <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
+                      {s.mainImage ? (
+                        <img src={s.mainImage} alt={s.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="material-symbols-outlined text-5xl text-primary/30">design_services</span>
+                      )}
+                      {s.isBoosted && (
+                        <span className="absolute top-3 left-3 bg-amber-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">star</span> Vedette
+                        </span>
+                      )}
+                      {/* Favorite button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite("service", s.id, s.title, s.mainImage || "", s.rating, s.categoryName); }}
+                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors"
+                      >
+                        <span
+                          className={cn("material-symbols-outlined text-lg", isFavorited(s.id) ? "text-red-400" : "text-white/70")}
+                          style={{ fontVariationSettings: isFavorited(s.id) ? "'FILL' 1" : "'FILL' 0" }}
+                        >
+                          favorite
+                        </span>
+                      </button>
+                    </div>
+                    {/* Content */}
+                    <div className="p-4">
+                      <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">{s.title}</h3>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold overflow-hidden flex-shrink-0">
+                          {s.vendorAvatar ? (
+                            <img src={s.vendorAvatar} alt={s.vendorName} className="w-full h-full object-cover" />
+                          ) : (
+                            getInitials(s.vendorName)
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-400 truncate">{s.vendorName}</span>
+                        {s.vendorCountry && (
+                          <span className="text-[10px] text-slate-500">{s.vendorCountry}</span>
+                        )}
+                        <div className="flex items-center gap-0.5 ml-auto flex-shrink-0">
+                          <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                          <span className="text-xs font-bold text-white">{s.rating.toFixed(1)}</span>
+                          <span className="text-[10px] text-slate-500">({s.ratingCount})</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {s.tags.slice(0, 3).map(t => (
+                          <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-border-dark">
+                        <div>
+                          <p className="text-[10px] text-slate-500">A partir de</p>
+                          <p className="text-lg font-black text-primary">{s.basePrice.toLocaleString("fr-FR")}&nbsp;EUR</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                          <span className="material-symbols-outlined text-xs">schedule</span>
+                          {s.deliveryDays}j
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* List Card */
+                  <div key={s.id} className="bg-neutral-dark rounded-xl border border-border-dark p-4 hover:border-primary/40 transition-all flex gap-4 group">
+                    <div className="w-24 h-20 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {s.mainImage ? (
+                        <img src={s.mainImage} alt={s.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="material-symbols-outlined text-2xl text-primary/30">design_services</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-1">{s.title}</h3>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite("service", s.id, s.title, s.mainImage || "", s.rating, s.categoryName); }}
+                          className="flex-shrink-0"
+                        >
+                          <span
+                            className={cn("material-symbols-outlined text-lg", isFavorited(s.id) ? "text-red-400" : "text-slate-600 hover:text-white")}
+                            style={{ fontVariationSettings: isFavorited(s.id) ? "'FILL' 1" : "'FILL' 0" }}
+                          >
+                            favorite
+                          </span>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[8px] font-bold">
+                            {getInitials(s.vendorName)}
+                          </div>
+                          {s.vendorName}
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-amber-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                          <span className="font-bold text-white">{s.rating.toFixed(1)}</span>
+                          <span className="text-slate-500">({s.ratingCount})</span>
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-xs">schedule</span>
+                          {s.deliveryDays}j
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex gap-1">
+                          {s.tags.slice(0, 3).map(t => (
+                            <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
+                          ))}
+                        </div>
+                        <p className="text-base font-black text-primary">{s.basePrice.toLocaleString("fr-FR")}&nbsp;EUR</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ))}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* ===== FREELANCES VIEW ===== */}
-      {view === "freelances" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredFreelancers.map(f => (
-            <div key={f.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/40 transition-all">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">{f.avatar}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-white">{f.name}</h3>
-                    {f.verified && <span className="material-symbols-outlined text-blue-400 text-base">verified</span>}
-                    {f.topRated && (
-                      <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                        <span className="material-symbols-outlined text-xs">star</span> Top Rated
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-400 mt-0.5">{f.title}</p>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                    <span>{f.flag} {f.country}</span>
-                    <span className="flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-amber-400 text-xs">star</span>
-                      <span className="font-bold text-white">{f.rating}</span> ({f.reviews})
-                    </span>
-                    <span className="font-bold text-white">€{f.hourly}/h</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {f.skills.map(s => (
-                      <span key={s} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
-                <span className={cn("flex items-center gap-1.5 text-xs font-semibold", f.available ? "text-emerald-400" : "text-slate-500")}>
-                  <span className={cn("w-2 h-2 rounded-full", f.available ? "bg-emerald-400" : "bg-slate-500")} />
-                  {f.available ? "Disponible" : "Occupé"}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setContactModal(f.name)}
-                    className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    Contacter
-                  </button>
-                  <button
-                    onClick={() => setProposalModal(f.name)}
-                    className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
-                  >
-                    Proposition
-                  </button>
-                  <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
-                    Voir profil
-                  </button>
-                </div>
-              </div>
+      {view === "freelances" && !error && (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <FreelanceCardSkeleton key={i} />)}
             </div>
-          ))}
-        </div>
+          ) : freelances.length === 0 ? (
+            <div className="text-center py-16">
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">person_off</span>
+              <p className="text-white font-semibold mb-1">Aucun freelance trouve</p>
+              <p className="text-slate-400 text-sm">Essayez de modifier votre recherche.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {freelances.map(f => (
+                <div key={f.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/40 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 overflow-hidden">
+                      {f.avatar ? (
+                        <img src={f.avatar} alt={f.name} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(f.name)
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-white">{f.name}</h3>
+                        {f.badges.includes("verified") && <span className="material-symbols-outlined text-blue-400 text-base">verified</span>}
+                        {f.badges.includes("top_rated") && (
+                          <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+                            <span className="material-symbols-outlined text-xs">star</span> Top Rated
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-400 mt-0.5">{f.serviceCount} service(s) actif(s)</p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
+                        {f.country && <span>{f.country}</span>}
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-amber-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                          <span className="font-bold text-white">{f.rating.toFixed(1)}</span> ({f.ratingCount})
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        {f.skills.slice(0, 5).map(s => (
+                          <span key={s} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
+                    <button
+                      onClick={() => toggleFavorite("freelance", f.id, f.name, f.avatar, f.rating, f.skills[0] || "")}
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors"
+                    >
+                      <span
+                        className={cn("material-symbols-outlined text-base", isFreelanceFavorited(f.id) ? "text-red-400" : "")}
+                        style={{ fontVariationSettings: isFreelanceFavorited(f.id) ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        favorite
+                      </span>
+                      {isFreelanceFavorited(f.id) ? "Retire" : "Favoris"}
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setContactModal(f.name)}
+                        className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                      >
+                        Contacter
+                      </button>
+                      <button
+                        onClick={() => setProposalModal(f.name)}
+                        className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
+                      >
+                        Proposition
+                      </button>
+                      <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                        Voir profil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* ===== AGENCIES VIEW ===== */}
-      {view === "agences" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredAgencies.map(a => (
-            <div key={a.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/40 transition-all">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">{a.avatar}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-white">{a.name}</h3>
-                    {a.verified && <span className="material-symbols-outlined text-blue-400 text-base">verified</span>}
-                    {a.premium && (
-                      <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full font-bold">Premium</span>
-                    )}
+      {view === "agences" && !error && (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <FreelanceCardSkeleton key={i} />)}
+            </div>
+          ) : agences.length === 0 ? (
+            <div className="text-center py-16">
+              <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">domain_disabled</span>
+              <p className="text-white font-semibold mb-1">Aucune agence trouvee</p>
+              <p className="text-slate-400 text-sm">Essayez de modifier votre recherche.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {agences.map(a => (
+                <div key={a.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/40 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 overflow-hidden">
+                      {a.avatar ? (
+                        <img src={a.avatar} alt={a.name} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(a.name)
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-white">{a.name}</h3>
+                        {a.badges.includes("verified") && <span className="material-symbols-outlined text-blue-400 text-base">verified</span>}
+                        {a.badges.includes("premium") && (
+                          <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full font-bold">Premium</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-400 mt-0.5">{a.serviceCount} service(s)</p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
+                        {a.country && <span>{a.country}</span>}
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-amber-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                          <span className="font-bold text-white">{a.rating.toFixed(1)}</span> ({a.ratingCount})
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        {a.specialities.map(s => (
+                          <span key={s} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{s}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-slate-400 mt-0.5">{a.desc}</p>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                    <span>{a.flag} {a.country}</span>
-                    <span className="flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-amber-400 text-xs">star</span>
-                      <span className="font-bold text-white">{a.rating}</span> ({a.reviews})
-                    </span>
-                    <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">group</span>{a.members} membres</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {a.specialities.map(s => (
-                      <span key={s} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{s}</span>
-                    ))}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
+                    <button
+                      onClick={() => toggleFavorite("agence", a.id, a.name, a.avatar, a.rating, a.specialities[0] || "")}
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors"
+                    >
+                      <span
+                        className={cn("material-symbols-outlined text-base", isAgenceFavorited(a.id) ? "text-red-400" : "")}
+                        style={{ fontVariationSettings: isAgenceFavorited(a.id) ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        favorite
+                      </span>
+                      {isAgenceFavorited(a.id) ? "Retire" : "Favoris"}
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setContactModal(a.name)}
+                        className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                      >
+                        Contacter
+                      </button>
+                      <button
+                        onClick={() => setProposalModal(a.name)}
+                        className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
+                      >
+                        Demander un devis
+                      </button>
+                      <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                        Voir agence
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-border-dark">
-                <button
-                  onClick={() => setContactModal(a.name)}
-                  className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                >
-                  Contacter
-                </button>
-                <button
-                  onClick={() => setProposalModal(a.name)}
-                  className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
-                >
-                  Demander un devis
-                </button>
-                <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
-                  Voir agence
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* ===== CONTACT MODAL ===== */}
@@ -353,7 +662,7 @@ export default function ClientExplorer() {
             </div>
             <textarea
               rows={4}
-              placeholder="Bonjour, je suis intéressé par vos services. Pouvez-vous me donner plus de détails sur..."
+              placeholder="Bonjour, je suis interesse par vos services. Pouvez-vous me donner plus de details sur..."
               className="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 resize-none"
             />
             <div className="flex justify-end gap-3 mt-4">
@@ -372,7 +681,7 @@ export default function ClientExplorer() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProposalModal(null)}>
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white text-lg">Proposition à {proposalModal}</h3>
+              <h3 className="font-bold text-white text-lg">Proposition a {proposalModal}</h3>
               <button onClick={() => setProposalModal(null)} className="text-slate-400 hover:text-white"><span className="material-symbols-outlined">close</span></button>
             </div>
             <div className="space-y-4">
@@ -391,21 +700,21 @@ export default function ClientExplorer() {
                   value={proposalForm.description}
                   onChange={e => setProposalForm(p => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  placeholder="Décrivez précisément ce que vous recherchez, les fonctionnalités attendues, le contexte..."
+                  placeholder="Decrivez precisement ce que vous recherchez, les fonctionnalites attendues, le contexte..."
                   className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-lg text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-white mb-1.5">Budget estimé</label>
+                  <label className="block text-sm font-semibold text-white mb-1.5">Budget estime</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">€</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">EUR</span>
                     <input
                       type="number"
                       value={proposalForm.budget}
                       onChange={e => setProposalForm(p => ({ ...p, budget: e.target.value }))}
                       placeholder="1500"
-                      className="w-full pl-7 pr-4 py-2.5 bg-background-dark border border-border-dark rounded-lg text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50"
+                      className="w-full pl-12 pr-4 py-2.5 bg-background-dark border border-border-dark rounded-lg text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50"
                     />
                   </div>
                 </div>

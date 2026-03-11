@@ -1,27 +1,17 @@
-import Link from "next/link";
+"use client";
 
-const STEPS = [
-  {
-    number: 1,
-    title: "Décrivez votre projet",
-    description:
-      "Dites-nous ce que vous cherchez. Publiez votre besoin ou parcourez notre catalogue de services freelance.",
-  },
-  {
-    number: 2,
-    title: "Trouvez l'expert idéal",
-    description:
-      "Comparez les profils, les portfolios et les avis. Échangez directement avec les freelances avant de vous engager.",
-  },
-  {
-    number: 3,
-    title: "Collaborez en confiance",
-    description:
-      "Paiement sécurisé par séquestre. Vos fonds sont protégés jusqu'à ce que vous soyez satisfait de la livraison.",
-  },
-];
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export function HowItWorksSection() {
+  const t = useTranslations("landing.how_it_works");
+
+  const STEPS = [
+    { number: 1, titleKey: "step1_title", descKey: "step1_desc" },
+    { number: 2, titleKey: "step2_title", descKey: "step2_desc" },
+    { number: 3, titleKey: "step3_title", descKey: "step3_desc" },
+  ];
+
   return (
     <section className="py-32 px-6 lg:px-20">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
@@ -37,10 +27,10 @@ export function HowItWorksSection() {
           <div className="absolute -bottom-8 right-0 sm:-right-8 z-20 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-primary/10 max-w-[200px] sm:max-w-xs">
             <div className="flex items-center gap-4 mb-4">
               <span className="material-symbols-outlined text-primary text-3xl">verified</span>
-              <p className="font-bold text-lg leading-tight">Satisfaction garantie</p>
+              <p className="font-bold text-lg leading-tight">{t("floating_title")}</p>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Chaque freelance est vérifié. Vous ne payez que lorsque le travail vous satisfait pleinement.
+              {t("floating_desc")}
             </p>
           </div>
         </div>
@@ -49,10 +39,10 @@ export function HowItWorksSection() {
         <div className="space-y-12 order-1 lg:order-2">
           <div className="space-y-6">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Simple, rapide et <span className="text-primary">sécurisé</span>
+              {t("title_1")} <span className="text-primary">{t("title_highlight")}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-lg">
-              En 3 étapes, trouvez le freelance parfait et lancez votre projet en toute sérénité.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -63,8 +53,8 @@ export function HowItWorksSection() {
                   {step.number}
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold mb-2">{step.title}</h4>
-                  <p className="text-slate-500 dark:text-slate-400">{step.description}</p>
+                  <h4 className="text-xl font-bold mb-2">{t(step.titleKey)}</h4>
+                  <p className="text-slate-500 dark:text-slate-400">{t(step.descKey)}</p>
                 </div>
               </div>
             ))}
@@ -74,7 +64,7 @@ export function HowItWorksSection() {
             href="/inscription"
             className="inline-flex items-center gap-4 bg-primary hover:bg-primary/90 text-white rounded-2xl px-10 py-5 text-xl font-bold shadow-2xl shadow-primary/20 transition-all group"
           >
-            Commencer gratuitement
+            {t("cta")}
             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </Link>
         </div>

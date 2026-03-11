@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
 import { cn } from "@/lib/utils";
 
@@ -14,19 +15,29 @@ interface MarketplaceService {
   slug: string;
   title: string;
   category: string;
-  categorySlug: string;
-  image: string;
-  freelancer: {
-    name: string;
-    avatar: string;
-    level: "Nouveau" | "Confirme" | "Top Rated" | "Elite";
-    country: string;
-  };
-  rating: number;
-  reviewCount: number;
-  price: number;
+  categoryId: string;
+  basePrice: number;
   deliveryDays: number;
-  favorited: boolean;
+  rating: number;
+  ratingCount: number;
+  orderCount: number;
+  image: string;
+  images: string[];
+  vendorName: string;
+  vendorAvatar: string;
+  vendorUsername: string;
+  vendorCountry: string;
+  vendorBadges: string[];
+  isBoosted: boolean;
+  tags: string[];
+  favorited?: boolean;
+}
+
+interface ApiResponse {
+  services: Omit<MarketplaceService, "favorited">[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 // ============================================================
@@ -34,55 +45,38 @@ interface MarketplaceService {
 // ============================================================
 
 const CATEGORIES = [
-  { label: "Developpement Web", slug: "developpement-web", icon: "code" },
-  { label: "Design UI/UX", slug: "design-ui-ux", icon: "palette" },
-  { label: "Marketing Digital", slug: "marketing-digital", icon: "campaign" },
-  { label: "Redaction", slug: "redaction", icon: "edit_note" },
-  { label: "Traduction", slug: "traduction", icon: "translate" },
-  { label: "Video & Animation", slug: "video-animation", icon: "videocam" },
-  { label: "IA & Data", slug: "ia-data", icon: "smart_toy" },
-  { label: "Mobile", slug: "mobile", icon: "smartphone" },
-  { label: "SEO", slug: "seo", icon: "travel_explore" },
-  { label: "Cybersecurite", slug: "cybersecurite", icon: "security" },
+  { slug: "developpement-web", icon: "code" },
+  { slug: "design-ui-ux", icon: "palette" },
+  { slug: "marketing-digital", icon: "campaign" },
+  { slug: "redaction", icon: "edit_note" },
+  { slug: "traduction", icon: "translate" },
+  { slug: "video-animation", icon: "videocam" },
+  { slug: "ia-data", icon: "smart_toy" },
+  { slug: "mobile", icon: "smartphone" },
+  { slug: "seo", icon: "travel_explore" },
+  { slug: "cybersecurite", icon: "security" },
 ] as const;
 
-const DELIVERY_OPTIONS = [
-  { label: "Tous", value: "all" },
-  { label: "1-3 jours", value: "1-3" },
-  { label: "3-7 jours", value: "3-7" },
-  { label: "7-14 jours", value: "7-14" },
-  { label: "14-30 jours", value: "14-30" },
+const DELIVERY_VALUES = ["all", "1-3", "3-7", "7-14", "14-30"] as const;
+
+const RATING_OPTIONS = [4, 3, 2] as const;
+
+const SELLER_LEVEL_KEYS = ["nouveau", "confirme", "top_rated", "elite"] as const;
+
+const COUNTRY_KEYS = [
+  "tous",
+  "senegal",
+  "cote_divoire",
+  "cameroun",
+  "france",
+  "maroc",
+  "belgique",
+  "canada",
+  "mali",
+  "burkina_faso",
 ] as const;
 
-const RATING_OPTIONS = [
-  { label: "4 etoiles et +", value: 4 },
-  { label: "3 etoiles et +", value: 3 },
-  { label: "2 etoiles et +", value: 2 },
-] as const;
-
-const SELLER_LEVELS = ["Nouveau", "Confirme", "Top Rated", "Elite"] as const;
-
-const COUNTRIES = [
-  "Tous",
-  "Senegal",
-  "Cote d'Ivoire",
-  "Cameroun",
-  "France",
-  "Maroc",
-  "Belgique",
-  "Canada",
-  "Mali",
-  "Burkina Faso",
-] as const;
-
-const SORT_OPTIONS = [
-  { label: "Pertinence", value: "pertinence" },
-  { label: "Prix croissant", value: "prix_asc" },
-  { label: "Prix decroissant", value: "prix_desc" },
-  { label: "Meilleures notes", value: "note" },
-  { label: "Plus recents", value: "recent" },
-  { label: "Populaires", value: "populaire" },
-] as const;
+const SORT_VALUES = ["pertinence", "prix_asc", "prix_desc", "note", "recent", "populaire"] as const;
 
 const ITEMS_PER_PAGE = 12;
 
@@ -100,167 +94,70 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 };
 
 // ============================================================
-// Demo Data (24+ services)
+// Category slug lookup for gradient/icon mapping
 // ============================================================
 
-const DEMO_SERVICES: MarketplaceService[] = [
-  {
-    id: "ms1", slug: "creation-site-web-vitrine-next-js", title: "Creation de site web vitrine avec Next.js",
-    category: "Developpement Web", categorySlug: "developpement-web",
-    image: "code", freelancer: { name: "Gildas L.", avatar: "GL", level: "Top Rated", country: "Cote d'Ivoire" },
-    rating: 4.9, reviewCount: 287, price: 120, deliveryDays: 7, favorited: false,
-  },
-  {
-    id: "ms2", slug: "design-ui-ux-application-mobile", title: "Design UI/UX complet pour application mobile",
-    category: "Design UI/UX", categorySlug: "design-ui-ux",
-    image: "palette", freelancer: { name: "Claire B.", avatar: "CB", level: "Elite", country: "France" },
-    rating: 4.8, reviewCount: 203, price: 180, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms3", slug: "strategie-marketing-digital-reseaux-sociaux", title: "Strategie marketing digital et reseaux sociaux",
-    category: "Marketing Digital", categorySlug: "marketing-digital",
-    image: "campaign", freelancer: { name: "Fatou S.", avatar: "FS", level: "Top Rated", country: "Senegal" },
-    rating: 4.7, reviewCount: 312, price: 95, deliveryDays: 3, favorited: false,
-  },
-  {
-    id: "ms4", slug: "redaction-articles-blog-seo", title: "Redaction d'articles de blog optimises SEO",
-    category: "Redaction", categorySlug: "redaction",
-    image: "edit_note", freelancer: { name: "Amina D.", avatar: "AD", level: "Confirme", country: "Senegal" },
-    rating: 4.6, reviewCount: 156, price: 60, deliveryDays: 2, favorited: false,
-  },
-  {
-    id: "ms5", slug: "traduction-francais-anglais-professionnelle", title: "Traduction francais-anglais professionnelle",
-    category: "Traduction", categorySlug: "traduction",
-    image: "translate", freelancer: { name: "Sophie M.", avatar: "SM", level: "Top Rated", country: "Belgique" },
-    rating: 4.9, reviewCount: 198, price: 45, deliveryDays: 2, favorited: false,
-  },
-  {
-    id: "ms6", slug: "montage-video-pub-instagram", title: "Montage video publicitaire pour Instagram & TikTok",
-    category: "Video & Animation", categorySlug: "video-animation",
-    image: "videocam", freelancer: { name: "Youssef M.", avatar: "YM", level: "Confirme", country: "Maroc" },
-    rating: 4.5, reviewCount: 89, price: 150, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms7", slug: "chatbot-ia-customer-service", title: "Chatbot IA pour service client automatise",
-    category: "IA & Data", categorySlug: "ia-data",
-    image: "smart_toy", freelancer: { name: "Marc T.", avatar: "MT", level: "Elite", country: "Cameroun" },
-    rating: 4.8, reviewCount: 145, price: 250, deliveryDays: 10, favorited: false,
-  },
-  {
-    id: "ms8", slug: "application-mobile-react-native", title: "Application mobile React Native cross-platform",
-    category: "Mobile", categorySlug: "mobile",
-    image: "smartphone", freelancer: { name: "Gildas L.", avatar: "GL", level: "Top Rated", country: "Cote d'Ivoire" },
-    rating: 4.9, reviewCount: 342, price: 350, deliveryDays: 14, favorited: false,
-  },
-  {
-    id: "ms9", slug: "audit-seo-technique-complet", title: "Audit SEO technique complet de votre site web",
-    category: "SEO", categorySlug: "seo",
-    image: "travel_explore", freelancer: { name: "Fatou S.", avatar: "FS", level: "Top Rated", country: "Senegal" },
-    rating: 4.7, reviewCount: 267, price: 200, deliveryDays: 7, favorited: false,
-  },
-  {
-    id: "ms10", slug: "test-penetration-securite-web", title: "Test de penetration et audit securite web",
-    category: "Cybersecurite", categorySlug: "cybersecurite",
-    image: "security", freelancer: { name: "Ibrahim K.", avatar: "IK", level: "Elite", country: "Mali" },
-    rating: 4.9, reviewCount: 78, price: 400, deliveryDays: 10, favorited: false,
-  },
-  {
-    id: "ms11", slug: "logo-design-identite-visuelle", title: "Logo design et identite visuelle complete",
-    category: "Design UI/UX", categorySlug: "design-ui-ux",
-    image: "palette", freelancer: { name: "Claire B.", avatar: "CB", level: "Elite", country: "France" },
-    rating: 4.8, reviewCount: 340, price: 85, deliveryDays: 3, favorited: false,
-  },
-  {
-    id: "ms12", slug: "api-backend-nodejs-fastify", title: "API backend Node.js avec Fastify et Prisma",
-    category: "Developpement Web", categorySlug: "developpement-web",
-    image: "code", freelancer: { name: "Gildas L.", avatar: "GL", level: "Top Rated", country: "Cote d'Ivoire" },
-    rating: 4.9, reviewCount: 198, price: 250, deliveryDays: 10, favorited: false,
-  },
-  {
-    id: "ms13", slug: "community-management-mensuel", title: "Community management mensuel pour vos reseaux",
-    category: "Marketing Digital", categorySlug: "marketing-digital",
-    image: "campaign", freelancer: { name: "Awa N.", avatar: "AN", level: "Confirme", country: "Senegal" },
-    rating: 4.4, reviewCount: 67, price: 300, deliveryDays: 30, favorited: false,
-  },
-  {
-    id: "ms14", slug: "redaction-contenu-site-web", title: "Redaction complete du contenu de votre site web",
-    category: "Redaction", categorySlug: "redaction",
-    image: "edit_note", freelancer: { name: "Marie D.", avatar: "MD", level: "Top Rated", country: "France" },
-    rating: 4.7, reviewCount: 231, price: 180, deliveryDays: 7, favorited: false,
-  },
-  {
-    id: "ms15", slug: "traduction-arabe-francais-technique", title: "Traduction arabe-francais documents techniques",
-    category: "Traduction", categorySlug: "traduction",
-    image: "translate", freelancer: { name: "Hassan R.", avatar: "HR", level: "Confirme", country: "Maroc" },
-    rating: 4.6, reviewCount: 102, price: 55, deliveryDays: 3, favorited: false,
-  },
-  {
-    id: "ms16", slug: "animation-motion-design-logo", title: "Animation motion design pour votre logo",
-    category: "Video & Animation", categorySlug: "video-animation",
-    image: "videocam", freelancer: { name: "Kofi A.", avatar: "KA", level: "Nouveau", country: "Cote d'Ivoire" },
-    rating: 4.2, reviewCount: 23, price: 75, deliveryDays: 4, favorited: false,
-  },
-  {
-    id: "ms17", slug: "analyse-donnees-dashboard-power-bi", title: "Analyse de donnees et dashboard Power BI",
-    category: "IA & Data", categorySlug: "ia-data",
-    image: "smart_toy", freelancer: { name: "Nadia T.", avatar: "NT", level: "Top Rated", country: "Cameroun" },
-    rating: 4.8, reviewCount: 178, price: 200, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms18", slug: "application-flutter-ios-android", title: "Application Flutter pour iOS et Android",
-    category: "Mobile", categorySlug: "mobile",
-    image: "smartphone", freelancer: { name: "Oumar S.", avatar: "OS", level: "Confirme", country: "Mali" },
-    rating: 4.5, reviewCount: 56, price: 280, deliveryDays: 14, favorited: false,
-  },
-  {
-    id: "ms19", slug: "optimisation-seo-on-page", title: "Optimisation SEO on-page pour e-commerce",
-    category: "SEO", categorySlug: "seo",
-    image: "travel_explore", freelancer: { name: "Pierre L.", avatar: "PL", level: "Top Rated", country: "France" },
-    rating: 4.6, reviewCount: 189, price: 150, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms20", slug: "formation-securite-informatique", title: "Formation en securite informatique pour equipes",
-    category: "Cybersecurite", categorySlug: "cybersecurite",
-    image: "security", freelancer: { name: "Bamba D.", avatar: "BD", level: "Confirme", country: "Burkina Faso" },
-    rating: 4.3, reviewCount: 34, price: 500, deliveryDays: 7, favorited: false,
-  },
-  {
-    id: "ms21", slug: "ecommerce-shopify-custom", title: "Boutique e-commerce Shopify personnalisee",
-    category: "Developpement Web", categorySlug: "developpement-web",
-    image: "code", freelancer: { name: "Amina D.", avatar: "AD", level: "Confirme", country: "Senegal" },
-    rating: 4.5, reviewCount: 112, price: 180, deliveryDays: 7, favorited: false,
-  },
-  {
-    id: "ms22", slug: "design-system-figma-complet", title: "Design system Figma complet pour votre produit",
-    category: "Design UI/UX", categorySlug: "design-ui-ux",
-    image: "palette", freelancer: { name: "Nadia T.", avatar: "NT", level: "Elite", country: "Cameroun" },
-    rating: 4.9, reviewCount: 256, price: 350, deliveryDays: 10, favorited: false,
-  },
-  {
-    id: "ms23", slug: "campagne-google-ads-optimisee", title: "Campagne Google Ads optimisee et geree",
-    category: "Marketing Digital", categorySlug: "marketing-digital",
-    image: "campaign", freelancer: { name: "Pierre L.", avatar: "PL", level: "Top Rated", country: "France" },
-    rating: 4.7, reviewCount: 145, price: 220, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms24", slug: "script-automatisation-python", title: "Script d'automatisation Python sur mesure",
-    category: "IA & Data", categorySlug: "ia-data",
-    image: "smart_toy", freelancer: { name: "Marc T.", avatar: "MT", level: "Elite", country: "Cameroun" },
-    rating: 4.8, reviewCount: 167, price: 130, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms25", slug: "wordpress-theme-custom", title: "Theme WordPress personnalise et responsive",
-    category: "Developpement Web", categorySlug: "developpement-web",
-    image: "code", freelancer: { name: "Kofi A.", avatar: "KA", level: "Nouveau", country: "Cote d'Ivoire" },
-    rating: 4.1, reviewCount: 18, price: 90, deliveryDays: 5, favorited: false,
-  },
-  {
-    id: "ms26", slug: "voix-off-professionnelle-francais", title: "Voix-off professionnelle en francais",
-    category: "Video & Animation", categorySlug: "video-animation",
-    image: "videocam", freelancer: { name: "Awa N.", avatar: "AN", level: "Confirme", country: "Senegal" },
-    rating: 4.6, reviewCount: 89, price: 40, deliveryDays: 2, favorited: false,
-  },
-];
+function getCategorySlug(categoryName: string): string {
+  // Try direct slug map first
+  const normalized = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  if (CATEGORY_GRADIENTS[normalized]) return normalized;
+  // Try matching from CATEGORIES
+  const match = CATEGORIES.find((c) => c.slug === normalized);
+  return match?.slug ?? normalized;
+}
+
+function getBadgeLevel(badges: string[]): string {
+  if (badges.includes("Elite")) return "Elite";
+  if (badges.includes("Top Rated")) return "Top Rated";
+  if (badges.includes("Confirme") || badges.includes("Pro")) return "Confirme";
+  return "Nouveau";
+}
+
+// ============================================================
+// Loading Skeleton
+// ============================================================
+
+function ServiceCardSkeleton({ view }: { view: "grid" | "list" }) {
+  if (view === "list") {
+    return (
+      <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark p-3 animate-pulse">
+        <div className="w-full sm:w-56 h-40 sm:h-36 rounded-lg bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+        <div className="flex-1 flex flex-col justify-between min-w-0">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700" />
+              <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
+            </div>
+            <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+            <div className="h-3 w-1/3 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden animate-pulse">
+      <div className="aspect-[4/3] bg-slate-200 dark:bg-slate-700" />
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
+        </div>
+        <div className="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded mb-1" />
+        <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded mb-3" />
+        <div className="h-3 w-1/3 bg-slate-200 dark:bg-slate-700 rounded mb-3" />
+        <div className="border-t border-slate-100 dark:border-border-dark pt-3 flex items-center justify-between">
+          <div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded" />
+          <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ============================================================
 // Sub-components
@@ -307,14 +204,18 @@ function ServiceCard({
   view,
   format,
   onToggleFavorite,
+  t,
 }: {
   service: MarketplaceService;
   view: "grid" | "list";
   format: (n: number) => string;
   onToggleFavorite: (id: string) => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
-  const catIcon = CATEGORIES.find((c) => c.slug === service.categorySlug)?.icon ?? "category";
-  const gradient = CATEGORY_GRADIENTS[service.categorySlug] ?? "from-primary/80 to-teal-800/80";
+  const categorySlug = getCategorySlug(service.category);
+  const catIcon = CATEGORIES.find((c) => c.slug === categorySlug)?.icon ?? "category";
+  const gradient = CATEGORY_GRADIENTS[categorySlug] ?? "from-primary/80 to-teal-800/80";
+  const vendorLevel = getBadgeLevel(service.vendorBadges || []);
 
   if (view === "list") {
     return (
@@ -352,10 +253,10 @@ function ServiceCard({
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                {service.freelancer.avatar}
+                {service.vendorAvatar ? service.vendorAvatar.slice(0, 2).toUpperCase() : "??"}
               </div>
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.freelancer.name}</span>
-              <LevelBadge level={service.freelancer.level} />
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.vendorName}</span>
+              <LevelBadge level={vendorLevel} />
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-2">
               {service.title}
@@ -363,16 +264,16 @@ function ServiceCard({
             <div className="flex items-center gap-2 mb-2">
               <StarRating rating={service.rating} />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{service.rating}</span>
-              <span className="text-xs text-slate-500">({service.reviewCount})</span>
+              <span className="text-xs text-slate-500">({service.ratingCount})</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-xs text-slate-500">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              {service.deliveryDays}j
+              {service.deliveryDays}{t("days_short")}
             </div>
             <p className="text-sm font-extrabold text-slate-900 dark:text-white">
-              A partir de {format(service.price)}
+              {t("from")} {format(service.basePrice)}
             </p>
           </div>
         </div>
@@ -415,10 +316,10 @@ function ServiceCard({
         {/* Freelancer */}
         <div className="flex items-center gap-2 mb-2">
           <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-            {service.freelancer.avatar}
+            {service.vendorAvatar ? service.vendorAvatar.slice(0, 2).toUpperCase() : "??"}
           </div>
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.freelancer.name}</span>
-          <LevelBadge level={service.freelancer.level} />
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.vendorName}</span>
+          <LevelBadge level={vendorLevel} />
         </div>
 
         {/* Title */}
@@ -430,17 +331,17 @@ function ServiceCard({
         <div className="flex items-center gap-2 mb-3">
           <StarRating rating={service.rating} />
           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{service.rating}</span>
-          <span className="text-xs text-slate-500">({service.reviewCount})</span>
+          <span className="text-xs text-slate-500">({service.ratingCount})</span>
         </div>
 
         {/* Divider + Price */}
         <div className="border-t border-slate-100 dark:border-border-dark pt-3 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-slate-500">
             <span className="material-symbols-outlined text-sm">schedule</span>
-            {service.deliveryDays}j
+            {service.deliveryDays}{t("days_short")}
           </div>
           <p className="text-sm font-extrabold text-slate-900 dark:text-white">
-            A partir de {format(service.price)}
+            {t("from")} {format(service.basePrice)}
           </p>
         </div>
       </div>
@@ -485,6 +386,8 @@ function FilterSidebar({
   onReset: () => void;
   className?: string;
 }) {
+  const t = useTranslations("explorer");
+
   const toggleCategory = (slug: string) => {
     const next = filters.categories.includes(slug)
       ? filters.categories.filter((c) => c !== slug)
@@ -512,7 +415,7 @@ function FilterSidebar({
     <div className={cn("flex flex-col gap-6", className)}>
       {/* Categories */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Categories</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_categories")}</h4>
         <div className="space-y-1.5">
           {CATEGORIES.map((cat) => (
             <label key={cat.slug} className="flex items-center gap-2.5 cursor-pointer group">
@@ -523,7 +426,7 @@ function FilterSidebar({
                 className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30 accent-primary"
               />
               <span className="material-symbols-outlined text-sm text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">{cat.icon}</span>
-              <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">{cat.label}</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">{t(`cat.${cat.slug}`)}</span>
             </label>
           ))}
         </div>
@@ -531,11 +434,11 @@ function FilterSidebar({
 
       {/* Price Range */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Fourchette de prix (EUR)</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_price_range")}</h4>
         <div className="flex items-center gap-2">
           <input
             type="number"
-            placeholder="Min"
+            placeholder={t("filter_min")}
             value={filters.priceMin}
             onChange={(e) => onChange({ ...filters, priceMin: e.target.value })}
             className="w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
@@ -543,7 +446,7 @@ function FilterSidebar({
           <span className="text-slate-400 text-xs">-</span>
           <input
             type="number"
-            placeholder="Max"
+            placeholder={t("filter_max")}
             value={filters.priceMax}
             onChange={(e) => onChange({ ...filters, priceMax: e.target.value })}
             className="w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
@@ -553,21 +456,21 @@ function FilterSidebar({
 
       {/* Delivery Time */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Delai de livraison</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_delivery")}</h4>
         <select
           value={filters.delivery}
           onChange={(e) => onChange({ ...filters, delivery: e.target.value })}
           className="w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         >
-          {DELIVERY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          {DELIVERY_VALUES.map((val) => (
+            <option key={val} value={val}>{t(`delivery.${val}`)}</option>
           ))}
         </select>
       </div>
 
       {/* Rating */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Note minimale</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_min_rating")}</h4>
         <div className="space-y-1.5">
           <label className="flex items-center gap-2.5 cursor-pointer group">
             <input
@@ -577,22 +480,22 @@ function FilterSidebar({
               onChange={() => onChange({ ...filters, minRating: 0 })}
               className="w-4 h-4 border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30 accent-primary"
             />
-            <span className="text-sm text-slate-700 dark:text-slate-300">Toutes les notes</span>
+            <span className="text-sm text-slate-700 dark:text-slate-300">{t("filter_all_ratings")}</span>
           </label>
-          {RATING_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+          {RATING_OPTIONS.map((value) => (
+            <label key={value} className="flex items-center gap-2.5 cursor-pointer group">
               <input
                 type="radio"
                 name="rating"
-                checked={filters.minRating === opt.value}
-                onChange={() => onChange({ ...filters, minRating: opt.value })}
+                checked={filters.minRating === value}
+                onChange={() => onChange({ ...filters, minRating: value })}
                 className="w-4 h-4 border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30 accent-primary"
               />
               <div className="flex items-center gap-1">
-                {Array.from({ length: opt.value }).map((_, i) => (
+                {Array.from({ length: value }).map((_, i) => (
                   <span key={i} className="material-symbols-outlined text-sm text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                 ))}
-                <span className="text-sm text-slate-700 dark:text-slate-300 ml-1">& +</span>
+                <span className="text-sm text-slate-700 dark:text-slate-300 ml-1">{t("filter_and_more")}</span>
               </div>
             </label>
           ))}
@@ -601,17 +504,17 @@ function FilterSidebar({
 
       {/* Seller Level */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Niveau du vendeur</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_seller_level")}</h4>
         <div className="space-y-1.5">
-          {SELLER_LEVELS.map((level) => (
-            <label key={level} className="flex items-center gap-2.5 cursor-pointer group">
+          {SELLER_LEVEL_KEYS.map((key) => (
+            <label key={key} className="flex items-center gap-2.5 cursor-pointer group">
               <input
                 type="checkbox"
-                checked={filters.sellerLevels.includes(level)}
-                onChange={() => toggleSellerLevel(level)}
+                checked={filters.sellerLevels.includes(t(`level.${key}`))}
+                onChange={() => toggleSellerLevel(t(`level.${key}`))}
                 className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/30 accent-primary"
               />
-              <LevelBadge level={level} />
+              <LevelBadge level={t(`level.${key}`)} />
             </label>
           ))}
         </div>
@@ -619,14 +522,14 @@ function FilterSidebar({
 
       {/* Country */}
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Pays</h4>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t("filter_country")}</h4>
         <select
           value={filters.country}
           onChange={(e) => onChange({ ...filters, country: e.target.value })}
           className="w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
         >
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+          {COUNTRY_KEYS.map((key) => (
+            <option key={key} value={t(`country.${key}`)}>{t(`country.${key}`)}</option>
           ))}
         </select>
       </div>
@@ -638,7 +541,7 @@ function FilterSidebar({
           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-slate-200 dark:border-border-dark text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-red-400 hover:text-red-500 transition-colors"
         >
           <span className="material-symbols-outlined text-sm">restart_alt</span>
-          Reinitialiser les filtres
+          {t("reset_filters")}
         </button>
       )}
     </div>
@@ -718,112 +621,160 @@ function Pagination({
 
 export default function ExplorerPage() {
   const { format } = useCurrencyStore();
+  const t = useTranslations("explorer");
 
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [sort, setSort] = useState("pertinence");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [services, setServices] = useState(DEMO_SERVICES);
 
-  // ---- Toggle favorite ----
+  // API data state
+  const [services, setServices] = useState<MarketplaceService[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  // Debounce timer for search input
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track the search value independently for the input, debouncing API calls
+  const [searchInput, setSearchInput] = useState("");
+
+  // ---- Fetch services from API ----
+  const fetchServices = useCallback(async (
+    currentFilters: FilterState,
+    currentSort: string,
+    currentPage: number,
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+
+      // Search query
+      if (currentFilters.search.trim()) {
+        params.set("q", currentFilters.search.trim());
+      }
+
+      // Category filter — the API accepts category name
+      if (currentFilters.categories.length === 1) {
+        const catSlug = currentFilters.categories[0];
+        const cat = CATEGORIES.find((c) => c.slug === catSlug);
+        if (cat) params.set("category", t(`cat.${cat.slug}`));
+      }
+
+      // Price range
+      if (currentFilters.priceMin !== "") {
+        params.set("minPrice", currentFilters.priceMin);
+      }
+      if (currentFilters.priceMax !== "") {
+        params.set("maxPrice", currentFilters.priceMax);
+      }
+
+      // Sort
+      params.set("sort", currentSort === "recent" ? "nouveau" : currentSort);
+
+      // Pagination
+      params.set("page", String(currentPage));
+      params.set("limit", String(ITEMS_PER_PAGE));
+
+      const res = await fetch(`/api/public/services?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error(`Erreur HTTP ${res.status}`);
+      }
+
+      const data: ApiResponse = await res.json();
+
+      // Apply client-side filters that the API does not support
+      let filtered = data.services.map((s) => ({
+        ...s,
+        favorited: favoriteIds.has(s.id),
+      }));
+
+      // Multi-category filter (API only supports single category)
+      if (currentFilters.categories.length > 1) {
+        filtered = filtered.filter((s) => {
+          const slug = getCategorySlug(s.category);
+          return currentFilters.categories.includes(slug);
+        });
+      }
+
+      // Delivery time filter (client-side)
+      if (currentFilters.delivery !== "all") {
+        const [minStr, maxStr] = currentFilters.delivery.split("-");
+        const min = Number(minStr);
+        const max = Number(maxStr);
+        filtered = filtered.filter((s) => s.deliveryDays >= min && s.deliveryDays <= max);
+      }
+
+      // Rating filter (client-side)
+      if (currentFilters.minRating > 0) {
+        filtered = filtered.filter((s) => s.rating >= currentFilters.minRating);
+      }
+
+      // Seller level filter (client-side)
+      if (currentFilters.sellerLevels.length > 0) {
+        filtered = filtered.filter((s) => {
+          const level = getBadgeLevel(s.vendorBadges || []);
+          return currentFilters.sellerLevels.includes(level);
+        });
+      }
+
+      // Country filter (client-side)
+      if (currentFilters.country !== "Tous") {
+        filtered = filtered.filter((s) => s.vendorCountry === currentFilters.country);
+      }
+
+      setServices(filtered);
+      setTotalResults(data.total);
+      setTotalPages(data.totalPages);
+    } catch (err) {
+      console.error("[Explorer] Fetch error:", err);
+      setError("Impossible de charger les services. Veuillez reessayer.");
+      setServices([]);
+      setTotalResults(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [favoriteIds, t]);
+
+  // ---- Fetch on mount and when filters/sort/page change ----
+  useEffect(() => {
+    fetchServices(filters, sort, page);
+  }, [filters, sort, page, fetchServices]);
+
+  // ---- Toggle favorite (local state only) ----
   const toggleFavorite = useCallback((id: string) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
     setServices((prev) =>
       prev.map((s) => (s.id === id ? { ...s, favorited: !s.favorited } : s))
     );
   }, []);
 
-  // ---- Filtering ----
-  const filtered = useMemo(() => {
-    let result = [...services];
-
-    // Search
-    if (filters.search.trim()) {
-      const q = filters.search.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q) ||
-          s.freelancer.name.toLowerCase().includes(q)
-      );
-    }
-
-    // Categories
-    if (filters.categories.length > 0) {
-      result = result.filter((s) => filters.categories.includes(s.categorySlug));
-    }
-
-    // Price
-    if (filters.priceMin !== "") {
-      result = result.filter((s) => s.price >= Number(filters.priceMin));
-    }
-    if (filters.priceMax !== "") {
-      result = result.filter((s) => s.price <= Number(filters.priceMax));
-    }
-
-    // Delivery
-    if (filters.delivery !== "all") {
-      const [minStr, maxStr] = filters.delivery.split("-");
-      const min = Number(minStr);
-      const max = Number(maxStr);
-      result = result.filter((s) => s.deliveryDays >= min && s.deliveryDays <= max);
-    }
-
-    // Rating
-    if (filters.minRating > 0) {
-      result = result.filter((s) => s.rating >= filters.minRating);
-    }
-
-    // Seller levels
-    if (filters.sellerLevels.length > 0) {
-      result = result.filter((s) => filters.sellerLevels.includes(s.freelancer.level));
-    }
-
-    // Country
-    if (filters.country !== "Tous") {
-      result = result.filter((s) => s.freelancer.country === filters.country);
-    }
-
-    return result;
-  }, [services, filters]);
-
-  // ---- Sorting ----
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    switch (sort) {
-      case "prix_asc":
-        arr.sort((a, b) => a.price - b.price);
-        break;
-      case "prix_desc":
-        arr.sort((a, b) => b.price - a.price);
-        break;
-      case "note":
-        arr.sort((a, b) => b.rating - a.rating);
-        break;
-      case "recent":
-        arr.sort((a, b) => b.id.localeCompare(a.id));
-        break;
-      case "populaire":
-        arr.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
-      default:
-        break;
-    }
-    return arr;
-  }, [filtered, sort]);
-
-  // ---- Pagination ----
-  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
-  const paged = useMemo(
-    () => sorted.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE),
-    [sorted, page]
-  );
-
-  // Reset page when filters change
+  // Reset page when filters change (with debounce for search)
   const updateFilters = useCallback((f: FilterState) => {
+    // If only search changed, debounce the API call
+    if (f.search !== filters.search) {
+      setSearchInput(f.search);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setFilters(f);
+        setPage(1);
+      }, 400);
+      return;
+    }
     setFilters(f);
     setPage(1);
-  }, []);
+  }, [filters.search]);
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
@@ -845,21 +796,21 @@ export default function ExplorerPage() {
       <div className="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-neutral-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-4">
-            Explorer les Services
+            {t("title")}
           </h1>
           {/* Search bar */}
           <div className="relative max-w-2xl">
             <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
             <input
               type="text"
-              placeholder="Rechercher un service, une competence, un freelance..."
-              value={filters.search}
+              placeholder={t("search_placeholder")}
+              value={searchInput}
               onChange={(e) => updateFilters({ ...filters, search: e.target.value })}
               className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
-            {filters.search && (
+            {searchInput && (
               <button
-                onClick={() => updateFilters({ ...filters, search: "" })}
+                onClick={() => { setSearchInput(""); updateFilters({ ...filters, search: "" }); }}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
@@ -877,7 +828,7 @@ export default function ExplorerPage() {
             <div className="sticky top-24 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 max-h-[calc(100vh-7rem)] overflow-y-auto">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">filter_list</span>
-                Filtres
+                {t("filters")}
                 {activeFilterCount > 0 && (
                   <span className="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {activeFilterCount}
@@ -903,7 +854,7 @@ export default function ExplorerPage() {
                   className="lg:hidden flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-border-dark text-sm font-semibold hover:border-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">filter_list</span>
-                  Filtres
+                  {t("filters")}
                   {activeFilterCount > 0 && (
                     <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {activeFilterCount}
@@ -911,7 +862,7 @@ export default function ExplorerPage() {
                   )}
                 </button>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  <span className="font-bold text-slate-800 dark:text-white">{sorted.length}</span> services trouves
+                  <span className="font-bold text-slate-800 dark:text-white">{loading ? "..." : totalResults}</span> {t("services_found")}
                 </p>
               </div>
 
@@ -922,8 +873,8 @@ export default function ExplorerPage() {
                   onChange={(e) => setSort(e.target.value)}
                   className="bg-white dark:bg-neutral-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                 >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  {SORT_VALUES.map((val) => (
+                    <option key={val} value={val}>{t(`sort.${val}`)}</option>
                   ))}
                 </select>
 
@@ -952,7 +903,7 @@ export default function ExplorerPage() {
             </div>
 
             {/* Service grid / list */}
-            {paged.length > 0 ? (
+            {loading ? (
               <div
                 className={cn(
                   view === "grid"
@@ -960,13 +911,41 @@ export default function ExplorerPage() {
                     : "flex flex-col gap-4"
                 )}
               >
-                {paged.map((service) => (
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                  <ServiceCardSkeleton key={`skeleton-${i}`} view={view} />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-3xl text-red-400">error</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t("error_title")}</h3>
+                <p className="text-sm text-slate-500 max-w-md mb-5">{t("error_description")}</p>
+                <button
+                  onClick={() => fetchServices(filters, sort, page)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  {t("retry")}
+                </button>
+              </div>
+            ) : services.length > 0 ? (
+              <div
+                className={cn(
+                  view === "grid"
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5"
+                    : "flex flex-col gap-4"
+                )}
+              >
+                {services.map((service) => (
                   <ServiceCard
                     key={service.id}
                     service={service}
                     view={view}
                     format={format}
                     onToggleFavorite={toggleFavorite}
+                    t={t}
                   />
                 ))}
               </div>
@@ -976,22 +955,22 @@ export default function ExplorerPage() {
                 <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-border-dark flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined text-3xl text-slate-400">search_off</span>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Aucun service trouve</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t("empty_title")}</h3>
                 <p className="text-sm text-slate-500 max-w-md mb-5">
-                  Aucun service ne correspond a vos criteres de recherche. Essayez de modifier vos filtres ou d&apos;elargir votre recherche.
+                  {t("empty_description")}
                 </p>
                 <button
                   onClick={resetFilters}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">restart_alt</span>
-                  Reinitialiser les filtres
+                  {t("reset_filters")}
                 </button>
               </div>
             )}
 
             {/* Pagination */}
-            <Pagination current={page} total={totalPages} onChange={setPage} />
+            {!loading && <Pagination current={page} total={totalPages} onChange={setPage} />}
           </div>
         </div>
       </div>
@@ -1009,7 +988,7 @@ export default function ExplorerPage() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-border-dark">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">filter_list</span>
-                Filtres
+                {t("filters")}
               </h3>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
@@ -1030,7 +1009,7 @@ export default function ExplorerPage() {
                 onClick={() => setMobileFiltersOpen(false)}
                 className="w-full py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
               >
-                Voir {sorted.length} resultats
+                {t("see_results", { count: totalResults })}
               </button>
             </div>
           </div>

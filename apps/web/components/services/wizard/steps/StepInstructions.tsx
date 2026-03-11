@@ -70,6 +70,7 @@ const TEMPLATES: Record<string, { label: string; content: Record<string, unknown
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepInstructions({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [errors, setErrors] = useState<Record<string, string>>({});

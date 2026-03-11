@@ -68,6 +68,16 @@ export async function PATCH(
 
       case "feature": {
         serviceStore.update(id, { status: "actif", isBoosted: true });
+
+        notificationStore.add({
+          userId: service.userId,
+          title: "Service mis en avant",
+          message: `Votre service "${service.title}" a ete mis en avant sur la marketplace ! Il sera plus visible dans les resultats de recherche.`,
+          type: "service",
+          read: false,
+          link: "/dashboard/services",
+        });
+
         return NextResponse.json({
           success: true,
           message: `Service "${service.title}" mis en vedette`,
@@ -76,6 +86,16 @@ export async function PATCH(
 
       case "unfeature": {
         serviceStore.update(id, { isBoosted: false });
+
+        notificationStore.add({
+          userId: service.userId,
+          title: "Service retire de la mise en avant",
+          message: `Votre service "${service.title}" n'est plus mis en avant sur la marketplace.`,
+          type: "service",
+          read: false,
+          link: "/dashboard/services",
+        });
+
         return NextResponse.json({
           success: true,
           message: `Service "${service.title}" retire de la vedette`,

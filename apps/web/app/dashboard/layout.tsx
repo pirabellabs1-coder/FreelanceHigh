@@ -6,11 +6,13 @@ import { ToastContainer } from "@/components/ui/toast";
 import { DashboardNotificationBell } from "@/components/dashboard/DashboardNotificationBell";
 import { useDashboardStore } from "@/store/dashboard";
 
+const NOTIFICATION_POLL_INTERVAL = 30_000; // 30 seconds
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const syncFromApi = useDashboardStore((s) => s.syncFromApi);
-  const lastSyncAt = useDashboardStore((s) => s.lastSyncAt);
+  const refreshNotifications = useDashboardStore((s) => s.refreshNotifications);
   const hasSynced = useRef(false);
 
   // Sync from API on first mount
@@ -20,6 +22,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       syncFromApi();
     }
   }, [syncFromApi]);
+
+  // Poll notifications every 30s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshNotifications();
+    }, NOTIFICATION_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [refreshNotifications]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background-dark">

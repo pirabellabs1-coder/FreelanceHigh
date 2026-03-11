@@ -1,15 +1,24 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata = {
-  title: "Mentions Légales — FreelanceHigh",
-  description: "Mentions légales de la plateforme FreelanceHigh. Informations sur l'éditeur, l'hébergement, la propriété intellectuelle et la responsabilité.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("legal_notices_meta_title"),
+    description: t("legal_notices_meta_description"),
+  };
+}
 
-export default function MentionsLegalesPage() {
+export default async function MentionsLegalesPage() {
+  const t = await getTranslations("legal");
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="max-w-4xl mx-auto px-6 py-20">
-        <h1 className="text-4xl font-black text-white mb-4">Mentions Légales</h1>
+        <h1 className="text-4xl font-black text-white mb-4">{t("legal_notices_title")}</h1>
+        {t("french_only_notice") && (
+          <p className="text-sm text-amber-400/80 mb-2 italic">{t("french_only_notice")}</p>
+        )}
         <p className="text-sm text-slate-500 mb-12">
           Conformément aux dispositions des articles 6-III et 19 de la loi n°2004-575 du 21 juin 2004 pour la Confiance dans l&apos;Économie Numérique (LCEN), il est porté à la connaissance des utilisateurs du site https://www.freelancehigh.com les informations suivantes.
         </p>
@@ -281,7 +290,7 @@ export default function MentionsLegalesPage() {
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">
-          © 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.
+          {t("copyright")}
         </p>
       </div>
     </div>

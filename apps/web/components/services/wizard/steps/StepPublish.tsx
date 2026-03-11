@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
@@ -5,7 +6,7 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useServiceWizardStore } from "@/store/service-wizard";
 import { useDashboardStore } from "@/store/dashboard";
-import { COMMISSION_RATES, SERVICES_LIMITS } from "@/lib/validations/service";
+import { COMMISSION_RATES } from "@/lib/validations/service";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 

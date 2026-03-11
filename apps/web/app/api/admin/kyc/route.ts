@@ -1,0 +1,172 @@
+import { NextRequest, NextResponse } from "next/server";
+import { notificationStore } from "@/lib/dev/data-store";
+import { devStore } from "@/lib/dev/dev-store";
+
+// GET /api/admin/kyc — KYC verification queue
+export async function GET() {
+  try {
+    const users = devStore.getAll();
+
+    // Build KYC queue from users who haven't reached level 4
+    const kycQueue = users
+      .filter((u) => u.role !== "admin" && u.kyc < 4)
+      .map((u) => {
+        // Determine what the next verification step is
+        const nextLevel = u.kyc + 1;
+        const levelDescriptions: Record<number, { label: string; verification: string }> = {
+          1: {
+            label: "Niveau 1 - Email",
+            verification: "Verification de l'adresse email",
+          },
+          2: {
+            label: "Niveau 2 - Telephone",
+            verification: "Verification du numero de telephone",
+          },
+          3: {
+            label: "Niveau 3 - Identite",
+            verification: "Verification de la piece d'identite",
+          },
+          4: {
+            label: "Niveau 4 - Professionnel",
+            verification: "Verification professionnelle complete",
+          },
+        };
+
+        const next = levelDescriptions[nextLevel] ?? levelDescriptions[4];
+
+        return {
+          userId: u.id,
+          userName: u.name,
+          userEmail: u.email,
+          userRole: u.role,
+          currentLevel: u.kyc,
+          nextLevel,
+          nextLevelLabel: next.label,
+          nextVerification: next.verification,
+          status: u.status,
+          createdAt: u.createdAt,
+          // Simulated document status
+          documentSubmitted: u.kyc >= 2, // Simulate that level 2+ users have submitted docs
+          documentType: u.kyc >= 2 ? "Carte d'identite nationale" : null,
+          submittedAt: u.kyc >= 2 ? u.createdAt : null,
+        };
+      })
+      .sort((a, b) => b.currentLevel - a.currentLevel); // Higher levels first (closer to approval)
+
+    // Summary stats
+    const summary = {
+      total: kycQueue.length,
+      level0: users.filter((u) => u.role !== "admin" && u.kyc === 0).length,
+      level1: users.filter((u) => u.role !== "admin" && u.kyc === 1).length,
+      level2: users.filter((u) => u.role !== "admin" && u.kyc === 2).length,
+      level3: users.filter((u) => u.role !== "admin" && u.kyc === 3).length,
+      level4: users.filter((u) => u.role !== "admin" && u.kyc === 4).length,
+    };
+
+    return NextResponse.json({
+      queue: kycQueue,
+      summary,
+    });
+  } catch (error) {
+    console.error("[API /admin/kyc GET]", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la recuperation de la file KYC" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/admin/kyc — Approve or refuse KYC verification
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { action, userId, level, reason } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "userId est requis" },
+        { status: 400 }
+      );
+    }
+
+    const user = devStore.findById(userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: "Utilisateur introuvable" },
+        { status: 404 }
+      );
+    }
+
+    switch (action) {
+      case "approve": {
+        const newLevel = level ?? user.kyc + 1;
+        if (newLevel < 1 || newLevel > 4) {
+          return NextResponse.json(
+            { error: "Niveau KYC invalide (1-4)" },
+            { status: 400 }
+          );
+        }
+
+        devStore.update(userId, { kyc: newLevel });
+
+        const levelBadges: Record<number, string> = {
+          1: "Email verifie",
+          2: "Telephone verifie",
+          3: "Identite verifiee",
+          4: "Professionnel verifie - Badge Elite",
+        };
+
+        notificationStore.add({
+          userId,
+          title: "Verification KYC approuvee",
+          message: `Felicitations ! Votre verification de niveau ${newLevel} a ete approuvee. ${levelBadges[newLevel] ?? ""}`,
+          type: "system",
+          read: false,
+          link: "/dashboard/parametres",
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `KYC niveau ${newLevel} approuve pour ${user.name}`,
+          user: {
+            id: user.id,
+            name: user.name,
+            kycLevel: newLevel,
+          },
+        });
+      }
+
+      case "refuse": {
+        const refuseReason =
+          reason ?? "Documents non conformes aux exigences de la plateforme";
+
+        notificationStore.add({
+          userId,
+          title: "Verification KYC refusee",
+          message: `Votre demande de verification a ete refusee. Motif : ${refuseReason}`,
+          type: "system",
+          read: false,
+          link: "/dashboard/parametres",
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `Verification KYC refusee pour ${user.name}`,
+          reason: refuseReason,
+        });
+      }
+
+      default:
+        return NextResponse.json(
+          { error: `Action inconnue: ${action}` },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error("[API /admin/kyc POST]", error);
+    return NextResponse.json(
+      { error: "Erreur lors de l'action KYC" },
+      { status: 500 }
+    );
+  }
+}

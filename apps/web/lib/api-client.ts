@@ -310,6 +310,9 @@ export const reviewsApi = {
     return fetchApi<{ reviews: ApiReview[]; summary: ApiReviewSummary }>(url);
   },
 
+  getByClient: () =>
+    fetchApi<{ reviews: ApiReview[]; summary: ApiReviewSummary }>("/api/reviews?role=client"),
+
   getByService: (serviceId: string) =>
     fetchApi<{ reviews: ApiReview[]; summary: ApiReviewSummary }>(`/api/reviews?serviceId=${serviceId}`),
 
@@ -327,6 +330,318 @@ export const reviewsApi = {
 
   markHelpful: (reviewId: string) =>
     fetchApi<{ review: ApiReview }>(`/api/reviews/${reviewId}/helpful`, { method: "POST" }),
+};
+
+// ── Projects ──
+
+export const projectsApi = {
+  list: () => fetchApi<{ projects: Record<string, unknown>[] }>("/api/projects"),
+
+  create: (data: Record<string, unknown>) =>
+    fetchApi<{ project: Record<string, unknown> }>("/api/projects", { method: "POST", body: JSON.stringify(data) }),
+
+  update: (id: string, data: Record<string, unknown>) =>
+    fetchApi<{ project: Record<string, unknown> }>(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+
+  delete: (id: string) =>
+    fetchApi<{ success: boolean }>(`/api/projects/${id}`, { method: "DELETE" }),
+};
+
+// ── Candidatures ──
+
+export const candidaturesApi = {
+  list: () => fetchApi<{ candidatures: Record<string, unknown>[] }>("/api/candidatures"),
+
+  getByProject: (projectId: string) =>
+    fetchApi<{ candidatures: Record<string, unknown>[] }>(`/api/candidatures?projectId=${projectId}`),
+
+  accept: (id: string) =>
+    fetchApi<unknown>(`/api/candidatures/${id}`, { method: "PATCH", body: JSON.stringify({ status: "acceptee" }) }),
+
+  reject: (id: string) =>
+    fetchApi<unknown>(`/api/candidatures/${id}`, { method: "PATCH", body: JSON.stringify({ status: "refusee" }) }),
+};
+
+// ── Offres (proposals received by client) ──
+
+export const offresApi = {
+  list: () => fetchApi<{ offres: Record<string, unknown>[] }>("/api/offres"),
+
+  accept: (id: string) =>
+    fetchApi<unknown>(`/api/offres/${id}`, { method: "PATCH", body: JSON.stringify({ status: "acceptee" }) }),
+
+  reject: (id: string) =>
+    fetchApi<unknown>(`/api/offres/${id}`, { method: "PATCH", body: JSON.stringify({ status: "refusee" }) }),
+};
+
+// ── Affiliation ──
+
+export interface ApiAffiliationTier {
+  id: string;
+  name: string;
+  range: string;
+  icon: string;
+  gradient: string;
+  status: "unlocked" | "current" | "locked";
+  statusLabel: string;
+  benefits: string[];
+}
+
+export interface ApiAffiliationReward {
+  id: string;
+  reward: string;
+  date: string;
+  status: "verse" | "active" | "en_attente";
+  value: string;
+}
+
+export interface ApiAffiliationFriend {
+  id: string;
+  name: string;
+  date: string;
+  gender: string;
+  status: "active" | "pending";
+}
+
+export interface ApiAffiliationData {
+  referralLink: string;
+  currentTier: string;
+  totalReferrals: number;
+  totalEarnings: number;
+  conversionRate: number;
+  progressToNext: number;
+  nextTier: string;
+  nextTierThreshold: number;
+  tiers: ApiAffiliationTier[];
+  rewards: ApiAffiliationReward[];
+  invitedFriends: ApiAffiliationFriend[];
+}
+
+export const affiliationApi = {
+  get: () => fetchApi<ApiAffiliationData>("/api/affiliation"),
+
+  invite: (email: string, message?: string) =>
+    fetchApi<{ success: boolean; message: string }>("/api/affiliation", {
+      method: "POST",
+      body: JSON.stringify({ action: "invite", email, message }),
+    }),
+};
+
+// ── Automation ──
+
+export interface ApiAutomationTrigger {
+  id: string;
+  icon: string;
+  label: string;
+  category: string;
+}
+
+export interface ApiAutomationCondition {
+  id: string;
+  icon: string;
+  label: string;
+  valueType: "number" | "select" | "text";
+  options?: string[];
+}
+
+export interface ApiAutomationAction {
+  id: string;
+  icon: string;
+  label: string;
+  hasMessage?: boolean;
+}
+
+export interface ApiAutomationScenario {
+  id: string;
+  name: string;
+  active: boolean;
+  trigger: ApiAutomationTrigger;
+  conditions: { condition: ApiAutomationCondition; value: string }[];
+  actions: { action: ApiAutomationAction; message?: string }[];
+  triggerCount: number;
+  lastTriggered?: string;
+  createdAt: string;
+}
+
+export interface ApiAutomationData {
+  triggers: ApiAutomationTrigger[];
+  conditions: ApiAutomationCondition[];
+  actions: ApiAutomationAction[];
+  scenarios: ApiAutomationScenario[];
+}
+
+export const automationApi = {
+  get: () => fetchApi<ApiAutomationData>("/api/automation"),
+
+  createScenario: (scenario: Omit<ApiAutomationScenario, "id" | "triggerCount" | "createdAt">) =>
+    fetchApi<{ scenario: ApiAutomationScenario }>("/api/automation", {
+      method: "POST",
+      body: JSON.stringify({ action: "create", scenario }),
+    }),
+
+  toggleScenario: (id: string, active: boolean) =>
+    fetchApi<{ success: boolean }>("/api/automation", {
+      method: "POST",
+      body: JSON.stringify({ action: "toggle", id, active }),
+    }),
+
+  deleteScenario: (id: string) =>
+    fetchApi<{ success: boolean }>("/api/automation", {
+      method: "POST",
+      body: JSON.stringify({ action: "delete", id }),
+    }),
+};
+
+// ── Favorites ──
+
+export interface ApiFavorite {
+  id: string;
+  targetId: string;
+  type: "freelance" | "service" | "agence";
+  name: string;
+  avatar: string;
+  rating: number;
+  specialty: string;
+  addedAt: string;
+}
+
+export const favoritesApi = {
+  list: () => fetchApi<{ favorites: ApiFavorite[] }>("/api/favorites"),
+
+  add: (data: { targetId: string; type: string; name: string; avatar: string; rating: number; specialty: string }) =>
+    fetchApi<{ success: boolean; favorite: ApiFavorite }>("/api/favorites", { method: "POST", body: JSON.stringify(data) }),
+
+  remove: (targetId: string, type: string) =>
+    fetchApi<{ success: boolean }>("/api/favorites", { method: "POST", body: JSON.stringify({ action: "remove", targetId, type }) }),
+};
+
+// ── Payment Methods ──
+
+export interface ApiPaymentMethod {
+  id: string;
+  type: "card" | "momo" | "bank" | "paypal";
+  label: string;
+  last4?: string;
+  brand?: string;
+  provider?: string;
+  phone?: string;
+  email?: string;
+  bankName?: string;
+  iban?: string;
+  expiresAt?: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export const paymentMethodsApi = {
+  list: () => fetchApi<{ methods: ApiPaymentMethod[] }>("/api/payment-methods"),
+
+  add: (data: Record<string, unknown>) =>
+    fetchApi<{ success: boolean; method: ApiPaymentMethod }>("/api/payment-methods", { method: "POST", body: JSON.stringify(data) }),
+
+  remove: (id: string) =>
+    fetchApi<{ success: boolean }>("/api/payment-methods", { method: "POST", body: JSON.stringify({ action: "delete", id }) }),
+
+  setDefault: (id: string) =>
+    fetchApi<{ success: boolean }>("/api/payment-methods", { method: "POST", body: JSON.stringify({ action: "set-default", id }) }),
+};
+
+// ── Support Tickets ──
+
+export interface ApiSupportTicket {
+  id: string;
+  subject: string;
+  category: string;
+  message: string;
+  priority: "basse" | "normale" | "haute" | "urgente";
+  status: "ouvert" | "en_cours" | "resolu" | "ferme";
+  responses: { id: string; from: "support" | "user"; message: string; createdAt: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const supportTicketsApi = {
+  list: () => fetchApi<{ tickets: ApiSupportTicket[] }>("/api/support-tickets"),
+
+  create: (data: { subject: string; category: string; message: string; priority?: string }) =>
+    fetchApi<{ success: boolean; ticket: ApiSupportTicket }>("/api/support-tickets", { method: "POST", body: JSON.stringify(data) }),
+
+  reply: (ticketId: string, message: string) =>
+    fetchApi<{ success: boolean; ticket: ApiSupportTicket }>("/api/support-tickets", { method: "POST", body: JSON.stringify({ action: "reply", ticketId, message }) }),
+};
+
+// ── Sessions ──
+
+export interface ApiSession {
+  id: string;
+  device: string;
+  browser: string;
+  os: string;
+  ip: string;
+  location: string;
+  isCurrent: boolean;
+  lastActive: string;
+  createdAt: string;
+}
+
+export const sessionsApi = {
+  list: () => fetchApi<{ sessions: ApiSession[] }>("/api/sessions"),
+
+  revoke: (sessionId: string) =>
+    fetchApi<{ success: boolean }>("/api/sessions", { method: "POST", body: JSON.stringify({ action: "revoke", sessionId }) }),
+
+  revokeAll: () =>
+    fetchApi<{ success: boolean }>("/api/sessions", { method: "POST", body: JSON.stringify({ action: "revoke-all" }) }),
+};
+
+// ── Search (semantic/keyword) ──
+
+export interface ApiSearchResult {
+  id: string;
+  name: string;
+  avatar: string;
+  title: string;
+  rating: number;
+  reviews: number;
+  hourlyRate: number;
+  location: string;
+  skills: string[];
+  bio: string;
+  completionRate: number;
+  responseTime: string;
+  matchScore: number;
+  type: "freelance" | "agence";
+}
+
+export const searchApi = {
+  search: (params: { q: string; skills?: string[]; budget?: number; type?: string }) => {
+    const sp = new URLSearchParams();
+    if (params.q) sp.set("q", params.q);
+    if (params.skills?.length) sp.set("skills", params.skills.join(","));
+    if (params.budget) sp.set("budget", params.budget.toString());
+    if (params.type) sp.set("type", params.type);
+    return fetchApi<{ results: ApiSearchResult[]; entities: { skills: string[]; budget: number | null; type: string | null } }>(`/api/search?${sp.toString()}`);
+  },
+};
+
+// ── File Upload ──
+
+export const uploadApi = {
+  file: async (file: File, context?: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (context) formData.append("context", context);
+    const res = await fetch("/api/upload/file", { method: "POST", body: formData });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json() as Promise<{ success: boolean; file: { id: string; name: string; size: number; type: string; url: string; uploadedAt: string } }>;
+  },
+};
+
+// ── Invoices ──
+
+export const invoicesApi = {
+  sendByEmail: (invoiceId: string) =>
+    fetchApi<{ success: boolean }>(`/api/invoices/${invoiceId}/email`, { method: "POST" }),
 };
 
 // ── Feed ──

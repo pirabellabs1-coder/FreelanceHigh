@@ -30,6 +30,7 @@ const PUBLIC_ROUTES = [
   "/404",
   "/maintenance",
   "/status",
+  "/feed",
 ];
 
 // Routes auth — accessibles uniquement si NON connecte
@@ -83,21 +84,63 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Pas de profil public client (/clients/[id] → /feed)
+  // --- i18n : set locale cookie from Accept-Language if absent ---
+  const localeCookie = req.cookies.get("locale")?.value;
+  let needsLocaleCookie = false;
+  let detectedLocale = "fr";
+  if (!localeCookie) {
+    const acceptLang = req.headers.get("accept-language") ?? "";
+    const preferredLocale = acceptLang
+      .split(",")
+      .map((part) => part.split(";")[0].trim().slice(0, 2).toLowerCase())
+      .find((lang) => lang === "en" || lang === "fr");
+    detectedLocale = preferredLocale ?? "fr";
+    needsLocaleCookie = true;
+  }
+
+  function withLocaleCookie(res: NextResponse): NextResponse {
+    if (needsLocaleCookie) {
+      res.cookies.set("locale", detectedLocale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+    return res;
+  }
+
+  // Pas de profil public client (/clients/[id] → rediriger par rôle)
   if (pathname.startsWith("/clients/")) {
-    return NextResponse.redirect(new URL("/feed", req.url));
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const role = token?.role as string | undefined;
+    const roleRedirectMap: Record<string, string> = {
+      admin: "/admin",
+      freelance: "/dashboard",
+      client: "/client",
+      agence: "/agence",
+    };
+    const redirectUrl = role ? (roleRedirectMap[role] || "/dashboard") : "/";
+    return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
   }
 
   // Routes publiques — toujours accessibles
   if (isPublicRoute(pathname)) {
-    // Si connecté et sur la page d'accueil → rediriger vers /feed
+    // Si connecté et sur la page d'accueil → rediriger par rôle
     if (pathname === "/") {
       const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
       if (token) {
-        return NextResponse.redirect(new URL("/feed", req.url));
+        const role = token.role as string | undefined;
+        const roleRedirectMap: Record<string, string> = {
+          admin: "/admin",
+          freelance: "/dashboard",
+          client: "/client",
+          agence: "/agence",
+        };
+        const redirectUrl = role ? (roleRedirectMap[role] || "/dashboard") : "/dashboard";
+        return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
       }
     }
-    return NextResponse.next();
+    return withLocaleCookie(NextResponse.next());
   }
 
   // Lire le token JWT directement (compatible Edge Runtime)
@@ -115,15 +158,15 @@ export async function middleware(req: NextRequest) {
         agence: "/agence",
       };
       const redirectUrl = redirectMap[userRole] || "/dashboard";
-      return NextResponse.redirect(new URL(redirectUrl, req.url));
+      return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
     }
-    return NextResponse.next();
+    return withLocaleCookie(NextResponse.next());
   }
 
   // Toutes les autres routes necessitent une authentification
   if (!isAuthenticated) {
     const callbackUrl = encodeURIComponent(pathname);
-    return NextResponse.redirect(new URL(`/connexion?callbackUrl=${callbackUrl}`, req.url));
+    return withLocaleCookie(NextResponse.redirect(new URL(`/connexion?callbackUrl=${callbackUrl}`, req.url)));
   }
 
   // Verification du role
@@ -131,20 +174,27 @@ export async function middleware(req: NextRequest) {
   if (requiredRole) {
     // L'admin a acces a tout
     if (userRole === "admin") {
-      const response = NextResponse.next();
+      const res = NextResponse.next();
       if (requiredRole !== "admin") {
-        response.headers.set("x-admin-viewing", "true");
+        res.headers.set("x-admin-viewing", "true");
       }
-      return response;
+      return withLocaleCookie(res);
     }
 
-    // Verifier que le role correspond
+    // Verifier que le role correspond — rediriger vers l'espace du rôle
     if (userRole !== requiredRole) {
-      return NextResponse.redirect(new URL("/feed", req.url));
+      const roleRedirectMap: Record<string, string> = {
+        admin: "/admin",
+        freelance: "/dashboard",
+        client: "/client",
+        agence: "/agence",
+      };
+      const redirectUrl = userRole ? (roleRedirectMap[userRole] || "/dashboard") : "/dashboard";
+      return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
     }
   }
 
-  return NextResponse.next();
+  return withLocaleCookie(NextResponse.next());
 }
 
 export const config = {

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToastStore } from "@/store/dashboard";
+import { useAgencyStore } from "@/store/agency";
+import { profileApi } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
-// Plan data
+// Plan data (static config -- defines plan structures, stays hardcoded)
 // ---------------------------------------------------------------------------
 interface Plan {
   id: string;
@@ -90,9 +92,7 @@ const PLANS: Plan[] = [
   },
 ];
 
-const CURRENT_PLAN = PLANS.find((p) => p.id === "agence")!;
-
-// Feature comparison rows
+// Feature comparison rows (static config)
 const COMPARISON_ROWS = [
   { label: "Services actifs", values: ["3", "15", "Illimité", "Illimité"] },
   { label: "Candidatures/mois", values: ["5", "20", "Illimité", "Illimité"] },
@@ -105,15 +105,32 @@ const COMPARISON_ROWS = [
   { label: "Support", values: ["Email", "Prioritaire", "Dédié", "Dédié VIP"] },
 ];
 
-// Invoices
-const INVOICES = [
-  { id: "FA-2026-03", date: "2026-03-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-  { id: "FA-2026-02", date: "2026-02-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-  { id: "FA-2026-01", date: "2026-01-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-  { id: "FA-2025-12", date: "2025-12-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-  { id: "FA-2025-11", date: "2025-11-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-  { id: "FA-2025-10", date: "2025-10-01", amount: 99, status: "payee", method: "Carte Visa ****4829" },
-];
+// ---------------------------------------------------------------------------
+// Types for dynamic data
+// ---------------------------------------------------------------------------
+interface Invoice {
+  id: string;
+  date: string;
+  amount: number;
+  status: string;
+  method: string;
+  description?: string;
+}
+
+interface SubscriptionData {
+  planId: string;
+  billing: "monthly" | "annual";
+  nextBillingDate: string | null;
+  paymentMethod: string | null;
+}
+
+// Plan limits for usage stats display
+const PLAN_LIMITS: Record<string, { members: number | null; storage: number; services: number | null; boosts: number | null }> = {
+  gratuit: { members: 0, storage: 0, services: 3, boosts: 0 },
+  pro: { members: 0, storage: 0, services: 15, boosts: 1 },
+  business: { members: 0, storage: 0, services: null, boosts: 5 },
+  agence: { members: 20, storage: 50, services: null, boosts: 10 },
+};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -126,6 +143,93 @@ export default function AgenceAbonnement() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const { addToast } = useToastStore();
 
+  // Dynamic data state
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  // Real usage stats from agency store
+  const { members, services, syncAll, isLoading: storeLoading } = useAgencyStore();
+
+  // Derive current plan from subscription data, fallback to "gratuit"
+  const currentPlanId = subscription?.planId ?? "gratuit";
+  const currentPlan = PLANS.find((p) => p.id === currentPlanId) ?? PLANS[0];
+  const limits = PLAN_LIMITS[currentPlanId] ?? PLAN_LIMITS.gratuit;
+
+  // Compute real usage stats
+  const membersCount = members.length;
+  const activeServicesCount = services.filter((s) => s.status === "actif" || s.status === "active").length;
+  const boostedServicesCount = services.filter((s) => s.isBoosted).length;
+
+  // Load subscription & profile data on mount
+  const loadSubscription = useCallback(async () => {
+    setSubscriptionLoading(true);
+    try {
+      const profile = await profileApi.get();
+      // Try to extract subscription info from profile
+      const profileAny = profile as unknown as Record<string, unknown>;
+      if (profileAny.subscription && typeof profileAny.subscription === "object") {
+        const sub = profileAny.subscription as Record<string, unknown>;
+        setSubscription({
+          planId: (sub.planId as string) ?? (sub.plan as string) ?? "gratuit",
+          billing: (sub.billing as "monthly" | "annual") ?? "monthly",
+          nextBillingDate: (sub.nextBillingDate as string) ?? null,
+          paymentMethod: (sub.paymentMethod as string) ?? null,
+        });
+      } else if (profileAny.plan && typeof profileAny.plan === "string") {
+        setSubscription({
+          planId: profileAny.plan as string,
+          billing: "monthly",
+          nextBillingDate: null,
+          paymentMethod: null,
+        });
+      } else {
+        // No subscription data found in profile, default to gratuit
+        setSubscription({
+          planId: "gratuit",
+          billing: "monthly",
+          nextBillingDate: null,
+          paymentMethod: null,
+        });
+      }
+    } catch {
+      // If profile fetch fails, default to gratuit
+      setSubscription({
+        planId: "gratuit",
+        billing: "monthly",
+        nextBillingDate: null,
+        paymentMethod: null,
+      });
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
+  const loadInvoices = useCallback(async () => {
+    setInvoicesLoading(true);
+    try {
+      const res = await fetch("/api/billing/invoices");
+      if (res.ok) {
+        const data = await res.json();
+        setInvoices(data.invoices ?? data ?? []);
+      } else {
+        // API not available yet -- show empty state
+        setInvoices([]);
+      }
+    } catch {
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSubscription();
+    loadInvoices();
+    syncAll();
+  }, [loadSubscription, loadInvoices, syncAll]);
+
   function getPrice(plan: Plan) {
     if (billing === "annuel") {
       return plan.priceAnnual > 0
@@ -133,6 +237,19 @@ export default function AgenceAbonnement() {
         : "0";
     }
     return plan.priceMonthly.toLocaleString("fr-FR");
+  }
+
+  function formatRenewalDate(): string {
+    if (!subscription?.nextBillingDate) return "\u2014";
+    try {
+      return new Date(subscription.nextBillingDate).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return "\u2014";
+    }
   }
 
   function handleCancelSubscription() {
@@ -145,6 +262,31 @@ export default function AgenceAbonnement() {
     router.push(`/agence/abonnement/paiement?plan=${planId}&billing=${billingParam}`);
     setShowChangePlan(false);
     setSelectedPlan(null);
+  }
+
+  // Show skeleton while loading critical data
+  if (subscriptionLoading || storeLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-black text-white">Abonnement</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Gérez votre plan et votre facturation.
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-neutral-dark rounded-xl border border-border-dark p-6 animate-pulse"
+            >
+              <div className="h-4 bg-border-dark rounded w-1/3 mb-3" />
+              <div className="h-3 bg-border-dark rounded w-2/3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -178,38 +320,33 @@ export default function AgenceAbonnement() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-white">
-                  Plan {CURRENT_PLAN.name}
+                  Plan {currentPlan.name}
                 </h2>
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase">
                   Actif
                 </span>
               </div>
               <p className="text-sm text-slate-400">
-                Commission réduite à {CURRENT_PLAN.commission} sur toutes les
+                Commission réduite à {currentPlan.commission} sur toutes les
                 transactions
               </p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-2xl font-black text-white">
-              {CURRENT_PLAN.priceMonthly}
+              {currentPlan.priceMonthly > 0
+                ? `${currentPlan.priceMonthly}\u00A0\u20AC`
+                : "Gratuit"}
             </p>
-            <p className="text-xs text-slate-500">par mois</p>
+            {currentPlan.priceMonthly > 0 && (
+              <p className="text-xs text-slate-500">par mois</p>
+            )}
           </div>
         </div>
 
         {/* Features */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {[
-            "Services illimités",
-            "10 boosts/mois",
-            "20 membres max",
-            "Support VIP",
-            "Certification IA",
-            "Clés API",
-            "50 GB stockage",
-            "Commission 8%",
-          ].map((feat) => (
+          {currentPlan.features.map((feat) => (
             <div key={feat} className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-sm">
                 check_circle
@@ -226,23 +363,27 @@ export default function AgenceAbonnement() {
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                 Prochain renouvellement
               </p>
-              <p className="text-sm font-semibold text-white">1 avril 2026</p>
+              <p className="text-sm font-semibold text-white">
+                {formatRenewalDate()}
+              </p>
             </div>
             <div>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                 Moyen de paiement
               </p>
               <p className="text-sm font-semibold text-white">
-                Visa ****4829
+                {subscription?.paymentMethod ?? "\u2014"}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowCancel(true)}
-            className="text-xs text-red-400 font-semibold hover:text-red-300 transition-colors"
-          >
-            Annuler l&apos;abonnement
-          </button>
+          {currentPlanId !== "gratuit" && (
+            <button
+              onClick={() => setShowCancel(true)}
+              className="text-xs text-red-400 font-semibold hover:text-red-300 transition-colors"
+            >
+              Annuler l&apos;abonnement
+            </button>
+          )}
         </div>
       </div>
 
@@ -255,34 +396,34 @@ export default function AgenceAbonnement() {
           {[
             {
               label: "Membres",
-              current: 12,
-              max: 20,
+              current: membersCount,
+              max: limits.members,
               unit: "",
               icon: "groups",
               color: "text-primary",
             },
             {
               label: "Stockage",
-              current: 69.6,
-              max: 50 * 1024,
-              unit: "MB / 50 GB",
+              current: 0,
+              max: limits.storage > 0 ? limits.storage * 1024 : null,
+              unit: "MB",
               icon: "cloud",
               color: "text-blue-400",
-              displayValue: "69.6 MB",
-              displayMax: "50 GB",
+              displayValue: "0 MB",
+              displayMax: limits.storage > 0 ? `${limits.storage} GB` : "\u2014",
             },
             {
               label: "Services actifs",
-              current: 8,
-              max: null,
-              unit: "/ Illimité",
+              current: activeServicesCount,
+              max: limits.services,
+              unit: "",
               icon: "work",
               color: "text-emerald-400",
             },
             {
               label: "Boost ce mois",
-              current: 3,
-              max: 10,
+              current: boostedServicesCount,
+              max: limits.boosts,
               unit: "",
               icon: "rocket_launch",
               color: "text-amber-400",
@@ -311,13 +452,13 @@ export default function AgenceAbonnement() {
                 </div>
                 <p className="text-lg font-black text-white mb-1">
                   {stat.label === "Stockage"
-                    ? `${stat.current} MB`
+                    ? (stat as { displayValue?: string }).displayValue ?? `${stat.current} MB`
                     : stat.current}
                   <span className="text-sm font-normal text-slate-500 ml-1">
-                    {stat.max !== null
-                      ? stat.label === "Stockage"
-                        ? "/ 50 GB"
-                        : `/ ${stat.max}`
+                    {stat.label === "Stockage"
+                      ? `/ ${(stat as { displayMax?: string }).displayMax ?? "\u2014"}`
+                      : stat.max !== null && stat.max !== undefined
+                      ? `/ ${stat.max}`
                       : "/ Illimité"}
                   </span>
                 </p>
@@ -376,37 +517,40 @@ export default function AgenceAbonnement() {
 
         {/* Plan cards row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={cn(
-                "bg-neutral-dark rounded-xl border p-4 text-center",
-                plan.highlight
-                  ? "border-primary/50 ring-1 ring-primary/20"
-                  : "border-border-dark"
-              )}
-            >
-              {plan.highlight && (
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase mb-2 inline-block">
-                  Plan actuel
-                </span>
-              )}
-              <p className="text-sm font-bold text-white">{plan.name}</p>
-              <p className="text-2xl font-black text-white mt-1">
-                {getPrice(plan)}
-              </p>
-              <p className="text-[10px] text-slate-500 mb-3">
-                {billing === "annuel" && plan.priceAnnual > 0
-                  ? "/an"
-                  : plan.priceMonthly === 0
-                  ? ""
-                  : "/mois"}
-              </p>
-              <p className="text-xs text-primary font-semibold">
-                Commission {plan.commission}
-              </p>
-            </div>
-          ))}
+          {PLANS.map((plan) => {
+            const isCurrent = plan.id === currentPlanId;
+            return (
+              <div
+                key={plan.id}
+                className={cn(
+                  "bg-neutral-dark rounded-xl border p-4 text-center",
+                  isCurrent
+                    ? "border-primary/50 ring-1 ring-primary/20"
+                    : "border-border-dark"
+                )}
+              >
+                {isCurrent && (
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase mb-2 inline-block">
+                    Plan actuel
+                  </span>
+                )}
+                <p className="text-sm font-bold text-white">{plan.name}</p>
+                <p className="text-2xl font-black text-white mt-1">
+                  {getPrice(plan)}
+                </p>
+                <p className="text-[10px] text-slate-500 mb-3">
+                  {billing === "annuel" && plan.priceAnnual > 0
+                    ? "/an"
+                    : plan.priceMonthly === 0
+                    ? ""
+                    : "/mois"}
+                </p>
+                <p className="text-xs text-primary font-semibold">
+                  Commission {plan.commission}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Comparison table */}
@@ -422,7 +566,7 @@ export default function AgenceAbonnement() {
                     key={p.id}
                     className={cn(
                       "px-5 py-3 text-center font-semibold",
-                      p.highlight ? "text-primary" : ""
+                      p.id === currentPlanId ? "text-primary" : ""
                     )}
                   >
                     {p.name}
@@ -475,68 +619,92 @@ export default function AgenceAbonnement() {
           Historique de facturation
         </p>
         <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                <th className="px-5 py-3 text-left font-semibold">Facture</th>
-                <th className="px-5 py-3 text-left font-semibold">Date</th>
-                <th className="px-5 py-3 text-left font-semibold">Montant</th>
-                <th className="px-5 py-3 text-left font-semibold">
-                  Moyen de paiement
-                </th>
-                <th className="px-5 py-3 text-left font-semibold">Statut</th>
-                <th className="px-5 py-3 text-center font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {INVOICES.map((inv) => (
-                <tr
-                  key={inv.id}
-                  className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors"
-                >
-                  <td className="px-5 py-3 text-sm font-mono text-primary font-semibold">
-                    {inv.id}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-400">
-                    {new Date(inv.date).toLocaleDateString("fr-FR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </td>
-                  <td className="px-5 py-3 text-sm font-bold text-white">
-                    {inv.amount}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-slate-400">
-                    {inv.method}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
-                      Payée
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <button
-                      onClick={() =>
-                        addToast(
-                          "info",
-                          `Téléchargement de la facture ${inv.id}`
-                        )
-                      }
-                      className="text-xs text-primary font-semibold hover:underline flex items-center gap-1 justify-center"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        download
-                      </span>
-                      PDF
-                    </button>
-                  </td>
+          {invoicesLoading ? (
+            <div className="px-5 py-8 text-center">
+              <div className="inline-block h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-sm text-slate-500">Chargement des factures...</p>
+            </div>
+          ) : invoices.length === 0 ? (
+            <div className="px-5 py-8 text-center">
+              <span className="material-symbols-outlined text-3xl text-slate-600 mb-2 block">
+                receipt_long
+              </span>
+              <p className="text-sm text-slate-500">Aucune facture</p>
+              <p className="text-xs text-slate-600 mt-1">
+                Vos factures apparaitront ici apres votre premier paiement.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
+                  <th className="px-5 py-3 text-left font-semibold">Facture</th>
+                  <th className="px-5 py-3 text-left font-semibold">Date</th>
+                  <th className="px-5 py-3 text-left font-semibold">Montant</th>
+                  <th className="px-5 py-3 text-left font-semibold">
+                    Moyen de paiement
+                  </th>
+                  <th className="px-5 py-3 text-left font-semibold">Statut</th>
+                  <th className="px-5 py-3 text-center font-semibold">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors"
+                  >
+                    <td className="px-5 py-3 text-sm font-mono text-primary font-semibold">
+                      {inv.id}
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-400">
+                      {new Date(inv.date).toLocaleDateString("fr-FR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-5 py-3 text-sm font-bold text-white">
+                      {inv.amount}\u00A0\u20AC
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-400">
+                      {inv.method || "\u2014"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={cn(
+                          "text-xs font-semibold px-2.5 py-1 rounded-full",
+                          inv.status === "payee"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-amber-500/20 text-amber-400"
+                        )}
+                      >
+                        {inv.status === "payee" ? "Payée" : "En attente"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <button
+                        onClick={() =>
+                          addToast(
+                            "info",
+                            `Téléchargement de la facture ${inv.id}`
+                          )
+                        }
+                        className="text-xs text-primary font-semibold hover:underline flex items-center gap-1 justify-center"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          download
+                        </span>
+                        PDF
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -555,8 +723,10 @@ export default function AgenceAbonnement() {
               Annuler votre abonnement ?
             </h3>
             <p className="text-sm text-slate-400 mb-2">
-              Votre plan Agence restera actif jusqu&apos;au{" "}
-              <span className="text-white font-semibold">1 avril 2026</span>.
+              Votre plan {currentPlan.name} restera actif jusqu&apos;au{" "}
+              <span className="text-white font-semibold">
+                {formatRenewalDate()}
+              </span>.
               Après cette date :
             </p>
             <ul className="text-sm text-slate-400 text-left space-y-1 mb-6 pl-4">
@@ -622,37 +792,40 @@ export default function AgenceAbonnement() {
               prochain cycle de facturation.
             </p>
             <div className="grid grid-cols-2 gap-3 mb-6">
-              {PLANS.map((plan) => (
-                <button
-                  key={plan.id}
-                  onClick={() => setSelectedPlan(plan.id)}
-                  disabled={plan.id === "agence"}
-                  className={cn(
-                    "rounded-xl border p-4 text-left transition-all",
-                    plan.id === "agence"
-                      ? "border-primary/30 bg-primary/5 opacity-60 cursor-not-allowed"
-                      : selectedPlan === plan.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border-dark hover:border-slate-500"
-                  )}
-                >
-                  <p className="text-sm font-bold text-white">{plan.name}</p>
-                  <p className="text-lg font-black text-white mt-1">
-                    {plan.priceMonthly}
-                    <span className="text-xs font-normal text-slate-500">
-                      {plan.priceMonthly > 0 ? "/mois" : ""}
-                    </span>
-                  </p>
-                  <p className="text-[10px] text-primary font-semibold mt-1">
-                    Commission {plan.commission}
-                  </p>
-                  {plan.id === "agence" && (
-                    <span className="text-[10px] text-slate-500 mt-1 block">
-                      Plan actuel
-                    </span>
-                  )}
-                </button>
-              ))}
+              {PLANS.map((plan) => {
+                const isCurrent = plan.id === currentPlanId;
+                return (
+                  <button
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan.id)}
+                    disabled={isCurrent}
+                    className={cn(
+                      "rounded-xl border p-4 text-left transition-all",
+                      isCurrent
+                        ? "border-primary/30 bg-primary/5 opacity-60 cursor-not-allowed"
+                        : selectedPlan === plan.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border-dark hover:border-slate-500"
+                    )}
+                  >
+                    <p className="text-sm font-bold text-white">{plan.name}</p>
+                    <p className="text-lg font-black text-white mt-1">
+                      {plan.priceMonthly}
+                      <span className="text-xs font-normal text-slate-500">
+                        {plan.priceMonthly > 0 ? "/mois" : ""}
+                      </span>
+                    </p>
+                    <p className="text-[10px] text-primary font-semibold mt-1">
+                      Commission {plan.commission}
+                    </p>
+                    {isCurrent && (
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Plan actuel
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <div className="flex gap-3">
               <button

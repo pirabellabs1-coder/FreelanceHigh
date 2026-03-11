@@ -1,52 +1,112 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToastStore } from "@/store/dashboard";
-import { usePlatformDataStore } from "@/store/platform-data";
+import { useAdminStore } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
 const LEVEL_MAP: Record<number, { label: string; desc: string; color: string }> = {
-  1: { label: "Niveau 1", desc: "Email vérifié", color: "text-slate-400" },
-  2: { label: "Niveau 2", desc: "Téléphone vérifié", color: "text-blue-400" },
-  3: { label: "Niveau 3", desc: "Identité vérifiée", color: "text-amber-400" },
-  4: { label: "Niveau 4", desc: "Vérification pro", color: "text-emerald-400" },
+  1: { label: "Niveau 1", desc: "Email verifie", color: "text-slate-400" },
+  2: { label: "Niveau 2", desc: "Telephone verifie", color: "text-blue-400" },
+  3: { label: "Niveau 3", desc: "Identite verifiee", color: "text-amber-400" },
+  4: { label: "Niveau 4", desc: "Verification pro", color: "text-emerald-400" },
 };
 
+function KycSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-neutral-dark rounded-xl p-5 border border-border-dark">
+            <div className="h-6 w-16 bg-border-dark rounded mb-2" />
+            <div className="h-4 w-24 bg-border-dark rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="h-10 bg-border-dark rounded w-full" />
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-border-dark shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-40 bg-border-dark rounded" />
+              <div className="h-4 w-60 bg-border-dark rounded" />
+              <div className="h-4 w-48 bg-border-dark rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminKYC() {
-  const [tab, setTab] = useState("en_attente");
-  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [tab, setTab] = useState("all");
+  const [rejectUserId, setRejectUserId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { addToast } = useToastStore();
-  const { kycRequests, users, approveKyc, refuseKyc } = usePlatformDataStore();
+  const { kycRequests, kycSummary, loading, syncKyc, approveKyc, refuseKyc } = useAdminStore();
+
+  useEffect(() => {
+    syncKyc();
+  }, [syncKyc]);
 
   const filtered = useMemo(() => {
-    if (tab === "tous") return kycRequests;
-    if (tab === "en_attente") return kycRequests.filter(r => r.status === "en_attente");
-    if (tab === "approuve") return kycRequests.filter(r => r.status === "approuve");
-    if (tab === "refuse") return kycRequests.filter(r => r.status === "refuse");
-    const lvl = parseInt(tab.replace("niveau_", ""));
-    return kycRequests.filter(r => r.requestedLevel === lvl && r.status === "en_attente");
+    if (tab === "all") return kycRequests;
+    const lvl = parseInt(tab);
+    if (!isNaN(lvl)) return kycRequests.filter(r => r.nextLevel === lvl);
+    return kycRequests;
   }, [tab, kycRequests]);
 
   const stats = useMemo(() => ({
-    pending: kycRequests.filter(r => r.status === "en_attente").length,
-    approved: kycRequests.filter(r => r.status === "approuve").length,
-    refused: kycRequests.filter(r => r.status === "refuse").length,
-  }), [kycRequests]);
+    total: kycSummary?.total ?? kycRequests.length,
+    byLevel: kycSummary?.byLevel ?? {},
+  }), [kycSummary, kycRequests]);
 
-  function handleApprove(id: string) {
-    const req = kycRequests.find(r => r.id === id);
-    approveKyc(id);
-    addToast("success", `KYC de ${req?.userName} approuvé — niveau ${req?.requestedLevel} activé`);
+  async function handleApprove(userId: string, nextLevel: number) {
+    const req = kycRequests.find(r => r.userId === userId);
+    setActionLoading(userId);
+    const ok = await approveKyc(userId, nextLevel);
+    setActionLoading(null);
+    if (ok) {
+      addToast("success", `KYC de ${req?.name} approuve — niveau ${nextLevel} active`);
+    } else {
+      addToast("error", "Erreur lors de l'approbation du KYC");
+    }
   }
 
-  function handleRefuse() {
-    if (!rejectId || !rejectReason.trim()) { addToast("warning", "Indiquez un motif de refus"); return; }
-    const req = kycRequests.find(r => r.id === rejectId);
-    refuseKyc(rejectId, rejectReason);
-    addToast("success", `KYC de ${req?.userName} refusé`);
-    setRejectId(null);
+  async function handleRefuse() {
+    if (!rejectUserId || !rejectReason.trim()) {
+      addToast("warning", "Indiquez un motif de refus");
+      return;
+    }
+    const req = kycRequests.find(r => r.userId === rejectUserId);
+    setActionLoading(rejectUserId);
+    const ok = await refuseKyc(rejectUserId, rejectReason);
+    setActionLoading(null);
+    if (ok) {
+      addToast("success", `KYC de ${req?.name} refuse`);
+    } else {
+      addToast("error", "Erreur lors du refus du KYC");
+    }
+    setRejectUserId(null);
     setRejectReason("");
+  }
+
+  if (loading.kyc) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-black text-white flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">verified</span>
+            Verifications KYC
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">Validez les demandes de verification d&apos;identite.</p>
+        </div>
+        <KycSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -54,17 +114,17 @@ export default function AdminKYC() {
       <div>
         <h1 className="text-3xl font-black text-white flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">verified</span>
-          Vérifications KYC
+          Verifications KYC
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Validez les demandes de vérification d&apos;identité.</p>
+        <p className="text-slate-400 text-sm mt-1">Validez les demandes de verification d&apos;identite.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "En attente", value: stats.pending, color: "text-amber-400", icon: "hourglass_top" },
-          { label: "Approuvés", value: stats.approved, color: "text-emerald-400", icon: "check_circle" },
-          { label: "Refusés", value: stats.refused, color: "text-red-400", icon: "cancel" },
+          { label: "Total demandes", value: stats.total, color: "text-primary", icon: "assignment" },
+          { label: "Niveau 2", value: stats.byLevel["2"] ?? 0, color: "text-blue-400", icon: "phone_android" },
+          { label: "Niveau 3", value: stats.byLevel["3"] ?? 0, color: "text-amber-400", icon: "badge" },
         ].map(s => (
           <div key={s.label} className="bg-neutral-dark rounded-xl p-5 border border-border-dark">
             <div className="flex items-center gap-3 mb-2">
@@ -79,10 +139,10 @@ export default function AdminKYC() {
       {/* Onglets */}
       <div className="flex gap-2 border-b border-border-dark overflow-x-auto">
         {[
-          { key: "en_attente", label: "En attente", count: stats.pending },
-          { key: "approuve", label: "Approuvés", count: stats.approved },
-          { key: "refuse", label: "Refusés", count: stats.refused },
-          { key: "tous", label: "Tous", count: kycRequests.length },
+          { key: "all", label: "Tous", count: kycRequests.length },
+          { key: "2", label: "Niveau 2", count: kycRequests.filter(r => r.nextLevel === 2).length },
+          { key: "3", label: "Niveau 3", count: kycRequests.filter(r => r.nextLevel === 3).length },
+          { key: "4", label: "Niveau 4", count: kycRequests.filter(r => r.nextLevel === 4).length },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} className={cn("px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap flex items-center gap-1.5", tab === t.key ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-300")}>
             {t.label}
@@ -94,41 +154,45 @@ export default function AdminKYC() {
       {/* Liste */}
       <div className="space-y-4">
         {filtered.map(r => {
-          const user = users.find(u => u.id === r.userId);
-          const levelInfo = LEVEL_MAP[r.requestedLevel];
+          const levelInfo = LEVEL_MAP[r.nextLevel];
           return (
-            <div key={r.id} className={cn("bg-neutral-dark rounded-xl border border-border-dark p-5", r.status !== "en_attente" && "opacity-70")}>
+            <div key={r.userId} className="bg-neutral-dark rounded-xl border border-border-dark p-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">{r.userAvatar}</div>
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                    {r.name.charAt(0).toUpperCase()}
+                  </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-bold text-white">{r.userName}</h3>
+                      <h3 className="font-bold text-white">{r.name}</h3>
                       <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", levelInfo?.color === "text-blue-400" ? "bg-blue-500/20 text-blue-400" : levelInfo?.color === "text-amber-400" ? "bg-amber-500/20 text-amber-400" : levelInfo?.color === "text-emerald-400" ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-400")}>
                         {levelInfo?.label}
                       </span>
-                      {r.status === "approuve" && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-semibold">Approuvé</span>}
-                      {r.status === "refuse" && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-semibold">Refusé</span>}
+                      <span className="text-xs bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{r.role}</span>
                     </div>
-                    <p className="text-sm text-slate-400">{r.userEmail}</p>
-                    <p className="text-sm text-slate-400 mt-0.5">Niveau actuel : <b className="text-white">{r.currentLevel}</b> → Demandé : <b className="text-white">{r.requestedLevel}</b></p>
+                    <p className="text-sm text-slate-400">{r.email}</p>
+                    <p className="text-sm text-slate-400 mt-0.5">Niveau actuel : <b className="text-white">{r.currentLevel}</b> → Demande : <b className="text-white">{r.nextLevel}</b></p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="inline-flex items-center gap-1 text-xs bg-border-dark text-slate-300 px-2 py-1 rounded-lg">
-                        <span className="material-symbols-outlined text-xs">description</span>{r.documentType}
-                      </span>
-                      <span className="text-xs text-slate-500">Soumis le {new Date(r.submittedAt).toLocaleDateString("fr-FR")}</span>
-                      {user && <span className="text-xs text-slate-500">{user.countryFlag} {user.country}</span>}
+                      <span className="text-xs text-slate-500">Soumis le {new Date(r.createdAt).toLocaleDateString("fr-FR")}</span>
                     </div>
-                    {r.refuseReason && <p className="text-xs text-red-400/80 mt-2">Motif : {r.refuseReason}</p>}
-                    {r.reviewedAt && <p className="text-xs text-slate-600 mt-1">Traité le {new Date(r.reviewedAt).toLocaleDateString("fr-FR")} par {r.reviewedBy}</p>}
                   </div>
                 </div>
-                {r.status === "en_attente" && (
-                  <div className="flex gap-2 shrink-0">
-                    <button onClick={() => handleApprove(r.id)} className="px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors">Approuver</button>
-                    <button onClick={() => setRejectId(r.id)} className="px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors">Refuser</button>
-                  </div>
-                )}
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handleApprove(r.userId, r.nextLevel)}
+                    disabled={actionLoading === r.userId}
+                    className="px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {actionLoading === r.userId ? "..." : "Approuver"}
+                  </button>
+                  <button
+                    onClick={() => setRejectUserId(r.userId)}
+                    disabled={actionLoading === r.userId}
+                    className="px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Refuser
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -136,21 +200,21 @@ export default function AdminKYC() {
         {filtered.length === 0 && (
           <div className="text-center py-16">
             <span className="material-symbols-outlined text-5xl text-slate-600">verified</span>
-            <p className="text-slate-500 mt-2">Aucune demande dans cette catégorie</p>
+            <p className="text-slate-500 mt-2">Aucune demande dans cette categorie</p>
           </div>
         )}
       </div>
 
       {/* Modal refus */}
-      {rejectId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setRejectId(null)}>
+      {rejectUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setRejectUserId(null)}>
           <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
             <h3 className="font-bold text-lg text-white mb-4">Motif de refus</h3>
-            <p className="text-sm text-slate-400 mb-3">Ce motif sera communiqué à l&apos;utilisateur.</p>
+            <p className="text-sm text-slate-400 mb-3">Ce motif sera communique a l&apos;utilisateur.</p>
             <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} placeholder="Expliquez le motif du refus..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />
             <div className="flex gap-3">
-              <button onClick={() => setRejectId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={handleRefuse} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors">Confirmer le refus</button>
+              <button onClick={() => setRejectUserId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
+              <button onClick={handleRefuse} disabled={actionLoading !== null} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">Confirmer le refus</button>
             </div>
           </div>
         </div>

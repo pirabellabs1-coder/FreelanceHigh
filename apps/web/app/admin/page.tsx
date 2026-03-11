@@ -1,70 +1,123 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import { usePlatformDataStore, computeAdminStats, computeAdminFinanceStats } from "@/store/platform-data";
+import { useAdminStore } from "@/store/admin";
 import { cn } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function AdminDashboard() {
-  const [revPeriod, setRevPeriod] = useState("12m");
-  const state = usePlatformDataStore();
-  const adminRevenue = state.adminRevenue[revPeriod] || state.adminRevenue["12m"];
+  const { dashboardStats, loading, config, syncDashboard, syncConfig } = useAdminStore();
 
-  const stats = useMemo(() => computeAdminStats(state), [state]);
-  const finance = useMemo(() => computeAdminFinanceStats(state), [state]);
+  useEffect(() => {
+    syncDashboard();
+    syncConfig();
+  }, [syncDashboard, syncConfig]);
+
+  // Loading skeleton
+  if (loading.dashboard || !dashboardStats) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-8 w-48 bg-neutral-dark rounded-lg" />
+            <div className="h-4 w-72 bg-neutral-dark rounded-lg mt-2" />
+          </div>
+          <div className="h-8 w-40 bg-neutral-dark rounded-full" />
+        </div>
+
+        {/* Stats grid skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark p-4 h-24" />
+          ))}
+        </div>
+
+        {/* Chart + alerts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-neutral-dark rounded-xl border border-border-dark h-72" />
+          <div className="bg-neutral-dark rounded-xl border border-border-dark h-72" />
+        </div>
+
+        {/* Activity feed skeleton */}
+        <div className="bg-neutral-dark rounded-xl border border-border-dark h-48" />
+
+        {/* Bottom row skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-neutral-dark rounded-xl border border-border-dark h-56" />
+          <div className="bg-neutral-dark rounded-xl border border-border-dark h-56" />
+          <div className="bg-neutral-dark rounded-xl border border-border-dark h-56" />
+        </div>
+
+        {/* Quick links skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark h-16" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const { users, orders, services, finances, disputes, monthlyRevenue, recentOrders, recentUsers } = dashboardStats;
 
   const STATS = [
-    { label: "Utilisateurs", value: stats.totalUsers.toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
-    { label: "GMV", value: `€${stats.gmv.toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
-    { label: "Commandes actives", value: stats.activeOrders.toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
-    { label: "Commissions", value: `€${stats.commissions.toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
-    { label: "Litiges", value: stats.disputes.toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },
-    { label: "Modération", value: stats.pendingModeration.toString(), icon: "pending", color: "text-purple-400", link: "/admin/services" },
+    { label: "Utilisateurs", value: users.totalUsers.toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
+    { label: "GMV", value: `€${orders.gmv.toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
+    { label: "Commandes actives", value: orders.active.toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
+    { label: "Commissions", value: `€${finances.platformRevenue.toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
+    { label: "Litiges", value: disputes.total.toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },
+    { label: "Modération", value: services.pendingModeration.toString(), icon: "pending", color: "text-purple-400", link: "/admin/services" },
   ];
 
   const roleCounts = [
-    { role: "Freelances", count: stats.freelances, pct: stats.totalUsers > 0 ? Math.round((stats.freelances / stats.totalUsers) * 100) : 0 },
-    { role: "Clients", count: stats.clients, pct: stats.totalUsers > 0 ? Math.round((stats.clients / stats.totalUsers) * 100) : 0 },
-    { role: "Agences", count: stats.agencies, pct: stats.totalUsers > 0 ? Math.round((stats.agencies / stats.totalUsers) * 100) : 0 },
+    { role: "Freelances", count: users.freelances, pct: users.totalUsers > 0 ? Math.round((users.freelances / users.totalUsers) * 100) : 0 },
+    { role: "Clients", count: users.clients, pct: users.totalUsers > 0 ? Math.round((users.clients / users.totalUsers) * 100) : 0 },
+    { role: "Agences", count: users.agencies, pct: users.totalUsers > 0 ? Math.round((users.agencies / users.totalUsers) * 100) : 0 },
   ];
 
-  // Build live activity from actual data
-  const activities = useMemo(() => {
+  const rolePie = [
+    { name: "Freelances", value: users.freelances, color: "#6C2BD9" },
+    { name: "Clients", value: users.clients, color: "#0EA5E9" },
+    { name: "Agences", value: users.agencies, color: "#10B981" },
+  ];
+
+  // Chart data: map monthlyRevenue to recharts format
+  const chartData = monthlyRevenue.map(m => ({
+    month: m.month,
+    revenue: m.revenue,
+    commissions: m.commission,
+  }));
+
+  // Build activity feed from recentOrders + recentUsers
+  const activities = (() => {
     const acts: { text: string; time: string; icon: string; color: string; link: string }[] = [];
 
-    // Recent orders
-    const recentOrders = [...state.orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
     recentOrders.forEach(o => {
       if (o.status === "en_cours") acts.push({ text: `Commande ${o.id} en cours — ${o.serviceTitle}`, time: o.createdAt, icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" });
-      else if (o.status === "termine") acts.push({ text: `Commande ${o.id} terminée — €${o.amount}`, time: o.deliveredAt || o.createdAt, icon: "check_circle", color: "text-emerald-400", link: "/admin/commandes" });
+      else if (o.status === "termine") acts.push({ text: `Commande ${o.id} terminée — €${o.amount}`, time: o.createdAt, icon: "check_circle", color: "text-emerald-400", link: "/admin/commandes" });
       else if (o.status === "litige") acts.push({ text: `Litige ouvert sur ${o.id}`, time: o.createdAt, icon: "gavel", color: "text-red-400", link: "/admin/litiges" });
+      else acts.push({ text: `Commande ${o.id} — ${o.serviceTitle} (${o.status})`, time: o.createdAt, icon: "shopping_cart", color: "text-slate-400", link: "/admin/commandes" });
     });
 
-    // Pending services
-    const pendingSvc = state.services.filter(s => s.status === "en_attente").slice(0, 2);
-    pendingSvc.forEach(s => acts.push({ text: `Service "${s.title}" en attente de modération`, time: s.createdAt, icon: "pending", color: "text-purple-400", link: "/admin/services" }));
-
-    // KYC
-    const pendingKyc = state.kycRequests.filter(k => k.status === "en_attente").slice(0, 2);
-    pendingKyc.forEach(k => acts.push({ text: `KYC Niv. ${k.requestedLevel} — ${k.userName}`, time: k.submittedAt, icon: "verified", color: "text-blue-400", link: "/admin/kyc" }));
-
-    // Recent users
-    const recentUsers = [...state.users].sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)).slice(0, 2);
-    recentUsers.forEach(u => acts.push({ text: `${u.name} inscrit comme ${u.role}`, time: u.registeredAt, icon: "person_add", color: "text-primary", link: "/admin/utilisateurs" }));
+    recentUsers.forEach(u => acts.push({ text: `${u.name} inscrit comme ${u.role}`, time: u.createdAt, icon: "person_add", color: "text-primary", link: "/admin/utilisateurs" }));
 
     return acts.slice(0, 8);
-  }, [state]);
+  })();
 
-  // Dynamic alerts
-  const alerts = useMemo(() => {
+  // Dynamic alerts computed from dashboardStats
+  const alerts = (() => {
     const list: { title: string; description: string; severity: "haute" | "moyenne"; icon: string; link: string }[] = [];
-    if (stats.disputes > 0) list.push({ title: `${stats.disputes} litige(s) ouvert(s)`, description: "Des litiges nécessitent votre attention", severity: "haute", icon: "gavel", link: "/admin/litiges" });
-    if (stats.pendingModeration > 0) list.push({ title: `${stats.pendingModeration} service(s) en attente`, description: "Des services attendent votre approbation", severity: "moyenne", icon: "pending", link: "/admin/services" });
-    if (stats.pendingKyc > 0) list.push({ title: `${stats.pendingKyc} demande(s) KYC`, description: "Demandes de vérification en attente", severity: "moyenne", icon: "verified", link: "/admin/kyc" });
-    if (finance.pendingWithdrawals > 0) list.push({ title: `€${finance.pendingWithdrawals} en retraits`, description: "Retraits en attente de traitement", severity: "moyenne", icon: "account_balance_wallet", link: "/admin/finances" });
+    if (disputes.total > 0) list.push({ title: `${disputes.total} litige(s) ouvert(s)`, description: "Des litiges nécessitent votre attention", severity: "haute", icon: "gavel", link: "/admin/litiges" });
+    if (services.pendingModeration > 0) list.push({ title: `${services.pendingModeration} service(s) en attente`, description: "Des services attendent votre approbation", severity: "moyenne", icon: "pending", link: "/admin/services" });
+    if (finances.pendingWithdrawals > 0) list.push({ title: `€${finances.pendingWithdrawals.toLocaleString()} en retraits`, description: "Retraits en attente de traitement", severity: "moyenne", icon: "account_balance_wallet", link: "/admin/finances" });
     return list;
-  }, [stats, finance]);
+  })();
+
+  // Key metrics
+  const completionRate = orders.total > 0 ? Math.round((orders.completed / orders.total) * 100) : 0;
+  const avgOrderValue = orders.total > 0 ? Math.round(orders.gmv / orders.total) : 0;
 
   return (
     <div className="space-y-6">
@@ -73,9 +126,9 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-black text-white">Administration</h1>
           <p className="text-slate-400 text-sm mt-1">Vue globale de la plateforme FreelanceHigh.</p>
         </div>
-        <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold", state.config.maintenanceMode ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400")}>
-          <span className={cn("w-2 h-2 rounded-full", state.config.maintenanceMode ? "bg-red-400" : "bg-emerald-400 animate-pulse")} />
-          {state.config.maintenanceMode ? "Mode maintenance" : "Plateforme en ligne"}
+        <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold", config?.maintenanceMode ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400")}>
+          <span className={cn("w-2 h-2 rounded-full", config?.maintenanceMode ? "bg-red-400" : "bg-emerald-400 animate-pulse")} />
+          {config?.maintenanceMode ? "Mode maintenance" : "Plateforme en ligne"}
         </span>
       </div>
 
@@ -101,15 +154,15 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-white">Revenus plateforme</h2>
             <div className="flex bg-border-dark rounded-lg p-0.5">
-              {["7j", "30j", "90j", "12m"].map(p => (
-                <button key={p} onClick={() => setRevPeriod(p)} className={cn("px-2.5 py-1 rounded-md text-[10px] font-semibold transition-colors", revPeriod === p ? "bg-neutral-dark text-primary shadow-sm" : "text-slate-500 hover:text-slate-300")}>
+              {["12m"].map(p => (
+                <button key={p} className="px-2.5 py-1 rounded-md text-[10px] font-semibold bg-neutral-dark text-primary shadow-sm">
                   {p}
                 </button>
               ))}
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={adminRevenue}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6C2BD9" stopOpacity={0.3} />
@@ -171,14 +224,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Users by role */}
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h3 className="font-bold text-white text-sm mb-3">Utilisateurs par rôle</h3>
           <ResponsiveContainer width="100%" height={120}>
             <PieChart>
-              <Pie data={stats.rolePie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={50} paddingAngle={4}>
-                {stats.rolePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+              <Pie data={rolePie} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={50} paddingAngle={4}>
+                {rolePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
               <Tooltip contentStyle={{ background: "#1e1e2e", border: "1px solid #2d2d3f", borderRadius: 12, color: "#fff", fontSize: 11 }} />
             </PieChart>
@@ -191,26 +244,15 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Top countries */}
-        <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
-          <h3 className="font-bold text-white text-sm mb-3">Top pays</h3>
-          {stats.topCountries.map(c => (
-            <div key={c.country} className="flex items-center justify-between py-1.5">
-              <span className="text-sm text-slate-300">{c.flag} {c.country}</span>
-              <span className="text-sm font-bold text-white">{c.users}</span>
-            </div>
-          ))}
-        </div>
-
         {/* Key metrics */}
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h3 className="font-bold text-white text-sm mb-3">Métriques clés</h3>
           {[
-            { label: "Taux de complétion", value: `${stats.completionRate}%` },
-            { label: "Panier moyen", value: `€${stats.avgOrderValue}` },
-            { label: "Escrow en cours", value: `€${stats.escrowTotal.toLocaleString()}` },
-            { label: "Catégories actives", value: `${stats.totalCategories}` },
-            { label: "Articles publiés", value: `${stats.totalArticles}` },
+            { label: "Taux de complétion", value: `${completionRate}%` },
+            { label: "Panier moyen", value: `€${avgOrderValue}` },
+            { label: "Escrow en cours", value: `€${finances.escrowFunds.toLocaleString()}` },
+            { label: "Services actifs", value: `${services.active}` },
+            { label: "Transactions totales", value: `${finances.totalTransactions}` },
           ].map(m => (
             <div key={m.label} className="flex items-center justify-between py-1.5">
               <span className="text-sm text-slate-500">{m.label}</span>
@@ -225,14 +267,13 @@ export default function AdminDashboard() {
         {[
           { label: "Catégories", icon: "category", link: "/admin/categories", color: "text-primary" },
           { label: "Blog", icon: "article", link: "/admin/blog", color: "text-blue-400" },
-          { label: "KYC", icon: "verified", link: "/admin/kyc", count: stats.pendingKyc, color: "text-amber-400" },
+          { label: "KYC", icon: "verified", link: "/admin/kyc", color: "text-amber-400" },
           { label: "Configuration", icon: "settings", link: "/admin/configuration", color: "text-slate-400" },
         ].map(q => (
           <Link key={q.label} href={q.link} className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3 hover:border-primary/30 transition-all group">
             <span className={cn("material-symbols-outlined text-2xl", q.color)}>{q.icon}</span>
             <div className="flex-1">
               <p className="text-sm font-bold text-white group-hover:text-primary transition-colors">{q.label}</p>
-              {q.count !== undefined && q.count > 0 && <p className="text-xs text-amber-400">{q.count} en attente</p>}
             </div>
             <span className="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors">chevron_right</span>
           </Link>

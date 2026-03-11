@@ -14,13 +14,16 @@ const TIER_CONFIG: Record<TierKey, { label: string; icon: string; color: string;
   premium: { label: "Premium", icon: "star", color: "text-amber-400", bgColor: "bg-amber-500/10" },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepPackages({ role }: { role: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { packages, basePrice, baseDeliveryDays, updateField, markStepCompleted, setStep, markDirty } =
     useServiceWizardStore();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [newFeatureLabel, setNewFeatureLabel] = useState("");
 
   // Sync basic price from step 2 on first render if unchanged
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const effectivePackages = {
     ...packages,
     basic: {

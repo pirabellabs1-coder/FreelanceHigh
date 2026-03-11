@@ -1,1 +1,62 @@
-[]
+[
+  {
+    "id": "cand_001",
+    "projectId": "proj_001",
+    "projectTitle": "Développement Application Mobile E-commerce",
+    "clientName": "TechCorp Dakar",
+    "freelanceId": "dev-freelance-1",
+    "motivation": "Bonjour, je suis très intéressé par votre projet d'application mobile e-commerce. J'ai une solide expérience en Flutter avec plus de 3 ans de pratique, et j'ai déjà intégré les paiements Orange Money et Wave dans deux applications déployées au Sénégal. Je maîtrise également Firebase pour la gestion en temps réel. Je suis convaincu de pouvoir livrer une application performante et conforme à vos attentes.",
+    "proposedPrice": 1500,
+    "deliveryDays": 30,
+    "status": "vue",
+    "submittedAt": "2026-03-01T08:30:00.000Z"
+  },
+  {
+    "id": "cand_002",
+    "projectId": "proj_002",
+    "projectTitle": "Design Logo & Charte Graphique Startup Livraison",
+    "clientName": "Studio Créatif Abidjan",
+    "freelanceId": "dev-1772837012734",
+    "motivation": "Bonjour, votre projet de branding pour une startup de livraison écologique m'inspire beaucoup. J'ai réalisé plus de 50 identités visuelles pour des entreprises africaines et européennes. Je propose un processus créatif en 3 étapes : moodboard, 3 propositions de logo, puis déclinaison complète de la charte graphique. Je peux vous montrer mon portfolio sur demande.",
+    "proposedPrice": 350,
+    "deliveryDays": 7,
+    "status": "en_attente",
+    "submittedAt": "2026-03-02T10:00:00.000Z"
+  },
+  {
+    "id": "cand_003",
+    "projectId": "proj_003",
+    "projectTitle": "Rédaction de 10 Articles SEO — Blog Tech IA & Web3",
+    "clientName": "Digital Agency Paris",
+    "freelanceId": "dev-1772837012734",
+    "motivation": "Bonjour, rédacteur spécialisé en technologies depuis 4 ans, je suis passionné par l'IA et le Web3. J'écris régulièrement pour des blogs tech francophones et j'ai une bonne maîtrise des techniques SEO (recherche de mots-clés, structure sémantique, maillage interne). Je propose 10 articles de 1200 mots livrés en lots de 3-4, avec optimisation complète pour le référencement naturel.",
+    "proposedPrice": 700,
+    "deliveryDays": 20,
+    "status": "acceptee",
+    "submittedAt": "2026-03-03T07:00:00.000Z"
+  },
+  {
+    "id": "cand_004",
+    "projectId": "proj_004",
+    "projectTitle": "Intégration API Paiement Mobile Money (MTN, Orange)",
+    "clientName": "FinTech Solutions Douala",
+    "freelanceId": "dev-freelance-1",
+    "motivation": "Bonjour, développeur backend Node.js avec une expertise spécifique sur les APIs de paiement mobile en Afrique. J'ai intégré CinetPay et Flutterwave dans plusieurs projets de production (e-commerce, marketplace, SaaS). Je connais bien les spécificités de MTN MoMo et Orange Money au Cameroun. Je peux également mettre en place un système de fallback entre les deux providers.",
+    "proposedPrice": 900,
+    "deliveryDays": 15,
+    "status": "en_attente",
+    "submittedAt": "2026-03-04T09:00:00.000Z"
+  },
+  {
+    "id": "cand_005",
+    "projectId": "proj_005",
+    "projectTitle": "Création Site Vitrine WordPress Multilingue",
+    "clientName": "ONG Éducation Mali",
+    "freelanceId": "dev-1772837012734",
+    "motivation": "Bonjour, je serais ravi de contribuer à votre projet éducatif. J'ai de l'expérience avec WordPress multilingue via WPML et Polylang, et j'ai déjà travaillé sur des sites en langues africaines. Je propose un site responsive avec formulaire de dons intégré (Stripe + Mobile Money), section blog et interface d'administration simple pour que votre équipe puisse mettre à jour le contenu facilement.",
+    "proposedPrice": 450,
+    "deliveryDays": 14,
+    "status": "refusee",
+    "submittedAt": "2026-03-05T12:00:00.000Z"
+  }
+]

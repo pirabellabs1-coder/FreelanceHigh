@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ToastContainer } from "@/components/ui/toast";
+import { useAdminStore } from "@/store/admin";
 
 const ADMIN_CSS_VARS = {
   "--color-primary": "220 38 38",
@@ -13,8 +14,25 @@ const ADMIN_CSS_VARS = {
   "--color-border-dark": "50 38 38",
 } as React.CSSProperties;
 
+const ADMIN_POLL_INTERVAL = 30_000; // 30 seconds
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const syncDashboard = useAdminStore((s) => s.syncDashboard);
+
+  // Initial sync on mount
+  useEffect(() => {
+    syncDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Poll dashboard metrics every 30s for real-time alerts
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncDashboard();
+    }, ADMIN_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [syncDashboard]);
 
   return (
     <div style={ADMIN_CSS_VARS} className="flex h-screen overflow-hidden bg-background-dark">

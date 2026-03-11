@@ -1,16 +1,25 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata = {
-  title: "Politique de Confidentialité — FreelanceHigh",
-  description: "Politique de confidentialité et de protection des données personnelles de FreelanceHigh. Conforme au RGPD.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("privacy_meta_title"),
+    description: t("privacy_meta_description"),
+  };
+}
 
-export default function ConfidentialitePage() {
+export default async function ConfidentialitePage() {
+  const t = await getTranslations("legal");
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="max-w-4xl mx-auto px-6 py-20">
-        <h1 className="text-4xl font-black text-white mb-4">Politique de Confidentialité</h1>
-        <p className="text-sm text-slate-500 mb-2">Dernière mise à jour : 1er mars 2026</p>
+        <h1 className="text-4xl font-black text-white mb-4">{t("privacy_title")}</h1>
+        <p className="text-sm text-slate-500 mb-2">{t("last_updated", { date: "1er mars 2026" })}</p>
+        {t("french_only_notice") && (
+          <p className="text-sm text-amber-400/80 mb-2 italic">{t("french_only_notice")}</p>
+        )}
         <p className="text-sm text-slate-500 mb-12">
           FreelanceHigh s&apos;engage à protéger la vie privée de ses utilisateurs. La présente Politique de Confidentialité décrit comment nous collectons, utilisons, stockons et protégeons vos données personnelles lorsque vous utilisez notre plateforme, conformément au Règlement Général sur la Protection des Données (RGPD - Règlement UE 2016/679) et à la loi Informatique et Libertés du 6 janvier 1978 modifiée.
         </p>
@@ -490,7 +499,7 @@ export default function ConfidentialitePage() {
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">
-          © 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.
+          {t("copyright")}
         </p>
       </div>
     </div>

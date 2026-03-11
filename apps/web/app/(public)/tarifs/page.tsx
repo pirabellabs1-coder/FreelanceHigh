@@ -1,41 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
 import { cn } from "@/lib/utils";
 
-const PLANS = [
-  { name: "Gratuit", price: 0, commission: "20%", services: "3", candidatures: "5/mois", boost: "Non", certif: false, api: false, color: "border-slate-600" },
-  { name: "Pro", price: 15, commission: "15%", services: "15", candidatures: "20/mois", boost: "1/mois", certif: true, api: false, color: "border-primary", popular: true },
-  { name: "Business", price: 45, commission: "10%", services: "Illimité", candidatures: "Illimité", boost: "5/mois", certif: true, api: true, color: "border-blue-500" },
-  { name: "Agence", price: 99, commission: "8%", services: "Illimité", candidatures: "Illimité", boost: "10/mois", certif: true, api: true, color: "border-emerald-500" },
-];
-
-const FAQ = [
-  { q: "Puis-je changer de plan à tout moment ?", a: "Oui, vous pouvez upgrader ou downgrader votre plan à tout moment. Le changement prend effet immédiatement, avec un prorata sur la facturation." },
-  { q: "Quelles méthodes de paiement acceptez-vous ?", a: "Nous acceptons les cartes bancaires (Visa, Mastercard), PayPal, Orange Money, Wave, MTN Mobile Money et les virements SEPA." },
-  { q: "Y a-t-il un engagement minimum ?", a: "Non, tous nos plans sont sans engagement. Vous pouvez annuler à tout moment." },
-  { q: "Qu'est-ce que la commission ?", a: "La commission est prélevée sur chaque transaction réussie. Plus votre plan est élevé, plus la commission est réduite." },
-  { q: "Le plan Agence inclut-il des membres d'équipe ?", a: "Oui, le plan Agence permet jusqu'à 20 membres d'équipe avec gestion des rôles et permissions." },
-];
-
 export default function TarifsPage() {
+  const t = useTranslations("pricing");
   const [annual, setAnnual] = useState(false);
   const { format } = useCurrencyStore();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const PLANS = [
+    { key: "free", price: 0, commission: "20%", services: "3", candidatures: t("plan_free_candidatures"), boost: t("no"), certif: false, api: false, color: "border-slate-600" },
+    { key: "pro", price: 15, commission: "15%", services: "15", candidatures: t("plan_pro_candidatures"), boost: t("plan_pro_boost"), certif: true, api: false, color: "border-primary", popular: true },
+    { key: "business", price: 45, commission: "10%", services: t("unlimited"), candidatures: t("unlimited"), boost: t("plan_business_boost"), certif: true, api: true, color: "border-blue-500" },
+    { key: "agency", price: 99, commission: "8%", services: t("unlimited"), candidatures: t("unlimited"), boost: t("plan_agency_boost"), certif: true, api: true, color: "border-emerald-500" },
+  ];
+
+  const FAQ = [
+    { q: t("faq_change_plan_q"), a: t("faq_change_plan_a") },
+    { q: t("faq_payment_methods_q"), a: t("faq_payment_methods_a") },
+    { q: t("faq_commitment_q"), a: t("faq_commitment_a") },
+    { q: t("faq_commission_q"), a: t("faq_commission_a") },
+    { q: t("faq_agency_members_q"), a: t("faq_agency_members_a") },
+  ];
 
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-            Des tarifs simples et transparents
+            {t("title")}
           </h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Choisissez le plan qui correspond à vos ambitions. Évoluez à votre rythme.
+            {t("subtitle")}
           </p>
           <div className="flex items-center justify-center gap-4 mt-8">
-            <span className={cn("text-sm font-semibold", !annual ? "text-white" : "text-slate-500")}>Mensuel</span>
+            <span className={cn("text-sm font-semibold", !annual ? "text-white" : "text-slate-500")}>{t("monthly")}</span>
             <button
               onClick={() => setAnnual(!annual)}
               className={cn("w-14 h-7 rounded-full transition-colors relative", annual ? "bg-primary" : "bg-slate-600")}
@@ -43,7 +45,7 @@ export default function TarifsPage() {
               <div className={cn("w-5 h-5 rounded-full bg-white absolute top-1 transition-all", annual ? "left-8" : "left-1")} />
             </button>
             <span className={cn("text-sm font-semibold", annual ? "text-white" : "text-slate-500")}>
-              Annuel <span className="text-primary text-xs font-bold ml-1">-20%</span>
+              {t("annual")} <span className="text-primary text-xs font-bold ml-1">-20%</span>
             </span>
           </div>
         </div>
@@ -52,27 +54,27 @@ export default function TarifsPage() {
           {PLANS.map(plan => {
             const price = annual ? Math.round(plan.price * 0.8 * 12) : plan.price;
             return (
-              <div key={plan.name} className={cn("relative bg-neutral-dark rounded-2xl border-2 p-6 flex flex-col", plan.color, plan.popular && "ring-2 ring-primary/30")}>
+              <div key={plan.key} className={cn("relative bg-neutral-dark rounded-2xl border-2 p-6 flex flex-col", plan.color, plan.popular && "ring-2 ring-primary/30")}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-4 py-1 rounded-full">
-                    Populaire
+                    {t("popular")}
                   </div>
                 )}
-                <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t(`plan_${plan.key}`)}</h3>
                 <div className="mb-6">
                   <span className="text-4xl font-black text-white">{format(price)}</span>
-                  <span className="text-slate-500 text-sm">/{annual ? "an" : "mois"}</span>
+                  <span className="text-slate-500 text-sm">/{annual ? t("year") : t("month")}</span>
                 </div>
-                <p className="text-sm text-primary font-bold mb-6">Commission : {plan.commission}</p>
+                <p className="text-sm text-primary font-bold mb-6">{t("commission")}: {plan.commission}</p>
                 <ul className="space-y-3 flex-1 mb-6">
-                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>{plan.services} services actifs</li>
-                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>{plan.candidatures} candidatures</li>
-                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>Boost : {plan.boost}</li>
-                  <li className={cn("flex items-center gap-2 text-sm", plan.certif ? "text-slate-300" : "text-slate-600")}><span className="material-symbols-outlined text-sm">{plan.certif ? "check" : "close"}</span>Certification IA</li>
-                  <li className={cn("flex items-center gap-2 text-sm", plan.api ? "text-slate-300" : "text-slate-600")}><span className="material-symbols-outlined text-sm">{plan.api ? "check" : "close"}</span>Clés API</li>
+                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>{plan.services} {t("active_services")}</li>
+                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>{plan.candidatures} {t("applications")}</li>
+                  <li className="flex items-center gap-2 text-sm text-slate-300"><span className="material-symbols-outlined text-primary text-sm">check</span>{t("boost")}: {plan.boost}</li>
+                  <li className={cn("flex items-center gap-2 text-sm", plan.certif ? "text-slate-300" : "text-slate-600")}><span className="material-symbols-outlined text-sm">{plan.certif ? "check" : "close"}</span>{t("ai_certification")}</li>
+                  <li className={cn("flex items-center gap-2 text-sm", plan.api ? "text-slate-300" : "text-slate-600")}><span className="material-symbols-outlined text-sm">{plan.api ? "check" : "close"}</span>{t("api_keys")}</li>
                 </ul>
                 <button className={cn("w-full py-3 rounded-xl text-sm font-bold transition-colors", plan.popular ? "bg-primary text-white hover:bg-primary/90" : "bg-border-dark text-white hover:bg-border-dark/80")}>
-                  {plan.price === 0 ? "Commencer gratuitement" : "Choisir ce plan"}
+                  {plan.price === 0 ? t("start_free") : t("choose_plan")}
                 </button>
               </div>
             );
@@ -81,7 +83,7 @@ export default function TarifsPage() {
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">Questions fréquentes</h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-8">{t("faq_title")}</h2>
           <div className="space-y-3">
             {FAQ.map((item, i) => (
               <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">

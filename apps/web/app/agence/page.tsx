@@ -1,57 +1,83 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { usePlatformDataStore, computeAgencyStats } from "@/store/platform-data";
+import { useAgencyStore } from "@/store/agency";
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
 
-// Current demo agency = u9 (TechCorp Agency)
-const CURRENT_AGENCY_ID = "u9";
-
-const ACTIVITIES = [
-  { member: "Amadou D.", action: "a livré le module panier", time: "Il y a 30min", icon: "check_circle", color: "text-emerald-400" },
-  { member: "Fatou S.", action: "a uploadé les maquettes Figma", time: "Il y a 1h", icon: "upload_file", color: "text-blue-400" },
-  { member: "Nadia F.", action: "a soumis le rapport SEO", time: "Il y a 2h", icon: "description", color: "text-purple-400" },
-  { member: "Ibrahim T.", action: "a commencé le sprint 3", time: "Il y a 3h", icon: "play_arrow", color: "text-amber-400" },
-  { member: "Kofi M.", action: "a rejoint le projet FinTech", time: "Il y a 5h", icon: "person_add", color: "text-primary" },
+const PERIOD_OPTIONS = [
+  { label: "7j", value: "7d" as const },
+  { label: "30j", value: "30d" as const },
+  { label: "3m", value: "3m" as const },
+  { label: "6m", value: "6m" as const },
+  { label: "1an", value: "1y" as const },
 ];
 
-const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  en_attente: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
-  en_cours: { label: "En cours", cls: "bg-blue-500/20 text-blue-400" },
-  conception: { label: "Conception", cls: "bg-purple-500/20 text-purple-400" },
-  actif: { label: "Actif", cls: "bg-primary/20 text-primary" },
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  online: "bg-emerald-400",
-  busy: "bg-amber-400",
-  offline: "bg-slate-500",
-};
+const COLORS = ["#14B835", "#0EA5E9", "#8B5CF6", "#F59E0B", "#EF4444", "#EC4899"];
 
 export default function AgencyDashboard() {
-  const state = usePlatformDataStore();
-  const agencyStats = useMemo(() => computeAgencyStats(state, CURRENT_AGENCY_ID), [state]);
+  const {
+    syncAll, isLoading, stats, financeSummary, services, orders, reviews,
+    reviewSummary, activities, members, timePeriod, setTimePeriod,
+  } = useAgencyStore();
 
-  const STATS = [
-    { label: "CA mensuel", value: `€${agencyStats.totalCA.toLocaleString()}`, icon: "trending_up", color: "text-primary", trend: "+12.4%", trendUp: true },
-    { label: "Projets actifs", value: agencyStats.activeProjects.toString(), icon: "folder_open", color: "text-blue-400", trend: `+${agencyStats.activeProjects}`, trendUp: true },
-    { label: "Membres", value: agencyStats.totalMembers.toString(), icon: "groups", color: "text-purple-400" },
-    { label: "Commandes", value: agencyStats.activeOrderCount.toString(), icon: "shopping_cart", color: "text-amber-400", trend: `${agencyStats.activeOrderCount}`, trendUp: true },
-    { label: "Satisfaction", value: `${agencyStats.satisfaction}%`, icon: "sentiment_satisfied", color: "text-emerald-400", trend: "+2%", trendUp: true },
-    { label: "Occupation", value: `${agencyStats.avgOccupation}%`, icon: "schedule", color: "text-orange-400", trend: agencyStats.avgOccupation > 70 ? "+5%" : "-1.5%", trendUp: agencyStats.avgOccupation > 70 },
+  useEffect(() => { syncAll(); }, [syncAll]);
+
+  // Auto-refresh stats every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      useAgencyStore.getState().syncStats();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Computed stats from real data
+  const totalCA = financeSummary?.totalEarned ?? 0;
+  const activeOrders = stats?.activeOrders ?? 0;
+  const memberCount = members.length || 1; // At least the owner
+  const avgRating = reviewSummary?.avgRating ?? 0;
+  const activeServices = stats?.servicesCount?.active ?? 0;
+  const conversionRate = stats?.conversionRate ?? 0;
+
+  const STATS_CARDS = [
+    { label: "CA total", value: `\u20AC${totalCA.toLocaleString("fr-FR")}`, icon: "trending_up", color: "text-primary" },
+    { label: "Commandes actives", value: activeOrders.toString(), icon: "shopping_cart", color: "text-blue-400" },
+    { label: "Membres", value: memberCount.toString(), icon: "groups", color: "text-purple-400" },
+    { label: "Note moyenne", value: avgRating > 0 ? `${avgRating.toFixed(1)}/5` : "—", icon: "star", color: "text-amber-400" },
+    { label: "Services actifs", value: activeServices.toString(), icon: "work", color: "text-emerald-400" },
+    { label: "Taux conversion", value: `${conversionRate.toFixed(1)}%`, icon: "percent", color: "text-orange-400" },
   ];
 
-  const revenue = state.agencyRevenue;
-  const maxRev = Math.max(...revenue.map(r => r.value));
-  const chartW = 600;
-  const chartH = 180;
-  const points = revenue.map((r, i) => ({
-    x: (i / (revenue.length - 1)) * chartW,
-    y: chartH - (r.value / maxRev) * chartH,
-  }));
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const areaPath = `${linePath} L ${chartW} ${chartH} L 0 ${chartH} Z`;
+  // Monthly revenue data for BarChart
+  const monthlyRevenue = useMemo(() => {
+    return stats?.monthlyRevenue ?? [];
+  }, [stats]);
+
+  // Weekly orders data for LineChart
+  const weeklyOrders = useMemo(() => {
+    return stats?.weeklyOrders ?? [];
+  }, [stats]);
+
+  // Service category distribution for PieChart
+  const categoryDistribution = useMemo(() => {
+    const cats = new Map<string, number>();
+    services.forEach((s) => {
+      const cat = s.categoryName || "Autre";
+      cats.set(cat, (cats.get(cat) ?? 0) + 1);
+    });
+    return Array.from(cats.entries()).map(([name, value]) => ({ name, value }));
+  }, [services]);
+
+  // Profile views for AreaChart
+  const profileViews = useMemo(() => {
+    return stats?.profileViews ?? [];
+  }, [stats]);
+
+  const fmt = (n: number) => `\u20AC${n.toLocaleString("fr-FR")}`;
 
   return (
     <div className="space-y-6">
@@ -59,12 +85,12 @@ export default function AgencyDashboard() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-black text-white">Tableau de bord</h1>
-          <p className="text-slate-400 text-sm mt-1">Vue globale de votre agence — TechCorp Agency</p>
+          <p className="text-slate-400 text-sm mt-1">Vue globale de votre agence</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/agence/projets" className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+          <Link href="/agence/services/creer" className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">add</span>
-            Nouveau projet
+            Nouveau service
           </Link>
           <Link href="/agence/equipe" className="px-4 py-2.5 bg-neutral-dark border border-border-dark text-white text-sm font-bold rounded-xl hover:bg-border-dark transition-colors flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">person_add</span>
@@ -73,141 +99,168 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
+      {/* Time period filter */}
+      <div className="flex gap-2">
+        {PERIOD_OPTIONS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setTimePeriod(p.value)}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+              timePeriod === p.value
+                ? "bg-primary text-background-dark"
+                : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        {STATS.map(s => (
+        {STATS_CARDS.map((s) => (
           <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-4">
             <div className="flex items-center justify-between mb-2">
               <span className={cn("material-symbols-outlined text-xl", s.color)}>{s.icon}</span>
-              {s.trend && (
-                <span className={cn("text-xs font-semibold", s.trendUp ? "text-emerald-400" : "text-red-400")}>
-                  {s.trend}
-                </span>
-              )}
             </div>
-            <p className="text-xl font-black text-white">{s.value}</p>
+            <p className="text-xl font-black text-white">{isLoading ? "..." : s.value}</p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue Chart */}
-        <div className="lg:col-span-2 bg-neutral-dark rounded-xl border border-border-dark p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-white">Revenus mensuels</h2>
-            <span className="text-xs text-slate-500">6 derniers mois</span>
-          </div>
-          <svg viewBox={`0 0 ${chartW} ${chartH + 20}`} className="w-full h-48">
-            <defs>
-              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgb(var(--color-primary))" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="rgb(var(--color-primary))" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d={areaPath} fill="url(#areaGrad)" />
-            <path d={linePath} fill="none" stroke="rgb(var(--color-primary))" strokeWidth="2.5" strokeLinejoin="round" />
-            {points.map((p, i) => (
-              <g key={i}>
-                <circle cx={p.x} cy={p.y} r="4" fill="rgb(var(--color-primary))" />
-                <text x={p.x} y={p.y - 10} textAnchor="middle" className="text-[10px] fill-slate-400">€{(revenue[i].value / 1000).toFixed(0)}k</text>
-                <text x={p.x} y={chartH + 16} textAnchor="middle" className="text-[10px] fill-slate-500">{revenue[i].month}</text>
-              </g>
-            ))}
-          </svg>
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* CA par mois - BarChart */}
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+          <h2 className="font-bold text-white mb-4">CA par mois</h2>
+          {monthlyRevenue.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
+                <Tooltip
+                  contentStyle={{ background: "#1a2f1e", border: "1px solid #2a3f2e", borderRadius: 8, color: "#fff" }}
+                  formatter={(value: number) => [fmt(value), "CA"]}
+                />
+                <Bar dataKey="revenue" fill="rgb(20, 184, 53)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center text-slate-500 text-sm">
+              Pas encore de donnees
+            </div>
+          )}
         </div>
 
-        {/* Team Status */}
+        {/* Commandes par semaine - LineChart */}
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-white">Équipe</h2>
-            <Link href="/agence/equipe" className="text-xs text-primary font-semibold hover:underline">Voir tout</Link>
-          </div>
-          <div className="space-y-3">
-            {state.agencyMembers.map(m => (
-              <div key={m.id} className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{m.avatar}</div>
-                  <span className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-neutral-dark", STATUS_COLORS[m.status])} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{m.name}</p>
-                  <p className="text-xs text-slate-500">{m.role}</p>
-                </div>
-                <span className={cn("text-[10px] font-semibold capitalize", m.status === "online" ? "text-emerald-400" : m.status === "busy" ? "text-amber-400" : "text-slate-500")}>
-                  {m.status === "online" ? "Disponible" : m.status === "busy" ? "Occupé" : "Hors-ligne"}
-                </span>
-              </div>
-            ))}
-          </div>
+          <h2 className="font-bold text-white mb-4">Commandes par semaine</h2>
+          {weeklyOrders.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={weeklyOrders}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="week" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#1a2f1e", border: "1px solid #2a3f2e", borderRadius: 8, color: "#fff" }} />
+                <Line type="monotone" dataKey="orders" stroke="#0EA5E9" strokeWidth={2.5} dot={{ r: 4, fill: "#0EA5E9" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center text-slate-500 text-sm">
+              Pas encore de donnees
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Active Projects Table */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark">
-        <div className="p-5 border-b border-border-dark flex items-center justify-between">
-          <h2 className="font-bold text-white">Projets actifs</h2>
-          <Link href="/agence/projets" className="text-sm text-primary font-semibold hover:underline">Voir tout</Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                <th className="px-5 py-3 text-left font-semibold">Projet</th>
-                <th className="px-5 py-3 text-left font-semibold">Responsable</th>
-                <th className="px-5 py-3 text-left font-semibold">Statut</th>
-                <th className="px-5 py-3 text-left font-semibold">Progression</th>
-                <th className="px-5 py-3 text-left font-semibold">Budget</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.agencyProjects.map((p, i) => (
-                <tr key={i} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
-                  <td className="px-5 py-3">
-                    <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="text-xs text-slate-500">{p.client}</p>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                        {p.memberName.split(" ").map(n => n[0]).join("")}
-                      </div>
-                      <span className="text-sm text-slate-300">{p.memberName}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", STATUS_MAP[p.status]?.cls)}>{STATUS_MAP[p.status]?.label}</span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-border-dark rounded-full max-w-[100px]">
-                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${p.progress}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-400">{p.progress}%</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-sm font-semibold text-white">€{p.budget.toLocaleString()}</td>
-                </tr>
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Repartition services par categorie - PieChart */}
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+          <h2 className="font-bold text-white mb-4">Services par categorie</h2>
+          {categoryDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={categoryDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={40} paddingAngle={3}>
+                  {categoryDistribution.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: "#1a2f1e", border: "1px solid #2a3f2e", borderRadius: 8, color: "#fff" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-slate-500 text-sm">
+              Aucun service
+            </div>
+          )}
+          {categoryDistribution.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {categoryDistribution.map((c, i) => (
+                <span key={c.name} className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                  {c.name} ({c.value})
+                </span>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
+        </div>
+
+        {/* Taux de conversion - AreaChart */}
+        <div className="lg:col-span-2 bg-neutral-dark rounded-xl border border-border-dark p-5">
+          <h2 className="font-bold text-white mb-4">Vues du profil</h2>
+          {profileViews.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={profileViews}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#1a2f1e", border: "1px solid #2a3f2e", borderRadius: 8, color: "#fff" }} />
+                <defs>
+                  <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#14B835" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#14B835" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="views" stroke="#14B835" strokeWidth={2} fill="url(#viewsGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-slate-500 text-sm">
+              Pas encore de donnees
+            </div>
+          )}
         </div>
       </div>
 
       {/* Activity Feed */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
-        <h2 className="font-bold text-white mb-4">Activité récente</h2>
-        <div className="space-y-4">
-          {ACTIVITIES.map((a, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <span className={cn("material-symbols-outlined text-lg mt-0.5", a.color)}>{a.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm text-slate-300"><span className="font-semibold text-white">{a.member}</span> {a.action}</p>
-                <p className="text-xs text-slate-500">{a.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <h2 className="font-bold text-white mb-4">Activite recente</h2>
+        {activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((a) => (
+              <Link key={a.id} href={a.link} className="flex items-start gap-3 hover:bg-white/5 rounded-lg p-2 -m-2 transition-colors">
+                <span className={cn("material-symbols-outlined text-lg mt-0.5", a.color)}>{a.icon}</span>
+                <div className="flex-1">
+                  <p className="text-sm text-slate-300">{a.message}</p>
+                  <p className="text-xs text-slate-500">
+                    {new Date(a.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">inbox</span>
+            <p className="text-slate-500 text-sm">Aucune activite pour le moment</p>
+            <p className="text-slate-600 text-xs mt-1">Les actions de votre agence apparaitront ici</p>
+          </div>
+        )}
       </div>
     </div>
   );

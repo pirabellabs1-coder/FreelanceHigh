@@ -1,42 +1,187 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useClientStore } from "@/store/client";
+import { profileApi, uploadApi } from "@/lib/api-client";
 import { useToastStore } from "@/store/dashboard";
 
 export default function ClientProfile() {
   const { addToast } = useToastStore();
+  const { updateProfile } = useClientStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [fetching, setFetching] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+
   const [form, setForm] = useState({
-    fullName: "Jean Dupont",
-    email: "jean.dupont@email.sn",
-    bio: "Entrepreneur passionné par le digital. Je dirige une agence de transformation digitale spécialisée dans les solutions innovantes pour les entreprises africaines. Toujours à la recherche de freelances talentueux pour collaborer.",
-    company: "Digital Solutions SARL",
-    website: "https://digitalsolutions.sn",
-    sector: "Technologie",
-    teamSize: "10-50",
-    country: "Sénégal",
-    city: "Dakar",
-    phone: "+221 77 123 45 67",
+    fullName: "",
+    email: "",
+    bio: "",
+    company: "",
+    website: "",
+    sector: "",
+    teamSize: "",
+    country: "",
+    city: "",
+    phone: "",
   });
 
+  const [completionItems, setCompletionItems] = useState<{ label: string; done: boolean }[]>([]);
+
+  useEffect(() => {
+    setFetching(true);
+    profileApi
+      .get()
+      .then((profile) => {
+        setForm({
+          fullName: [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "",
+          email: profile.email || "",
+          bio: profile.bio || "",
+          company: "",
+          website: profile.links?.portfolio || "",
+          sector: "",
+          teamSize: "",
+          country: profile.country || "",
+          city: profile.city || "",
+          phone: profile.phone || "",
+        });
+        setAvatarUrl(profile.photo || "");
+
+        // Calculate completion dynamically
+        const items = [
+          { label: "Photo de profil ajoutee", done: !!profile.photo },
+          { label: "Bio renseignee", done: !!profile.bio },
+          { label: "Telephone verifie", done: !!profile.phone },
+          { label: "Pays renseigne", done: !!profile.country },
+        ];
+        setCompletionItems(items);
+      })
+      .catch(() => {
+        // Keep default empty values on error
+      })
+      .finally(() => setFetching(false));
+  }, []);
+
   function update(key: string, val: string) {
-    setForm(prev => ({ ...prev, [key]: val }));
+    setForm((prev) => ({ ...prev, [key]: val }));
   }
 
-  function save() {
-    addToast("success", "Profil mis à jour avec succès !");
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      addToast("error", "Veuillez selectionner une image (JPG, PNG, WebP)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      addToast("error", "L'image ne doit pas depasser 5 Mo");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const result = await uploadApi.file(file, "avatar");
+      setAvatarUrl(result.file.url);
+      // Update the profile with the new avatar URL
+      await profileApi.update({ photo: result.file.url });
+      addToast("success", "Photo de profil mise a jour !");
+    } catch {
+      addToast("error", "Erreur lors de l'upload de la photo");
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function save() {
+    setSaving(true);
+    const nameParts = form.fullName.trim().split(/\s+/);
+    const success = await updateProfile({
+      firstName: nameParts[0] || "",
+      lastName: nameParts.slice(1).join(" ") || "",
+      email: form.email,
+      bio: form.bio,
+      phone: form.phone,
+      city: form.city,
+      country: form.country,
+    });
+    setSaving(false);
+    if (success) {
+      addToast("success", "Profil mis a jour avec succes !");
+    } else {
+      addToast("error", "Erreur lors de la mise a jour du profil");
+    }
+  }
+
+  const initials = form.fullName
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "??";
+
+  const completionPercent = completionItems.length > 0
+    ? Math.round((completionItems.filter(i => i.done).length / completionItems.length) * 100)
+    : 0;
+
+  if (fetching) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="h-8 w-48 bg-border-dark rounded animate-pulse" />
+            <div className="h-4 w-72 bg-border-dark rounded mt-2 animate-pulse" />
+          </div>
+        </div>
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 animate-pulse">
+          <div className="flex items-center gap-5">
+            <div className="w-24 h-24 rounded-full bg-border-dark" />
+            <div className="space-y-2">
+              <div className="h-6 w-40 bg-border-dark rounded" />
+              <div className="h-4 w-32 bg-border-dark rounded" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 animate-pulse">
+          <div className="h-6 w-56 bg-border-dark rounded mb-5" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-10 bg-border-dark rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleAvatarUpload}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-black text-white">Mon Profil</h1>
-          <p className="text-slate-400 text-sm mt-1">Gérez vos informations personnelles et votre profil entreprise.</p>
+          <p className="text-slate-400 text-sm mt-1">Gerez vos informations personnelles et votre profil entreprise.</p>
         </div>
-        <button onClick={save} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all">
-          <span className="material-symbols-outlined text-lg">save</span>
-          Enregistrer les modifications
+        <button
+          onClick={save}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-lg">{saving ? "hourglass_empty" : "save"}</span>
+          {saving ? "Enregistrement..." : "Enregistrer les modifications"}
         </button>
       </div>
 
@@ -44,28 +189,37 @@ export default function ClientProfile() {
       <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black ring-4 ring-primary/20">
-              JD
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black ring-4 ring-primary/20 overflow-hidden">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <button
-              onClick={() => addToast("info", "Upload photo bientôt disponible")}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-lg hover:scale-110 transition-transform"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark shadow-lg hover:scale-110 transition-transform disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-sm">photo_camera</span>
+              <span className="material-symbols-outlined text-sm">{uploading ? "hourglass_empty" : "photo_camera"}</span>
             </button>
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">{form.fullName}</h2>
-            <p className="text-slate-400 text-sm">Entrepreneur · {form.city}, {form.country}</p>
+            <h2 className="text-2xl font-black text-white">{form.fullName || "Votre nom"}</h2>
+            <p className="text-slate-400 text-sm">{form.company ? `${form.company} · ` : ""}{form.city || "Ville"}, {form.country || "Pays"}</p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                Email vérifié
-              </span>
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                Téléphone vérifié
-              </span>
+              {form.email && (
+                <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  Email verifie
+                </span>
+              )}
+              {form.phone && (
+                <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  Telephone verifie
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -80,20 +234,21 @@ export default function ClientProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Nom complet</label>
-            <input value={form.fullName} onChange={e => update("fullName", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
+            <input value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
             <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Email</label>
-            <input value={form.email} onChange={e => update("email", e.target.value)} type="email" className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
+            <input value={form.email} onChange={(e) => update("email", e.target.value)} type="email" className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Téléphone</label>
-            <input value={form.phone} onChange={e => update("phone", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
+            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Telephone</label>
+            <input value={form.phone} onChange={(e) => update("phone", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
             <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Pays</label>
-            <select value={form.country} onChange={e => update("country", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
-              {["Sénégal", "Côte d'Ivoire", "Cameroun", "France", "Belgique", "Canada", "Autre"].map(c => <option key={c} value={c}>{c}</option>)}
+            <select value={form.country} onChange={(e) => update("country", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
+              <option value="">Selectionnez un pays</option>
+              {["Senegal", "Cote d'Ivoire", "Cameroun", "France", "Belgique", "Canada", "Maroc", "Tunisie", "RDC", "Mali", "Burkina Faso", "Niger", "Guinee", "Benin", "Togo", "Gabon", "Autre"].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         </div>
@@ -101,7 +256,7 @@ export default function ClientProfile() {
           <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Bio professionnelle</label>
           <textarea
             value={form.bio}
-            onChange={e => update("bio", e.target.value)}
+            onChange={(e) => update("bio", e.target.value)}
             rows={4}
             className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 resize-none"
           />
@@ -117,22 +272,24 @@ export default function ClientProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Nom de l&apos;entreprise</label>
-            <input value={form.company} onChange={e => update("company", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
+            <input value={form.company} onChange={(e) => update("company", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
             <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Site web</label>
-            <input value={form.website} onChange={e => update("website", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
+            <input value={form.website} onChange={(e) => update("website", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Secteur d&apos;activité</label>
-            <select value={form.sector} onChange={e => update("sector", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
-              {["Technologie", "Marketing", "Finance", "Santé", "Éducation", "Commerce", "Industrie", "Autre"].map(s => <option key={s} value={s}>{s}</option>)}
+            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Secteur d&apos;activite</label>
+            <select value={form.sector} onChange={(e) => update("sector", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
+              <option value="">Selectionnez un secteur</option>
+              {["Technologie", "Marketing", "Finance", "Sante", "Education", "Commerce", "Industrie", "Autre"].map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Taille d&apos;équipe</label>
-            <select value={form.teamSize} onChange={e => update("teamSize", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
-              {["1-5", "5-10", "10-50", "50-200", "200+"].map(s => <option key={s} value={s}>{s}</option>)}
+            <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Taille d&apos;equipe</label>
+            <select value={form.teamSize} onChange={(e) => update("teamSize", e.target.value)} className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
+              <option value="">Selectionnez une taille</option>
+              {["1-5", "5-10", "10-50", "50-200", "200+"].map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
@@ -143,18 +300,25 @@ export default function ClientProfile() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">trending_up</span>
-            <p className="font-bold text-white text-sm">Complétion du profil</p>
+            <p className="font-bold text-white text-sm">Completion du profil</p>
           </div>
-          <span className="text-primary text-sm font-bold">75%</span>
+          <span className="text-primary text-sm font-bold">{completionPercent}%</span>
         </div>
         <div className="h-2 bg-border-dark rounded-full overflow-hidden mb-3">
-          <div className="h-full bg-primary rounded-full transition-all" style={{ width: "75%" }} />
+          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${completionPercent}%` }} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <span className="flex items-center gap-1.5 text-slate-500"><span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>Photo de profil ajoutée</span>
-          <span className="flex items-center gap-1.5 text-slate-500"><span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>Bio renseignée</span>
-          <span className="flex items-center gap-1.5 text-slate-500"><span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>Entreprise vérifiée</span>
-          <span className="flex items-center gap-1.5 text-slate-400"><span className="material-symbols-outlined text-slate-600 text-sm">radio_button_unchecked</span>Ajouter une méthode de paiement</span>
+          {completionItems.map(item => (
+            <span key={item.label} className="flex items-center gap-1.5 text-slate-500">
+              <span
+                className={`material-symbols-outlined text-sm ${item.done ? "text-primary" : "text-slate-600"}`}
+                style={item.done ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              >
+                {item.done ? "check_circle" : "radio_button_unchecked"}
+              </span>
+              {item.label}
+            </span>
+          ))}
         </div>
       </div>
     </div>

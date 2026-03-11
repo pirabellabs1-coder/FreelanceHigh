@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCurrencyStore, CURRENCIES, type Currency } from "@/store/currency";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { currency, setCurrency } = useCurrencyStore();
+  const t = useTranslations("navbar");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-6 lg:px-20 py-4">
@@ -20,14 +23,17 @@ export function Navbar() {
 
         {/* Nav desktop */}
         <nav className="hidden md:flex flex-1 justify-center gap-8">
-          <Link href="/explorer" className="text-sm font-semibold hover:text-primary transition-colors">Explorer</Link>
-          <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">Devenir Freelance</Link>
-          <Link href="/projets" className="text-sm font-semibold hover:text-primary transition-colors">Projets</Link>
-          <Link href="/tarifs" className="text-sm font-semibold hover:text-primary transition-colors">Tarifs</Link>
+          <Link href="/explorer" className="text-sm font-semibold hover:text-primary transition-colors">{t("explorer")}</Link>
+          <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">{t("devenir_freelance")}</Link>
+          <Link href="/projets" className="text-sm font-semibold hover:text-primary transition-colors">{t("projets")}</Link>
+          <Link href="/tarifs" className="text-sm font-semibold hover:text-primary transition-colors">{t("tarifs")}</Link>
         </nav>
 
         {/* Actions desktop */}
         <div className="flex items-center gap-6">
+          {/* Locale switcher */}
+          <LocaleSwitcher className="hidden lg:flex" />
+
           {/* Currency selector */}
           <div className="relative group hidden lg:block">
             <button className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold hover:border-primary transition-all">
@@ -57,13 +63,13 @@ export function Navbar() {
               href="/connexion"
               className="text-sm font-bold hover:text-primary transition-colors px-2 py-2"
             >
-              Connexion
+              {t("connexion")}
             </Link>
             <Link
               href="/inscription"
               className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
             >
-              Inscription
+              {t("inscription")}
             </Link>
           </div>
 
@@ -81,15 +87,23 @@ export function Navbar() {
       {mobileOpen && (
         <div className="md:hidden border-t border-primary/20 mt-4 pt-4 pb-4 px-4 space-y-4">
           <nav className="flex flex-col gap-2">
-            <Link href="/explorer" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Explorer</Link>
-            <Link href="/inscription" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Devenir Freelance</Link>
-            <Link href="/projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Projets</Link>
-            <Link href="/tarifs" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>Tarifs</Link>
+            <Link href="/explorer" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("explorer")}</Link>
+            <Link href="/inscription" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("devenir_freelance")}</Link>
+            <Link href="/projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
+            <Link href="/tarifs" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("tarifs")}</Link>
           </nav>
+
+          {/* Locale switcher mobile */}
+          <div className="pt-2 border-t border-primary/20">
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 px-3">{t("devise")}</p>
+            <div className="flex items-center gap-3 px-3 mb-3">
+              <LocaleSwitcher />
+            </div>
+          </div>
 
           {/* Currency selector mobile */}
           <div className="pt-2 border-t border-primary/20">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 px-3">Devise</p>
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 px-3">{t("devise")}</p>
             <div className="flex flex-wrap gap-2 px-3">
               {CURRENCIES.map((c) => (
                 <button
@@ -109,8 +123,8 @@ export function Navbar() {
           </div>
 
           <div className="flex flex-col gap-2 pt-2 border-t border-primary/20">
-            <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>Connexion</Link>
-            <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>Inscription</Link>
+            <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>{t("connexion")}</Link>
+            <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>{t("inscription")}</Link>
           </div>
         </div>
       )}

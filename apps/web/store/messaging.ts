@@ -9,7 +9,7 @@ import { create } from "zustand";
 // ── Types ──
 
 export type ConversationType = "direct" | "group" | "order" | "admin";
-export type MessageContentType = "text" | "file" | "image" | "system";
+export type MessageContentType = "text" | "file" | "image" | "system" | "voice" | "call_audio" | "call_video" | "call_missed";
 export type UserRole = "freelance" | "client" | "agence" | "admin";
 
 export interface MessageParticipant {
@@ -31,6 +31,10 @@ export interface UnifiedMessage {
   fileSize?: string;
   createdAt: string;
   readBy: string[];
+  audioUrl?: string;
+  audioDuration?: number;
+  callDuration?: number;
+  transcription?: string;
 }
 
 export interface UnifiedConversation {
@@ -52,7 +56,7 @@ interface MessagingState {
 
   // Actions
   setCurrentUser: (userId: string, role: UserRole) => void;
-  sendMessage: (convId: string, content: string, type?: MessageContentType, fileName?: string, fileSize?: string) => void;
+  sendMessage: (convId: string, content: string, type?: MessageContentType, fileName?: string, fileSize?: string, audioUrl?: string, audioDuration?: number) => void;
   markConversationRead: (convId: string) => void;
   createConversation: (participants: MessageParticipant[], type: ConversationType, title?: string, orderId?: string) => string;
   getMyConversations: () => UnifiedConversation[];
@@ -93,125 +97,148 @@ function msg(id: string, senderId: string, content: string, type: MessageContent
   };
 }
 
+// Generate a tiny valid WAV data URL (0.5s silence) for demo voice messages
+function makeDemoAudioUrl(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const sampleRate = 8000;
+    const numSamples = sampleRate / 2; // 0.5 second
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+    // WAV header
+    const writeStr = (offset: number, str: string) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, numSamples * 2, true);
+    // Silent samples (all zeros)
+    const blob = new Blob([buffer], { type: "audio/wav" });
+    return URL.createObjectURL(blob);
+  } catch {
+    return "";
+  }
+}
+
+let _demoAudioUrl: string | null = null;
+function getDemoAudioUrl(): string {
+  if (_demoAudioUrl === null) _demoAudioUrl = makeDemoAudioUrl();
+  return _demoAudioUrl;
+}
+
+function voiceMsg(id: string, senderId: string, audioDuration: number, minutesAgo: number): UnifiedMessage {
+  const sender = DEMO_PARTICIPANTS[senderId];
+  return {
+    id,
+    senderId,
+    senderName: sender?.name ?? "Inconnu",
+    senderRole: sender?.role ?? "client",
+    content: "Message vocal",
+    type: "voice",
+    audioUrl: getDemoAudioUrl(),
+    audioDuration,
+    transcription: "Bonjour, je voulais discuter du projet en cours...",
+    createdAt: new Date(Date.now() - minutesAgo * 60000).toISOString(),
+    readBy: [senderId],
+  };
+}
+
+function callMsg(id: string, senderId: string, callType: "call_audio" | "call_video" | "call_missed", callDuration: number, minutesAgo: number): UnifiedMessage {
+  const sender = DEMO_PARTICIPANTS[senderId];
+  const labels = { call_audio: "Appel audio", call_video: "Appel video", call_missed: "Appel manque" };
+  return {
+    id,
+    senderId,
+    senderName: sender?.name ?? "Inconnu",
+    senderRole: sender?.role ?? "client",
+    content: labels[callType],
+    type: callType,
+    callDuration,
+    createdAt: new Date(Date.now() - minutesAgo * 60000).toISOString(),
+    readBy: [senderId],
+  };
+}
+
 const DEMO_CONVERSATIONS: UnifiedConversation[] = [
-  // Freelance <-> Client conversations
   {
     id: "conv-1",
-    type: "order",
+    type: "direct",
     participants: [p("u1"), p("u6")],
-    orderId: "CMD-342",
-    lastMessage: "Le code a ete deploye sur le serveur de staging.",
-    lastMessageTime: new Date(Date.now() - 10 * 60000).toISOString(),
+    lastMessage: "Message vocal",
+    lastMessageTime: new Date(Date.now() - 5 * 60000).toISOString(),
     unreadCount: 2,
     messages: [
-      msg("m1", "u6", "Bonjour Amadou ! J'ai un projet de site e-commerce a vous confier.", "text", 180),
-      msg("m2", "u1", "Bonjour Marie ! Avec plaisir, pouvez-vous me donner plus de details sur vos besoins ?", "text", 170),
-      msg("m3", "u6", "Oui bien sur. Je vous envoie le cahier des charges.", "text", 165),
-      msg("m4", "u6", "cahier-des-charges-v2.pdf", "file", 164),
-      msg("m5", "u1", "Merci ! Je regarde ca et je vous fais un retour demain.", "text", 120),
-      msg("m6", "u1", "Le code a ete deploye sur le serveur de staging.", "text", 10),
+      msg("m1", "u6", "Bonjour Amadou, j'ai vu votre service de developpement web.", "text", 120),
+      msg("m2", "u1", "Bonjour Marie ! Oui, je suis disponible. Quel est votre projet ?", "text", 115),
+      voiceMsg("m3", "u6", 47, 90),
+      msg("m4", "u1", "Tres bien, je comprends vos besoins. Voici ma proposition.", "text", 85),
+      callMsg("m5", "u1", "call_audio", 154, 60),
+      msg("m6", "u6", "Super appel ! On avance bien.", "text", 50),
+      voiceMsg("m7", "u6", 23, 5),
     ],
   },
   {
     id: "conv-2",
-    type: "direct",
-    participants: [p("u1"), p("u7")],
-    lastMessage: "J'ai envoye les maquettes Figma.",
-    lastMessageTime: new Date(Date.now() - 60 * 60000).toISOString(),
+    type: "order",
+    participants: [p("u1"), p("u8")],
+    orderId: "CMD-2024-0042",
+    lastMessage: "Appel video",
+    lastMessageTime: new Date(Date.now() - 30 * 60000).toISOString(),
     unreadCount: 0,
     messages: [
-      msg("m10", "u7", "Bonjour, je cherche un developpeur pour un projet React.", "text", 300),
-      msg("m11", "u1", "Bonjour Jean-Pierre ! Je suis disponible, quel est le scope du projet ?", "text", 295),
-      msg("m12", "u7", "C'est un dashboard analytics. Budget de 2000 EUR.", "text", 290),
-      msg("m13", "u1", "J'ai envoye les maquettes Figma.", "text", 60),
+      msg("m10", "u8", "J'ai recu votre livraison, merci !", "text", 180),
+      msg("m11", "u1", "Avec plaisir ! N'hesitez pas si vous avez des questions.", "text", 175),
+      callMsg("m12", "u1", "call_video", 920, 120),
+      msg("m13", "u8", "L'appel video etait tres utile pour la demo. Merci !", "text", 60),
+      callMsg("m14", "u8", "call_missed", 0, 30),
     ],
   },
   {
     id: "conv-3",
-    type: "order",
-    participants: [p("u3"), p("u8")],
-    orderId: "CMD-567",
-    lastMessage: "L'API est prete pour les tests.",
-    lastMessageTime: new Date(Date.now() - 30 * 60000).toISOString(),
+    type: "direct",
+    participants: [p("u1"), p("u11")],
+    lastMessage: "On cherche un dev React pour un projet urgent.",
+    lastMessageTime: new Date(Date.now() - 45 * 60000).toISOString(),
     unreadCount: 1,
     messages: [
-      msg("m20", "u8", "Kofi, comment avance le developpement de l'API ?", "text", 120),
-      msg("m21", "u3", "Ca avance bien ! Je finalise les endpoints de paiement.", "text", 100),
-      msg("m22", "u3", "L'API est prete pour les tests.", "text", 30),
+      msg("m20", "u11", "Salut Amadou ! Studio Digital Dakar ici.", "text", 200),
+      msg("m21", "u11", "On cherche un dev React pour un projet urgent.", "text", 45),
+      voiceMsg("m22", "u11", 65, 40),
     ],
   },
-  // Agency <-> Client
   {
     id: "conv-4",
-    type: "group",
-    participants: [p("u11"), p("u6"), p("u1")],
-    title: "Projet site vitrine - Marie",
-    lastMessage: "Amadou, peux-tu prendre en charge le front ?",
-    lastMessageTime: new Date(Date.now() - 45 * 60000).toISOString(),
-    unreadCount: 3,
+    type: "direct",
+    participants: [p("u6"), p("u2")],
+    lastMessage: "D'accord, je vous envoie le brief.",
+    lastMessageTime: new Date(Date.now() - 10 * 60000).toISOString(),
+    unreadCount: 0,
     messages: [
-      msg("m30", "u6", "Bonjour l'equipe ! Voici le brief pour le site vitrine.", "text", 480),
-      msg("m31", "u11", "Merci Marie ! On va assigner Amadou au front-end.", "text", 460),
-      msg("m32", "u11", "Amadou, peux-tu prendre en charge le front ?", "text", 45),
+      msg("m30", "u6", "Bonjour Fatou, je cherche une designer.", "text", 100),
+      msg("m31", "u2", "Bonjour ! Je suis disponible. Quel type de design ?", "text", 95),
+      voiceMsg("m32", "u6", 35, 80),
+      msg("m33", "u2", "D'accord, je vous envoie le brief.", "text", 10),
     ],
   },
-  // Admin <-> User
   {
     id: "conv-5",
     type: "admin",
     participants: [p("admin-1"), p("u1")],
-    title: "Verification KYC",
-    lastMessage: "Votre verification KYC niveau 3 a ete approuvee.",
-    lastMessageTime: new Date(Date.now() - 120 * 60000).toISOString(),
-    unreadCount: 0,
-    messages: [
-      msg("m40", "admin-1", "Bonjour Amadou, nous avons bien recu vos documents KYC.", "text", 180),
-      msg("m41", "u1", "Merci ! Combien de temps pour la verification ?", "text", 170),
-      msg("m42", "admin-1", "Votre verification KYC niveau 3 a ete approuvee.", "system", 120),
-    ],
-  },
-  // Agency internal
-  {
-    id: "conv-6",
-    type: "group",
-    participants: [p("u11"), p("u1"), p("u2")],
-    title: "#general - Studio Digital Dakar",
-    lastMessage: "Reunion d'equipe vendredi a 14h",
+    title: "Support FreelanceHigh",
+    lastMessage: "Votre verification KYC a ete approuvee.",
     lastMessageTime: new Date(Date.now() - 240 * 60000).toISOString(),
     unreadCount: 0,
     messages: [
-      msg("m50", "u11", "Bonjour a tous ! Rappel: reunion d'equipe vendredi a 14h.", "text", 300),
-      msg("m51", "u1", "Bien note ! Je serai present.", "text", 280),
-      msg("m52", "u2", "Idem pour moi.", "text", 260),
-      msg("m53", "u11", "Reunion d'equipe vendredi a 14h", "text", 240),
-    ],
-  },
-  // Another client <-> freelance
-  {
-    id: "conv-7",
-    type: "direct",
-    participants: [p("u2"), p("u8")],
-    lastMessage: "Les maquettes V2 sont pretes pour review.",
-    lastMessageTime: new Date(Date.now() - 90 * 60000).toISOString(),
-    unreadCount: 1,
-    messages: [
-      msg("m60", "u8", "Fatou, comment avancent les maquettes ?", "text", 150),
-      msg("m61", "u2", "J'y travaille ! Ca sera pret demain.", "text", 140),
-      msg("m62", "u2", "Les maquettes V2 sont pretes pour review.", "text", 90),
-    ],
-  },
-  // Admin <-> Agency (dispute)
-  {
-    id: "conv-8",
-    type: "admin",
-    participants: [p("admin-1"), p("u12")],
-    title: "Litige #LIT-001",
-    lastMessage: "Nous examinons votre dossier. Merci de votre patience.",
-    lastMessageTime: new Date(Date.now() - 360 * 60000).toISOString(),
-    unreadCount: 0,
-    messages: [
-      msg("m70", "u12", "Bonjour, nous souhaitons signaler un probleme avec une commande.", "text", 400),
-      msg("m71", "admin-1", "Nous examinons votre dossier. Merci de votre patience.", "text", 360),
+      msg("m40", "admin-1", "Bonjour Amadou, votre document d'identite a ete recu.", "system", 300),
+      msg("m41", "admin-1", "Votre verification KYC a ete approuvee.", "system", 240),
     ],
   },
 ];
@@ -239,7 +266,7 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
 
   setCurrentUser: (userId, role) => set({ currentUserId: userId, currentUserRole: role }),
 
-  sendMessage: (convId, content, type = "text", fileName, fileSize) => {
+  sendMessage: (convId, content, type = "text", fileName, fileSize, audioUrl, audioDuration) => {
     const { currentUserId, currentUserRole } = get();
     const participant = DEMO_PARTICIPANTS[currentUserId];
 
@@ -252,9 +279,19 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
       type,
       fileName,
       fileSize,
+      audioUrl,
+      audioDuration,
       createdAt: new Date().toISOString(),
       readBy: [currentUserId],
     };
+
+    const lastMessageText =
+      type === "voice" ? "Message vocal" :
+      type === "file" ? (fileName ?? content) :
+      type === "call_audio" ? "Appel audio" :
+      type === "call_video" ? "Appel video" :
+      type === "call_missed" ? "Appel manque" :
+      content;
 
     set((s) => ({
       conversations: s.conversations.map((conv) =>
@@ -262,7 +299,7 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
           ? {
               ...conv,
               messages: [...conv.messages, newMessage],
-              lastMessage: type === "file" ? fileName ?? content : content,
+              lastMessage: lastMessageText,
               lastMessageTime: newMessage.createdAt,
             }
           : conv

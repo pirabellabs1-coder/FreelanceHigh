@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useDashboardStore, useToastStore } from "@/store/dashboard";
+import { useAgencyStore } from "@/store/agency";
+import { useToastStore } from "@/store/dashboard";
 import { servicesApi } from "@/lib/api-client";
 
 // ============================================================
@@ -79,8 +80,13 @@ function checkIcon(status: SeoCheckItem["status"]): { icon: string; color: strin
 // ============================================================
 
 export default function AgenceSeoPage() {
-  const services = useDashboardStore((s) => s.services);
+  const { services, syncServices } = useAgencyStore();
   const addToast = useToastStore((s) => s.addToast);
+
+  // Sync services from API on mount
+  useEffect(() => {
+    syncServices();
+  }, [syncServices]);
 
   // Service selection
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");

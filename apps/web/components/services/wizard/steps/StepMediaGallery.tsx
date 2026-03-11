@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useCallback } from "react";
@@ -86,6 +87,7 @@ function extractVideoId(url: string): { provider: "youtube" | "vimeo"; id: strin
   return null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepMediaGallery({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [uploadError, setUploadError] = useState("");

@@ -3,114 +3,66 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-// ============================================================
-// Types & Demo Data
-// ============================================================
-
-interface ExtractedEntity {
-  icon: string;
-  label: string;
-  isPrimary: boolean;
-}
-
-interface AIResult {
-  id: string;
-  name: string;
-  title: string;
-  avatar: string;
-  bio: string;
-  skills: string[];
-  availability: string;
-  availabilityColor: string;
-  rate: string;
-  isPerfectMatch: boolean;
-}
-
-const DEMO_RESULTS: AIResult[] = [
-  {
-    id: "1",
-    name: "Amadou Diop",
-    title: "Expert React Native & Node.js",
-    avatar: "AD",
-    bio: "Specialiste des apps logistiques. Deja realise 3 apps de livraison avec temps reel et paiement Stripe.",
-    skills: ["Flutter", "Firebase", "Mapbox"],
-    availability: "Immediate",
-    availabilityColor: "text-green-500",
-    rate: "450k - 550k CFA",
-    isPerfectMatch: true,
-  },
-  {
-    id: "2",
-    name: "Sarah Kone",
-    title: "Full-stack Developer",
-    avatar: "SK",
-    bio: "Capable de livrer un MVP en 10 jours. Forte experience en integration de APIs de geolocalisation.",
-    skills: ["React Native", "Node.js"],
-    availability: "Sous 3 jours",
-    availabilityColor: "text-slate-300",
-    rate: "480k CFA",
-    isPerfectMatch: false,
-  },
-  {
-    id: "3",
-    name: "Jean-Luc Mensah",
-    title: "Backend & API Specialist",
-    avatar: "JM",
-    bio: "Specialise dans les systemes de paiement locaux (Mobile Money). Rapide et efficace.",
-    skills: ["Python", "Django"],
-    availability: "Immediate",
-    availabilityColor: "text-green-500",
-    rate: "520k CFA",
-    isPerfectMatch: false,
-  },
-];
-
-// ============================================================
-// Page Component
-// ============================================================
+import { searchApi, type ApiSearchResult } from "@/lib/api-client";
+import { EmptyState } from "@/components/client/EmptyState";
 
 export default function RechercheIAPage() {
-  const [query, setQuery] = useState(
-    "Je cherche quelqu'un pour creer une app de livraison en 2 semaines avec un budget de 500k"
-  );
-  const [searched, setSearched] = useState(true);
-  const [results, setResults] = useState<AIResult[]>(DEMO_RESULTS);
+  const [query, setQuery] = useState("");
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<ApiSearchResult[]>([]);
+  const [entities, setEntities] = useState<{ skills: string[]; budget: number | null; type: string | null }>({ skills: [], budget: null, type: null });
 
-  const extractedEntities: ExtractedEntity[] = [
-    { icon: "payments", label: "Budget: 500k CFA", isPrimary: true },
-    { icon: "schedule", label: "Delai: 2 semaines", isPrimary: true },
-    { icon: "app_shortcut", label: "App de livraison", isPrimary: false },
-    { icon: "code", label: "Developpement Mobile", isPrimary: false },
-  ];
-
-  function handleSearch() {
-    if (!query.trim()) return;
+  async function handleSearch() {
+    const q = query.trim();
+    if (!q) return;
+    setLoading(true);
     setSearched(true);
-    setResults(DEMO_RESULTS);
+    try {
+      const data = await searchApi.search({ q });
+      setResults(data.results || []);
+      setEntities(data.entities || { skills: [], budget: null, type: null });
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  const extractedEntities: { icon: string; label: string; isPrimary: boolean }[] = [];
+  if (entities.budget) extractedEntities.push({ icon: "payments", label: `Budget: ${entities.budget.toLocaleString("fr-FR")} €`, isPrimary: true });
+  if (entities.type) extractedEntities.push({ icon: "person", label: entities.type === "agence" ? "Agence" : "Freelance", isPrimary: true });
+  entities.skills.forEach(skill => extractedEntities.push({ icon: "code", label: skill, isPrimary: false }));
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Sidebar (inherits from client layout) is handled by parent */}
       <div className="flex-1 flex flex-col items-center">
+        {/* V3 Banner */}
+        <div className="w-full max-w-4xl px-6 pt-6">
+          <div className="flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <span className="material-symbols-outlined text-amber-400">info</span>
+            <p className="text-sm text-amber-300">
+              <span className="font-bold">Version actuelle :</span> recherche par mots-cles et competences. La recherche semantique par IA (langage naturel) sera disponible en V3.
+            </p>
+          </div>
+        </div>
+
         {/* Hero Search Section */}
-        <section className="w-full max-w-4xl px-6 pt-12 pb-8 flex flex-col items-center text-center">
+        <section className="w-full max-w-4xl px-6 pt-8 pb-8 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-6">
-            <span className="material-symbols-outlined text-sm">neurology</span>
-            Moteur IA Actif
+            <span className="material-symbols-outlined text-sm">search</span>
+            Recherche Avancee
           </div>
 
           <h1 className="text-slate-900 dark:text-white tracking-tight text-4xl md:text-5xl font-extrabold leading-tight mb-4">
-            Recherche Intelligente par IA
+            Trouvez le freelance ideal
           </h1>
 
           <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mb-10">
-            Decrivez votre besoin en langage naturel. Notre IA analyse vos contraintes de
-            budget, de delai et de competences.
+            Recherchez par competences, budget ou type de prestataire. Decrivez votre besoin et nous trouverons les profils les plus pertinents.
           </p>
 
-          {/* Search Bar with glow */}
+          {/* Search Bar */}
           <div className="w-full relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-blue-500/50 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
             <div className="relative flex flex-col w-full bg-white dark:bg-neutral-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-2xl p-2">
@@ -118,7 +70,7 @@ export default function RechercheIAPage() {
                 <span className="material-symbols-outlined text-primary">search</span>
                 <input
                   className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-white text-lg placeholder:text-slate-400"
-                  placeholder="Decrivez votre projet ici..."
+                  placeholder="Ex: developpeur React, design logo, marketing digital..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -127,14 +79,15 @@ export default function RechercheIAPage() {
                 />
                 <button
                   onClick={handleSearch}
-                  className="bg-primary text-white p-2 rounded-lg flex items-center justify-center hover:scale-105 transition-transform"
+                  disabled={loading}
+                  className="bg-primary text-white p-2 rounded-lg flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                  <span className="material-symbols-outlined">{loading ? "hourglass_empty" : "arrow_forward"}</span>
                 </button>
               </div>
 
               {/* Extracted entities */}
-              {searched && (
+              {searched && extractedEntities.length > 0 && (
                 <div className="flex gap-2 p-3 border-t border-slate-100 dark:border-border-dark overflow-x-auto">
                   {extractedEntities.map((entity) => (
                     <div
@@ -175,123 +128,140 @@ export default function RechercheIAPage() {
         {/* Results Section */}
         {searched && (
           <section className="w-full max-w-6xl px-6 py-12">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">auto_awesome</span>
-                Resultats analyses par l&apos;IA
-              </h3>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Trier par:</span>
-                <button className="font-bold text-primary flex items-center gap-1">
-                  Pertinence IA{" "}
-                  <span className="material-symbols-outlined text-sm">expand_more</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {results.map((result) => (
-                <div
-                  key={result.id}
-                  className={cn(
-                    "group relative bg-white dark:bg-neutral-dark border rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg",
-                    result.isPerfectMatch
-                      ? "border-primary/40 hover:border-primary shadow-lg hover:shadow-primary/5"
-                      : "border-slate-200 dark:border-border-dark hover:border-primary/50"
-                  )}
-                >
-                  {/* Match badge */}
-                  {result.isPerfectMatch && (
-                    <div className="absolute top-3 right-3 z-10">
-                      <div className="bg-primary text-white text-[10px] font-black px-2 py-1 rounded flex items-center gap-1 uppercase tracking-tighter">
-                        <span className="material-symbols-outlined text-[12px] font-bold">
-                          verified
-                        </span>
-                        Match Parfait
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-neutral-dark rounded-xl border border-border-dark p-6 animate-pulse">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-14 h-14 rounded-full bg-border-dark" />
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-border-dark rounded w-2/3" />
+                        <div className="h-3 bg-border-dark rounded w-1/2" />
                       </div>
                     </div>
-                  )}
+                    <div className="h-3 bg-border-dark rounded w-full mb-2" />
+                    <div className="h-3 bg-border-dark rounded w-3/4" />
+                  </div>
+                ))}
+              </div>
+            ) : results.length === 0 ? (
+              <EmptyState
+                icon="search_off"
+                title="Aucun resultat trouve"
+                description="Essayez avec d'autres mots-cles ou elargissez vos criteres de recherche."
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">person_search</span>
+                    {results.length} resultat{results.length > 1 ? "s" : ""} trouves
+                  </h3>
+                </div>
 
-                  <div className="p-6">
-                    {/* Freelancer info */}
-                    <div className="flex items-center gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {results.map((result) => {
+                    const initials = result.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+                    return (
                       <div
+                        key={result.id}
                         className={cn(
-                          "size-14 rounded-full flex items-center justify-center font-bold text-lg",
-                          result.isPerfectMatch
-                            ? "bg-primary/20 text-primary border-2 border-primary"
-                            : "bg-slate-200 dark:bg-border-dark text-slate-600 dark:text-slate-300"
+                          "group relative bg-white dark:bg-neutral-dark border rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg",
+                          result.matchScore >= 80
+                            ? "border-primary/40 hover:border-primary shadow-lg hover:shadow-primary/5"
+                            : "border-slate-200 dark:border-border-dark hover:border-primary/50"
                         )}
                       >
-                        {result.avatar}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-lg">{result.name}</h4>
-                        <p className="text-primary text-sm font-medium">{result.title}</p>
-                      </div>
-                    </div>
+                        {/* Match badge */}
+                        {result.matchScore >= 80 && (
+                          <div className="absolute top-3 right-3 z-10">
+                            <div className="bg-primary text-white text-[10px] font-black px-2 py-1 rounded flex items-center gap-1 uppercase tracking-tighter">
+                              <span className="material-symbols-outlined text-[12px] font-bold">verified</span>
+                              {result.matchScore}% match
+                            </div>
+                          </div>
+                        )}
 
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
-                      {result.bio}
-                    </p>
+                        <div className="p-6">
+                          {/* Freelancer info */}
+                          <div className="flex items-center gap-4 mb-4">
+                            <div
+                              className={cn(
+                                "size-14 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden",
+                                result.matchScore >= 80
+                                  ? "bg-primary/20 text-primary border-2 border-primary"
+                                  : "bg-slate-200 dark:bg-border-dark text-slate-600 dark:text-slate-300"
+                              )}
+                            >
+                              {result.avatar ? (
+                                <img src={result.avatar} alt={result.name} className="w-full h-full object-cover" />
+                              ) : (
+                                initials
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-lg">{result.name}</h4>
+                              <p className="text-primary text-sm font-medium">{result.title}</p>
+                            </div>
+                          </div>
 
-                    {/* Skills */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {result.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-1 bg-slate-100 dark:bg-border-dark rounded text-[10px] font-bold uppercase tracking-wide"
+                          <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
+                            {result.bio}
+                          </p>
+
+                          {/* Skills */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {result.skills.slice(0, 4).map((skill) => (
+                              <span
+                                key={skill}
+                                className="px-2 py-1 bg-slate-100 dark:bg-border-dark rounded text-[10px] font-bold uppercase tracking-wide"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Stats */}
+                          <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                              {result.rating.toFixed(1)} ({result.reviews})
+                            </span>
+                            <span>{result.completionRate}% complete</span>
+                            <span>{result.responseTime}</span>
+                          </div>
+
+                          {/* Rate & Location */}
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-border-dark">
+                            <div>
+                              <p className="text-[10px] text-slate-500 uppercase font-bold">Localisation</p>
+                              <p className="text-sm font-medium text-slate-300">{result.location}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-slate-500 uppercase font-bold">Tarif horaire</p>
+                              <p className="text-sm font-bold text-primary">{result.hourlyRate} €/h</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* CTA */}
+                        <Link
+                          href={`/freelances/${result.id}`}
+                          className={cn(
+                            "w-full py-3 font-bold text-sm transition-colors flex items-center justify-center",
+                            result.matchScore >= 80
+                              ? "bg-primary/10 hover:bg-primary text-primary hover:text-white"
+                              : "bg-slate-50 dark:bg-border-dark/30 hover:bg-primary text-slate-700 dark:text-slate-300 hover:text-white border-t border-slate-100 dark:border-border-dark"
+                          )}
                         >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Availability & Rate */}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-border-dark">
-                      <div>
-                        <p className="text-[10px] text-slate-500 uppercase font-bold">
-                          Disponibilite
-                        </p>
-                        <p className={cn("text-sm font-bold", result.availabilityColor)}>
-                          {result.availability}
-                        </p>
+                          Voir le profil
+                        </Link>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold">
-                          Tarif estime
-                        </p>
-                        <p className="text-sm font-bold">{result.rate}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CTA */}
-                  <Link
-                    href="/freelances/demo"
-                    className={cn(
-                      "w-full py-3 font-bold text-sm transition-colors flex items-center justify-center",
-                      result.isPerfectMatch
-                        ? "bg-primary/10 hover:bg-primary text-primary hover:text-white"
-                        : "bg-slate-50 dark:bg-border-dark/30 hover:bg-primary text-slate-700 dark:text-slate-300 hover:text-white border-t border-slate-100 dark:border-border-dark"
-                    )}
-                  >
-                    Voir le profil
-                  </Link>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-
-            {/* Load More */}
-            <div className="mt-12 flex flex-col items-center">
-              <p className="text-slate-500 text-sm mb-4 font-medium tracking-wide uppercase">
-                L&apos;IA a identifie 12 autres profils pertinents
-              </p>
-              <button className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary text-primary font-bold hover:bg-primary/5 transition-colors">
-                Afficher plus de resultats
-                <span className="material-symbols-outlined">expand_more</span>
-              </button>
-            </div>
+              </>
+            )}
           </section>
         )}
       </div>

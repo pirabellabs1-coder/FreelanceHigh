@@ -1,123 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/dashboard";
-
-// ============================================================
-// Data
-// ============================================================
-
-const CATEGORIES = [
-  { id: "start", title: "Premiers pas", icon: "rocket_launch", count: 12, description: "Guide de demarrage rapide" },
-  { id: "orders", title: "Commandes", icon: "shopping_cart", count: 15, description: "Gestion des commandes et livraisons" },
-  { id: "payments", title: "Paiements", icon: "payments", count: 10, description: "Methodes de paiement et retraits" },
-  { id: "disputes", title: "Litiges", icon: "gavel", count: 8, description: "Resolution des conflits" },
-  { id: "account", title: "Compte", icon: "person", count: 9, description: "Profil et parametres" },
-  { id: "security", title: "Securite", icon: "shield", count: 7, description: "Protection et 2FA" },
-];
-
-const POPULAR_ARTICLES = [
-  { title: "Comment creer un compte FreelanceHigh", icon: "person_add", category: "Premiers pas" },
-  { title: "Publier votre premier service en 5 minutes", icon: "add_circle", category: "Premiers pas" },
-  { title: "Comprendre le systeme d'escrow (sequestre)", icon: "account_balance", category: "Paiements" },
-  { title: "Comment retirer vos gains (SEPA, Mobile Money)", icon: "account_balance_wallet", category: "Paiements" },
-  { title: "Que faire en cas de litige avec un client", icon: "gavel", category: "Litiges" },
-  { title: "Configurer l'authentification a deux facteurs", icon: "verified_user", category: "Securite" },
-  { title: "Suivre l'avancement de vos commandes", icon: "local_shipping", category: "Commandes" },
-  { title: "Optimiser votre profil pour attirer plus de clients", icon: "trending_up", category: "Compte" },
-];
-
-const FAQ_ITEMS = [
-  {
-    question: "Comment m'inscrire sur FreelanceHigh ?",
-    answer:
-      "L'inscription est gratuite et ne prend que quelques minutes. Rendez-vous sur la page d'inscription, choisissez votre role (Freelance, Client ou Agence), remplissez vos informations et verifiez votre adresse email via le code OTP que nous vous envoyons. Vous pouvez aussi vous inscrire avec Google, LinkedIn, Facebook ou Apple.",
-    category: "start",
-  },
-  {
-    question: "Quels moyens de paiement sont acceptes ?",
-    answer:
-      "FreelanceHigh accepte les cartes bancaires (Visa, Mastercard) via Stripe, les paiements Mobile Money (Orange Money, Wave, MTN MoMo) via CinetPay, PayPal, les virements SEPA, et les stablecoins USDC/USDT. La devise par defaut est l'Euro (EUR) avec conversion automatique en FCFA, USD, GBP et MAD.",
-    category: "payments",
-  },
-  {
-    question: "Comment fonctionne la livraison d'une commande ?",
-    answer:
-      "Une fois la commande acceptee, le freelance travaille sur le projet et livre les fichiers directement dans l'espace de commande. Le client recoit une notification et dispose d'un delai pour valider la livraison ou demander une revision. Les fonds ne sont liberes qu'apres validation.",
-    category: "orders",
-  },
-  {
-    question: "Comment ouvrir un litige ?",
-    answer:
-      "Si vous n'etes pas satisfait d'une livraison et que vous ne parvenez pas a trouver un accord avec le prestataire, vous pouvez ouvrir un litige depuis la page de detail de votre commande. Un mediateur FreelanceHigh examinera les preuves fournies par les deux parties et rendra un verdict equitable.",
-    category: "disputes",
-  },
-  {
-    question: "Quelles sont les commissions de FreelanceHigh ?",
-    answer:
-      "Les commissions varient selon votre plan d'abonnement : Gratuit (20%), Pro a 15 EUR/mois (15%), Business a 45 EUR/mois (10%), Agence a 99 EUR/mois (8%). Chaque plan offre des avantages supplementaires comme des boosts publicitaires, des certifications IA et des cles API.",
-    category: "payments",
-  },
-  {
-    question: "Comment retirer mes gains ?",
-    answer:
-      "Rendez-vous dans la section Gains & Finances de votre dashboard. Vous pouvez retirer vos fonds par virement SEPA (Europe), Mobile Money via Orange Money, Wave ou MTN MoMo (Afrique), PayPal, Wise, ou en crypto (USDC/USDT). Le delai de traitement varie de 1 a 5 jours ouvrables selon la methode choisie.",
-    category: "payments",
-  },
-  {
-    question: "Puis-je annuler une commande en cours ?",
-    answer:
-      "Oui, sous certaines conditions. Si le freelance n'a pas encore commence le travail, l'annulation est automatique avec remboursement integral. Si le travail est en cours, une demande d'annulation est soumise et les deux parties doivent trouver un accord. En cas de desaccord, un litige peut etre ouvert.",
-    category: "orders",
-  },
-  {
-    question: "Comment activer l'authentification a deux facteurs (2FA) ?",
-    answer:
-      "Allez dans Parametres > Securite de votre dashboard. Activez la 2FA et choisissez entre Google Authenticator (application TOTP) ou l'envoi d'un code par SMS. Scannez le QR code avec votre application d'authentification ou entrez votre numero de telephone. Confirmez avec le code de verification.",
-    category: "security",
-  },
-  {
-    question: "Comment fonctionne le systeme d'agences ?",
-    answer:
-      "Les agences disposent d'un espace dedie pour gerer une equipe de freelances. En tant qu'agence, vous pouvez inviter des membres, publier des services sous votre marque, gerer des projets multi-membres avec vue Kanban, et centraliser la facturation. Le plan Agence (99 EUR/mois) permet jusqu'a 20 membres et offre 50 Go de stockage partage.",
-    category: "start",
-  },
-  {
-    question: "Comment contacter le support FreelanceHigh ?",
-    answer:
-      "Vous pouvez nous contacter de plusieurs manieres : via le chat en direct disponible sur cette page (lundi au vendredi, 9h-18h CET), par email a support@freelancehigh.com, ou en creant un ticket de support depuis le formulaire ci-dessous. Notre equipe s'engage a repondre sous 24 heures.",
-    category: "account",
-  },
-  {
-    question: "Qu'est-ce que le KYC et pourquoi est-il necessaire ?",
-    answer:
-      "Le KYC (Know Your Customer) est un processus de verification d'identite obligatoire pour certaines actions. Niveau 1 (email) donne l'acces de base. Niveau 2 (telephone) permet de commander et postuler. Niveau 3 (piece d'identite) debloque les retraits et la publication de services. Niveau 4 (verification pro) donne acces au badge Elite et aux limites elevees.",
-    category: "security",
-  },
-  {
-    question: "Comment booster la visibilite de mes services ?",
-    answer:
-      "Plusieurs strategies s'offrent a vous : completez votre profil a 100%, obtenez des avis positifs, utilisez des mots-cles pertinents dans vos titres et descriptions, ajoutez des images de qualite a vos services, et utilisez les boosts publicitaires inclus dans les plans Pro, Business et Agence pour apparaitre en tete des resultats de recherche.",
-    category: "account",
-  },
-];
-
-const TICKET_CATEGORIES = [
-  "Probleme technique",
-  "Question sur un paiement",
-  "Litige en cours",
-  "Probleme de compte",
-  "Signalement d'un utilisateur",
-  "Suggestion d'amelioration",
-  "Autre",
-];
-
-const TICKET_PRIORITIES = [
-  { value: "basse", label: "Basse" },
-  { value: "moyenne", label: "Moyenne" },
-  { value: "haute", label: "Haute" },
-];
 
 // ============================================================
 // Chat message type
@@ -139,6 +25,7 @@ function timeNow() {
 // ============================================================
 
 export default function AidePage() {
+  const t = useTranslations("help");
   const addToast = useToastStore((s) => s.addToast);
 
   // Search
@@ -151,7 +38,7 @@ export default function AidePage() {
   // Live chat
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
-    { id: "1", sender: "bot", text: "Bonjour ! Comment puis-je vous aider ?", time: timeNow() },
+    { id: "1", sender: "bot", text: t("chat_welcome"), time: timeNow() },
   ]);
   const [chatInput, setChatInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -160,10 +47,62 @@ export default function AidePage() {
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [ticketForm, setTicketForm] = useState({
     subject: "",
-    category: TICKET_CATEGORIES[0],
+    category: t("ticket_cat_technical"),
     description: "",
     priority: "moyenne",
   });
+
+  // Data
+  const CATEGORIES = [
+    { id: "start", titleKey: "cat_getting_started", icon: "rocket_launch", count: 12, descKey: "cat_getting_started_desc" },
+    { id: "orders", titleKey: "cat_orders", icon: "shopping_cart", count: 15, descKey: "cat_orders_desc" },
+    { id: "payments", titleKey: "cat_payments", icon: "payments", count: 10, descKey: "cat_payments_desc" },
+    { id: "disputes", titleKey: "cat_disputes", icon: "gavel", count: 8, descKey: "cat_disputes_desc" },
+    { id: "account", titleKey: "cat_account", icon: "person", count: 9, descKey: "cat_account_desc" },
+    { id: "security", titleKey: "cat_security", icon: "shield", count: 7, descKey: "cat_security_desc" },
+  ];
+
+  const POPULAR_ARTICLES = [
+    { titleKey: "article_create_account", icon: "person_add", categoryKey: "cat_getting_started" },
+    { titleKey: "article_publish_service", icon: "add_circle", categoryKey: "cat_getting_started" },
+    { titleKey: "article_escrow", icon: "account_balance", categoryKey: "cat_payments" },
+    { titleKey: "article_withdraw", icon: "account_balance_wallet", categoryKey: "cat_payments" },
+    { titleKey: "article_dispute", icon: "gavel", categoryKey: "cat_disputes" },
+    { titleKey: "article_2fa", icon: "verified_user", categoryKey: "cat_security" },
+    { titleKey: "article_track_orders", icon: "local_shipping", categoryKey: "cat_orders" },
+    { titleKey: "article_optimize_profile", icon: "trending_up", categoryKey: "cat_account" },
+  ];
+
+  const FAQ_ITEMS = [
+    { qKey: "faq_signup_q", aKey: "faq_signup_a", category: "start" },
+    { qKey: "faq_payment_methods_q", aKey: "faq_payment_methods_a", category: "payments" },
+    { qKey: "faq_delivery_q", aKey: "faq_delivery_a", category: "orders" },
+    { qKey: "faq_open_dispute_q", aKey: "faq_open_dispute_a", category: "disputes" },
+    { qKey: "faq_commissions_q", aKey: "faq_commissions_a", category: "payments" },
+    { qKey: "faq_withdraw_q", aKey: "faq_withdraw_a", category: "payments" },
+    { qKey: "faq_cancel_order_q", aKey: "faq_cancel_order_a", category: "orders" },
+    { qKey: "faq_2fa_q", aKey: "faq_2fa_a", category: "security" },
+    { qKey: "faq_agency_q", aKey: "faq_agency_a", category: "start" },
+    { qKey: "faq_contact_support_q", aKey: "faq_contact_support_a", category: "account" },
+    { qKey: "faq_kyc_q", aKey: "faq_kyc_a", category: "security" },
+    { qKey: "faq_boost_q", aKey: "faq_boost_a", category: "account" },
+  ];
+
+  const TICKET_CATEGORIES = [
+    t("ticket_cat_technical"),
+    t("ticket_cat_payment"),
+    t("ticket_cat_dispute"),
+    t("ticket_cat_account"),
+    t("ticket_cat_report_user"),
+    t("ticket_cat_suggestion"),
+    t("ticket_cat_other"),
+  ];
+
+  const TICKET_PRIORITIES = [
+    { value: "basse", labelKey: "priority_low" },
+    { value: "moyenne", labelKey: "priority_medium" },
+    { value: "haute", labelKey: "priority_high" },
+  ];
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -172,10 +111,12 @@ export default function AidePage() {
 
   // Filter FAQ by search and category
   const filteredFaq = FAQ_ITEMS.filter((item) => {
+    const question = t(item.qKey);
+    const answer = t(item.aKey);
     const matchesSearch =
       !searchQuery ||
-      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      answer.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !activeCategory || item.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
@@ -198,21 +139,21 @@ export default function AidePage() {
       const botMsg: ChatMsg = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: "Merci pour votre message. Un membre de notre equipe vous repondra dans les plus brefs delais. En attendant, consultez notre FAQ ci-dessus pour une reponse rapide.",
+        text: t("chat_auto_reply"),
         time: timeNow(),
       };
       setChatMessages((prev) => [...prev, botMsg]);
     }, 1200);
-  }, [chatInput]);
+  }, [chatInput, t]);
 
   // Submit ticket
   function handleSubmitTicket(e: React.FormEvent) {
     e.preventDefault();
     if (!ticketForm.subject.trim() || !ticketForm.description.trim()) {
-      addToast("error", "Veuillez remplir tous les champs obligatoires.");
+      addToast("error", t("ticket_error_required"));
       return;
     }
-    addToast("success", "Votre ticket a ete cree avec succes. Nous vous repondrons sous 24h.");
+    addToast("success", t("ticket_success"));
     setTicketModalOpen(false);
     setTicketForm({ subject: "", category: TICKET_CATEGORIES[0], description: "", priority: "moyenne" });
   }
@@ -227,16 +168,16 @@ export default function AidePage() {
         <div className="relative max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 text-primary text-xs font-bold uppercase tracking-wider border border-primary/25">
             <span className="material-symbols-outlined text-base">support_agent</span>
-            Centre d&apos;aide
+            {t("hero_badge")}
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-            Comment pouvons-nous{" "}
-            <span className="text-primary">vous aider</span> ?
+            {t("hero_title_prefix")}{" "}
+            <span className="text-primary">{t("hero_title_highlight")}</span> ?
           </h1>
 
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Trouvez des reponses a vos questions, explorez nos guides ou contactez notre equipe de support.
+            {t("hero_subtitle")}
           </p>
 
           {/* Search bar */}
@@ -245,7 +186,7 @@ export default function AidePage() {
               <span className="material-symbols-outlined text-slate-400 px-4 text-xl">search</span>
               <input
                 type="text"
-                placeholder="Rechercher dans la FAQ..."
+                placeholder={t("search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-slate-500 text-base py-4 pr-4"
@@ -269,7 +210,7 @@ export default function AidePage() {
       <section className="px-6 lg:px-20 pb-20">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
-            Explorer par categorie
+            {t("explore_by_category")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {CATEGORIES.map((cat) => (
@@ -295,9 +236,9 @@ export default function AidePage() {
                     <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-lg mb-1">{cat.title}</h3>
-                    <p className="text-sm text-slate-400 mb-2">{cat.description}</p>
-                    <span className="text-xs text-primary font-semibold">{cat.count} articles</span>
+                    <h3 className="font-bold text-lg mb-1">{t(cat.titleKey)}</h3>
+                    <p className="text-sm text-slate-400 mb-2">{t(cat.descKey)}</p>
+                    <span className="text-xs text-primary font-semibold">{t("articles_count", { count: cat.count })}</span>
                   </div>
                 </div>
               </button>
@@ -310,7 +251,7 @@ export default function AidePage() {
                 className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1"
               >
                 <span className="material-symbols-outlined text-base">close</span>
-                Effacer le filtre
+                {t("clear_filter")}
               </button>
             </div>
           )}
@@ -323,12 +264,12 @@ export default function AidePage() {
       <section className="px-6 lg:px-20 pb-20">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
-            Articles populaires
+            {t("popular_articles")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {POPULAR_ARTICLES.map((article) => (
               <div
-                key={article.title}
+                key={article.titleKey}
                 className="group bg-neutral-dark border border-border-dark rounded-xl p-5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
               >
                 <div className="flex items-start gap-3">
@@ -337,9 +278,9 @@ export default function AidePage() {
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-semibold text-sm leading-snug mb-1.5 group-hover:text-primary transition-colors">
-                      {article.title}
+                      {t(article.titleKey)}
                     </h4>
-                    <span className="text-xs text-slate-500">{article.category}</span>
+                    <span className="text-xs text-slate-500">{t(article.categoryKey)}</span>
                   </div>
                 </div>
               </div>
@@ -354,13 +295,13 @@ export default function AidePage() {
       <section className="px-6 lg:px-20 pb-20">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
-            Questions frequentes
+            {t("faq_title")}
           </h2>
 
           {filteredFaq.length === 0 ? (
             <div className="text-center py-16">
               <span className="material-symbols-outlined text-5xl text-slate-500 mb-4 block">search_off</span>
-              <p className="text-slate-400 text-lg">Aucune question ne correspond a votre recherche.</p>
+              <p className="text-slate-400 text-lg">{t("no_results")}</p>
               <button
                 onClick={() => {
                   setSearchQuery("");
@@ -368,7 +309,7 @@ export default function AidePage() {
                 }}
                 className="mt-4 text-primary hover:text-primary/80 text-sm font-semibold transition-colors"
               >
-                Reinitialiser les filtres
+                {t("reset_filters")}
               </button>
             </div>
           ) : (
@@ -389,7 +330,7 @@ export default function AidePage() {
                       onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
                       className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                     >
-                      <span className="font-semibold text-base leading-snug">{item.question}</span>
+                      <span className="font-semibold text-base leading-snug">{t(item.qKey)}</span>
                       <span
                         className={cn(
                           "material-symbols-outlined text-xl text-slate-400 shrink-0 transition-transform duration-200",
@@ -407,7 +348,7 @@ export default function AidePage() {
                     >
                       <div className="overflow-hidden">
                         <div className="px-6 pb-5 text-sm text-slate-400 leading-relaxed">
-                          {item.answer}
+                          {t(item.aKey)}
                         </div>
                       </div>
                     </div>
@@ -429,11 +370,10 @@ export default function AidePage() {
               <span className="material-symbols-outlined text-3xl">confirmation_number</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-              Vous n&apos;avez pas trouve votre reponse ?
+              {t("support_title")}
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto mb-8">
-              Creez un ticket de support et notre equipe vous repondra sous 24 heures.
-              Vous pouvez aussi nous contacter par email a{" "}
+              {t("support_desc")}{" "}
               <a href="mailto:support@freelancehigh.com" className="text-primary hover:underline font-semibold">
                 support@freelancehigh.com
               </a>
@@ -444,21 +384,21 @@ export default function AidePage() {
                 className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-8 py-4 font-bold transition-all shadow-lg shadow-primary/20"
               >
                 <span className="material-symbols-outlined text-xl">add</span>
-                Creer un ticket
+                {t("create_ticket")}
               </button>
               <a
                 href="mailto:support@freelancehigh.com"
                 className="inline-flex items-center gap-2 bg-border-dark hover:bg-border-dark/80 text-slate-300 rounded-xl px-8 py-4 font-semibold transition-all"
               >
                 <span className="material-symbols-outlined text-xl">mail</span>
-                Envoyer un email
+                {t("send_email")}
               </a>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-slate-500">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">schedule</span>
-                Lundi - Vendredi, 9h - 18h CET
+                {t("support_hours")}
               </div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">mail</span>
@@ -466,7 +406,7 @@ export default function AidePage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">avg_pace</span>
-                Reponse sous 24h
+                {t("support_response_time")}
               </div>
             </div>
           </div>
@@ -488,7 +428,7 @@ export default function AidePage() {
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <span className="material-symbols-outlined">confirmation_number</span>
                 </div>
-                <h3 className="text-lg font-bold">Creer un ticket de support</h3>
+                <h3 className="text-lg font-bold">{t("ticket_modal_title")}</h3>
               </div>
               <button
                 onClick={() => setTicketModalOpen(false)}
@@ -502,13 +442,13 @@ export default function AidePage() {
               {/* Subject */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Sujet <span className="text-red-400">*</span>
+                  {t("ticket_subject")} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={ticketForm.subject}
                   onChange={(e) => setTicketForm({ ...ticketForm, subject: e.target.value })}
-                  placeholder="Decrivez brievement votre probleme"
+                  placeholder={t("ticket_subject_placeholder")}
                   className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                 />
               </div>
@@ -516,7 +456,7 @@ export default function AidePage() {
               {/* Category */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Categorie
+                  {t("ticket_category")}
                 </label>
                 <div className="relative">
                   <select
@@ -539,7 +479,7 @@ export default function AidePage() {
               {/* Priority */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Priorite
+                  {t("ticket_priority")}
                 </label>
                 <div className="flex gap-3">
                   {TICKET_PRIORITIES.map((p) => (
@@ -554,7 +494,7 @@ export default function AidePage() {
                           : "bg-neutral-dark border-border-dark text-slate-400 hover:border-border-dark/80"
                       )}
                     >
-                      {p.label}
+                      {t(p.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -563,12 +503,12 @@ export default function AidePage() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Description <span className="text-red-400">*</span>
+                  {t("ticket_description")} <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   value={ticketForm.description}
                   onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
-                  placeholder="Decrivez votre probleme en detail..."
+                  placeholder={t("ticket_description_placeholder")}
                   rows={5}
                   className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
                 />
@@ -581,13 +521,13 @@ export default function AidePage() {
                   onClick={() => setTicketModalOpen(false)}
                   className="px-5 py-2.5 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-border-dark rounded-xl transition-colors"
                 >
-                  Annuler
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 text-sm font-bold bg-primary hover:bg-primary/90 text-white rounded-xl transition-colors shadow-lg shadow-primary/20"
                 >
-                  Envoyer le ticket
+                  {t("submit_ticket")}
                 </button>
               </div>
             </form>
@@ -611,8 +551,8 @@ export default function AidePage() {
                 <span className="material-symbols-outlined text-lg">support_agent</span>
               </div>
               <div>
-                <p className="font-bold text-sm">Support FreelanceHigh</p>
-                <p className="text-xs text-white/70">En ligne</p>
+                <p className="font-bold text-sm">{t("chat_header_title")}</p>
+                <p className="text-xs text-white/70">{t("chat_header_status")}</p>
               </div>
             </div>
             <button
@@ -669,7 +609,7 @@ export default function AidePage() {
                     handleSendChat();
                   }
                 }}
-                placeholder="Ecrivez votre message..."
+                placeholder={t("chat_input_placeholder")}
                 className="flex-1 bg-neutral-dark border border-border-dark rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/50 transition-all"
               />
               <button
@@ -698,7 +638,7 @@ export default function AidePage() {
             ? "bg-border-dark text-slate-300 hover:bg-border-dark/80"
             : "bg-primary text-white hover:bg-primary/90 shadow-primary/30"
         )}
-        title="Chat en direct"
+        title={t("chat_button_title")}
       >
         <span className="material-symbols-outlined text-2xl">
           {chatOpen ? "close" : "chat"}

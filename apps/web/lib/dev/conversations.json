@@ -1,1 +1,191 @@
-[]
+[
+  {
+    "id": "conv_001",
+    "participants": ["dev-freelance-1", "dev-client-1"],
+    "contactName": "Marie Martin",
+    "contactAvatar": "",
+    "contactRole": "client",
+    "lastMessage": "D'accord, je vous envoie le brief mis à jour ce soir.",
+    "lastMessageTime": "2026-03-10T18:45:00.000Z",
+    "unread": 1,
+    "online": true,
+    "orderId": "ORD-003",
+    "messages": [
+      {
+        "id": "msg_001_01",
+        "senderId": "dev-client-1",
+        "sender": "them",
+        "content": "Bonjour Jean, j'ai quelques modifications à apporter au brief de la commande en cours. Est-ce que vous êtes disponible pour en discuter ?",
+        "timestamp": "2026-03-10T14:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_001_02",
+        "senderId": "dev-freelance-1",
+        "sender": "me",
+        "content": "Bonjour Marie ! Oui bien sûr, je suis disponible. Quelles sont les modifications que vous souhaitez ?",
+        "timestamp": "2026-03-10T14:15:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_001_03",
+        "senderId": "dev-client-1",
+        "sender": "them",
+        "content": "Il faudrait ajouter une page de FAQ et revoir les couleurs de la section héro. J'ai préparé un document avec les détails.",
+        "timestamp": "2026-03-10T15:30:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_001_04",
+        "senderId": "dev-freelance-1",
+        "sender": "me",
+        "content": "Pas de problème, la page FAQ est simple à ajouter. Pour les couleurs, envoyez-moi vos préférences et je vous ferai une proposition avant de coder.",
+        "timestamp": "2026-03-10T16:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_001_05",
+        "senderId": "dev-client-1",
+        "sender": "them",
+        "content": "D'accord, je vous envoie le brief mis à jour ce soir.",
+        "timestamp": "2026-03-10T18:45:00.000Z",
+        "type": "text",
+        "read": false
+      }
+    ]
+  },
+  {
+    "id": "conv_002",
+    "participants": ["dev-freelance-1", "dev-agence-1"],
+    "contactName": "Tech Agency",
+    "contactAvatar": "",
+    "contactRole": "agence",
+    "lastMessage": "Super, on vous recontacte la semaine prochaine avec le brief complet.",
+    "lastMessageTime": "2026-03-09T11:00:00.000Z",
+    "unread": 0,
+    "online": false,
+    "messages": [
+      {
+        "id": "msg_002_01",
+        "senderId": "dev-agence-1",
+        "sender": "them",
+        "content": "Bonjour Jean, nous avons un projet de refonte d'application pour un de nos clients. Seriez-vous intéressé par une collaboration en sous-traitance ?",
+        "timestamp": "2026-03-09T09:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_002_02",
+        "senderId": "dev-freelance-1",
+        "sender": "me",
+        "content": "Bonjour ! Oui, ça m'intéresse beaucoup. Pouvez-vous me donner plus de détails sur le scope du projet et les technologies utilisées ?",
+        "timestamp": "2026-03-09T09:30:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_002_03",
+        "senderId": "dev-agence-1",
+        "sender": "them",
+        "content": "Super, on vous recontacte la semaine prochaine avec le brief complet.",
+        "timestamp": "2026-03-09T11:00:00.000Z",
+        "type": "text",
+        "read": true
+      }
+    ]
+  },
+  {
+    "id": "conv_003",
+    "participants": ["dev-client-1", "dev-freelance-1"],
+    "contactName": "Jean Dupont",
+    "contactAvatar": "",
+    "contactRole": "client",
+    "lastMessage": "Je peux vous proposer un forfait à 800€ avec livraison en 10 jours. Ça vous conviendrait ?",
+    "lastMessageTime": "2026-03-11T10:30:00.000Z",
+    "unread": 2,
+    "online": true,
+    "messages": [
+      {
+        "id": "msg_003_01",
+        "senderId": "dev-client-1",
+        "sender": "me",
+        "content": "Bonjour Jean, j'ai un nouveau projet de site vitrine pour mon entreprise. Seriez-vous disponible dans les prochaines semaines ?",
+        "timestamp": "2026-03-11T08:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_003_02",
+        "senderId": "dev-freelance-1",
+        "sender": "them",
+        "content": "Bonjour Marie ! Oui, je termine ma commande en cours cette semaine. Pouvez-vous me décrire votre besoin plus en détail ?",
+        "timestamp": "2026-03-11T08:30:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_003_03",
+        "senderId": "dev-client-1",
+        "sender": "me",
+        "content": "Il me faudrait un site responsive avec 5 pages : accueil, services, à propos, blog et contact. Design moderne et épuré. Budget autour de 700-900€.",
+        "timestamp": "2026-03-11T09:15:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_003_04",
+        "senderId": "dev-freelance-1",
+        "sender": "them",
+        "content": "Je peux vous proposer un forfait à 800€ avec livraison en 10 jours. Ça vous conviendrait ?",
+        "timestamp": "2026-03-11T10:30:00.000Z",
+        "type": "text",
+        "read": false
+      }
+    ]
+  },
+  {
+    "id": "conv_004",
+    "participants": ["dev-1772837012734", "dev-client-1"],
+    "contactName": "Marie Martin",
+    "contactAvatar": "",
+    "contactRole": "client",
+    "lastMessage": "Parfait, je valide la livraison dès que j'ai relu les articles. Merci Gildas !",
+    "lastMessageTime": "2026-03-10T17:20:00.000Z",
+    "unread": 1,
+    "online": true,
+    "orderId": "ORD-004",
+    "messages": [
+      {
+        "id": "msg_004_01",
+        "senderId": "dev-1772837012734",
+        "sender": "me",
+        "content": "Bonjour Marie, je viens de livrer les 5 premiers articles SEO pour votre blog. Vous les trouverez dans l'espace de livraison de la commande.",
+        "timestamp": "2026-03-10T15:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_004_02",
+        "senderId": "dev-client-1",
+        "sender": "them",
+        "content": "Merci Gildas ! Je vais les relire cet après-midi. Est-ce que les mots-clés que je vous avais envoyés sont bien intégrés dans chaque article ?",
+        "timestamp": "2026-03-10T16:00:00.000Z",
+        "type": "text",
+        "read": true
+      },
+      {
+        "id": "msg_004_03",
+        "senderId": "dev-client-1",
+        "sender": "them",
+        "content": "Parfait, je valide la livraison dès que j'ai relu les articles. Merci Gildas !",
+        "timestamp": "2026-03-10T17:20:00.000Z",
+        "type": "text",
+        "read": false
+      }
+    ]
+  }
+]

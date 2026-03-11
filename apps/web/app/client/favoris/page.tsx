@@ -1,174 +1,222 @@
 "use client";
 
-import { useState } from "react";
-import { useToastStore } from "@/store/dashboard";
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useClientStore } from "@/store/client";
+import { EmptyState } from "@/components/client/EmptyState";
+
+/* ------------------------------------------------------------------ */
+/* Constants                                                           */
+/* ------------------------------------------------------------------ */
 
 const TABS = [
   { key: "tous", label: "Tous", icon: "all_inclusive" },
-  { key: "logo", label: "Projet Logo", icon: "code" },
-  { key: "web", label: "Développement Web", icon: "code" },
-  { key: "redaction", label: "Rédaction Content", icon: "edit_note" },
-];
+  { key: "freelance", label: "Freelances", icon: "person" },
+  { key: "service", label: "Services", icon: "work" },
+  { key: "agence", label: "Agences", icon: "apartment" },
+] as const;
 
-const FREELANCERS = [
-  { name: "Jean D.", specialty: "Expert React", rating: 4.9, reviews: 120, verified: true },
-  { name: "Marie L.", specialty: "UI/UX Designer", rating: 5.0, reviews: 85, verified: true },
-  { name: "Dev Studio", specialty: "Fullstack Agency", rating: 4.8, reviews: 210, verified: false },
-  { name: "Sophie Design", specialty: "Illustratrice", rating: 4.9, reviews: 56, verified: true },
-];
+type TabKey = (typeof TABS)[number]["key"];
 
-const SERVICES = [
-  { title: "Design de Logo Minimaliste & Branding Premium", freelance: "Jean D.", rating: 4.9, reviews: 42, price: 250, image: "🎨" },
-  { title: "Landing Page Conversion-Optimisée (Figma/React)", freelance: "Marie L.", rating: 5.0, reviews: 18, price: 800, image: "🖥️" },
-  { title: "Illustrations Personnalisées pour SaaS & Blogs", freelance: "Sophie Design", rating: 4.8, reviews: 29, price: 150, image: "🌿" },
-];
+/* ------------------------------------------------------------------ */
+/* Skeleton                                                            */
+/* ------------------------------------------------------------------ */
 
-const LISTS = [
-  { name: "Projet Logo", count: 12, icon: "palette", color: "bg-primary/20" },
-  { name: "Développement Web", count: 5, icon: "laptop_mac", color: "bg-primary/20" },
-  { name: "Montage Vidéo", count: 3, icon: "movie", color: "bg-primary/20" },
-];
+function FavoriteCardSkeleton() {
+  return (
+    <div className="bg-neutral-dark rounded-xl border border-border-dark p-5 animate-pulse">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-full bg-border-dark flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-border-dark rounded w-1/3" />
+          <div className="h-3 bg-border-dark rounded w-1/2" />
+          <div className="h-3 bg-border-dark rounded w-1/4" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 
 export default function ClientFavorites() {
-  const [tab, setTab] = useState("tous");
-  const [favorites, setFavorites] = useState(FREELANCERS.map(f => f.name));
-  const { addToast } = useToastStore();
+  const [tab, setTab] = useState<TabKey>("tous");
 
-  function toggleFavorite(name: string) {
-    setFavorites(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
-    addToast("success", favorites.includes(name) ? "Retiré des favoris" : "Ajouté aux favoris");
-  }
+  const { favorites, syncFavorites, toggleFavorite, loading } = useClientStore();
 
-  function createList() {
-    const name = prompt("Nom de la nouvelle liste :");
-    if (name) addToast("success", `Liste "${name}" créée`);
-  }
+  // Sync favorites on mount
+  useEffect(() => {
+    syncFavorites();
+  }, [syncFavorites]);
+
+  // Filter favorites based on active tab
+  const filteredFavorites = useMemo(() => {
+    if (tab === "tous") return favorites;
+    return favorites.filter(f => f.type === tab);
+  }, [favorites, tab]);
+
+  // Count per type
+  const counts = useMemo(() => ({
+    tous: favorites.length,
+    freelance: favorites.filter(f => f.type === "freelance").length,
+    service: favorites.filter(f => f.type === "service").length,
+    agence: favorites.filter(f => f.type === "agence").length,
+  }), [favorites]);
+
+  // Get initials from name
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
+
+  // Get type icon
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "freelance": return "person";
+      case "service": return "work";
+      case "agence": return "apartment";
+      default: return "star";
+    }
+  };
+
+  // Get type label
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "freelance": return "Freelance";
+      case "service": return "Service";
+      case "agence": return "Agence";
+      default: return type;
+    }
+  };
+
+  // Format date
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+    } catch {
+      return "";
+    }
+  };
+
+  const isLoading = loading.favorites;
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Services et Freelances Favoris</h1>
-          <p className="text-slate-400 text-sm mt-1">Gérez vos prestataires et services sauvegardés pour vos futurs projets.</p>
-        </div>
-        <button onClick={createList} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all">
-          <span className="material-symbols-outlined text-lg">add</span>
-          Créer une nouvelle liste
-        </button>
+      <div>
+        <h1 className="text-3xl font-bold text-white">Favoris</h1>
+        <p className="text-slate-400 text-sm mt-1">Gerez vos prestataires et services sauvegardes pour vos futurs projets.</p>
       </div>
 
-      {/* Category tabs */}
+      {/* Tabs */}
       <div className="flex gap-4 border-b border-border-dark">
         {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={cn("flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors -mb-px", tab === t.key ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-300")}>
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors -mb-px",
+              tab === t.key ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-300"
+            )}
+          >
             <span className="material-symbols-outlined text-sm">{t.icon}</span>
             {t.label}
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+              tab === t.key ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500"
+            )}>
+              {counts[t.key]}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Freelances Favoris */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">group</span>
-            Freelances Favoris
-          </h2>
-          <button className="text-sm text-primary font-semibold hover:underline">Voir tout</button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FREELANCERS.map(f => (
-            <div key={f.name} className="bg-neutral-dark rounded-xl border border-border-dark p-5 text-center relative hover:border-primary/50 transition-colors">
-              <button onClick={() => toggleFavorite(f.name)} className="absolute top-3 right-3">
-                <span className={cn("material-symbols-outlined text-xl", favorites.includes(f.name) ? "text-primary" : "text-slate-600")} style={{ fontVariationSettings: favorites.includes(f.name) ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
-              </button>
-              <div className="relative inline-block mb-3">
-                <div className="w-24 h-24 rounded-full bg-primary/10 mx-auto flex items-center justify-center text-primary text-2xl font-bold">{f.name.split(" ").map(n => n[0]).join("")}</div>
-                {f.verified && (
-                  <span className="absolute bottom-0 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-background-dark text-sm">check</span>
-                  </span>
-                )}
-              </div>
-              <p className="font-bold text-white">{f.name}</p>
-              <p className="text-[11px] text-primary uppercase font-bold tracking-wider mt-0.5">{f.specialty}</p>
-              <div className="flex items-center justify-center gap-1 mt-2">
-                <span className="material-symbols-outlined text-yellow-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                <span className="text-sm font-bold text-white">{f.rating}</span>
-                <span className="text-xs text-slate-500">({f.reviews})</span>
-              </div>
-              <button className="mt-3 px-6 py-2 bg-border-dark text-white text-sm font-semibold rounded-lg hover:bg-primary hover:text-background-dark transition-colors">Profil</button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Services Sauvegardés */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">auto_awesome</span>
-            Services Sauvegardés
-          </h2>
-          <button className="text-sm text-primary font-semibold hover:underline">Voir tout</button>
-        </div>
+      {/* Content */}
+      {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {SERVICES.map(s => (
-            <div key={s.title} className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden hover:border-primary/50 transition-colors">
-              <div className="h-40 bg-background-dark flex items-center justify-center text-5xl relative">
-                {s.image}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">{s.freelance[0]}</div>
-                  <span className="text-xs text-white font-medium bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded">{s.freelance}</span>
+          {Array.from({ length: 6 }).map((_, i) => <FavoriteCardSkeleton key={i} />)}
+        </div>
+      ) : filteredFavorites.length === 0 ? (
+        <EmptyState
+          icon={tab === "tous" ? "favorite_border" : getTypeIcon(tab)}
+          title={tab === "tous" ? "Aucun favori" : `Aucun ${getTypeLabel(tab).toLowerCase()} en favoris`}
+          description="Explorez la marketplace et ajoutez des elements a vos favoris pour les retrouver ici."
+          actionLabel="Explorer"
+          actionHref="/client/explorer"
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredFavorites.map(fav => (
+            <div key={`${fav.type}-${fav.id}`} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/40 transition-all group relative">
+              {/* Type badge */}
+              <div className="absolute top-3 right-3 flex items-center gap-1">
+                <span className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                  fav.type === "freelance" ? "bg-blue-500/10 text-blue-400" :
+                  fav.type === "service" ? "bg-emerald-500/10 text-emerald-400" :
+                  "bg-purple-500/10 text-purple-400"
+                )}>
+                  {getTypeLabel(fav.type)}
+                </span>
+              </div>
+
+              {/* Avatar / Image */}
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "w-14 h-14 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0 overflow-hidden",
+                  fav.type === "agence" ? "rounded-xl" : "rounded-full",
+                  "bg-primary/20"
+                )}>
+                  {fav.avatar ? (
+                    <img src={fav.avatar} alt={fav.name} className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(fav.name)
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 pr-16">
+                  <h3 className="font-bold text-white text-sm line-clamp-2 group-hover:text-primary transition-colors">{fav.name}</h3>
+                  {fav.specialty && (
+                    <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{fav.specialty}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span className="text-sm font-bold text-white">{fav.rating.toFixed(1)}</span>
+                  </div>
+                  {fav.addedAt && (
+                    <p className="text-[10px] text-slate-500 mt-1.5">
+                      Ajoute le {formatDate(fav.addedAt)}
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-white text-sm line-clamp-2">{s.title}</h3>
-                <div className="flex items-center gap-1 mt-2">
-                  <span className="material-symbols-outlined text-yellow-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span className="text-sm font-bold text-white">{s.rating}</span>
-                  <span className="text-xs text-slate-500">({s.reviews})</span>
-                </div>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-border-dark">
-                  <span className="text-xs text-slate-500">À partir de</span>
-                  <span className="text-lg font-bold text-white">{s.price} €</span>
-                </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
+                <button
+                  onClick={() => toggleFavorite(fav.type, fav.targetId, fav.name, fav.avatar, fav.rating, fav.specialty)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                  Retirer
+                </button>
+                <Link
+                  href={
+                    fav.type === "service" ? `/services/${fav.targetId}` :
+                    fav.type === "agence" ? `/agences/${fav.targetId}` :
+                    `/freelances/${fav.targetId}`
+                  }
+                  className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary hover:text-background-dark transition-colors"
+                >
+                  {fav.type === "service" ? "Voir service" : fav.type === "agence" ? "Voir agence" : "Voir profil"}
+                </Link>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Listes de Projets */}
-      <div className="bg-primary/5 rounded-2xl border border-primary/10 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-white">Vos Listes de Projets</h2>
-            <p className="text-sm text-slate-400">Organisez vos favoris par type de projet.</p>
-          </div>
-          <button onClick={createList} className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-lg border border-primary/20 hover:bg-primary/20 transition-colors">
-            <span className="material-symbols-outlined text-sm">folder</span>
-            Nouvelle liste
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {LISTS.map(l => (
-            <button key={l.name} className="bg-neutral-dark rounded-xl border border-border-dark p-5 text-left hover:border-primary/40 transition-colors">
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-3", l.color)}>
-                <span className="material-symbols-outlined text-primary">{l.icon}</span>
-              </div>
-              <p className="font-bold text-white">{l.name}</p>
-              <p className="text-xs text-primary/60">{l.count} éléments sauvegardés</p>
-            </button>
-          ))}
-          <button onClick={createList} className="border-2 border-dashed border-border-dark rounded-xl p-5 text-center hover:border-primary/40 transition-colors flex flex-col items-center justify-center">
-            <span className="material-symbols-outlined text-2xl text-slate-500 mb-1">add</span>
-            <p className="text-sm text-slate-500 font-medium">Ajouter</p>
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

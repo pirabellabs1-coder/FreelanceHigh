@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,7 @@ interface PortfolioProject {
 }
 
 // ---------------------------------------------------------------------------
-// Demo data
+// UI config (not data)
 // ---------------------------------------------------------------------------
 const GRADIENTS = [
   "from-violet-600 to-indigo-700",
@@ -44,118 +44,38 @@ const CATEGORIES = [
   "Branding",
 ];
 
-const INITIAL_PROJECTS: PortfolioProject[] = [
-  {
-    id: "1",
-    title: "Plateforme E-commerce AfriShop",
-    category: "E-commerce",
-    client: "AfriShop SARL",
-    description:
-      "Marketplace multi-vendeurs avec paiement Mobile Money, gestion de stocks en temps réel et tableau de bord marchand complet.",
-    date: "2026-02-15",
-    skills: ["Next.js", "Stripe", "CinetPay", "PostgreSQL"],
-    link: "https://afrishop.example.com",
-    featured: true,
-    gradient: GRADIENTS[0],
-  },
-  {
-    id: "2",
-    title: "Application Mobile FinTech",
-    category: "Mobile",
-    client: "QuickPay CI",
-    description:
-      "Application mobile de transfert d'argent avec KYC intégré, conversion multi-devises et notifications push.",
-    date: "2026-01-28",
-    skills: ["React Native", "Node.js", "Firebase", "Stripe"],
-    link: "https://quickpay.example.com",
-    featured: true,
-    gradient: GRADIENTS[1],
-  },
-  {
-    id: "3",
-    title: "Refonte Identité Visuelle ONG",
-    category: "Branding",
-    client: "Fondation Espoir",
-    description:
-      "Création complète de l'identité visuelle : logo, charte graphique, papeterie et guide de marque digital.",
-    date: "2026-01-10",
-    skills: ["Illustrator", "Figma", "InDesign", "Photoshop"],
-    featured: true,
-    gradient: GRADIENTS[2],
-  },
-  {
-    id: "4",
-    title: "Dashboard Analytics RH",
-    category: "Développement",
-    client: "TalentPulse",
-    description:
-      "Tableau de bord RH avec visualisations interactives, rapports PDF générés automatiquement et intégration SIRH.",
-    date: "2025-12-20",
-    skills: ["React", "D3.js", "Python", "PostgreSQL"],
-    gradient: GRADIENTS[3],
-    featured: false,
-  },
-  {
-    id: "5",
-    title: "Campagne SEO & Content Marketing",
-    category: "Marketing",
-    client: "GreenLogistics",
-    description:
-      "Stratégie SEO complète avec audit technique, optimisation on-page, link building et création de 30 articles de blog.",
-    date: "2025-12-05",
-    skills: ["SEO", "Google Ads", "Analytics", "Rédaction"],
-    gradient: GRADIENTS[4],
-    featured: false,
-  },
-  {
-    id: "6",
-    title: "Site Vitrine Cabinet d'Avocats",
-    category: "Développement",
-    client: "Cabinet Diallo & Associés",
-    description:
-      "Site web responsive avec prise de rendez-vous en ligne, blog juridique et espace client sécurisé.",
-    date: "2025-11-18",
-    skills: ["Next.js", "Tailwind", "Supabase", "Calendly"],
-    gradient: GRADIENTS[5],
-    featured: false,
-  },
-  {
-    id: "7",
-    title: "UI/UX App de Livraison",
-    category: "Design",
-    client: "DakarExpress",
-    description:
-      "Design complet d'une application de livraison : wireframes, maquettes haute fidélité, prototypage interactif et design system.",
-    date: "2025-11-02",
-    skills: ["Figma", "Prototypage", "Design System", "User Research"],
-    gradient: GRADIENTS[6],
-    featured: false,
-  },
-  {
-    id: "8",
-    title: "Boutique en ligne Mode Africaine",
-    category: "E-commerce",
-    client: "Wax & Style",
-    description:
-      "E-commerce Shopify headless avec galerie lookbook, configurateur de tissu et livraison multi-pays.",
-    date: "2025-10-15",
-    skills: ["Shopify", "React", "Cloudinary", "Stripe"],
-    link: "https://waxstyle.example.com",
-    gradient: GRADIENTS[7],
-    featured: false,
-  },
-];
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 export default function AgencePortfolio() {
-  const [projects, setProjects] = useState<PortfolioProject[]>(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState<PortfolioProject[]>([]);
   const [filterCat, setFilterCat] = useState("Tous");
   const [showAdd, setShowAdd] = useState(false);
   const [editProject, setEditProject] = useState<PortfolioProject | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const { addToast } = useToastStore();
+
+  // Fetch portfolio from API on mount — stay empty on error
+  useEffect(() => {
+    async function fetchPortfolio() {
+      try {
+        const res = await fetch("/api/agency/portfolio");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(
+            data.map((p: PortfolioProject, i: number) => ({
+              ...p,
+              gradient: p.gradient || GRADIENTS[i % GRADIENTS.length],
+            }))
+          );
+        }
+      } catch {
+        // Silently stay empty
+      }
+    }
+    fetchPortfolio();
+  }, []);
 
   // Form state shared by add & edit
   const emptyForm = {
@@ -353,6 +273,29 @@ export default function AgencePortfolio() {
         ))}
       </div>
 
+      {/* Empty state when no projects at all */}
+      {projects.length === 0 && (
+        <div className="text-center py-20">
+          <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">
+            photo_library
+          </span>
+          <h2 className="text-lg font-bold text-white mb-2">
+            Aucun projet dans votre portfolio
+          </h2>
+          <p className="text-sm text-slate-400 mb-6 max-w-md mx-auto">
+            Mettez en valeur les réalisations de votre agence en ajoutant vos
+            premiers projets. Ils seront visibles sur votre profil public.
+          </p>
+          <button
+            onClick={openAdd}
+            className="px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 inline-flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Ajouter votre premier projet
+          </button>
+        </div>
+      )}
+
       {/* Featured projects */}
       {featured.length > 0 && (
         <div>
@@ -448,153 +391,158 @@ export default function AgencePortfolio() {
         </div>
       )}
 
-      {/* Category filter */}
-      <div className="flex gap-2 flex-wrap">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setFilterCat(cat)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
-              filterCat === cat
-                ? "bg-primary text-background-dark"
-                : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* All projects grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map((p, idx) => (
-          <div
-            key={p.id}
-            className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden group"
-          >
-            {/* Gradient thumbnail */}
-            <div
-              className={cn(
-                "h-28 bg-gradient-to-br flex items-end p-3 relative",
-                p.gradient
-              )}
-            >
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => moveProject(p.id, "up")}
-                  className="p-1 bg-black/40 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/60 transition-colors"
-                  title="Monter"
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    arrow_upward
-                  </span>
-                </button>
-                <button
-                  onClick={() => moveProject(p.id, "down")}
-                  className="p-1 bg-black/40 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/60 transition-colors"
-                  title="Descendre"
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    arrow_downward
-                  </span>
-                </button>
-                <button
-                  onClick={() => toggleFeatured(p.id)}
-                  className={cn(
-                    "p-1 bg-black/40 backdrop-blur-sm rounded-lg hover:bg-black/60 transition-colors",
-                    p.featured
-                      ? "text-amber-400"
-                      : "text-white/60 hover:text-amber-400"
-                  )}
-                  title="Mettre en vedette"
-                >
-                  <span className="material-symbols-outlined text-sm">
-                    star
-                  </span>
-                </button>
-              </div>
-              <span className="text-white/80 text-[10px] font-semibold bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-lg">
-                {p.category}
-              </span>
-            </div>
-
-            <div className="p-4">
-              <h3 className="font-bold text-white text-sm mb-1 line-clamp-1">
-                {p.title}
-              </h3>
-              <p className="text-xs text-primary mb-1">{p.client}</p>
-              <p className="text-xs text-slate-400 line-clamp-2 mb-3">
-                {p.description}
-              </p>
-              <div className="flex flex-wrap gap-1 mb-3">
-                {p.skills.slice(0, 3).map((sk) => (
-                  <span
-                    key={sk}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium"
-                  >
-                    {sk}
-                  </span>
-                ))}
-                {p.skills.length > 3 && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-border-dark text-slate-400 font-medium">
-                    +{p.skills.length - 3}
-                  </span>
+      {/* Category filter & grid — only show when there are projects */}
+      {projects.length > 0 && (
+        <>
+          {/* Category filter */}
+          <div className="flex gap-2 flex-wrap">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+                  filterCat === cat
+                    ? "bg-primary text-background-dark"
+                    : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
                 )}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-500">
-                  {new Date(p.date).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "short",
-                  })}
-                </span>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {p.link && (
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* All projects grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filtered.map((p) => (
+              <div
+                key={p.id}
+                className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden group"
+              >
+                {/* Gradient thumbnail */}
+                <div
+                  className={cn(
+                    "h-28 bg-gradient-to-br flex items-end p-3 relative",
+                    p.gradient
+                  )}
+                >
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => {
-                        addToast("info", `Ouverture de ${p.link}`);
-                      }}
-                      className="p-1.5 text-slate-500 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors"
+                      onClick={() => moveProject(p.id, "up")}
+                      className="p-1 bg-black/40 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                      title="Monter"
                     >
                       <span className="material-symbols-outlined text-sm">
-                        open_in_new
+                        arrow_upward
                       </span>
                     </button>
-                  )}
-                  <button
-                    onClick={() => openEdit(p)}
-                    className="p-1.5 text-slate-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      edit
+                    <button
+                      onClick={() => moveProject(p.id, "down")}
+                      className="p-1 bg-black/40 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                      title="Descendre"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        arrow_downward
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => toggleFeatured(p.id)}
+                      className={cn(
+                        "p-1 bg-black/40 backdrop-blur-sm rounded-lg hover:bg-black/60 transition-colors",
+                        p.featured
+                          ? "text-amber-400"
+                          : "text-white/60 hover:text-amber-400"
+                      )}
+                      title="Mettre en vedette"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        star
+                      </span>
+                    </button>
+                  </div>
+                  <span className="text-white/80 text-[10px] font-semibold bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-lg">
+                    {p.category}
+                  </span>
+                </div>
+
+                <div className="p-4">
+                  <h3 className="font-bold text-white text-sm mb-1 line-clamp-1">
+                    {p.title}
+                  </h3>
+                  <p className="text-xs text-primary mb-1">{p.client}</p>
+                  <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                    {p.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {p.skills.slice(0, 3).map((sk) => (
+                      <span
+                        key={sk}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium"
+                      >
+                        {sk}
+                      </span>
+                    ))}
+                    {p.skills.length > 3 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-border-dark text-slate-400 font-medium">
+                        +{p.skills.length - 3}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500">
+                      {new Date(p.date).toLocaleDateString("fr-FR", {
+                        year: "numeric",
+                        month: "short",
+                      })}
                     </span>
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(p.id)}
-                    className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      delete
-                    </span>
-                  </button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {p.link && (
+                        <button
+                          onClick={() => {
+                            addToast("info", `Ouverture de ${p.link}`);
+                          }}
+                          className="p-1.5 text-slate-500 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            open_in_new
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openEdit(p)}
+                        className="p-1.5 text-slate-500 hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          edit
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(p.id)}
+                        className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          delete
+                        </span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
+            ))}
 
-        {filtered.length === 0 && (
-          <div className="col-span-full text-center py-16">
-            <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">
-              photo_library
-            </span>
-            <p className="text-slate-400">
-              Aucun projet dans cette catégorie.
-            </p>
+            {filtered.length === 0 && (
+              <div className="col-span-full text-center py-16">
+                <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">
+                  photo_library
+                </span>
+                <p className="text-slate-400">
+                  Aucun projet dans cette catégorie.
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* ---- Add / Edit modal ---- */}
       {showAdd && (

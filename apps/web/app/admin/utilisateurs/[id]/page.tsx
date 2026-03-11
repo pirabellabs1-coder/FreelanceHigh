@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { usePlatformDataStore } from "@/store/platform-data";
+import { useAdminStore, type AdminUser } from "@/store/admin";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/dashboard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -28,7 +28,43 @@ const PLAN_LABELS: Record<string, { label: string; color: string }> = {
   agence: { label: "Agence", color: "bg-amber-500/20 text-amber-400" },
 };
 
-type Tab = "info" | "orders" | "services" | "transactions" | "audit";
+type Tab = "info" | "orders" | "transactions" | "audit";
+
+function getInitials(name: string): string {
+  return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function SkeletonBlock() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="bg-neutral-dark border border-border-dark rounded-xl p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-full bg-border-dark animate-pulse" />
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-40 bg-border-dark rounded animate-pulse" />
+                <div className="h-5 w-16 bg-border-dark rounded-full animate-pulse" />
+                <div className="h-5 w-16 bg-border-dark rounded-full animate-pulse" />
+              </div>
+              <div className="h-4 w-48 bg-border-dark/60 rounded animate-pulse" />
+              <div className="h-3 w-72 bg-border-dark/40 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-border-dark">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="text-center space-y-2">
+              <div className="h-7 w-20 bg-border-dark rounded animate-pulse mx-auto" />
+              <div className="h-3 w-24 bg-border-dark/60 rounded animate-pulse mx-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,17 +72,26 @@ export default function UserDetailPage() {
   const addToast = useToastStore((s) => s.addToast);
 
   const {
-    users, orders, services, transactions, auditLog,
+    users, orders, transactions, auditLog, loading,
+    syncUsers, syncOrders, syncFinances, syncAuditLog,
     suspendUser, banUser, reactivateUser,
-    changeUserRole, changeUserPlan, verifyUserKyc,
-    logAudit,
-  } = usePlatformDataStore();
+    changeUserRole, changeUserPlan, approveKyc,
+  } = useAdminStore();
 
   const { startImpersonation } = useAuthStore();
 
+  // Sync data on mount if not already loaded
+  useEffect(() => {
+    if (users.length === 0) syncUsers();
+    if (orders.length === 0) syncOrders();
+    if (transactions.length === 0) syncFinances();
+    if (auditLog.length === 0) syncAuditLog();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isLoading = loading.users && users.length === 0;
+
   const user = useMemo(() => users.find((u) => u.id === id), [users, id]);
   const userOrders = useMemo(() => orders.filter((o) => o.freelanceId === id || o.clientId === id), [orders, id]);
-  const userServices = useMemo(() => services.filter((s) => s.freelanceId === id), [services, id]);
   const userTransactions = useMemo(() => transactions.filter((t) => t.userId === id), [transactions, id]);
   const userAuditEntries = useMemo(
     () => auditLog.filter((e) => e.targetUserId === id),
@@ -57,6 +102,22 @@ export default function UserDetailPage() {
   const [modal, setModal] = useState<"suspend" | "ban" | "reset" | "impersonate" | null>(null);
   const [suspendReason, setSuspendReason] = useState("");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <button onClick={() => router.push("/admin/utilisateurs")} className="hover:text-primary transition-colors flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Utilisateurs
+          </button>
+          <span>/</span>
+          <div className="h-4 w-24 bg-border-dark rounded animate-pulse" />
+        </div>
+        <SkeletonBlock />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -74,30 +135,32 @@ export default function UserDetailPage() {
   const statusInfo = STATUS_LABELS[user.status] ?? STATUS_LABELS.actif;
   const planInfo = PLAN_LABELS[user.plan] ?? PLAN_LABELS.gratuit;
 
-  // Stats
-  const totalEarnings = userTransactions
-    .filter((t) => t.type === "paiement" && t.status === "complete")
-    .reduce((s, t) => s + t.amount, 0);
-  const completedOrders = userOrders.filter((o) => o.status === "termine").length;
+  // Stats from AdminUser fields
+  const totalEarnings = user.revenue;
+  const totalSpent = user.totalSpent;
+  const ordersCount = user.ordersCount;
   const activeOrders = userOrders.filter((o) => ["en_cours", "en_attente", "revision"].includes(o.status)).length;
 
-  function handleSuspend() {
+  async function handleSuspend() {
     if (!suspendReason.trim()) return;
-    suspendUser(id, suspendReason);
-    addToast("success", `${user!.name} a ete suspendu.`);
+    const ok = await suspendUser(id);
+    if (ok) addToast("success", `${user!.name} a ete suspendu.`);
+    else addToast("error", "Erreur lors de la suspension.");
     setSuspendReason("");
     setModal(null);
   }
 
-  function handleBan() {
-    banUser(id);
-    addToast("success", `${user!.name} a ete banni.`);
+  async function handleBan() {
+    const ok = await banUser(id);
+    if (ok) addToast("success", `${user!.name} a ete banni.`);
+    else addToast("error", "Erreur lors du bannissement.");
     setModal(null);
   }
 
-  function handleReactivate() {
-    reactivateUser(id);
-    addToast("success", `${user!.name} a ete reactive.`);
+  async function handleReactivate() {
+    const ok = await reactivateUser(id);
+    if (ok) addToast("success", `${user!.name} a ete reactive.`);
+    else addToast("error", "Erreur lors de la reactivation.");
   }
 
   async function handleResetPassword() {
@@ -110,10 +173,6 @@ export default function UserDetailPage() {
       const data = await res.json();
       if (res.ok) {
         setTempPassword(data.tempPassword);
-        logAudit({
-          adminId: "admin-1", adminName: "Admin Principal",
-          action: "reset_password", targetUserId: id, targetUserName: user!.name,
-        });
         addToast("success", "Mot de passe reinitialise.");
       } else {
         addToast("error", data.error || "Erreur");
@@ -128,10 +187,6 @@ export default function UserDetailPage() {
       addToast("error", "Impossible d'impersonner un admin.");
       return;
     }
-    logAudit({
-      adminId: "admin-1", adminName: "Admin Principal",
-      action: "impersonate", targetUserId: id, targetUserName: user!.name,
-    });
     startImpersonation({
       id: user!.id,
       name: user!.name,
@@ -150,7 +205,6 @@ export default function UserDetailPage() {
   const TABS: { key: Tab; label: string; icon: string; count?: number }[] = [
     { key: "info", label: "Informations", icon: "person" },
     { key: "orders", label: "Commandes", icon: "shopping_cart", count: userOrders.length },
-    { key: "services", label: "Services", icon: "work", count: userServices.length },
     { key: "transactions", label: "Transactions", icon: "payments", count: userTransactions.length },
     { key: "audit", label: "Historique admin", icon: "history", count: userAuditEntries.length },
   ];
@@ -172,7 +226,7 @@ export default function UserDetailPage() {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-xl font-bold text-primary">
-              {user.avatar}
+              {getInitials(user.name)}
             </div>
             <div>
               <div className="flex items-center gap-3 mb-1">
@@ -185,11 +239,11 @@ export default function UserDetailPage() {
               </div>
               <p className="text-slate-400 text-sm">{user.email}</p>
               <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                <span>{user.countryFlag} {user.country}</span>
-                <span>KYC: Niveau {user.kyc}</span>
+                <span>{user.country}</span>
+                <span>KYC: Niveau {user.kycLevel}</span>
                 <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-semibold", planInfo.color)}>Plan {planInfo.label}</span>
-                <span>Inscrit le {user.registeredAt}</span>
-                <span>Derniere connexion: {user.lastLogin}</span>
+                <span>Inscrit le {new Date(user.createdAt).toLocaleDateString("fr-FR")}</span>
+                <span>Derniere connexion: {new Date(user.lastLoginAt).toLocaleDateString("fr-FR")}</span>
               </div>
             </div>
           </div>
@@ -249,16 +303,16 @@ export default function UserDetailPage() {
             <p className="text-xs text-slate-500">Revenus totaux</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-white">{completedOrders}</p>
-            <p className="text-xs text-slate-500">Commandes terminees</p>
+            <p className="text-2xl font-bold text-white">{totalSpent.toLocaleString()} EUR</p>
+            <p className="text-xs text-slate-500">Total depense</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-white">{ordersCount}</p>
+            <p className="text-xs text-slate-500">Commandes totales</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-primary">{activeOrders}</p>
             <p className="text-xs text-slate-500">Commandes actives</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-white">{userServices.length}</p>
-            <p className="text-xs text-slate-500">Services</p>
           </div>
         </div>
       </div>
@@ -298,13 +352,10 @@ export default function UserDetailPage() {
               <div className="flex justify-between"><span className="text-slate-500">Email</span><span className="text-white">{user.email}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Role</span><span className={cn("px-2 py-0.5 rounded-full text-xs font-semibold", roleInfo.color)}>{roleInfo.label}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Plan</span><span className={cn("px-2 py-0.5 rounded-full text-xs font-semibold", planInfo.color)}>{planInfo.label}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Pays</span><span className="text-white">{user.countryFlag} {user.country}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">KYC</span><span className="text-white">Niveau {user.kyc}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Inscription</span><span className="text-white">{user.registeredAt}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Derniere connexion</span><span className="text-white">{user.lastLogin}</span></div>
-              {user.suspendReason && (
-                <div className="flex justify-between"><span className="text-slate-500">Raison suspension</span><span className="text-amber-400">{user.suspendReason}</span></div>
-              )}
+              <div className="flex justify-between"><span className="text-slate-500">Pays</span><span className="text-white">{user.country}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">KYC</span><span className="text-white">Niveau {user.kycLevel}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Inscription</span><span className="text-white">{new Date(user.createdAt).toLocaleDateString("fr-FR")}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Derniere connexion</span><span className="text-white">{new Date(user.lastLoginAt).toLocaleDateString("fr-FR")}</span></div>
             </div>
           </div>
 
@@ -319,9 +370,10 @@ export default function UserDetailPage() {
                 <label className="block text-xs text-slate-500 mb-1">Changer le role</label>
                 <select
                   value={user.role}
-                  onChange={(e) => {
-                    changeUserRole(id, e.target.value as "freelance" | "client" | "agence" | "admin");
-                    addToast("success", `Role change en ${e.target.value}`);
+                  onChange={async (e) => {
+                    const ok = await changeUserRole(id, e.target.value);
+                    if (ok) addToast("success", `Role change en ${e.target.value}`);
+                    else addToast("error", "Erreur lors du changement de role");
                   }}
                   className="w-full px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary appearance-none"
                 >
@@ -335,9 +387,10 @@ export default function UserDetailPage() {
                 <label className="block text-xs text-slate-500 mb-1">Changer le plan</label>
                 <select
                   value={user.plan}
-                  onChange={(e) => {
-                    changeUserPlan(id, e.target.value as "gratuit" | "pro" | "business" | "agence");
-                    addToast("success", `Plan change en ${e.target.value}`);
+                  onChange={async (e) => {
+                    const ok = await changeUserPlan(id, e.target.value);
+                    if (ok) addToast("success", `Plan change en ${e.target.value}`);
+                    else addToast("error", "Erreur lors du changement de plan");
                   }}
                   className="w-full px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary appearance-none"
                 >
@@ -350,10 +403,11 @@ export default function UserDetailPage() {
               <div>
                 <label className="block text-xs text-slate-500 mb-1">Niveau KYC</label>
                 <select
-                  value={user.kyc}
-                  onChange={(e) => {
-                    verifyUserKyc(id, parseInt(e.target.value));
-                    addToast("success", `KYC verifie au niveau ${e.target.value}`);
+                  value={user.kycLevel}
+                  onChange={async (e) => {
+                    const ok = await approveKyc(id, parseInt(e.target.value));
+                    if (ok) addToast("success", `KYC verifie au niveau ${e.target.value}`);
+                    else addToast("error", "Erreur lors de la mise a jour du KYC");
                   }}
                   className="w-full px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary appearance-none"
                 >
@@ -399,39 +453,6 @@ export default function UserDetailPage() {
         </div>
       )}
 
-      {activeTab === "services" && (
-        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
-          {userServices.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">Aucun service</div>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border-dark text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Titre</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Categorie</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Prix</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Statut</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Vues</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Commandes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userServices.map((s) => (
-                  <tr key={s.id} className="border-b border-border-dark/50 hover:bg-background-dark/30">
-                    <td className="px-4 py-3 text-sm text-white font-medium">{s.title}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{s.category}</td>
-                    <td className="px-4 py-3 text-sm font-bold text-white">{s.price} EUR</td>
-                    <td className="px-4 py-3"><span className="text-xs font-semibold capitalize">{s.status}</span></td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{s.views}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{s.orders}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
       {activeTab === "transactions" && (
         <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
           {userTransactions.length === 0 ? (
@@ -441,6 +462,7 @@ export default function UserDetailPage() {
               <thead>
                 <tr className="border-b border-border-dark text-left">
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Type</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Description</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Montant</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Statut</th>
                   <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Methode</th>
@@ -451,9 +473,10 @@ export default function UserDetailPage() {
                 {userTransactions.map((t) => (
                   <tr key={t.id} className="border-b border-border-dark/50 hover:bg-background-dark/30">
                     <td className="px-4 py-3 text-sm capitalize">{t.type}</td>
+                    <td className="px-4 py-3 text-sm text-slate-300 truncate max-w-[200px]">{t.description}</td>
                     <td className="px-4 py-3 text-sm font-bold text-white">{t.amount} EUR</td>
                     <td className="px-4 py-3"><span className="text-xs font-semibold capitalize">{t.status.replace("_", " ")}</span></td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{t.method ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400">{t.method ?? "---"}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">{t.date}</td>
                   </tr>
                 ))}
@@ -484,9 +507,7 @@ export default function UserDetailPage() {
                       <span className="font-semibold text-primary">{entry.action.replace(/_/g, " ")}</span>
                     </p>
                     {entry.details && (
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {Object.entries(entry.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}
-                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">{entry.details}</p>
                     )}
                   </div>
                   <span className="text-xs text-slate-500">

@@ -2,20 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
-const HERO_CATEGORIES = [
-  { value: "", label: "Toutes les catégories" },
-  { value: "design-crea", label: "Design & Créatif" },
-  { value: "developpement", label: "Développement & Tech" },
-  { value: "marketing", label: "Marketing Digital" },
-  { value: "redaction", label: "Rédaction & Traduction" },
-  { value: "video", label: "Vidéo & Animation" },
-  { value: "musique", label: "Musique & Audio" },
-  { value: "business", label: "Business & Conseil" },
-  { value: "ia-data", label: "IA & Data Science" },
+const HERO_CATEGORY_SLUGS = [
+  "design-crea",
+  "developpement",
+  "marketing",
+  "redaction",
+  "video",
+  "musique",
+  "business",
+  "ia-data",
 ];
 
-const POPULAR_SEARCHES = [
+const POPULAR_SEARCH_KEYS = [
   "Logo Design",
   "Site WordPress",
   "App Mobile",
@@ -29,6 +29,7 @@ export function HeroSection() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const t = useTranslations("landing.hero");
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -59,19 +60,17 @@ export function HeroSection() {
           {/* Content */}
           <div className="relative z-10 max-w-3xl space-y-8">
             <span className="inline-block px-4 py-1.5 rounded-full bg-accent/20 text-accent text-xs font-bold uppercase tracking-wider border border-accent/30">
-              +25 000 freelances prêts à démarrer
+              {t("badge")}
             </span>
 
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
-              Trouvez le{" "}
-              <span className="text-primary">freelance parfait</span> pour
-              chaque <span className="text-accent">projet</span>
+              {t("title_1")}{" "}
+              <span className="text-primary">{t("title_highlight")}</span> {t("title_2")}{" "}
+              <span className="text-accent">{t("title_accent")}</span>
             </h1>
 
             <p className="text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed">
-              Des experts vérifiés en design, développement, marketing et bien
-              plus. Collaborez en toute confiance avec un paiement 100%
-              sécurisé.
+              {t("subtitle")}
             </p>
 
             {/* Search & Filter bar */}
@@ -89,9 +88,10 @@ export function HeroSection() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="appearance-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl pl-10 pr-8 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 ring-primary/50 cursor-pointer w-full sm:w-[200px]"
                 >
-                  {HERO_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
+                  <option value="">{t("all_categories")}</option>
+                  {HERO_CATEGORY_SLUGS.map((slug) => (
+                    <option key={slug} value={slug}>
+                      {t(`categories.${slug}`)}
                     </option>
                   ))}
                 </select>
@@ -107,7 +107,7 @@ export function HeroSection() {
                 </span>
                 <input
                   className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder:text-slate-400 text-base py-4 min-w-0"
-                  placeholder="Ex: logo, site web, app mobile..."
+                  placeholder={t("search_placeholder")}
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -118,16 +118,16 @@ export function HeroSection() {
                 type="submit"
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg whitespace-nowrap"
               >
-                Rechercher
+                {t("search_button")}
               </button>
             </form>
 
             {/* Popular searches */}
             <div className="flex items-center gap-3 flex-wrap pt-2">
               <span className="text-xs text-slate-400 font-semibold">
-                Populaires :
+                {t("popular_label")}
               </span>
-              {POPULAR_SEARCHES.map((tag) => (
+              {POPULAR_SEARCH_KEYS.map((tag) => (
                 <button
                   key={tag}
                   type="button"

@@ -3,20 +3,38 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES: Record<string, { name: string; icon: string; description: string }> = {
-  "developpement-web": { name: "Développement Web", icon: "code", description: "Sites web, applications, e-commerce et développement sur mesure" },
-  "design-ui-ux": { name: "Design UI/UX", icon: "palette", description: "Interfaces utilisateur, expérience utilisateur, prototypage et design system" },
-  "marketing-digital": { name: "Marketing Digital", icon: "campaign", description: "SEO, réseaux sociaux, publicité en ligne et stratégie digitale" },
-  "redaction": { name: "Rédaction", icon: "edit_note", description: "Copywriting, articles, contenus web et rédaction technique" },
-  "traduction": { name: "Traduction", icon: "translate", description: "Traduction professionnelle, localisation et interprétation" },
-  "video-animation": { name: "Vidéo & Animation", icon: "videocam", description: "Montage vidéo, motion design, animation 2D/3D" },
-  "ia-data": { name: "IA & Data", icon: "psychology", description: "Intelligence artificielle, machine learning, analyse de données" },
-  "mobile": { name: "Mobile", icon: "smartphone", description: "Applications iOS, Android, React Native et Flutter" },
-  "seo": { name: "SEO", icon: "search", description: "Référencement naturel, audit SEO, optimisation technique" },
-  "cybersecurite": { name: "Cybersécurité", icon: "security", description: "Audit de sécurité, pentest, protection des données" },
+const CATEGORY_SLUGS = [
+  "developpement-web",
+  "design-ui-ux",
+  "marketing-digital",
+  "redaction",
+  "traduction",
+  "video-animation",
+  "ia-data",
+  "mobile",
+  "seo",
+  "cybersecurite",
+] as const;
+
+const CATEGORY_ICONS: Record<string, string> = {
+  "developpement-web": "code",
+  "design-ui-ux": "palette",
+  "marketing-digital": "campaign",
+  "redaction": "edit_note",
+  "traduction": "translate",
+  "video-animation": "videocam",
+  "ia-data": "psychology",
+  "mobile": "smartphone",
+  "seo": "search",
+  "cybersecurite": "security",
 };
+
+function getCategoryTranslationKey(slug: string): string {
+  return `cat_${slug.replace(/-/g, "_")}`;
+}
 
 const DEMO_SERVICES = [
   { id: "1", title: "Site e-commerce complet avec Shopify", category: "developpement-web", price: 450, rating: 4.9, reviews: 127, seller: "Amadou D.", level: "Top Rated", delivery: 7, image: "code" },
@@ -40,7 +58,11 @@ const DEMO_SERVICES = [
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
-  const category = CATEGORIES[slug];
+  const t = useTranslations("category_page");
+  const isValidCategory = CATEGORY_SLUGS.includes(slug as typeof CATEGORY_SLUGS[number]);
+  const categoryIcon = CATEGORY_ICONS[slug];
+  const categoryNameKey = getCategoryTranslationKey(slug);
+  const categoryDescKey = `${categoryNameKey}_desc`;
   const [sortBy, setSortBy] = useState("pertinence");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -53,58 +75,61 @@ export default function CategoryPage() {
     return filtered;
   }, [slug, sortBy]);
 
-  if (!category) {
+  if (!isValidCategory) {
     return (
       <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
         <div className="text-center">
           <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
-          <h2 className="text-xl font-bold mb-2">Catégorie introuvable</h2>
-          <Link href="/explorer" className="text-primary hover:underline">Retour au marketplace</Link>
+          <h2 className="text-xl font-bold mb-2">{t("not_found_title")}</h2>
+          <Link href="/explorer" className="text-primary hover:underline">{t("back_to_marketplace")}</Link>
         </div>
       </div>
     );
   }
+
+  const categoryName = t(categoryNameKey);
+  const categoryDescription = t(categoryDescKey);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-          <Link href="/" className="hover:text-primary">Accueil</Link>
+          <Link href="/" className="hover:text-primary">{t("breadcrumb_home")}</Link>
           <span>/</span>
-          <Link href="/explorer" className="hover:text-primary">Explorer</Link>
+          <Link href="/explorer" className="hover:text-primary">{t("breadcrumb_explorer")}</Link>
           <span>/</span>
-          <span className="text-slate-800 dark:text-white font-medium">{category.name}</span>
+          <span className="text-slate-800 dark:text-white font-medium">{categoryName}</span>
         </nav>
 
         {/* Category header */}
         <div className="bg-white dark:bg-neutral-dark rounded-2xl p-8 border border-slate-200 dark:border-border-dark mb-8">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl text-primary">{category.icon}</span>
+              <span className="material-symbols-outlined text-3xl text-primary">{categoryIcon}</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{category.name}</h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">{category.description}</p>
-              <p className="text-sm text-primary font-semibold mt-1">{services.length} services disponibles</p>
+              <h1 className="text-2xl font-bold">{categoryName}</h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">{categoryDescription}</p>
+              <p className="text-sm text-primary font-semibold mt-1">{t("services_available", { count: String(services.length) })}</p>
             </div>
           </div>
         </div>
 
         {/* Sort bar */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-slate-500">{services.length} résultats</p>
+          <p className="text-sm text-slate-500">{t("results_count", { count: String(services.length) })}</p>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Trier par :</span>
+            <span className="text-sm text-slate-500">{t("sort_by")}</span>
             {[
-              { key: "pertinence", label: "Pertinence" },
-              { key: "prix-asc", label: "Prix ↑" },
-              { key: "prix-desc", label: "Prix ↓" },
-              { key: "note", label: "Note" },
-              { key: "populaire", label: "Populaire" },
+              { key: "pertinence", labelKey: "sort_pertinence" },
+              { key: "prix-asc", labelKey: "sort_price_asc" },
+              { key: "prix-desc", labelKey: "sort_price_desc" },
+              { key: "note", labelKey: "sort_rating" },
+              { key: "populaire", labelKey: "sort_popular" },
             ].map(s => (
               <button key={s.key} onClick={() => setSortBy(s.key)} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors", sortBy === s.key ? "bg-primary text-white" : "bg-slate-100 dark:bg-neutral-dark text-slate-600 dark:text-slate-400 hover:bg-slate-200")}>
-                {s.label}
+                {t(s.labelKey)}
               </button>
             ))}
           </div>
@@ -114,7 +139,7 @@ export default function CategoryPage() {
         {services.length === 0 ? (
           <div className="text-center py-20">
             <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">inbox</span>
-            <p className="text-lg font-semibold text-slate-500">Aucun service dans cette catégorie</p>
+            <p className="text-lg font-semibold text-slate-500">{t("no_services")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -122,7 +147,7 @@ export default function CategoryPage() {
               <Link key={s.id} href={`/services/${s.id}`} className="group bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all">
                 <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
                   <span className="material-symbols-outlined text-5xl text-primary/40">{s.image}</span>
-                  <span className="absolute top-3 left-3 bg-primary/90 text-white text-xs font-bold px-2 py-1 rounded-lg">{category.name}</span>
+                  <span className="absolute top-3 left-3 bg-primary/90 text-white text-xs font-bold px-2 py-1 rounded-lg">{categoryName}</span>
                   <button onClick={(e) => { e.preventDefault(); setFavorites(prev => { const n = new Set(prev); if (n.has(s.id)) { n.delete(s.id); } else { n.add(s.id); } return n; }); }} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 dark:bg-neutral-dark/80 flex items-center justify-center hover:bg-white transition-colors">
                     <span className={cn("material-symbols-outlined text-lg", favorites.has(s.id) ? "text-rose-500" : "text-slate-400")}>{favorites.has(s.id) ? "favorite" : "favorite_border"}</span>
                   </button>
@@ -140,8 +165,8 @@ export default function CategoryPage() {
                     <span className="text-xs text-slate-400">({s.reviews})</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-border-dark pt-3">
-                    <span className="text-xs text-slate-400">{s.delivery}j livraison</span>
-                    <span className="font-bold text-primary">À partir de €{s.price}</span>
+                    <span className="text-xs text-slate-400">{t("delivery_days", { count: String(s.delivery) })}</span>
+                    <span className="font-bold text-primary">{t("from_price", { price: String(s.price) })}</span>
                   </div>
                 </div>
               </Link>
@@ -153,7 +178,7 @@ export default function CategoryPage() {
         <div className="mt-12 text-center">
           <Link href="/explorer" className="inline-flex items-center gap-2 text-primary font-semibold hover:underline">
             <span className="material-symbols-outlined">arrow_back</span>
-            Voir toutes les catégories
+            {t("see_all_categories")}
           </Link>
         </div>
       </div>

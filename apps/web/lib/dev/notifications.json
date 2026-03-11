@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "userId": "dev-1773159936968",
+    "title": "Service soumis",
+    "message": "Votre service \"crrer votre site zeb\" a ete soumis pour validation. Il sera visible apres approbation.",
+    "type": "service",
+    "read": false,
+    "link": "/dashboard/services",
+    "id": "notif_mml003uw",
+    "createdAt": "2026-03-10T19:23:36.200Z"
+  }
+]

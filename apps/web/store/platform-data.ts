@@ -160,6 +160,15 @@ export interface PlatformConfig {
   enabledCurrencies: string[];
 }
 
+export interface PromoCode {
+  code: string;
+  discount: number;
+  uses: number;
+  maxUses: number;
+  expiry: string;
+  active: boolean;
+}
+
 export interface AuditEntry {
   id: string;
   adminId: string;
@@ -569,6 +578,12 @@ interface PlatformDataState {
   unblockTransaction: (id: string) => void;
   addRefundTransaction: (orderId: string, amount: number, userId: string, userName: string) => void;
 
+  // ── Promo Codes ──
+  promoCodes: PromoCode[];
+  addPromoCode: (promo: Omit<PromoCode, "uses">) => void;
+  togglePromoCode: (code: string) => void;
+  deletePromoCode: (code: string) => void;
+
   // ── Config Actions ──
   updateConfig: (data: Partial<PlatformConfig>) => void;
   updatePlanConfig: (index: number, data: Partial<PlatformConfig["plans"][0]>) => void;
@@ -611,6 +626,22 @@ export const usePlatformDataStore = create<PlatformDataState>()((set, get) => ({
   agencyRevenue: AGENCY_REVENUE,
   auditLog: [],
   userNotifications: [],
+  promoCodes: [
+    { code: "LAUNCH2026", discount: 30, uses: 145, maxUses: 500, expiry: "2026-06-30", active: true },
+    { code: "AFRIK20", discount: 20, uses: 89, maxUses: 200, expiry: "2026-04-30", active: true },
+    { code: "WELCOME10", discount: 10, uses: 312, maxUses: 1000, expiry: "2026-12-31", active: true },
+  ],
+
+  // ── Promo Code Actions ──
+  addPromoCode: (promo) => set(s => ({
+    promoCodes: [...s.promoCodes, { ...promo, uses: 0 }],
+  })),
+  togglePromoCode: (code) => set(s => ({
+    promoCodes: s.promoCodes.map(p => p.code === code ? { ...p, active: !p.active } : p),
+  })),
+  deletePromoCode: (code) => set(s => ({
+    promoCodes: s.promoCodes.filter(p => p.code !== code),
+  })),
 
   // ── Audit & Notification Actions ──
   logAudit: (entry) => set(s => ({

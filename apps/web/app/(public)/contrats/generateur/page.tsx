@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/dashboard";
 
@@ -12,9 +13,9 @@ type TemplateId = "prestation" | "nda" | "sous-traitance";
 
 interface Template {
   id: TemplateId;
-  label: string;
+  labelKey: string;
   icon: string;
-  description: string;
+  descKey: string;
 }
 
 type PaymentTerms =
@@ -57,40 +58,40 @@ interface ContractForm {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const TEMPLATES: Template[] = [
+const TEMPLATES: { id: TemplateId; labelKey: string; icon: string; descKey: string }[] = [
   {
     id: "prestation",
-    label: "Contrat de Prestation de Service",
+    labelKey: "contracts_tpl_prestation",
     icon: "description",
-    description: "Cadre juridique pour une mission freelance classique",
+    descKey: "contracts_tpl_prestation_desc",
   },
   {
     id: "nda",
-    label: "Accord de Confidentialite (NDA)",
+    labelKey: "contracts_tpl_nda",
     icon: "security",
-    description: "Protection des informations echangees entre les parties",
+    descKey: "contracts_tpl_nda_desc",
   },
   {
     id: "sous-traitance",
-    label: "Contrat de Sous-traitance",
+    labelKey: "contracts_tpl_sous_traitance",
     icon: "handshake",
-    description: "Delegation de mission a un tiers prestataire",
+    descKey: "contracts_tpl_sous_traitance_desc",
   },
 ];
 
-const PAYMENT_OPTIONS: { value: PaymentTerms; label: string }[] = [
-  { value: "100_livraison", label: "100% a la livraison" },
-  { value: "50_50", label: "50% a la commande, 50% a la livraison" },
-  { value: "30_40_30", label: "30% commande, 40% mi-parcours, 30% livraison" },
-  { value: "mensuel", label: "Paiement mensuel" },
+const PAYMENT_OPTIONS: { value: PaymentTerms; labelKey: string }[] = [
+  { value: "100_livraison", labelKey: "contracts_pay_100_livraison" },
+  { value: "50_50", labelKey: "contracts_pay_50_50" },
+  { value: "30_40_30", labelKey: "contracts_pay_30_40_30" },
+  { value: "mensuel", labelKey: "contracts_pay_mensuel" },
 ];
 
-const CLAUSES_META: { key: keyof ContractForm["clauses"]; label: string; icon: string }[] = [
-  { key: "proprieteIntellectuelle", label: "Propriete intellectuelle", icon: "copyright" },
-  { key: "confidentialite", label: "Clause de confidentialite", icon: "lock" },
-  { key: "nonConcurrence", label: "Non-concurrence", icon: "block" },
-  { key: "penalitesRetard", label: "Penalites de retard", icon: "schedule" },
-  { key: "resiliation", label: "Clause de resiliation", icon: "cancel" },
+const CLAUSES_META: { key: keyof ContractForm["clauses"]; labelKey: string; icon: string }[] = [
+  { key: "proprieteIntellectuelle", labelKey: "contracts_clause_propriete_intellectuelle", icon: "copyright" },
+  { key: "confidentialite", labelKey: "contracts_clause_confidentialite", icon: "lock" },
+  { key: "nonConcurrence", labelKey: "contracts_clause_non_concurrence", icon: "block" },
+  { key: "penalitesRetard", labelKey: "contracts_clause_penalites_retard", icon: "schedule" },
+  { key: "resiliation", labelKey: "contracts_clause_resiliation", icon: "cancel" },
 ];
 
 const INITIAL_FORM: ContractForm = {
@@ -117,19 +118,19 @@ const INITIAL_FORM: ContractForm = {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function getTemplateTitre(tpl: TemplateId): string {
+function getTemplateTitreKey(tpl: TemplateId): string {
   switch (tpl) {
     case "prestation":
-      return "CONTRAT DE PRESTATION DE SERVICE";
+      return "contracts_preview_title_prestation";
     case "nda":
-      return "ACCORD DE CONFIDENTIALITE (NDA)";
+      return "contracts_preview_title_nda";
     case "sous-traitance":
-      return "CONTRAT DE SOUS-TRAITANCE";
+      return "contracts_preview_title_sous_traitance";
   }
 }
 
-function formatPaymentTerms(terms: PaymentTerms): string {
-  return PAYMENT_OPTIONS.find((o) => o.value === terms)?.label ?? terms;
+function getPaymentTermsKey(terms: PaymentTerms): string {
+  return PAYMENT_OPTIONS.find((o) => o.value === terms)?.labelKey ?? terms;
 }
 
 function formatDate(iso: string): string {
@@ -194,11 +195,14 @@ function SignatureModal({
   onClose,
   prestataireEmail,
   clientEmail,
+  t,
 }: {
   open: boolean;
   onClose: () => void;
   prestataireEmail: string;
   clientEmail: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string) => string;
 }) {
   const addToast = useToastStore((s) => s.addToast);
   const [emailPrestataire, setEmailPrestataire] = useState(prestataireEmail);
@@ -214,16 +218,16 @@ function SignatureModal({
 
   const handleSend = useCallback(async () => {
     if (!emailPrestataire || !emailClient) {
-      addToast("error", "Veuillez renseigner les deux adresses email.");
+      addToast("error", t("contracts_error_emails_required"));
       return;
     }
     setSending(true);
     // Simulate API call
     await new Promise((r) => setTimeout(r, 1800));
     setSending(false);
-    addToast("success", "Demande de signature envoyee aux deux parties !");
+    addToast("success", t("contracts_signature_sent"));
     onClose();
-  }, [emailPrestataire, emailClient, addToast, onClose]);
+  }, [emailPrestataire, emailClient, addToast, onClose, t]);
 
   if (!open) return null;
 
@@ -237,16 +241,16 @@ function SignatureModal({
             <span className="material-symbols-outlined text-primary">draw</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold">Envoyer pour signature</h3>
+            <h3 className="text-lg font-bold">{t("contracts_signature_title")}</h3>
             <p className="text-xs text-slate-400">
-              Les deux parties recevront un email avec le contrat a signer
+              {t("contracts_signature_subtitle")}
             </p>
           </div>
         </div>
 
         {/* Emails */}
         <div className="space-y-4 mb-4">
-          <FormField label="Email du prestataire" required>
+          <FormField label={t("contracts_prestataire_email")} required>
             <input
               type="email"
               value={emailPrestataire}
@@ -255,7 +259,7 @@ function SignatureModal({
               className={inputClass}
             />
           </FormField>
-          <FormField label="Email du client" required>
+          <FormField label={t("contracts_client_email")} required>
             <input
               type="email"
               value={emailClient}
@@ -264,11 +268,11 @@ function SignatureModal({
               className={inputClass}
             />
           </FormField>
-          <FormField label="Message personnalise">
+          <FormField label={t("contracts_custom_message")}>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ajoutez un message a l'intention des signataires..."
+              placeholder={t("contracts_custom_message_placeholder")}
               rows={3}
               className={textareaClass}
             />
@@ -281,7 +285,7 @@ function SignatureModal({
             onClick={onClose}
             className="px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-border-dark rounded-lg transition-colors"
           >
-            Annuler
+            {t("contracts_cancel")}
           </button>
           <button
             onClick={handleSend}
@@ -298,12 +302,12 @@ function SignatureModal({
                 <span className="material-symbols-outlined animate-spin text-base">
                   progress_activity
                 </span>
-                Envoi en cours...
+                {t("contracts_sending")}
               </>
             ) : (
               <>
                 <span className="material-symbols-outlined text-base">send</span>
-                Envoyer
+                {t("contracts_send")}
               </>
             )}
           </button>
@@ -320,10 +324,13 @@ function ContractPreview({
   form,
   onDownload,
   onSign,
+  t,
 }: {
   form: ContractForm;
   onDownload: () => void;
   onSign: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: Record<string, string>) => string;
 }) {
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -339,7 +346,7 @@ function ContractPreview({
       <div className="bg-primary/5 border-b border-border-dark px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">preview</span>
-          <h3 className="text-sm font-bold">Apercu du contrat</h3>
+          <h3 className="text-sm font-bold">{t("contracts_preview")}</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -347,14 +354,14 @@ function ContractPreview({
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-border-dark hover:bg-border-dark/80 rounded-lg transition-colors"
           >
             <span className="material-symbols-outlined text-sm">download</span>
-            Telecharger PDF
+            {t("contracts_download_pdf")}
           </button>
           <button
             onClick={onSign}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors shadow shadow-primary/20"
           >
             <span className="material-symbols-outlined text-sm">draw</span>
-            Envoyer pour signature
+            {t("contracts_send_signature")}
           </button>
         </div>
       </div>
@@ -370,10 +377,10 @@ function ContractPreview({
         {/* Title */}
         <div className="text-center mb-8">
           <h2 className="text-lg font-extrabold tracking-wide uppercase text-primary">
-            {getTemplateTitre(form.template)}
+            {t(getTemplateTitreKey(form.template))}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Genere le {today} via FreelanceHigh
+            {t("contracts_generated_on", { date: today })}
           </p>
         </div>
 
@@ -383,25 +390,25 @@ function ContractPreview({
         {/* Parties */}
         <div className="mb-6">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-            Article 1 — Les Parties
+            {t("contracts_article_parties")}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="bg-background-dark rounded-xl p-4 border border-border-dark">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Le Prestataire</p>
-              <p className="font-semibold">{form.prestataire.nom || "—"}</p>
-              <p className="text-slate-400 text-xs mt-1">{form.prestataire.email || "—"}</p>
-              <p className="text-slate-400 text-xs">{form.prestataire.adresse || "—"}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">{t("contracts_the_prestataire")}</p>
+              <p className="font-semibold">{form.prestataire.nom || "\u2014"}</p>
+              <p className="text-slate-400 text-xs mt-1">{form.prestataire.email || "\u2014"}</p>
+              <p className="text-slate-400 text-xs">{form.prestataire.adresse || "\u2014"}</p>
               {form.prestataire.siret && (
-                <p className="text-slate-400 text-xs">SIRET : {form.prestataire.siret}</p>
+                <p className="text-slate-400 text-xs">{t("contracts_siret_label")} : {form.prestataire.siret}</p>
               )}
             </div>
             <div className="bg-background-dark rounded-xl p-4 border border-border-dark">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Le Client</p>
-              <p className="font-semibold">{form.client.nom || "—"}</p>
-              <p className="text-slate-400 text-xs mt-1">{form.client.email || "—"}</p>
-              <p className="text-slate-400 text-xs">{form.client.adresse || "—"}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">{t("contracts_the_client")}</p>
+              <p className="font-semibold">{form.client.nom || "\u2014"}</p>
+              <p className="text-slate-400 text-xs mt-1">{form.client.email || "\u2014"}</p>
+              <p className="text-slate-400 text-xs">{form.client.adresse || "\u2014"}</p>
               {form.client.societe && (
-                <p className="text-slate-400 text-xs">Societe : {form.client.societe}</p>
+                <p className="text-slate-400 text-xs">{t("contracts_societe_label")} : {form.client.societe}</p>
               )}
             </div>
           </div>
@@ -410,7 +417,7 @@ function ContractPreview({
         {/* Mission */}
         <div className="mb-6">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-            Article 2 — Objet de la Mission
+            {t("contracts_article_mission")}
           </h4>
           <div className="bg-background-dark rounded-xl p-4 border border-border-dark text-sm space-y-2">
             <div className="flex items-start gap-2">
@@ -418,13 +425,13 @@ function ContractPreview({
                 work
               </span>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase">Titre</p>
-                <p className="font-semibold">{form.mission.titre || "—"}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">{t("contracts_title_label")}</p>
+                <p className="font-semibold">{form.mission.titre || "\u2014"}</p>
               </div>
             </div>
             {form.mission.description && (
               <div className="pl-7">
-                <p className="text-xs font-bold text-slate-400 uppercase mt-2">Description</p>
+                <p className="text-xs font-bold text-slate-400 uppercase mt-2">{t("contracts_description_label")}</p>
                 <p className="text-slate-300 text-xs leading-relaxed whitespace-pre-wrap">
                   {form.mission.description}
                 </p>
@@ -436,7 +443,7 @@ function ContractPreview({
         {/* Duration & payment */}
         <div className="mb-6">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-            Article 3 — Duree et Remuneration
+            {t("contracts_article_duration")}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="bg-background-dark rounded-xl p-4 border border-border-dark">
@@ -444,23 +451,22 @@ function ContractPreview({
                 <span className="material-symbols-outlined text-primary text-base">
                   calendar_today
                 </span>
-                <p className="text-xs font-bold text-slate-400 uppercase">Duree</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">{t("contracts_duration")}</p>
               </div>
               <p className="text-xs text-slate-300">
-                Du <span className="font-semibold text-slate-100">{formatDate(form.mission.dateDebut)}</span>{" "}
-                au <span className="font-semibold text-slate-100">{formatDate(form.mission.dateFin)}</span>
+                {t("contracts_duration_from_to", { from: formatDate(form.mission.dateDebut), to: formatDate(form.mission.dateFin) })}
               </p>
             </div>
             <div className="bg-background-dark rounded-xl p-4 border border-border-dark">
               <div className="flex items-center gap-2 mb-2">
                 <span className="material-symbols-outlined text-primary text-base">euro</span>
-                <p className="text-xs font-bold text-slate-400 uppercase">Remuneration</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">{t("contracts_remuneration")}</p>
               </div>
               <p className="text-lg font-extrabold text-primary">
                 {formatMontant(form.mission.montant)}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                {formatPaymentTerms(form.mission.modalites)}
+                {t(getPaymentTermsKey(form.mission.modalites))}
               </p>
             </div>
           </div>
@@ -470,7 +476,7 @@ function ContractPreview({
         {activeClauses.length > 0 && (
           <div className="mb-6">
             <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-              Article 4 — Clauses Particulieres
+              {t("contracts_article_clauses")}
             </h4>
             <div className="space-y-2">
               {activeClauses.map((clause, idx) => (
@@ -483,10 +489,9 @@ function ContractPreview({
                   </span>
                   <span className="text-xs text-slate-300">
                     <span className="font-semibold text-slate-100">
-                      {idx + 1}. {clause.label}
+                      {idx + 1}. {t(clause.labelKey)}
                     </span>{" "}
-                    — Les termes de cette clause sont applicables conformement a la legislation
-                    en vigueur.
+                    {t("contracts_clause_applicable")}
                   </span>
                 </div>
               ))}
@@ -497,21 +502,21 @@ function ContractPreview({
         {/* Signatures placeholder */}
         <div className="mt-8 pt-6 border-t border-border-dark">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-4">
-            Signatures
+            {t("contracts_signatures")}
           </h4>
           <div className="grid grid-cols-2 gap-6 text-sm">
             <div className="text-center">
-              <p className="text-xs text-slate-400 mb-8">Le Prestataire</p>
+              <p className="text-xs text-slate-400 mb-8">{t("contracts_the_prestataire")}</p>
               <div className="h-px bg-border-dark mx-4" />
               <p className="text-xs text-slate-400 mt-2">
-                {form.prestataire.nom || "Nom et signature"}
+                {form.prestataire.nom || t("contracts_name_and_signature")}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-slate-400 mb-8">Le Client</p>
+              <p className="text-xs text-slate-400 mb-8">{t("contracts_the_client")}</p>
               <div className="h-px bg-border-dark mx-4" />
               <p className="text-xs text-slate-400 mt-2">
-                {form.client.nom || "Nom et signature"}
+                {form.client.nom || t("contracts_name_and_signature")}
               </p>
             </div>
           </div>
@@ -520,8 +525,7 @@ function ContractPreview({
         {/* Footer */}
         <div className="mt-8 pt-4 border-t border-border-dark text-center">
           <p className="text-[10px] text-slate-500">
-            Document genere automatiquement via FreelanceHigh. Ce document n&apos;a pas de valeur
-            juridique tant qu&apos;il n&apos;a pas ete signe par les deux parties.
+            {t("contracts_disclaimer")}
           </p>
         </div>
       </div>
@@ -533,6 +537,7 @@ function ContractPreview({
 // Main Page
 // ---------------------------------------------------------------------------
 export default function ContractGeneratorPage() {
+  const t = useTranslations("legal");
   const addToast = useToastStore((s) => s.addToast);
   const [form, setForm] = useState<ContractForm>(INITIAL_FORM);
   const [signModalOpen, setSignModalOpen] = useState(false);
@@ -572,21 +577,21 @@ export default function ContractGeneratorPage() {
 
   const handleReset = useCallback(() => {
     setForm(INITIAL_FORM);
-    addToast("info", "Formulaire reinitialise.");
-  }, [addToast]);
+    addToast("info", t("contracts_form_reset"));
+  }, [addToast, t]);
 
   const handleGenerate = useCallback(() => {
     // Basic validation
     if (!form.prestataire.nom || !form.client.nom || !form.mission.titre) {
-      addToast("error", "Veuillez remplir au minimum les noms des parties et le titre de la mission.");
+      addToast("error", t("contracts_error_fill_required"));
       return;
     }
-    addToast("success", "Contrat genere avec succes ! Consultez l'apercu a droite.");
-  }, [form, addToast]);
+    addToast("success", t("contracts_success_generated"));
+  }, [form, addToast, t]);
 
   const handleDownload = useCallback(() => {
-    addToast("info", "Telechargement du PDF en cours... (fonctionnalite simulee)");
-  }, [addToast]);
+    addToast("info", t("contracts_download_in_progress"));
+  }, [addToast, t]);
 
   const handleOpenSign = useCallback(() => {
     setSignModalOpen(true);
@@ -599,19 +604,19 @@ export default function ContractGeneratorPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
             <Link href="/" className="hover:text-primary transition-colors">
-              Accueil
+              {t("contracts_breadcrumb_home")}
             </Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="text-slate-200 font-semibold">Generateur de contrats</span>
+            <span className="text-slate-200 font-semibold">{t("contracts_breadcrumb_current")}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
               <span className="material-symbols-outlined text-primary text-2xl">gavel</span>
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight">Generateur de Contrats</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight">{t("contracts_title")}</h1>
               <p className="text-sm text-slate-400 mt-0.5">
-                Creez des contrats professionnels en quelques minutes. Gratuit et securise.
+                {t("contracts_subtitle")}
               </p>
             </div>
           </div>
@@ -625,7 +630,7 @@ export default function ContractGeneratorPage() {
           <div className="space-y-6">
             {/* 1. Template selection */}
             <div className="bg-neutral-dark border border-border-dark rounded-2xl p-6">
-              <SectionHeading icon="article" title="Type de contrat" />
+              <SectionHeading icon="article" title={t("contracts_template_section")} />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {TEMPLATES.map((tpl) => (
                   <button
@@ -648,9 +653,9 @@ export default function ContractGeneratorPage() {
                     >
                       <span className="material-symbols-outlined">{tpl.icon}</span>
                     </div>
-                    <span className="text-xs font-bold leading-tight">{tpl.label}</span>
+                    <span className="text-xs font-bold leading-tight">{t(tpl.labelKey)}</span>
                     <span className="text-[10px] text-slate-500 leading-snug">
-                      {tpl.description}
+                      {t(tpl.descKey)}
                     </span>
                   </button>
                 ))}
@@ -659,16 +664,16 @@ export default function ContractGeneratorPage() {
 
             {/* 2. Parties */}
             <div className="bg-neutral-dark border border-border-dark rounded-2xl p-6">
-              <SectionHeading icon="people" title="Les Parties" />
+              <SectionHeading icon="people" title={t("contracts_parties_section")} />
 
               {/* Prestataire */}
               <div className="mb-5">
                 <p className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-sm">person</span>
-                  Prestataire
+                  {t("contracts_prestataire")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormField label="Nom complet" required>
+                  <FormField label={t("contracts_full_name")} required>
                     <input
                       type="text"
                       value={form.prestataire.nom}
@@ -677,7 +682,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Email" required>
+                  <FormField label={t("contracts_email")} required>
                     <input
                       type="email"
                       value={form.prestataire.email}
@@ -686,7 +691,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Adresse">
+                  <FormField label={t("contracts_address")}>
                     <input
                       type="text"
                       value={form.prestataire.adresse}
@@ -695,7 +700,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="SIRET (optionnel)">
+                  <FormField label={t("contracts_siret")}>
                     <input
                       type="text"
                       value={form.prestataire.siret}
@@ -714,10 +719,10 @@ export default function ContractGeneratorPage() {
               <div>
                 <p className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-sm">business</span>
-                  Client
+                  {t("contracts_client")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormField label="Nom complet" required>
+                  <FormField label={t("contracts_full_name")} required>
                     <input
                       type="text"
                       value={form.client.nom}
@@ -726,7 +731,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Email" required>
+                  <FormField label={t("contracts_email")} required>
                     <input
                       type="email"
                       value={form.client.email}
@@ -735,7 +740,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Adresse">
+                  <FormField label={t("contracts_address")}>
                     <input
                       type="text"
                       value={form.client.adresse}
@@ -744,12 +749,12 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Societe">
+                  <FormField label={t("contracts_company")}>
                     <input
                       type="text"
                       value={form.client.societe}
                       onChange={(e) => updateClient("societe", e.target.value)}
-                      placeholder="Nom de l'entreprise"
+                      placeholder={t("contracts_placeholder_company")}
                       className={inputClass}
                     />
                   </FormField>
@@ -759,28 +764,28 @@ export default function ContractGeneratorPage() {
 
             {/* 3. Mission details */}
             <div className="bg-neutral-dark border border-border-dark rounded-2xl p-6">
-              <SectionHeading icon="assignment" title="Details du contrat" />
+              <SectionHeading icon="assignment" title={t("contracts_details_section")} />
               <div className="space-y-4">
-                <FormField label="Titre de la mission" required>
+                <FormField label={t("contracts_mission_title")} required>
                   <input
                     type="text"
                     value={form.mission.titre}
                     onChange={(e) => updateMission("titre", e.target.value)}
-                    placeholder="Ex: Redesign complet du site web corporate"
+                    placeholder={t("contracts_placeholder_mission_title")}
                     className={inputClass}
                   />
                 </FormField>
-                <FormField label="Description detaillee">
+                <FormField label={t("contracts_detailed_description")}>
                   <textarea
                     value={form.mission.description}
                     onChange={(e) => updateMission("description", e.target.value)}
-                    placeholder="Decrivez en detail les livrables, les attentes et le perimetre de la mission..."
+                    placeholder={t("contracts_placeholder_description")}
                     rows={5}
                     className={textareaClass}
                   />
                 </FormField>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormField label="Date de debut">
+                  <FormField label={t("contracts_start_date")}>
                     <input
                       type="date"
                       value={form.mission.dateDebut}
@@ -788,7 +793,7 @@ export default function ContractGeneratorPage() {
                       className={inputClass}
                     />
                   </FormField>
-                  <FormField label="Date de fin">
+                  <FormField label={t("contracts_end_date")}>
                     <input
                       type="date"
                       value={form.mission.dateFin}
@@ -798,7 +803,7 @@ export default function ContractGeneratorPage() {
                   </FormField>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FormField label="Montant total (EUR)" required>
+                  <FormField label={t("contracts_total_amount")} required>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">
                         &euro;
@@ -814,7 +819,7 @@ export default function ContractGeneratorPage() {
                       />
                     </div>
                   </FormField>
-                  <FormField label="Modalites de paiement">
+                  <FormField label={t("contracts_payment_terms")}>
                     <select
                       value={form.mission.modalites}
                       onChange={(e) =>
@@ -824,7 +829,7 @@ export default function ContractGeneratorPage() {
                     >
                       {PAYMENT_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {t(opt.labelKey)}
                         </option>
                       ))}
                     </select>
@@ -835,7 +840,7 @@ export default function ContractGeneratorPage() {
 
             {/* 4. Clauses */}
             <div className="bg-neutral-dark border border-border-dark rounded-2xl p-6">
-              <SectionHeading icon="policy" title="Clauses additionnelles" />
+              <SectionHeading icon="policy" title={t("contracts_clauses_section")} />
               <div className="space-y-2">
                 {CLAUSES_META.map((clause) => (
                   <label
@@ -875,7 +880,7 @@ export default function ContractGeneratorPage() {
                     >
                       {clause.icon}
                     </span>
-                    <span className="text-sm font-semibold">{clause.label}</span>
+                    <span className="text-sm font-semibold">{t(clause.labelKey)}</span>
                   </label>
                 ))}
               </div>
@@ -888,14 +893,14 @@ export default function ContractGeneratorPage() {
                 className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
               >
                 <span className="material-symbols-outlined text-base">auto_awesome</span>
-                Generer le contrat
+                {t("contracts_generate")}
               </button>
               <button
                 onClick={handleReset}
                 className="flex items-center justify-center gap-2 bg-border-dark hover:bg-border-dark/80 rounded-xl px-6 py-3.5 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all"
               >
                 <span className="material-symbols-outlined text-base">restart_alt</span>
-                Reinitialiser
+                {t("contracts_reset")}
               </button>
             </div>
           </div>
@@ -906,6 +911,7 @@ export default function ContractGeneratorPage() {
               form={form}
               onDownload={handleDownload}
               onSign={handleOpenSign}
+              t={t}
             />
           </div>
         </div>
@@ -917,6 +923,7 @@ export default function ContractGeneratorPage() {
         onClose={() => setSignModalOpen(false)}
         prestataireEmail={form.prestataire.email}
         clientEmail={form.client.email}
+        t={t}
       />
     </div>
   );

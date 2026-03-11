@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useDashboardStore, useToastStore } from "@/store/dashboard";
+import { useAgencyStore } from "@/store/agency";
+import { useToastStore } from "@/store/dashboard";
 
 // ============================================================
 // Types
@@ -155,8 +156,13 @@ function tierBadgeClass(tier: BoostTier): string {
 // ============================================================
 
 export default function AgenceBoostPage() {
-  const { services } = useDashboardStore();
+  const { services, syncServices } = useAgencyStore();
   const addToast = useToastStore((s) => s.addToast);
+
+  // Sync agency services on mount
+  useEffect(() => {
+    syncServices();
+  }, [syncServices]);
 
   // Only show active services for boosting
   const activeServices = useMemo(
@@ -246,7 +252,7 @@ export default function AgenceBoostPage() {
 
   // Calculate ROI
   const roi = stats.totalSpent > 0
-    ? ((stats.totalOrders * (selectedService?.price ?? 0) - stats.totalSpent) / stats.totalSpent * 100)
+    ? ((stats.totalOrders * (selectedService?.basePrice ?? 0) - stats.totalSpent) / stats.totalSpent * 100)
     : 0;
 
   // Build chart data from history (group by day of week for performance view)
@@ -330,7 +336,7 @@ export default function AgenceBoostPage() {
             >
               {activeServices.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title} ({s.price} EUR)
+                  {s.title} ({s.basePrice} EUR)
                 </option>
               ))}
             </select>

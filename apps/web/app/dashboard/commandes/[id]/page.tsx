@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
 import { reviewsApi } from "@/lib/api-client";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
@@ -26,6 +27,7 @@ const TIMELINE_ICONS: Record<string, { icon: string; color: string }> = {
   cancelled: { icon: "cancel", color: "text-red-400" },
   message: { icon: "chat_bubble", color: "text-slate-400" },
 };
+
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -238,60 +240,51 @@ export default function OrderDetailPage() {
         <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${order.progress}%` }} />
       </div>
 
-      {/* Timeline — Always visible */}
-      <div className="bg-background-dark/50 border border-border-dark rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-lg">timeline</span>
-          Suivi de la commande
-        </h3>
-        {/* Horizontal stepper on desktop, vertical on mobile */}
-        <div className="hidden md:flex items-start gap-0">
-          {order.timeline.map((event, i) => {
-            const tc = TIMELINE_ICONS[event.type] ?? { icon: "circle", color: "text-slate-400" };
-            const isLast = i === order.timeline.length - 1;
-            return (
-              <div key={event.id} className="flex-1 flex flex-col items-center text-center relative">
-                <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center z-10",
-                  isLast ? "bg-primary/20 ring-2 ring-primary" : "bg-white/5"
-                )}>
-                  <span className={cn("material-symbols-outlined text-xl", isLast ? "text-primary" : tc.color)}>{tc.icon}</span>
-                </div>
-                {i < order.timeline.length - 1 && (
-                  <div className="absolute top-5 left-[calc(50%+20px)] right-[calc(-50%+20px)] h-0.5 bg-primary/30" />
-                )}
-                <p className={cn("text-xs font-bold mt-2", isLast ? "text-primary" : "text-slate-300")}>{event.title}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(event.timestamp)}</p>
-              </div>
-            );
-          })}
-        </div>
-        {/* Vertical on mobile */}
-        <div className="md:hidden space-y-0">
-          {order.timeline.map((event, i) => {
-            const tc = TIMELINE_ICONS[event.type] ?? { icon: "circle", color: "text-slate-400" };
-            const isLast = i === order.timeline.length - 1;
-            return (
-              <div key={event.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center",
-                    isLast ? "bg-primary/20 ring-2 ring-primary" : "bg-white/5"
-                  )}>
-                    <span className={cn("material-symbols-outlined text-lg", isLast ? "text-primary" : tc.color)}>{tc.icon}</span>
+      {/* ================================================================ */}
+      {/* PIPELINE DE SUIVI — Phases fixes                                  */}
+      {/* ================================================================ */}
+      <OrderPhasePipeline
+        status={order.status}
+        revisionsLeft={order.revisionsLeft}
+        timeline={order.timeline}
+      />
+
+      {/* ================================================================ */}
+      {/* HISTORIQUE DÉTAILLÉ (événements)                                  */}
+      {/* ================================================================ */}
+      {order.timeline.length > 0 && (
+        <details className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden group/details">
+          <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">history</span>
+              <h3 className="text-sm font-bold">Historique détaillé</h3>
+              <span className="text-xs text-slate-500 bg-border-dark px-1.5 py-0.5 rounded">{order.timeline.length}</span>
+            </div>
+            <span className="material-symbols-outlined text-slate-500 transition-transform group-open/details:rotate-180">expand_more</span>
+          </summary>
+          <div className="px-5 pb-5 space-y-0">
+            {order.timeline.map((event, i) => {
+              const tc = TIMELINE_ICONS[event.type] ?? { icon: "circle", color: "text-slate-400" };
+              const isLast = i === order.timeline.length - 1;
+              return (
+                <div key={event.id} className="flex gap-3">
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                      <span className={cn("material-symbols-outlined text-lg", tc.color)}>{tc.icon}</span>
+                    </div>
+                    {!isLast && <div className="w-0.5 flex-1 bg-border-dark my-1" />}
                   </div>
-                  {i < order.timeline.length - 1 && <div className="w-0.5 flex-1 bg-border-dark my-1" />}
+                  <div className={cn("pb-4", isLast && "pb-0")}>
+                    <p className="font-bold text-sm text-slate-200">{event.title}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{event.description}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(event.timestamp)}</p>
+                  </div>
                 </div>
-                <div className="pb-4">
-                  <p className={cn("font-bold text-sm", isLast ? "text-primary" : "")}>{event.title}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{event.description}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(event.timestamp)}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
 
       {/* Buyer actions when order is delivered */}
       {order.status === "livre" && (

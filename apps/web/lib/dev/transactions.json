@@ -1,1 +1,132 @@
-[]
+[
+  {
+    "id": "txn_001",
+    "userId": "dev-freelance-1",
+    "type": "vente",
+    "description": "Paiement reçu — Développement site web Next.js (ORD-001)",
+    "amount": 400,
+    "status": "complete",
+    "date": "2026-02-24T10:15:00.000Z",
+    "orderId": "ORD-001",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_002",
+    "userId": "platform",
+    "type": "commission",
+    "description": "Commission 20% — ORD-001 (Développement site web Next.js)",
+    "amount": 100,
+    "status": "complete",
+    "date": "2026-02-24T10:15:00.000Z",
+    "orderId": "ORD-001",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_003",
+    "userId": "dev-agence-1",
+    "type": "vente",
+    "description": "Paiement reçu — Création de logo et identité visuelle (ORD-002)",
+    "amount": 138,
+    "status": "complete",
+    "date": "2026-02-16T09:30:00.000Z",
+    "orderId": "ORD-002",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_004",
+    "userId": "platform",
+    "type": "commission",
+    "description": "Commission 8% — ORD-002 (Création de logo, plan Agence)",
+    "amount": 12,
+    "status": "complete",
+    "date": "2026-02-16T09:30:00.000Z",
+    "orderId": "ORD-002",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_005",
+    "userId": "dev-freelance-1",
+    "type": "vente",
+    "description": "Escrow bloqué — Design UI/UX application mobile (ORD-003)",
+    "amount": 320,
+    "status": "en_attente",
+    "date": "2026-02-28T11:00:00.000Z",
+    "orderId": "ORD-003",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_006",
+    "userId": "dev-freelance-1",
+    "type": "vente",
+    "description": "Escrow bloqué — Développement app mobile Flutter (ORD-005)",
+    "amount": 720,
+    "status": "en_attente",
+    "date": "2026-03-04T14:00:00.000Z",
+    "orderId": "ORD-005",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_007",
+    "userId": "dev-freelance-1",
+    "type": "vente",
+    "description": "Paiement reçu — Développement site web Next.js (ORD-006)",
+    "amount": 280,
+    "status": "complete",
+    "date": "2026-01-27T11:00:00.000Z",
+    "orderId": "ORD-006",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_008",
+    "userId": "platform",
+    "type": "commission",
+    "description": "Commission 20% — ORD-006 (Développement site web Next.js)",
+    "amount": 70,
+    "status": "complete",
+    "date": "2026-01-27T11:00:00.000Z",
+    "orderId": "ORD-006",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_009",
+    "userId": "dev-agence-1",
+    "type": "vente",
+    "description": "Paiement reçu — Création de logo et identité visuelle (ORD-007)",
+    "amount": 276,
+    "status": "en_attente",
+    "date": "2026-02-28T16:00:00.000Z",
+    "orderId": "ORD-007",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_010",
+    "userId": "dev-1772837012734",
+    "type": "vente",
+    "description": "Escrow bloqué — Rédaction d'articles SEO (ORD-004)",
+    "amount": 96,
+    "status": "en_attente",
+    "date": "2026-03-02T15:00:00.000Z",
+    "orderId": "ORD-004",
+    "method": "stripe"
+  },
+  {
+    "id": "txn_011",
+    "userId": "dev-freelance-1",
+    "type": "retrait",
+    "description": "Retrait vers compte bancaire — Virement SEPA",
+    "amount": 500,
+    "status": "complete",
+    "date": "2026-02-26T14:00:00.000Z",
+    "method": "virement_sepa"
+  },
+  {
+    "id": "txn_012",
+    "userId": "dev-freelance-1",
+    "type": "boost",
+    "description": "Boost publicitaire — Développement site web Next.js (svc_nextjs_web_001) — 7 jours",
+    "amount": 15,
+    "status": "complete",
+    "date": "2026-03-01T10:00:00.000Z",
+    "method": "wallet"
+  }
+]

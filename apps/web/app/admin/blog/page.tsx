@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToastStore } from "@/store/dashboard";
-import { usePlatformDataStore, type BlogArticle } from "@/store/platform-data";
+import { useAdminStore, type AdminBlogArticle } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -20,22 +20,68 @@ const BLOG_CATEGORIES = ["Conseils", "Tutoriels", "Success Stories", "Actualité
 type ModalMode = null | "add" | "edit";
 
 type BlogFormState = {
-  title: string; slug: string; content: string; excerpt: string; coverImage: string;
+  title: string; slug: string; content: string; excerpt: string;
   category: string; tags: string[]; author: string;
-  status: "brouillon" | "programme" | "publie"; publishedAt: string | null;
-  scheduledAt: string | null; metaTitle: string; metaDescription: string;
+  status: string; scheduledAt: string | null;
+  metaTitle: string; metaDescription: string;
 };
 
 const emptyForm: BlogFormState = {
-  title: "", slug: "", content: "", excerpt: "", coverImage: "",
+  title: "", slug: "", content: "", excerpt: "",
   category: "Conseils", tags: [], author: "Lissanon Gildas",
-  status: "brouillon", publishedAt: null,
-  scheduledAt: null, metaTitle: "", metaDescription: "",
+  status: "brouillon", scheduledAt: null,
+  metaTitle: "", metaDescription: "",
 };
+
+function BlogSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-32 bg-border-dark rounded-lg" />
+          <div className="h-4 w-48 bg-border-dark rounded-lg mt-2" />
+        </div>
+        <div className="h-10 w-36 bg-border-dark rounded-lg" />
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="bg-neutral-dark rounded-xl p-4 border border-border-dark">
+            <div className="h-6 w-12 bg-border-dark rounded mb-2" />
+            <div className="h-3 w-16 bg-border-dark rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 border-b border-border-dark pb-2">
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-8 w-24 bg-border-dark rounded-lg" />)}
+      </div>
+      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+        <div className="space-y-0">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-border-dark/50">
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-64 bg-border-dark rounded" />
+                <div className="h-3 w-40 bg-border-dark rounded" />
+              </div>
+              <div className="h-5 w-16 bg-border-dark rounded-full" />
+              <div className="h-5 w-16 bg-border-dark rounded-full" />
+              <div className="h-4 w-10 bg-border-dark rounded" />
+              <div className="h-4 w-20 bg-border-dark rounded" />
+              <div className="flex gap-1">
+                <div className="h-8 w-8 bg-border-dark rounded-lg" />
+                <div className="h-8 w-8 bg-border-dark rounded-lg" />
+                <div className="h-8 w-8 bg-border-dark rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminBlog() {
   const { addToast } = useToastStore();
-  const { blogArticles, addArticle, updateArticle, publishArticle, unpublishArticle, deleteArticle } = usePlatformDataStore();
+  const { blogArticles, loading, syncBlog, createArticle, updateArticle, deleteArticle } = useAdminStore();
 
   const [modal, setModal] = useState<ModalMode>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -43,6 +89,11 @@ export default function AdminBlog() {
   const [tagInput, setTagInput] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [tab, setTab] = useState("tous");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    syncBlog();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     if (tab === "tous") return blogArticles;
@@ -62,53 +113,67 @@ export default function AdminBlog() {
     setModal("add");
   }
 
-  function openEdit(article: BlogArticle) {
+  function openEdit(article: AdminBlogArticle) {
     setForm({
       title: article.title, slug: article.slug, content: article.content,
-      excerpt: article.excerpt, coverImage: article.coverImage,
+      excerpt: article.excerpt,
       category: article.category, tags: [...article.tags], author: article.author,
-      status: article.status, publishedAt: article.publishedAt,
-      scheduledAt: article.scheduledAt,
+      status: article.status, scheduledAt: article.scheduledAt,
       metaTitle: article.metaTitle || "", metaDescription: article.metaDescription || "",
     });
     setEditId(article.id);
     setModal("edit");
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.title.trim()) { addToast("warning", "Le titre est requis"); return; }
     if (!form.content.trim()) { addToast("warning", "Le contenu est requis"); return; }
 
     const slug = form.slug || slugify(form.title);
     const data = { ...form, slug };
 
-    if (modal === "add") {
-      addArticle(data);
-      addToast("success", `Article "${form.title}" créé`);
-    } else if (modal === "edit" && editId) {
-      updateArticle(editId, data);
-      addToast("success", `Article "${form.title}" modifié`);
+    setSaving(true);
+    try {
+      if (modal === "add") {
+        const ok = await createArticle(data);
+        if (ok) addToast("success", `Article "${form.title}" créé`);
+        else addToast("error", "Erreur lors de la création de l'article");
+      } else if (modal === "edit" && editId) {
+        const ok = await updateArticle(editId, data);
+        if (ok) addToast("success", `Article "${form.title}" modifié`);
+        else addToast("error", "Erreur lors de la modification de l'article");
+      }
+      setModal(null);
+    } finally {
+      setSaving(false);
     }
-    setModal(null);
   }
 
-  function handlePublish(id: string) {
+  async function handlePublish(id: string) {
     const article = blogArticles.find(a => a.id === id);
-    publishArticle(id);
-    addToast("success", `"${article?.title}" publié — visible sur /blog`);
+    const ok = await updateArticle(id, { status: "publie" });
+    if (ok) addToast("success", `"${article?.title}" publié — visible sur /blog`);
+    else addToast("error", "Erreur lors de la publication");
   }
 
-  function handleUnpublish(id: string) {
-    unpublishArticle(id);
-    addToast("success", "Article dépublié");
+  async function handleUnpublish(id: string) {
+    const ok = await updateArticle(id, { status: "brouillon" });
+    if (ok) addToast("success", "Article dépublié");
+    else addToast("error", "Erreur lors de la dépublication");
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteId) return;
     const article = blogArticles.find(a => a.id === deleteId);
-    deleteArticle(deleteId);
-    addToast("success", `"${article?.title}" supprimé`);
-    setDeleteId(null);
+    setSaving(true);
+    try {
+      const ok = await deleteArticle(deleteId);
+      if (ok) addToast("success", `"${article?.title}" supprimé`);
+      else addToast("error", "Erreur lors de la suppression");
+    } finally {
+      setSaving(false);
+      setDeleteId(null);
+    }
   }
 
   function addTag() {
@@ -121,6 +186,8 @@ export default function AdminBlog() {
   function removeTag(tag: string) {
     setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }));
   }
+
+  if (loading.blog) return <BlogSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -199,7 +266,7 @@ export default function AdminBlog() {
                     <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[a.status]?.cls)}>{STATUS_MAP[a.status]?.label}</span>
                   </td>
                   <td className="px-5 py-3 text-sm text-center font-bold text-white">{a.views > 0 ? a.views.toLocaleString() : "—"}</td>
-                  <td className="px-5 py-3 text-sm text-slate-400">{a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("fr-FR") : new Date(a.createdAt).toLocaleDateString("fr-FR")}</td>
+                  <td className="px-5 py-3 text-sm text-slate-400">{new Date(a.createdAt).toLocaleDateString("fr-FR")}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-center gap-1">
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Modifier">
@@ -291,7 +358,7 @@ export default function AdminBlog() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Statut</label>
-                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as BlogArticle["status"] }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none cursor-pointer focus:ring-2 focus:ring-primary/30">
                     <option value="brouillon">Brouillon</option>
                     <option value="publie">Publié</option>
                     <option value="programme">Programmé</option>
@@ -311,7 +378,10 @@ export default function AdminBlog() {
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={handleSave} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">{modal === "add" ? "Créer" : "Enregistrer"}</button>
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {modal === "add" ? "Créer" : "Enregistrer"}
+              </button>
             </div>
           </div>
         </div>
@@ -328,7 +398,10 @@ export default function AdminBlog() {
             <p className="text-sm text-slate-400 mb-6">Cette action est irréversible.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={handleDelete} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors">Supprimer</button>
+              <button onClick={handleDelete} disabled={saving} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

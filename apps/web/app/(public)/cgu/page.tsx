@@ -1,16 +1,25 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata = {
-  title: "Conditions Générales d'Utilisation — FreelanceHigh",
-  description: "Conditions Générales d'Utilisation de la plateforme FreelanceHigh. Règles régissant l'utilisation de la marketplace freelance.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("legal");
+  return {
+    title: t("cgu_meta_title"),
+    description: t("cgu_meta_description"),
+  };
+}
 
-export default function CguPage() {
+export default async function CguPage() {
+  const t = await getTranslations("legal");
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="max-w-4xl mx-auto px-6 py-20">
-        <h1 className="text-4xl font-black text-white mb-4">Conditions Générales d&apos;Utilisation</h1>
-        <p className="text-sm text-slate-500 mb-2">Dernière mise à jour : 1er mars 2026</p>
+        <h1 className="text-4xl font-black text-white mb-4">{t("cgu_title")}</h1>
+        <p className="text-sm text-slate-500 mb-2">{t("last_updated", { date: "1er mars 2026" })}</p>
+        {t("french_only_notice") && (
+          <p className="text-sm text-amber-400/80 mb-2 italic">{t("french_only_notice")}</p>
+        )}
         <p className="text-sm text-slate-500 mb-12">
           Les présentes Conditions Générales d&apos;Utilisation (ci-après &quot;CGU&quot;) régissent l&apos;accès et l&apos;utilisation de la plateforme FreelanceHigh. En accédant à la plateforme ou en créant un compte, vous acceptez l&apos;intégralité des présentes CGU.
         </p>
@@ -600,7 +609,7 @@ export default function CguPage() {
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">
-          © 2026 FreelanceHigh. Tous droits réservés. Fondée par Lissanon Gildas.
+          {t("copyright")}
         </p>
       </div>
     </div>

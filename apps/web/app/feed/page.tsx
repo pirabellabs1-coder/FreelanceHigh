@@ -5,13 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  MOCK_SERVICES,
-  MOCK_VENDORS,
-  CATEGORIES,
-  type MockService,
-  type MockVendor,
-} from "@/lib/dev/mock-data";
+import { CATEGORIES } from "@/lib/dev/mock-data";
 import { CategoryBar } from "@/components/navbar/CategoryBar";
 import { type ApiService } from "@/lib/api-client";
 
@@ -30,68 +24,55 @@ const SORT_OPTIONS = [
   { value: "popularite", label: "Plus populaires" },
 ];
 
-// ─── Multiply mock services to have enough data ──────────────────────────────
+// ─── Feed Service type (from API) ────────────────────────────────────────────
 
-function multiplyServices(services: MockService[], targetCount: number): MockService[] {
-  if (services.length >= targetCount) return services;
-  const result: MockService[] = [];
-  let index = 0;
-  while (result.length < targetCount) {
-    const original = services[index % services.length];
-    result.push({
-      ...original,
-      id: `${original.id}_${Math.floor(index / services.length)}`,
-      // Vary some data for realism
-      rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
-      reviewCount: Math.floor(Math.random() * 200) + 5,
-      orderCount: Math.floor(Math.random() * 300) + 1,
-      packages: {
-        ...original.packages,
-        basic: {
-          ...original.packages.basic,
-          price: [10, 15, 20, 25, 30, 35, 40, 50, 60, 75, 100, 150, 200][Math.floor(Math.random() * 13)],
-        },
-        standard: {
-          ...original.packages.standard,
-          price: [30, 50, 75, 100, 150, 200, 250, 300][Math.floor(Math.random() * 8)],
-        },
-        premium: {
-          ...original.packages.premium,
-          price: [100, 150, 200, 300, 400, 500, 750, 1000][Math.floor(Math.random() * 8)],
-        },
-      },
-    });
-    index++;
-  }
-  return result;
+interface FeedService {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  categorySlug: string;
+  tags: string[];
+  images: string[];
+  packages: {
+    basic: { name: string; description: string; price: number; deliveryDays: number; revisions: number };
+    standard: { name: string; description: string; price: number; deliveryDays: number; revisions: number };
+    premium: { name: string; description: string; price: number; deliveryDays: number; revisions: number };
+  };
+  vendorId: string;
+  vendorName: string;
+  vendorAvatar: string;
+  rating: number;
+  reviewCount: number;
+  orderCount: number;
+  featured: boolean;
+  createdAt: string;
 }
 
-const EXPANDED_SERVICES = multiplyServices(MOCK_SERVICES, 500);
-
-// Map API services to MockService format for feed display
-function mapApiToMock(s: ApiService): MockService {
+function mapApiToFeed(s: ApiService): FeedService {
   return {
     id: s.id,
     slug: s.slug,
     title: s.title,
-    description: s.descriptionText || "",
-    shortDesc: (s.descriptionText || "").slice(0, 120),
+    description: (s.descriptionText || "").slice(0, 120),
     category: s.categoryName,
     categorySlug: s.categoryId,
     tags: s.tags,
-    images: s.images.length > 0 ? s.images : [s.mainImage || "https://placehold.co/600x400/6C2BD9/white?text=Service"],
+    images: s.images.length > 0 ? s.images : [s.mainImage || ""],
     packages: {
-      basic: { name: s.packages.basic.name, description: s.packages.basic.description, price: s.packages.basic.price, deliveryDays: s.packages.basic.deliveryDays, revisions: s.packages.basic.revisions, features: [] },
-      standard: { name: s.packages.standard.name, description: s.packages.standard.description, price: s.packages.standard.price, deliveryDays: s.packages.standard.deliveryDays, revisions: s.packages.standard.revisions, features: [] },
-      premium: { name: s.packages.premium.name, description: s.packages.premium.description, price: s.packages.premium.price, deliveryDays: s.packages.premium.deliveryDays, revisions: s.packages.premium.revisions, features: [] },
+      basic: { name: s.packages.basic.name, description: s.packages.basic.description, price: s.packages.basic.price, deliveryDays: s.packages.basic.deliveryDays, revisions: s.packages.basic.revisions },
+      standard: { name: s.packages.standard.name, description: s.packages.standard.description, price: s.packages.standard.price, deliveryDays: s.packages.standard.deliveryDays, revisions: s.packages.standard.revisions },
+      premium: { name: s.packages.premium.name, description: s.packages.premium.description, price: s.packages.premium.price, deliveryDays: s.packages.premium.deliveryDays, revisions: s.packages.premium.revisions },
     },
     vendorId: s.userId,
+    vendorName: s.vendorName || "Freelance",
+    vendorAvatar: s.vendorAvatar || "",
     rating: s.rating,
     reviewCount: s.ratingCount,
     orderCount: s.orderCount,
     featured: s.isBoosted,
     createdAt: s.createdAt,
-    faq: s.faq,
   };
 }
 
@@ -108,59 +89,42 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 // ─── Scoring Algorithm ────────────────────────────────────────────────────────
 
-function computeScore(service: MockService, vendor: MockVendor | undefined): number {
+function computeScore(service: FeedService): number {
   const salesScore = Math.min(service.orderCount / 500, 1) * 0.25;
   const ratingScore = (service.rating / 5) * 0.20;
-  const completionScore = vendor ? (vendor.completionRate / 100) * 0.15 : 0;
-  const daysSinceLastSale = Math.max(1, 30 - Math.min(service.orderCount, 30));
-  const recencyScore = Math.max(0, 1 - daysSinceLastSale / 90) * 0.10;
-  const viewCount = service.reviewCount * 15 + service.orderCount * 8;
-  const viewScore = Math.min(viewCount / 5000, 1) * 0.10;
-  const responseRate = vendor ? vendor.completionRate / 100 : 0.5;
-  const responseScore = responseRate * 0.10;
-  const randomScore = Math.random() * 0.10;
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const newBoost = new Date(service.createdAt) > sevenDaysAgo ? 0.15 : 0;
-  return salesScore + ratingScore + completionScore + recencyScore + viewScore + responseScore + randomScore + newBoost;
+  const recencyScore = (() => {
+    const daysOld = (Date.now() - new Date(service.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, 1 - daysOld / 90) * 0.15;
+  })();
+  const viewScore = Math.min((service.reviewCount * 15 + service.orderCount * 8) / 5000, 1) * 0.10;
+  const featuredBonus = service.featured ? 0.15 : 0;
+  const randomScore = Math.random() * 0.15;
+  return salesScore + ratingScore + recencyScore + viewScore + featuredBonus + randomScore;
 }
 
-function isSponsored(vendor: MockVendor | undefined): boolean {
-  return !!vendor && (vendor.plan === "pro" || vendor.plan === "business" || vendor.plan === "agence");
-}
-
-function buildFeedList(services: MockService[], tab: FeedTab): MockService[] {
+function buildFeedList(services: FeedService[], tab: FeedTab): FeedService[] {
   if (tab === "pour-vous") {
-    // Shuffle then apply scoring for variety
     const shuffled = shuffleArray(services);
-    const scored = shuffled.map((s) => ({
-      s,
-      score: computeScore(s, MOCK_VENDORS.find((v) => v.id === s.vendorId)),
-      sponsored: isSponsored(MOCK_VENDORS.find((v) => v.id === s.vendorId)),
-    }));
+    const scored = shuffled.map((s) => ({ s, score: computeScore(s) }));
     scored.sort((a, b) => b.score - a.score);
 
-    const result: MockService[] = [];
+    const result: FeedService[] = [];
     const vendorCount: Record<string, number> = {};
-    let sponsoredInBatch = 0;
 
-    for (const { s, sponsored } of scored) {
-      const batchPos = result.length;
-      if (batchPos > 0 && batchPos % 20 === 0) sponsoredInBatch = 0;
+    for (const { s } of scored) {
       if ((vendorCount[s.vendorId] || 0) >= 4) continue;
-      if (sponsored && sponsoredInBatch >= 4) continue;
       result.push(s);
       vendorCount[s.vendorId] = (vendorCount[s.vendorId] || 0) + 1;
-      if (sponsored) sponsoredInBatch++;
     }
     return result;
   }
 
   if (tab === "meilleurs") {
-    return shuffleArray(services).sort((a, b) => b.rating - a.rating);
+    return [...services].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
   }
 
   if (tab === "nouveaux") {
-    return shuffleArray(services);
+    return [...services].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   return shuffleArray(services);
@@ -168,14 +132,10 @@ function buildFeedList(services: MockService[], tab: FeedTab): MockService[] {
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 
-function ServiceCard({ service, sponsored, apiVendors }: { service: MockService; sponsored?: boolean; apiVendors?: Map<string, { name: string; avatar: string }> }) {
-  const vendor = MOCK_VENDORS.find((v) => v.id === service.vendorId);
-  const apiVendor = apiVendors?.get(service.vendorId);
-  const vendorName = vendor?.name || apiVendor?.name || "Freelance";
-  const vendorAvatar = vendor?.avatar || apiVendor?.avatar || "https://i.pravatar.cc/100";
-  const hasTopBadge = vendor?.badges.includes("Top Rated") || false;
+function ServiceCard({ service }: { service: FeedService }) {
   const minPrice = service.packages.basic.price;
   const [imgError, setImgError] = useState(false);
+  const hasImage = service.images[0] && service.images[0] !== "";
 
   return (
     <Link
@@ -184,7 +144,7 @@ function ServiceCard({ service, sponsored, apiVendors }: { service: MockService;
     >
       {/* Image */}
       <div className="relative aspect-[16/9] bg-white/5 overflow-hidden">
-        {!imgError ? (
+        {hasImage && !imgError ? (
           <Image
             src={service.images[0]}
             alt={service.title}
@@ -199,12 +159,7 @@ function ServiceCard({ service, sponsored, apiVendors }: { service: MockService;
           </div>
         )}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {sponsored && (
-            <span className="bg-amber-500/90 text-black text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-              Sponsorisé
-            </span>
-          )}
-          {service.featured && !sponsored && (
+          {service.featured && (
             <span className="bg-primary/90 text-[#0f1117] text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
               Featured
             </span>
@@ -216,19 +171,22 @@ function ServiceCard({ service, sponsored, apiVendors }: { service: MockService;
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-6 h-6 rounded-full bg-primary/20 flex-shrink-0 overflow-hidden">
-            <Image
-              src={vendorAvatar}
-              alt={vendorName}
-              width={24}
-              height={24}
-              className="rounded-full"
-              unoptimized
-            />
+            {service.vendorAvatar ? (
+              <Image
+                src={service.vendorAvatar}
+                alt={service.vendorName}
+                width={24}
+                height={24}
+                className="rounded-full"
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary text-xs">person</span>
+              </div>
+            )}
           </div>
-          <span className="text-xs text-slate-400 font-medium truncate">{vendorName}</span>
-          {hasTopBadge && (
-            <span className="material-symbols-outlined text-primary text-xs ml-auto" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-          )}
+          <span className="text-xs text-slate-400 font-medium truncate">{service.vendorName}</span>
         </div>
 
         <h3 className="text-sm font-semibold text-white line-clamp-2 mb-2 group-hover:text-primary transition-colors flex-1">
@@ -255,7 +213,7 @@ function ServiceCard({ service, sponsored, apiVendors }: { service: MockService;
             <span>{service.orderCount}</span>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-slate-500">À partir de</p>
+            <p className="text-[10px] text-slate-500">A partir de</p>
             <p className="text-base font-bold text-white">{minPrice} EUR</p>
           </div>
         </div>
@@ -271,10 +229,9 @@ interface Filters {
   priceMax: number;
   rating: number;
   deliveryDays: number;
-  vendorType: "all" | "freelance" | "agence";
 }
 
-const DEFAULT_FILTERS: Filters = { priceMin: 0, priceMax: 2000, rating: 0, deliveryDays: 0, vendorType: "all" };
+const DEFAULT_FILTERS: Filters = { priceMin: 0, priceMax: 10000, rating: 0, deliveryDays: 0 };
 
 function FiltersPanel({ filters, onChange, onClose }: { filters: Filters; onChange: (f: Filters) => void; onClose: () => void }) {
   return (
@@ -282,7 +239,7 @@ function FiltersPanel({ filters, onChange, onClose }: { filters: Filters; onChan
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-white">Filtres</h3>
         <button onClick={() => onChange(DEFAULT_FILTERS)} className="text-xs text-primary hover:text-primary/80 transition-colors">
-          Réinitialiser
+          Reinitialiser
         </button>
       </div>
       <div>
@@ -290,12 +247,12 @@ function FiltersPanel({ filters, onChange, onClose }: { filters: Filters; onChan
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <label className="text-[10px] text-slate-500">Min (EUR)</label>
-            <input type="number" value={filters.priceMin} onChange={(e) => onChange({ ...filters, priceMin: +e.target.value })} min={0} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/50" />
+            <input type="number" value={filters.priceMin || ""} onChange={(e) => onChange({ ...filters, priceMin: +e.target.value || 0 })} min={0} placeholder="0" className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/50" />
           </div>
           <span className="text-slate-500 pt-4">—</span>
           <div className="flex-1">
             <label className="text-[10px] text-slate-500">Max (EUR)</label>
-            <input type="number" value={filters.priceMax} onChange={(e) => onChange({ ...filters, priceMax: +e.target.value })} min={0} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/50" />
+            <input type="number" value={filters.priceMax < 10000 ? filters.priceMax : ""} onChange={(e) => onChange({ ...filters, priceMax: +e.target.value || 10000 })} min={0} placeholder="Max" className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/50" />
           </div>
         </div>
       </div>
@@ -310,22 +267,11 @@ function FiltersPanel({ filters, onChange, onClose }: { filters: Filters; onChan
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Délai max (jours)</p>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Delai max (jours)</p>
         <div className="flex gap-2 flex-wrap">
           {[0, 3, 7, 14, 30].map((d) => (
             <button key={d} onClick={() => onChange({ ...filters, deliveryDays: d })} className={cn("px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors", filters.deliveryDays === d ? "bg-primary text-[#0f1117]" : "bg-white/5 text-slate-400 hover:bg-white/10")}>
               {d === 0 ? "Tout" : `${d}j`}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Type de prestataire</p>
-        <div className="space-y-2">
-          {(["all", "freelance", "agence"] as const).map((type) => (
-            <button key={type} onClick={() => onChange({ ...filters, vendorType: type })} className={cn("flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-colors", filters.vendorType === type ? "bg-primary/10 text-primary border border-primary/30" : "text-slate-400 hover:bg-white/5 border border-transparent")}>
-              <span className="material-symbols-outlined text-lg">{type === "all" ? "groups" : type === "freelance" ? "person" : "apartment"}</span>
-              {type === "all" ? "Tous" : type === "freelance" ? "Freelances" : "Agences"}
             </button>
           ))}
         </div>
@@ -367,7 +313,7 @@ function WelcomeBanner() {
       </div>
       <div className="flex-1">
         <p className="text-sm font-bold text-white">Bienvenue sur FreelanceHigh !</p>
-        <p className="text-xs text-slate-300 mt-0.5">Découvrez les meilleurs freelances et agences francophones pour vos projets.</p>
+        <p className="text-xs text-slate-300 mt-0.5">Decouvrez les meilleurs freelances et agences francophones pour vos projets.</p>
       </div>
       <button onClick={() => { setVisible(false); localStorage.setItem("fh_welcomed", "1"); }} className="text-slate-500 hover:text-white transition-colors flex-shrink-0">
         <span className="material-symbols-outlined text-lg">close</span>
@@ -399,75 +345,6 @@ function SkeletonCard() {
   );
 }
 
-// ─── Testimonial Banner ──────────────────────────────────────────────────────
-
-const TESTIMONIALS = [
-  {
-    name: "Aminata D.",
-    role: "CEO, AgriTech Sénégal",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    text: "FreelanceHigh m\u2019a permis de trouver un développeur mobile en 48h. La qualité du travail livré a dépassé mes attentes !",
-    rating: 5,
-  },
-  {
-    name: "Jean-Pierre K.",
-    role: "Freelance Full-Stack",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    text: "Depuis que je suis sur FreelanceHigh, mes revenus ont augmenté de 40%. La plateforme connecte vraiment les talents avec les bons clients.",
-    rating: 5,
-  },
-  {
-    name: "Fatou B.",
-    role: "Directrice Marketing, Abidjan",
-    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-    text: "L\u2019escrow sécurisé et la messagerie intégrée rendent la collaboration fluide et sans stress. Je recommande à 100% !",
-    rating: 5,
-  },
-];
-
-function TestimonialBanner() {
-  const testimonial = TESTIMONIALS[Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % TESTIMONIALS.length];
-
-  return (
-    <div className="col-span-full my-2">
-      <div className="bg-gradient-to-r from-primary/10 via-blue-500/5 to-primary/10 border border-primary/15 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-5">
-        <div className="flex-shrink-0">
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/30">
-            <Image
-              src={testimonial.avatar}
-              alt={testimonial.name}
-              width={56}
-              height={56}
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-        </div>
-        <div className="flex-1 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-0.5 mb-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span
-                key={star}
-                className={cn("material-symbols-outlined text-sm", star <= testimonial.rating ? "text-yellow-400" : "text-white/10")}
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >star</span>
-            ))}
-          </div>
-          <p className="text-sm text-slate-200 italic leading-relaxed">&ldquo;{testimonial.text}&rdquo;</p>
-          <div className="mt-2">
-            <p className="text-xs font-semibold text-white">{testimonial.name}</p>
-            <p className="text-[11px] text-slate-500">{testimonial.role}</p>
-          </div>
-        </div>
-        <div className="flex-shrink-0 hidden md:flex flex-col items-center gap-1">
-          <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
-          <span className="text-[10px] text-slate-500 font-medium">Témoignage vérifié</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main Feed Page ───────────────────────────────────────────────────────────
 
 function FeedPageInner() {
@@ -482,51 +359,32 @@ function FeedPageInner() {
   const [sort, setSort] = useState("pertinence");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [loading, setLoading] = useState(true);
 
   // Fetch real services from API
-  const [apiServices, setApiServices] = useState<MockService[]>([]);
-  const [apiVendors, setApiVendors] = useState<Map<string, { name: string; avatar: string }>>(new Map());
+  const [services, setServices] = useState<FeedService[]>([]);
   useEffect(() => {
+    setLoading(true);
     fetch("/api/feed")
       .then((res) => res.ok ? res.json() : { services: [] })
       .then((data: { services: ApiService[] }) => {
-        if (data.services && data.services.length > 0) {
-          setApiServices(data.services.map(mapApiToMock));
-          // Build vendor map from API services
-          const vendorMap = new Map<string, { name: string; avatar: string }>();
-          for (const s of data.services) {
-            if (!vendorMap.has(s.userId)) {
-              vendorMap.set(s.userId, {
-                name: s.vendorName || "Freelance",
-                avatar: s.vendorAvatar || "https://i.pravatar.cc/100",
-              });
-            }
-          }
-          setApiVendors(vendorMap);
+        if (data.services) {
+          setServices(data.services.map(mapApiToFeed));
         }
       })
-      .catch(() => { /* fallback to mock data only */ });
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
-
-  // Shuffle on each page load via key
-  const [shuffleKey] = useState(() => Math.random());
-
-  // Merge API services (real, at the top) + expanded mock services
-  const allServices = useMemo(() => {
-    const apiIds = new Set(apiServices.map((s) => s.id));
-    const mockWithoutDuplicates = EXPANDED_SERVICES.filter((s) => !apiIds.has(s.id));
-    return [...apiServices, ...mockWithoutDuplicates];
-  }, [apiServices]);
 
   // Filter services
   const filteredServices = useMemo(() => {
-    let list = allServices;
+    let list = services;
 
     if (query) {
       const q = query.toLowerCase();
       list = list.filter((s) =>
         s.title.toLowerCase().includes(q) ||
-        s.shortDesc.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
         s.tags.some((t) => t.toLowerCase().includes(q))
       );
     }
@@ -542,16 +400,9 @@ function FeedPageInner() {
 
     if (filters.rating > 0) list = list.filter((s) => s.rating >= filters.rating);
     if (filters.deliveryDays > 0) list = list.filter((s) => s.packages.basic.deliveryDays <= filters.deliveryDays);
-    if (filters.vendorType !== "all") {
-      list = list.filter((s) => {
-        const vendor = MOCK_VENDORS.find((v) => v.id === s.vendorId);
-        return vendor?.type === filters.vendorType;
-      });
-    }
 
     return list;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, categorySlug, filters, shuffleKey]);
+  }, [services, query, categorySlug, filters]);
 
   // Apply tab ordering
   const tabOrdered = useMemo(() => {
@@ -566,8 +417,7 @@ function FeedPageInner() {
       }
     }
     return buildFeedList(filteredServices, activeTab);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredServices, activeTab, sort]);
+  }, [filteredServices, activeTab, sort, query, categorySlug]);
 
   // Pagination
   const totalPages = Math.ceil(tabOrdered.length / SERVICES_PER_PAGE);
@@ -586,11 +436,6 @@ function FeedPageInner() {
     router.push(`/feed${qs ? `?${qs}` : ""}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [searchParams, router]);
-
-  // Split services for testimonial banner insertion after ~20 items
-  const TESTIMONIAL_INDEX = 20;
-  const beforeTestimonial = displayedServices.slice(0, TESTIMONIAL_INDEX);
-  const afterTestimonial = displayedServices.slice(TESTIMONIAL_INDEX);
 
   const activeCategory = CATEGORIES.find((c) => c.slug === categorySlug);
 
@@ -635,12 +480,16 @@ function FeedPageInner() {
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div>
             <h1 className="text-lg font-bold text-white">
-              {query ? `Résultats pour "${query}"` : activeCategory ? activeCategory.label : "Tous les services"}
+              {query ? `Resultats pour "${query}"` : activeCategory ? activeCategory.label : "Tous les services"}
             </h1>
             <p className="text-sm text-slate-500 mt-0.5">
-              {tabOrdered.length} service{tabOrdered.length !== 1 ? "s" : ""} disponible{tabOrdered.length !== 1 ? "s" : ""}
-              {totalPages > 1 && (
-                <span className="ml-2">— Page {currentPage} sur {totalPages}</span>
+              {loading ? "Chargement..." : (
+                <>
+                  {tabOrdered.length} service{tabOrdered.length !== 1 ? "s" : ""} disponible{tabOrdered.length !== 1 ? "s" : ""}
+                  {totalPages > 1 && (
+                    <span className="ml-2">— Page {currentPage} sur {totalPages}</span>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -687,33 +536,31 @@ function FeedPageInner() {
 
           {/* Services grid */}
           <div className="flex-1 min-w-0">
-            {displayedServices.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            ) : displayedServices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <span className="material-symbols-outlined text-6xl text-slate-600 mb-4">search_off</span>
-                <h3 className="text-lg font-semibold text-white mb-2">Aucun résultat</h3>
-                <p className="text-sm text-slate-500 max-w-sm">Essayez d&apos;autres termes de recherche ou supprimez certains filtres.</p>
+                <h3 className="text-lg font-semibold text-white mb-2">Aucun service disponible</h3>
+                <p className="text-sm text-slate-500 max-w-sm">
+                  {query || filters.rating > 0 || filters.deliveryDays > 0
+                    ? "Essayez d'autres termes de recherche ou supprimez certains filtres."
+                    : "Les services apparaitront ici une fois approuves par l'administration."}
+                </p>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                  {beforeTestimonial.map((service, index) => {
-                    const vendor = MOCK_VENDORS.find((v) => v.id === service.vendorId);
-                    const sp = activeTab === "pour-vous" && !query && !categorySlug && isSponsored(vendor);
-                    return (
-                      <ServiceCard key={`${service.id}-${index}`} service={service} sponsored={sp} apiVendors={apiVendors} />
-                    );
-                  })}
-                  {displayedServices.length > TESTIMONIAL_INDEX && <TestimonialBanner />}
-                  {afterTestimonial.map((service, index) => {
-                    const vendor = MOCK_VENDORS.find((v) => v.id === service.vendorId);
-                    const sp = activeTab === "pour-vous" && !query && !categorySlug && isSponsored(vendor);
-                    return (
-                      <ServiceCard key={`${service.id}-after-${index}`} service={service} sponsored={sp} apiVendors={apiVendors} />
-                    );
-                  })}
+                  {displayedServices.map((service, index) => (
+                    <ServiceCard key={`${service.id}-${index}`} service={service} />
+                  ))}
                 </div>
 
-                {/* Pagination — Voir plus de services */}
+                {/* Pagination */}
                 <div className="mt-10 flex flex-col items-center gap-6">
                   {hasMore && (
                     <button
@@ -788,13 +635,13 @@ function FeedPageInner() {
                         <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>
                       </div>
                       <p className="text-sm font-semibold text-white">Vous avez tout vu !</p>
-                      <p className="text-xs text-slate-500">De nouveaux services arrivent bientôt.</p>
+                      <p className="text-xs text-slate-500">De nouveaux services arrivent bientot.</p>
                       {currentPage > 1 && (
                         <button
                           onClick={() => goToPage(1)}
                           className="text-xs text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
                         >
-                          Revenir à la première page
+                          Revenir a la premiere page
                         </button>
                       )}
                     </div>

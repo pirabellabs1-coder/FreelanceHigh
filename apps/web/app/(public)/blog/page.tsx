@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { usePlatformDataStore } from "@/store/platform-data";
 
 export default function BlogPage() {
   const { blogArticles } = usePlatformDataStore();
   const [catFilter, setCatFilter] = useState("");
+  const t = useTranslations("blog");
 
   const published = useMemo(() => {
     let list = blogArticles.filter(a => a.status === "publie");
@@ -27,8 +29,8 @@ export default function BlogPage() {
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-20 pt-32 pb-16">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4">Blog FreelanceHigh</h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">Conseils, guides et success stories pour réussir en freelance en Afrique francophone et à l&apos;international.</p>
+          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4">{t("title")}</h1>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">{t("subtitle")}</p>
         </div>
       </div>
 
@@ -36,7 +38,7 @@ export default function BlogPage() {
         {/* Category filter */}
         <div className="flex gap-2 mb-10 flex-wrap">
           <button onClick={() => setCatFilter("")} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${!catFilter ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
-            Tous
+            {t("all")}
           </button>
           {categories.map(cat => (
             <button key={cat} onClick={() => setCatFilter(cat)} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${catFilter === cat ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
@@ -48,7 +50,7 @@ export default function BlogPage() {
         {published.length === 0 ? (
           <div className="text-center py-24">
             <span className="material-symbols-outlined text-6xl text-slate-600">article</span>
-            <p className="text-slate-500 mt-4 text-lg">Aucun article publié pour le moment.</p>
+            <p className="text-slate-500 mt-4 text-lg">{t("no_articles")}</p>
           </div>
         ) : (
           <>
@@ -63,7 +65,7 @@ export default function BlogPage() {
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{featured.category}</span>
                       <span className="text-xs text-slate-500">{featured.publishedAt && new Date(featured.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
-                      <span className="text-xs text-slate-500">{featured.views.toLocaleString()} vues</span>
+                      <span className="text-xs text-slate-500">{t("views", { count: featured.views.toLocaleString() })}</span>
                     </div>
                     <h2 className="text-2xl lg:text-3xl font-black text-white group-hover:text-primary transition-colors mb-3">{featured.title}</h2>
                     <p className="text-slate-400 leading-relaxed">{featured.excerpt}</p>
@@ -87,7 +89,7 @@ export default function BlogPage() {
                     <div className="p-5 flex-1 flex flex-col">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{article.category}</span>
-                        <span className="text-xs text-slate-600">{article.views > 0 && `${article.views.toLocaleString()} vues`}</span>
+                        <span className="text-xs text-slate-600">{article.views > 0 && t("views", { count: article.views.toLocaleString() })}</span>
                       </div>
                       <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors mb-2 line-clamp-2">{article.title}</h3>
                       <p className="text-sm text-slate-500 line-clamp-2 flex-1">{article.excerpt}</p>

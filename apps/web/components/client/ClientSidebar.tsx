@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { useClientStore } from "@/store/client";
+import { useMessagingStore } from "@/store/messaging";
 
 interface NavSection {
   title: string;
-  items: { label: string; href: string; icon: string; exact?: boolean; badge?: string }[];
+  items: { label: string; href: string; icon: string; exact?: boolean; badgeKey?: string }[];
 }
 
 const SECTIONS: NavSection[] = [
@@ -24,14 +26,14 @@ const SECTIONS: NavSection[] = [
     title: "Projets & Commandes",
     items: [
       { label: "Mes Projets", href: "/client/projets", icon: "assignment" },
-      { label: "Mes Commandes", href: "/client/commandes", icon: "shopping_bag" },
+      { label: "Mes Commandes", href: "/client/commandes", icon: "shopping_bag", badgeKey: "orders" },
       { label: "Propositions", href: "/client/propositions", icon: "send" },
     ],
   },
   {
     title: "Communication",
     items: [
-      { label: "Messages", href: "/client/messages", icon: "chat" },
+      { label: "Messages", href: "/client/messages", icon: "chat", badgeKey: "messages" },
       { label: "Favoris", href: "/client/favoris", icon: "favorite" },
       { label: "Avis", href: "/client/avis", icon: "rate_review" },
     ],
@@ -47,10 +49,10 @@ const SECTIONS: NavSection[] = [
 ];
 
 const BOTTOM_ITEMS = [
-  { label: "Notifications", href: "/client/notifications", icon: "notifications" },
+  { label: "Notifications", href: "/client/notifications", icon: "notifications", badgeKey: "notifications" as const },
   { label: "Aide", href: "/client/aide", icon: "help" },
   { label: "Profil", href: "/client/profil", icon: "person" },
-  { label: "Paramètres", href: "/client/parametres", icon: "settings" },
+  { label: "Parametres", href: "/client/parametres", icon: "settings" },
 ];
 
 interface ClientSidebarProps {
@@ -60,6 +62,18 @@ interface ClientSidebarProps {
 export function ClientSidebar({ onClose }: ClientSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // Badge counts from client and messaging stores
+  const activeOrders = useClientStore((s) => s.activeOrdersCount());
+  const unreadNotifications = useClientStore((s) => s.unreadNotificationsCount());
+  const conversations = useMessagingStore((s) => s.conversations);
+  const unreadMessages = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+
+  const badgeCounts: Record<string, number> = {
+    orders: activeOrders,
+    notifications: unreadNotifications,
+    messages: unreadMessages,
+  };
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
@@ -123,8 +137,9 @@ export function ClientSidebar({ onClose }: ClientSidebarProps) {
               </button>
               {isOpen && (
                 <div className="space-y-0.5 mb-2">
-                  {section.items.map(({ label, href, icon, exact, badge }) => {
+                  {section.items.map(({ label, href, icon, exact, badgeKey }) => {
                     const active = isActive(href, exact);
+                    const badgeCount = badgeKey ? badgeCounts[badgeKey] || 0 : 0;
                     return (
                       <Link
                         key={href}
@@ -139,8 +154,10 @@ export function ClientSidebar({ onClose }: ClientSidebarProps) {
                       >
                         <span className="material-symbols-outlined text-lg">{icon}</span>
                         <span className="flex-1">{label}</span>
-                        {badge && (
-                          <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold">{badge}</span>
+                        {badgeCount > 0 && (
+                          <span className="min-w-[20px] h-5 flex items-center justify-center text-[10px] bg-red-500 text-white px-1.5 rounded-full font-bold">
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
                         )}
                       </Link>
                     );
@@ -154,8 +171,9 @@ export function ClientSidebar({ onClose }: ClientSidebarProps) {
 
       {/* Bottom nav */}
       <div className="px-3 py-2 border-t border-border-dark flex-shrink-0 space-y-0.5">
-        {BOTTOM_ITEMS.map(({ label, href, icon }) => {
+        {BOTTOM_ITEMS.map(({ label, href, icon, badgeKey }) => {
           const active = isActive(href);
+          const badgeCount = badgeKey ? badgeCounts[badgeKey] || 0 : 0;
           return (
             <Link
               key={href}
@@ -169,7 +187,12 @@ export function ClientSidebar({ onClose }: ClientSidebarProps) {
               )}
             >
               <span className="material-symbols-outlined text-lg">{icon}</span>
-              <span>{label}</span>
+              <span className="flex-1">{label}</span>
+              {badgeCount > 0 && (
+                <span className="min-w-[20px] h-5 flex items-center justify-center text-[10px] bg-red-500 text-white px-1.5 rounded-full font-bold">
+                  {badgeCount > 99 ? "99+" : badgeCount}
+                </span>
+              )}
             </Link>
           );
         })}

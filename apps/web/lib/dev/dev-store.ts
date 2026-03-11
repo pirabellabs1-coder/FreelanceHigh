@@ -19,6 +19,7 @@ export interface DevUser {
   createdAt: string;
   loginCount: number;
   lastLoginAt?: string;
+  adminRole?: "super_admin" | "moderateur" | "validateur_kyc" | "analyste" | "support" | "financier";
 }
 
 const DB_PATH = path.join(process.cwd(), "lib", "dev", "users.json");
@@ -75,6 +76,7 @@ const DEFAULT_USERS: DevUser[] = [
     status: "ACTIF",
     createdAt: new Date().toISOString(),
     loginCount: 0,
+    adminRole: "super_admin",
   },
 ];
 
@@ -100,6 +102,10 @@ function writeUsers(users: DevUser[]): void {
 }
 
 export const devStore = {
+  getAll(): DevUser[] {
+    return readUsers();
+  },
+
   findByEmail(email: string): DevUser | null {
     const users = readUsers();
     return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? null;
@@ -121,6 +127,15 @@ export const devStore = {
     users.push(newUser);
     writeUsers(users);
     return newUser;
+  },
+
+  update(id: string, updates: Partial<Omit<DevUser, "id">>): DevUser | null {
+    const users = readUsers();
+    const idx = users.findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+    users[idx] = { ...users[idx], ...updates };
+    writeUsers(users);
+    return users[idx];
   },
 
   updateLastLogin(id: string): void {
