@@ -577,6 +577,7 @@ export const useClientStore = create<ClientState>()((set, get) => ({
 
   updateProject: async (id, data) => {
     try {
+      await projectsApi.update(id, data);
       set((s) => ({ projects: s.projects.map((p) => p.id === id ? { ...p, ...data } as ClientProject : p) }));
       return true;
     } catch { return false; }
@@ -584,6 +585,7 @@ export const useClientStore = create<ClientState>()((set, get) => ({
 
   closeProject: async (id) => {
     try {
+      await projectsApi.update(id, { status: "ferme" });
       set((s) => ({ projects: s.projects.map((p) => p.id === id ? { ...p, status: "termine" as const } : p) }));
       return true;
     } catch { return false; }
@@ -591,6 +593,7 @@ export const useClientStore = create<ClientState>()((set, get) => ({
 
   deleteProject: async (id) => {
     try {
+      await projectsApi.delete(id);
       set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
       return true;
     } catch { return false; }

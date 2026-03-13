@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore } from "@/store/currency";
+import { analytics } from "@/lib/analytics";
 
 // ============================================================
 // Types
@@ -244,6 +245,7 @@ export default function FreelanceProfilePage() {
       .then((data) => {
         if (data?.freelance) {
           setFreelancer(data.freelance);
+          analytics.profileViewed(data.freelance.id || username);
         }
         setLoading(false);
       })
@@ -340,7 +342,16 @@ export default function FreelanceProfilePage() {
                 <h1 className="text-slate-900 dark:text-slate-100 text-2xl md:text-3xl font-extrabold tracking-tight">
                   {freelancer.name}
                 </h1>
-                {available && (
+                {profile?.vacationMode ? (
+                  <div className="flex h-7 items-center justify-center gap-x-1.5 rounded-full bg-amber-500/20 px-3 border border-amber-500/30">
+                    <span className="material-symbols-outlined text-amber-500 text-sm">
+                      beach_access
+                    </span>
+                    <p className="text-amber-500 text-xs font-bold uppercase tracking-wider">
+                      En vacances
+                    </p>
+                  </div>
+                ) : available ? (
                   <div className="flex h-7 items-center justify-center gap-x-1.5 rounded-full bg-primary/20 px-3 border border-primary/30">
                     <span className="material-symbols-outlined text-primary text-sm fill-icon">
                       check_circle
@@ -349,7 +360,7 @@ export default function FreelanceProfilePage() {
                       {t("available")}
                     </p>
                   </div>
-                )}
+                ) : null}
                 {/* Badges */}
                 {allBadges.map((b) => {
                   const cfg = BADGE_CONFIG[b];

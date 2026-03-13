@@ -179,8 +179,8 @@ export default function AgenceParametres() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <button onClick={() => addToast("info", "Changement de plan a venir")} className="px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white font-semibold hover:bg-border-dark transition-colors">Changer de plan</button>
-                <button onClick={() => addToast("info", "Annulation du plan a venir")} className="px-4 py-2.5 text-red-400 text-sm font-semibold hover:text-red-300 transition-colors">Annuler l&apos;abonnement</button>
+                <button onClick={() => addToast("info", "Changement de plan en cours de developpement")} className="px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white font-semibold hover:bg-border-dark transition-colors">Changer de plan</button>
+                <button onClick={() => addToast("info", "Annulation du plan en cours de developpement")} className="px-4 py-2.5 text-red-400 text-sm font-semibold hover:text-red-300 transition-colors">Annuler l&apos;abonnement</button>
               </div>
             </div>
           )}
@@ -236,7 +236,7 @@ export default function AgenceParametres() {
               <div className="p-5 bg-red-500/5 rounded-xl border border-red-500/20">
                 <h3 className="text-sm font-bold text-red-400 mb-2">Suspendre l&apos;agence</h3>
                 <p className="text-xs text-slate-400 mb-3">Mettre l&apos;agence en pause desactive tous les services et rend le profil invisible. Les commandes en cours seront maintenues.</p>
-                <button onClick={() => addToast("info", "Suspension a venir")} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Suspendre l&apos;agence</button>
+                <button onClick={() => addToast("info", "Suspension en cours de developpement")} className="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Suspendre l&apos;agence</button>
               </div>
               <div className="p-5 bg-red-500/5 rounded-xl border border-red-500/20">
                 <h3 className="text-sm font-bold text-red-400 mb-2">Supprimer l&apos;agence</h3>

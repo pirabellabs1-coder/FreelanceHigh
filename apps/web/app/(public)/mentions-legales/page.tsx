@@ -287,6 +287,30 @@ export default async function MentionsLegalesPage() {
             </div>
           </section>
 
+          {/* Section 13 */}
+          <section className="bg-neutral-dark rounded-xl border border-border-dark p-8">
+            <h2 className="text-xl font-bold text-white mb-4">13. Section Formations</h2>
+
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              En complément de son activité principale de marketplace freelance, FreelanceHigh opère une <strong className="text-slate-300">section Formations</strong> permettant la publication, la commercialisation et le suivi de formations en ligne, de cohortes accompagnées et de produits numériques (e-books, templates, ressources, licences).
+            </p>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.1 Rôle additionnel : Instructeur</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              En plus des rôles de Freelance, Client et Agence, la Plateforme reconnaît le rôle d&apos;<strong className="text-slate-300">Instructeur</strong>, accessible sur candidature et après approbation par l&apos;équipe FreelanceHigh. Les Instructeurs peuvent créer et publier des formations, gérer des cohortes, commercialiser des produits numériques et percevoir 70 % des revenus générés par leurs ventes.
+            </p>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.2 Nature des certificats</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les certificats de complétion délivrés par la Plateforme FreelanceHigh ont une <strong className="text-slate-300">valeur purement informative</strong>. Ils attestent de la complétion d&apos;un parcours de formation sur la Plateforme mais ne constituent en aucun cas un diplôme reconnu par l&apos;État, une certification professionnelle ou une qualification au sens du Code du travail ou du Code de l&apos;éducation. FreelanceHigh n&apos;est pas un organisme de formation enregistré et ne délivre pas de certifications au sens du Répertoire National des Certifications Professionnelles (RNCP).
+            </p>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.3 Renvoi aux CGU</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Les conditions détaillées d&apos;utilisation de la section Formations — incluant les modalités de publication, le partage des revenus, l&apos;accès aux formations, les cohortes, les certificats, les produits numériques, la politique de remboursement et les règles d&apos;évaluation — sont définies à l&apos;<Link href="/cgu" className="text-primary hover:underline">Article 24 des Conditions Générales d&apos;Utilisation</Link>.
+            </p>
+          </section>
+
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">

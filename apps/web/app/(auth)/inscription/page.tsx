@@ -104,7 +104,7 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
 const LEFT_CONTENT = [
   {
     headline: "Commencez votre aventure freelance dès aujourd'hui",
-    subtitle: "Rejoignez plus de 50 000 freelances qui ont déjà transformé leur carrière sur notre plateforme.",
+    subtitle: "Rejoignez les freelances qui transforment leur carriere sur notre plateforme internationale.",
     items: [
       { icon: "verified", text: "Profil vérifié en moins de 24h" },
       { icon: "payments", text: "Paiements sécurisés par escrow" },
@@ -135,7 +135,7 @@ const LEFT_CONTENT = [
     items: [
       { icon: "rocket_launch", text: "Lancez-vous dès maintenant" },
       { icon: "shield", text: "Environnement sécurisé et vérifié" },
-      { icon: "diversity_3", text: "Communauté de 50k+ talents" },
+      { icon: "diversity_3", text: "Communaute internationale de talents" },
     ],
   },
 ];
@@ -208,7 +208,7 @@ export default function InscriptionPage() {
   // All form data
   const [d, setD] = useState({
     // Step 0
-    prenom: "", nom: "", email: "", password: "",
+    prenom: "", nom: "", email: "", password: "", confirmPassword: "",
     nomAgence: "", secteur: "", acceptCgu: false,
     // Step 1 — Profile
     titre: "", bio: "", pays: "", ville: "",
@@ -244,8 +244,9 @@ export default function InscriptionPage() {
 
   function canProceed(): boolean {
     if (step === 0) {
-      if (!d.prenom || !d.nom || !d.email || !d.password || !d.acceptCgu) return false;
+      if (!d.prenom || !d.nom || !d.email || !d.password || !d.confirmPassword || !d.acceptCgu) return false;
       if (d.password.length < 8) return false;
+      if (d.password !== d.confirmPassword) return false;
       if (role === "agence" && (!d.nomAgence || !d.secteur)) return false;
       return true;
     }
@@ -352,7 +353,11 @@ export default function InscriptionPage() {
 
         {/* Social login */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <button type="button" className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors">
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: role === "client" ? "/client" : "/dashboard" })}
+            className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+          >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -361,7 +366,11 @@ export default function InscriptionPage() {
             </svg>
             <span className="text-sm font-semibold">Google</span>
           </button>
-          <button type="button" className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors">
+          <button
+            type="button"
+            onClick={() => signIn("linkedin", { callbackUrl: role === "client" ? "/client" : "/dashboard" })}
+            className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+          >
             <svg className="w-5 h-5" fill="#0077b5" viewBox="0 0 24 24">
               <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
             </svg>
@@ -382,11 +391,11 @@ export default function InscriptionPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LABEL}>Prénom</label>
-              <input name="prenom" type="text" autoComplete="given-name" required value={d.prenom} onChange={handleChange} placeholder="Lissanon" className={INPUT} />
+              <input name="prenom" type="text" autoComplete="given-name" required value={d.prenom} onChange={handleChange} placeholder="Jean" className={INPUT} />
             </div>
             <div>
               <label className={LABEL}>Nom</label>
-              <input name="nom" type="text" autoComplete="family-name" required value={d.nom} onChange={handleChange} placeholder="Gildas" className={INPUT} />
+              <input name="nom" type="text" autoComplete="family-name" required value={d.nom} onChange={handleChange} placeholder="Dupont" className={INPUT} />
             </div>
           </div>
 
@@ -395,7 +404,7 @@ export default function InscriptionPage() {
             <>
               <div>
                 <label className={LABEL}>Nom de l&apos;agence</label>
-                <input name="nomAgence" type="text" required value={d.nomAgence} onChange={handleChange} placeholder="Studio Digital Dakar" className={INPUT} />
+                <input name="nomAgence" type="text" required value={d.nomAgence} onChange={handleChange} placeholder="Mon Agence" className={INPUT} />
               </div>
               <div>
                 <label className={LABEL}>Secteur d&apos;activité</label>
@@ -448,6 +457,28 @@ export default function InscriptionPage() {
                   {pw.label}
                 </span>
               </div>
+            )}
+          </div>
+
+          {/* Confirm password */}
+          <div>
+            <label className={LABEL}>Confirmer le mot de passe</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
+              <input
+                name="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={d.confirmPassword}
+                onChange={handleChange}
+                placeholder="Retapez votre mot de passe"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+              />
+            </div>
+            {d.confirmPassword && d.password !== d.confirmPassword && (
+              <p className="mt-1.5 text-xs text-red-400 font-medium">Les mots de passe ne correspondent pas</p>
             )}
           </div>
 

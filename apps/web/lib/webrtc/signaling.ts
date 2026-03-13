@@ -1,7 +1,7 @@
 // ============================================================
-// FreelanceHigh — WebRTC Signaling via BroadcastChannel
-// Permet le signaling entre onglets du meme navigateur.
-// Swappable vers Socket.io quand le backend sera pret.
+// FreelanceHigh — WebRTC Signaling via Server API + BroadcastChannel fallback
+// Le serveur API permet le signaling entre utilisateurs différents.
+// BroadcastChannel est utilisé en fallback pour le dev local (même navigateur).
 // ============================================================
 
 import type {
@@ -20,17 +20,19 @@ type SignalingEventHandler = {
   onReject: (reject: CallReject) => void;
 };
 
-// Message envelope sent via BroadcastChannel
 interface SignalingMessage {
   type: "offer" | "answer" | "ice-candidate" | "hangup" | "reject";
-  to: string; // userId destinataire
+  to: string;
   payload: CallOffer | CallAnswer | IceCandidate | CallHangup | CallReject;
 }
 
 const CHANNEL_NAME = "freelancehigh-signaling";
+const POLL_INTERVAL_MS = 2000;
+
 let channel: BroadcastChannel | null = null;
 let handlers: SignalingEventHandler | null = null;
 let currentUserId: string | null = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
 let _callIdCounter = 0;
 
 export function generateCallId(): string {
@@ -38,29 +40,52 @@ export function generateCallId(): string {
   return `call-${_callIdCounter}-${Date.now()}`;
 }
 
-function handleMessage(event: MessageEvent<SignalingMessage>) {
-  const msg = event.data;
-  if (!handlers || !currentUserId) return;
+function dispatchSignal(type: string, payload: unknown) {
+  if (!handlers) return;
 
-  // Only process messages addressed to us
-  if (msg.to !== currentUserId) return;
-
-  switch (msg.type) {
+  switch (type) {
     case "offer":
-      handlers.onOffer(msg.payload as CallOffer);
+      handlers.onOffer(payload as CallOffer);
       break;
     case "answer":
-      handlers.onAnswer(msg.payload as CallAnswer);
+      handlers.onAnswer(payload as CallAnswer);
       break;
     case "ice-candidate":
-      handlers.onIceCandidate(msg.payload as IceCandidate);
+      handlers.onIceCandidate(payload as IceCandidate);
       break;
     case "hangup":
-      handlers.onHangup(msg.payload as CallHangup);
+      handlers.onHangup(payload as CallHangup);
       break;
     case "reject":
-      handlers.onReject(msg.payload as CallReject);
+      handlers.onReject(payload as CallReject);
       break;
+  }
+}
+
+// BroadcastChannel handler (fallback for same-browser dev)
+function handleBroadcastMessage(event: MessageEvent<SignalingMessage>) {
+  const msg = event.data;
+  if (!handlers || !currentUserId) return;
+  if (msg.to !== currentUserId) return;
+  dispatchSignal(msg.type, msg.payload);
+}
+
+// Server polling
+async function pollServer() {
+  if (!currentUserId) return;
+
+  try {
+    const res = await fetch(`/api/signaling?userId=${encodeURIComponent(currentUserId)}`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (data.signals && Array.isArray(data.signals)) {
+      for (const sig of data.signals) {
+        dispatchSignal(sig.type, sig.payload);
+      }
+    }
+  } catch {
+    // Silent fail — network error during polling
   }
 }
 
@@ -69,30 +94,60 @@ export function registerSignalingHandlers(h: SignalingEventHandler, userId: stri
   handlers = h;
   currentUserId = userId;
 
+  // BroadcastChannel (same-browser fallback)
   if (typeof BroadcastChannel !== "undefined") {
-    // Close previous channel if any
     if (channel) {
-      channel.removeEventListener("message", handleMessage);
+      channel.removeEventListener("message", handleBroadcastMessage);
       channel.close();
     }
     channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.addEventListener("message", handleMessage);
+    channel.addEventListener("message", handleBroadcastMessage);
   }
+
+  // Start server polling
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollServer, POLL_INTERVAL_MS);
+  // Immediate first poll
+  pollServer();
 }
 
 export function unregisterSignalingHandlers() {
   handlers = null;
   currentUserId = null;
+
   if (channel) {
-    channel.removeEventListener("message", handleMessage);
+    channel.removeEventListener("message", handleBroadcastMessage);
     channel.close();
     channel = null;
   }
+
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 }
 
-function post(msg: SignalingMessage) {
+// Send signal via server API + BroadcastChannel
+async function post(msg: SignalingMessage) {
+  // BroadcastChannel (same-browser)
   if (channel) {
     channel.postMessage(msg);
+  }
+
+  // Server API (cross-browser / cross-device)
+  try {
+    await fetch("/api/signaling", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: msg.type,
+        from: currentUserId,
+        to: msg.to,
+        payload: msg.payload,
+      }),
+    });
+  } catch {
+    console.warn("[Signaling] Failed to send via server, BroadcastChannel only");
   }
 }
 

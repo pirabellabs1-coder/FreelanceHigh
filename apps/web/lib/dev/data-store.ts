@@ -439,9 +439,9 @@ function createSeedService(
     seoScore: Math.floor(40 + Math.random() * 40),
     faq: [],
     extras: [],
-    vendorName: "Gildas Lissanon",
-    vendorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
-    vendorUsername: "gildas-dev",
+    vendorName: "",
+    vendorAvatar: "",
+    vendorUsername: "",
     vendorCountry: "CI",
     vendorBadges: ["Vérifié", "Pro"],
     vendorRating: 4.8,
@@ -1413,6 +1413,38 @@ export const projectStore = {
 
   getById(id: string): StoredProject | null {
     return this.getAll().find((p) => p.id === id) ?? null;
+  },
+
+  create(data: Omit<StoredProject, "id" | "proposals" | "status" | "postedAt">): StoredProject {
+    const projects = this.getAll();
+    const project: StoredProject = {
+      ...data,
+      id: `proj_${Date.now().toString(36)}`,
+      proposals: 0,
+      status: "ouvert",
+      postedAt: new Date().toISOString(),
+    };
+    projects.unshift(project);
+    writeJson(PROJECTS_FILE, projects);
+    return project;
+  },
+
+  update(id: string, data: Partial<StoredProject>): StoredProject | null {
+    const projects = this.getAll();
+    const idx = projects.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+    projects[idx] = { ...projects[idx], ...data };
+    writeJson(PROJECTS_FILE, projects);
+    return projects[idx];
+  },
+
+  delete(id: string): boolean {
+    const projects = this.getAll();
+    const idx = projects.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    projects.splice(idx, 1);
+    writeJson(PROJECTS_FILE, projects);
+    return true;
   },
 
   incrementProposals(id: string): void {

@@ -8,7 +8,7 @@ interface AuthLeftPanelProps {
 }
 
 const DEFAULT_BENEFITS = [
-  "Accédez à des milliers de clients en Afrique et dans le monde",
+  "Accédez à des milliers de clients dans le monde entier",
   "Paiements sécurisés via escrow : Mobile Money, Stripe, PayPal",
   "Profil vérifié avec badges de confiance",
   "Support dédié francophone 7j/7",
@@ -80,7 +80,7 @@ export function AuthLeftPanel({
         </h2>
         <p className="text-white/70 text-base leading-relaxed mb-10 max-w-sm">
           {subtext ??
-            "Rejoignez des milliers de professionnels en Afrique francophone, en France et dans la diaspora mondiale."}
+            "Rejoignez des milliers de professionnels francophones et internationaux sur la plateforme freelance n°1."}
         </p>
         <ul className="space-y-4">
           {benefits.map((b) => (

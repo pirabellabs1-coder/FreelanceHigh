@@ -469,9 +469,119 @@ export default async function ConfidentialitePage() {
             </p>
           </section>
 
-          {/* Section 13 */}
+          {/* Section 13 — Données formations */}
           <section className="bg-neutral-dark rounded-xl border border-border-dark p-8">
-            <h2 className="text-xl font-bold text-white mb-4">13. Modifications de la politique de confidentialité</h2>
+            <h2 className="text-xl font-bold text-white mb-4">13. Données relatives aux formations et à l&apos;apprentissage</h2>
+
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              La Plateforme FreelanceHigh propose une section Formations permettant aux Utilisateurs de suivre des formations en ligne, de participer à des cohortes et d&apos;acquérir des produits numériques. Cette activité entraîne la collecte et le traitement de catégories de données spécifiques, décrites ci-après.
+            </p>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.1 Données d&apos;apprentissage collectées</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Lorsque vous utilisez la section Formations de la Plateforme en tant qu&apos;Apprenant, les données suivantes sont collectées :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li>Historique des formations auxquelles vous êtes inscrit (gratuites et payantes)</li>
+              <li>Progression par formation : pourcentage de complétion, leçons terminées, modules en cours</li>
+              <li>Scores obtenus aux quiz et évaluations</li>
+              <li>Temps passé par leçon, par module et par formation</li>
+              <li>Commentaires et questions posés dans les espaces de discussion des formations</li>
+              <li>Notes personnelles prises dans l&apos;interface d&apos;apprentissage (si fonctionnalité disponible)</li>
+              <li>Formations ajoutées à la liste de souhaits</li>
+              <li>Certificats obtenus et leur statut de vérification</li>
+              <li>Inscriptions aux cohortes (dates, statut, paiement)</li>
+              <li>Produits numériques achetés et téléchargés</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.2 Finalités du traitement des données d&apos;apprentissage</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les données d&apos;apprentissage sont traitées pour les finalités suivantes :
+            </p>
+            <div className="space-y-3 mb-4">
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-sm text-slate-300 font-semibold mb-2">Suivi de la progression</p>
+                <p className="text-sm text-slate-400">Permettre à l&apos;Apprenant de suivre sa progression dans chaque formation, de reprendre là où il s&apos;est arrêté, et de visualiser son parcours d&apos;apprentissage global.</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-sm text-slate-300 font-semibold mb-2">Délivrance des certificats</p>
+                <p className="text-sm text-slate-400">Vérifier que les conditions de complétion sont remplies (100 % de progression, score minimum aux quiz) pour la génération automatique des certificats.</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-sm text-slate-300 font-semibold mb-2">Statistiques agrégées pour les Instructeurs</p>
+                <p className="text-sm text-slate-400">Fournir aux Instructeurs des données agrégées et anonymisées sur l&apos;engagement de leurs apprenants (taux de complétion moyen, leçons les plus consultées, taux de réussite aux quiz) pour améliorer la qualité de leurs formations.</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-sm text-slate-300 font-semibold mb-2">Recommandations personnalisées</p>
+                <p className="text-sm text-slate-400">Suggérer des formations pertinentes en fonction de votre historique d&apos;apprentissage, de vos centres d&apos;intérêt et de votre progression dans des domaines connexes.</p>
+              </div>
+            </div>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.3 Partage des données d&apos;apprentissage</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Vos données d&apos;apprentissage font l&apos;objet d&apos;un partage limité et encadré :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Ce que l&apos;Instructeur voit :</strong> l&apos;Instructeur a accès à des statistiques agrégées sur l&apos;ensemble de ses apprenants (nombre d&apos;inscrits, taux de complétion moyen, distribution des notes). Il ne voit <strong className="text-slate-300">pas</strong> votre progression individuelle détaillée, sauf si vous êtes inscrit à une cohorte avec suivi personnalisé.</li>
+              <li><strong className="text-slate-300">Ce qui est public :</strong> le nombre total d&apos;apprenants inscrits à une formation est visible publiquement. Vos évaluations et commentaires publiés sont visibles par tous les utilisateurs. Votre nom d&apos;utilisateur est associé à vos avis.</li>
+              <li><strong className="text-slate-300">Certificats :</strong> les certificats disposent d&apos;une page de vérification publique accessible via un lien unique et un QR code. Cette page affiche votre nom, le titre de la formation, la date d&apos;obtention et l&apos;identifiant unique du certificat. Vous pouvez choisir de rendre vos certificats visibles sur votre profil public ou de les garder privés.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.4 Conservation des données d&apos;apprentissage</h3>
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full text-sm text-slate-400">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 px-4 text-slate-300 font-semibold">Type de données</th>
+                    <th className="text-left py-3 px-4 text-slate-300 font-semibold">Durée de conservation</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  <tr>
+                    <td className="py-3 px-4">Progression d&apos;apprentissage</td>
+                    <td className="py-3 px-4">Durée du compte + 3 ans après suppression</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4">Scores de quiz et évaluations</td>
+                    <td className="py-3 px-4">Durée du compte + 3 ans après suppression</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4">Certificats de complétion</td>
+                    <td className="py-3 px-4">Conservation indéfinie (valeur probatoire)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4">Commentaires et discussions de formation</td>
+                    <td className="py-3 px-4">Durée du compte + 1 an (anonymisés après suppression)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4">Données de transaction formations</td>
+                    <td className="py-3 px-4">10 ans (obligations comptables)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4">Évaluations et avis sur les formations</td>
+                    <td className="py-3 px-4">Durée du compte (anonymisés après suppression)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">13.5 Données des Instructeurs</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              En tant qu&apos;Instructeur, les données supplémentaires suivantes sont collectées et traitées :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Candidature :</strong> domaines d&apos;expertise, biographie professionnelle (FR et EN), liens professionnels (LinkedIn, site web, YouTube), motivation. Ces données sont conservées pendant la durée du statut d&apos;Instructeur + 1 an.</li>
+              <li><strong className="text-slate-300">Revenus :</strong> montant des ventes par formation, commissions perçues, historique des paiements, solde du portefeuille Instructeur. Conservés 10 ans conformément aux obligations comptables.</li>
+              <li><strong className="text-slate-300">Analytics de cours :</strong> nombre d&apos;inscrits, taux de complétion, notes moyennes, revenus par formation, données démographiques agrégées des apprenants (pays, langue). Ces données sont anonymisées et agrégées — aucune donnée personnelle individuelle d&apos;apprenant n&apos;est communiquée à l&apos;Instructeur.</li>
+            </ul>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              La base légale du traitement des données de formation est l&apos;exécution du contrat (Article 6.1.b du RGPD) pour le suivi de progression, la délivrance de certificats et le traitement des transactions. Les recommandations personnalisées sont fondées sur l&apos;intérêt légitime (Article 6.1.f du RGPD).
+            </p>
+          </section>
+
+          {/* Section 14 */}
+          <section className="bg-neutral-dark rounded-xl border border-border-dark p-8">
+            <h2 className="text-xl font-bold text-white mb-4">14. Modifications de la politique de confidentialité</h2>
 
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
               Nous nous réservons le droit de modifier la présente Politique de Confidentialité à tout moment. Les modifications substantielles vous seront notifiées par email et par notification in-app au moins 30 jours avant leur entrée en vigueur. La date de dernière mise à jour est indiquée en haut de cette page.
@@ -481,9 +591,9 @@ export default async function ConfidentialitePage() {
             </p>
           </section>
 
-          {/* Section 14 */}
+          {/* Section 15 */}
           <section className="bg-neutral-dark rounded-xl border border-border-dark p-8">
-            <h2 className="text-xl font-bold text-white mb-4">14. Contact</h2>
+            <h2 className="text-xl font-bold text-white mb-4">15. Contact</h2>
 
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
               Pour toute question, demande ou réclamation relative à la protection de vos données personnelles, vous pouvez nous contacter :

@@ -1,28 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePlatformDataStore } from "@/store/platform-data";
+
+interface BlogArticle {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  author: string;
+  category: string;
+  tags: string[];
+  status: string;
+  publishedAt: string | null;
+  featuredImage: string;
+  views: number;
+  createdAt: string;
+}
 
 export default function BlogPage() {
-  const { blogArticles } = usePlatformDataStore();
+  const [articles, setArticles] = useState<BlogArticle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState("");
   const t = useTranslations("blog");
 
+  useEffect(() => {
+    fetch("/api/blog")
+      .then(res => res.json())
+      .then(data => {
+        setArticles(data.articles || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   const published = useMemo(() => {
-    let list = blogArticles.filter(a => a.status === "publie");
+    let list = articles;
     if (catFilter) list = list.filter(a => a.category === catFilter);
     return list.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""));
-  }, [blogArticles, catFilter]);
+  }, [articles, catFilter]);
 
   const categories = useMemo(() => {
-    const cats = new Set(blogArticles.filter(a => a.status === "publie").map(a => a.category));
+    const cats = new Set(articles.map(a => a.category).filter(Boolean));
     return Array.from(cats);
-  }, [blogArticles]);
+  }, [articles]);
 
   const featured = published[0];
   const rest = published.slice(1);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
+          <p className="text-slate-400">Chargement des articles...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { serviceStore, orderStore, transactionStore, reviewStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
+import { trackingStore } from "@/lib/tracking/tracking-store";
 
 // GET /api/admin/dashboard — Aggregated platform stats for admin dashboard
 export async function GET() {
@@ -145,7 +146,7 @@ export async function GET() {
 
     return NextResponse.json({
       users: {
-        total: totalUsers,
+        totalUsers,
         freelances,
         clients,
         agencies,
@@ -182,6 +183,13 @@ export async function GET() {
       monthlyRevenue,
       recentOrders,
       recentUsers,
+      traffic: {
+        activeSessions: trackingStore.getActiveSessions(),
+        todayPageViews: trackingStore.getStats({ period: "1d" }).totalPageViews,
+        todayUniques: trackingStore.getStats({ period: "1d" }).uniqueVisitors,
+        avgSessionDuration: trackingStore.getStats({ period: "7d" }).avgSessionDuration,
+        topPages: trackingStore.getStats({ period: "1d" }).topPages.slice(0, 5),
+      },
     });
   } catch (error) {
     console.error("[API /admin/dashboard GET]", error);

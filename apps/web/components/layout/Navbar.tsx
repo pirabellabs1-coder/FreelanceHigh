@@ -25,7 +25,10 @@ export function Navbar() {
         <nav className="hidden md:flex flex-1 justify-center gap-8">
           <Link href="/explorer" className="text-sm font-semibold hover:text-primary transition-colors">{t("explorer")}</Link>
           <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">{t("devenir_freelance")}</Link>
-          <Link href="/projets" className="text-sm font-semibold hover:text-primary transition-colors">{t("projets")}</Link>
+          {process.env.NEXT_PUBLIC_FORMATIONS_ENABLED !== "false" && (
+            <Link href="/formations" className="text-sm font-semibold hover:text-primary transition-colors">{t("formations")}</Link>
+          )}
+          <Link href="/offres-projets" className="text-sm font-semibold hover:text-primary transition-colors">{t("projets")}</Link>
           <Link href="/tarifs" className="text-sm font-semibold hover:text-primary transition-colors">{t("tarifs")}</Link>
         </nav>
 
@@ -89,7 +92,10 @@ export function Navbar() {
           <nav className="flex flex-col gap-2">
             <Link href="/explorer" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("explorer")}</Link>
             <Link href="/inscription" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("devenir_freelance")}</Link>
-            <Link href="/projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
+            {process.env.NEXT_PUBLIC_FORMATIONS_ENABLED !== "false" && (
+              <Link href="/formations" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("formations")}</Link>
+            )}
+            <Link href="/offres-projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
             <Link href="/tarifs" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("tarifs")}</Link>
           </nav>
 

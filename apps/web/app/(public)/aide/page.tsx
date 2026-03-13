@@ -60,6 +60,10 @@ export default function AidePage() {
     { id: "disputes", titleKey: "cat_disputes", icon: "gavel", count: 8, descKey: "cat_disputes_desc" },
     { id: "account", titleKey: "cat_account", icon: "person", count: 9, descKey: "cat_account_desc" },
     { id: "security", titleKey: "cat_security", icon: "shield", count: 7, descKey: "cat_security_desc" },
+    { id: "formations", titleKey: "cat_formations", icon: "school", count: 10, descKey: "cat_formations_desc" },
+    { id: "instructors", titleKey: "cat_instructors", icon: "record_voice_over", count: 6, descKey: "cat_instructors_desc" },
+    { id: "certificates", titleKey: "cat_certificates", icon: "workspace_premium", count: 5, descKey: "cat_certificates_desc" },
+    { id: "products", titleKey: "cat_products", icon: "inventory_2", count: 5, descKey: "cat_products_desc" },
   ];
 
   const POPULAR_ARTICLES = [
@@ -71,6 +75,14 @@ export default function AidePage() {
     { titleKey: "article_2fa", icon: "verified_user", categoryKey: "cat_security" },
     { titleKey: "article_track_orders", icon: "local_shipping", categoryKey: "cat_orders" },
     { titleKey: "article_optimize_profile", icon: "trending_up", categoryKey: "cat_account" },
+    { titleKey: "article_enroll_formation", icon: "school", categoryKey: "cat_formations" },
+    { titleKey: "article_become_instructor", icon: "record_voice_over", categoryKey: "cat_instructors" },
+    { titleKey: "article_get_certificate", icon: "workspace_premium", categoryKey: "cat_certificates" },
+    { titleKey: "article_buy_product", icon: "shopping_bag", categoryKey: "cat_products" },
+    { titleKey: "article_join_cohort", icon: "groups", categoryKey: "cat_formations" },
+    { titleKey: "article_instructor_revenue", icon: "monetization_on", categoryKey: "cat_instructors" },
+    { titleKey: "article_formation_refund", icon: "replay", categoryKey: "cat_formations" },
+    { titleKey: "article_promo_codes", icon: "confirmation_number", categoryKey: "cat_formations" },
   ];
 
   const FAQ_ITEMS = [
@@ -86,6 +98,29 @@ export default function AidePage() {
     { qKey: "faq_contact_support_q", aKey: "faq_contact_support_a", category: "account" },
     { qKey: "faq_kyc_q", aKey: "faq_kyc_a", category: "security" },
     { qKey: "faq_boost_q", aKey: "faq_boost_a", category: "account" },
+    // Formations
+    { qKey: "faq_enroll_formation_q", aKey: "faq_enroll_formation_a", category: "formations" },
+    { qKey: "faq_formation_access_duration_q", aKey: "faq_formation_access_duration_a", category: "formations" },
+    { qKey: "faq_formation_refund_q", aKey: "faq_formation_refund_a", category: "formations" },
+    { qKey: "faq_what_is_cohort_q", aKey: "faq_what_is_cohort_a", category: "formations" },
+    { qKey: "faq_complete_formation_q", aKey: "faq_complete_formation_a", category: "formations" },
+    { qKey: "faq_promo_code_q", aKey: "faq_promo_code_a", category: "formations" },
+    { qKey: "faq_formation_mobile_q", aKey: "faq_formation_mobile_a", category: "formations" },
+    // Instructors
+    { qKey: "faq_become_instructor_q", aKey: "faq_become_instructor_a", category: "instructors" },
+    { qKey: "faq_instructor_revenue_q", aKey: "faq_instructor_revenue_a", category: "instructors" },
+    { qKey: "faq_instructor_approval_q", aKey: "faq_instructor_approval_a", category: "instructors" },
+    { qKey: "faq_create_publish_formation_q", aKey: "faq_create_publish_formation_a", category: "instructors" },
+    // Certificates
+    { qKey: "faq_get_certificate_q", aKey: "faq_get_certificate_a", category: "certificates" },
+    { qKey: "faq_certificate_value_q", aKey: "faq_certificate_value_a", category: "certificates" },
+    { qKey: "faq_verify_certificate_q", aKey: "faq_verify_certificate_a", category: "certificates" },
+    // Products
+    { qKey: "faq_what_is_digital_product_q", aKey: "faq_what_is_digital_product_a", category: "products" },
+    { qKey: "faq_buy_digital_product_q", aKey: "faq_buy_digital_product_a", category: "products" },
+    { qKey: "faq_return_digital_product_q", aKey: "faq_return_digital_product_a", category: "products" },
+    // Other
+    { qKey: "faq_ai_search_q", aKey: "faq_ai_search_a", category: "start" },
   ];
 
   const TICKET_CATEGORIES = [
@@ -93,6 +128,7 @@ export default function AidePage() {
     t("ticket_cat_payment"),
     t("ticket_cat_dispute"),
     t("ticket_cat_account"),
+    t("ticket_cat_formations"),
     t("ticket_cat_report_user"),
     t("ticket_cat_suggestion"),
     t("ticket_cat_other"),

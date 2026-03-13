@@ -27,16 +27,9 @@ interface ApiCall {
   latency: string;
 }
 
-const DEMO_KEYS: ApiKey[] = [
-  { id: "1", name: "Production - Mobile App", key: "af_live_••••••••••••x7r2", createdAt: "12/10/2025", lastUsed: "Il y a 2 heures" },
-  { id: "2", name: "Staging - Website", key: "af_test_••••••••••••9k2m", createdAt: "15/10/2025", lastUsed: "Il y a 3 jours" },
-];
+const DEMO_KEYS: ApiKey[] = [];
 
-const DEMO_CALLS: ApiCall[] = [
-  { id: "1", status: 200, statusText: "200 OK", method: "GET", endpoint: "/v1/services/search", source: "Mobile App", timeAgo: "Il y a 5 min", latency: "124ms" },
-  { id: "2", status: 200, statusText: "200 OK", method: "POST", endpoint: "/v1/webhooks/orders", source: "Backend System", timeAgo: "Il y a 12 min", latency: "89ms" },
-  { id: "3", status: 401, statusText: "401 UNAUTHORIZED", method: "GET", endpoint: "/v1/user/profile", source: "Unknown Device", timeAgo: "Il y a 45 min", latency: "15ms" },
-];
+const DEMO_CALLS: ApiCall[] = [];
 
 type SideTab = "keys" | "webhooks" | "logs" | "docs" | "stats";
 

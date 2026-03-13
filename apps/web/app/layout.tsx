@@ -4,6 +4,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import Script from "next/script";
 import { Providers } from "./providers";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { TrackingProvider } from "@/components/tracking/TrackingProvider";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,8 +42,10 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <ImpersonationBanner />
-            {children}
+            <TrackingProvider>
+              <ImpersonationBanner />
+              {children}
+            </TrackingProvider>
           </Providers>
         </NextIntlClientProvider>
       </body>

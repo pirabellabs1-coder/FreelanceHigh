@@ -36,24 +36,7 @@ function getCategoryTranslationKey(slug: string): string {
   return `cat_${slug.replace(/-/g, "_")}`;
 }
 
-const DEMO_SERVICES = [
-  { id: "1", title: "Site e-commerce complet avec Shopify", category: "developpement-web", price: 450, rating: 4.9, reviews: 127, seller: "Amadou D.", level: "Top Rated", delivery: 7, image: "code" },
-  { id: "2", title: "Refonte UI/UX application mobile", category: "design-ui-ux", price: 350, rating: 4.8, reviews: 89, seller: "Fatou S.", level: "Elite", delivery: 5, image: "palette" },
-  { id: "3", title: "Stratégie SEO complète et audit", category: "seo", price: 200, rating: 4.7, reviews: 63, seller: "Ousmane K.", level: "Confirmé", delivery: 3, image: "search" },
-  { id: "4", title: "Application React Native cross-platform", category: "mobile", price: 800, rating: 4.9, reviews: 45, seller: "Ibrahim M.", level: "Top Rated", delivery: 14, image: "smartphone" },
-  { id: "5", title: "Vidéo promotionnelle avec animation", category: "video-animation", price: 300, rating: 4.6, reviews: 78, seller: "Aïcha B.", level: "Confirmé", delivery: 5, image: "videocam" },
-  { id: "6", title: "Campagne Google Ads optimisée", category: "marketing-digital", price: 250, rating: 4.8, reviews: 92, seller: "Kofi A.", level: "Elite", delivery: 3, image: "campaign" },
-  { id: "7", title: "Rédaction articles SEO (10 articles)", category: "redaction", price: 180, rating: 4.5, reviews: 156, seller: "Marie L.", level: "Confirmé", delivery: 7, image: "edit_note" },
-  { id: "8", title: "Traduction FR-EN professionnelle", category: "traduction", price: 120, rating: 4.9, reviews: 201, seller: "Jean-Pierre N.", level: "Top Rated", delivery: 2, image: "translate" },
-  { id: "9", title: "Modèle ML prédictif sur mesure", category: "ia-data", price: 600, rating: 4.7, reviews: 34, seller: "Moussa T.", level: "Elite", delivery: 10, image: "psychology" },
-  { id: "10", title: "Audit cybersécurité complet", category: "cybersecurite", price: 500, rating: 4.8, reviews: 28, seller: "Yacine D.", level: "Top Rated", delivery: 5, image: "security" },
-  { id: "11", title: "Landing page WordPress optimisée", category: "developpement-web", price: 150, rating: 4.6, reviews: 210, seller: "Paul K.", level: "Confirmé", delivery: 3, image: "code" },
-  { id: "12", title: "Design système complet Figma", category: "design-ui-ux", price: 500, rating: 4.9, reviews: 67, seller: "Aminata C.", level: "Elite", delivery: 10, image: "palette" },
-  { id: "13", title: "API REST Node.js & documentation", category: "developpement-web", price: 380, rating: 4.7, reviews: 55, seller: "David O.", level: "Top Rated", delivery: 7, image: "code" },
-  { id: "14", title: "Community management 1 mois", category: "marketing-digital", price: 400, rating: 4.5, reviews: 88, seller: "Nadia F.", level: "Confirmé", delivery: 30, image: "campaign" },
-  { id: "15", title: "Chatbot IA pour service client", category: "ia-data", price: 700, rating: 4.8, reviews: 22, seller: "Ahmed S.", level: "Top Rated", delivery: 14, image: "psychology" },
-  { id: "16", title: "Montage vidéo YouTube (10 vidéos)", category: "video-animation", price: 350, rating: 4.6, reviews: 44, seller: "Awa D.", level: "Confirmé", delivery: 14, image: "videocam" },
-];
+const DEMO_SERVICES: { id: string; title: string; category: string; price: number; rating: number; reviews: number; seller: string; level: string; delivery: number; image: string }[] = [];
 
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();

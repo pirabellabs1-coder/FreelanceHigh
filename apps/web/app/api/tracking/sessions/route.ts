@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from "next/server";
+import { trackingStore } from "@/lib/tracking/tracking-store";
+import type { TrackingSession } from "@/lib/tracking/types";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { action, sessionId, userId, deviceType, path, referrer, utmSource, utmMedium, utmCampaign } = body;
+
+    if (!sessionId || !action) {
+      return NextResponse.json({ error: "Missing sessionId or action" }, { status: 400 });
+    }
+
+    const now = new Date().toISOString();
+
+    switch (action) {
+      case "start": {
+        const session: TrackingSession = {
+          id: sessionId,
+          userId,
+          startedAt: now,
+          lastActiveAt: now,
+          pageViews: 1,
+          entryPath: path || "/",
+          deviceType: deviceType || "desktop",
+          referrer,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+        };
+        trackingStore.upsertSession(session);
+        break;
+      }
+      case "heartbeat": {
+        const sessions = trackingStore.getSessions();
+        const existing = sessions.find((s) => s.id === sessionId);
+        if (existing) {
+          trackingStore.upsertSession({
+            ...existing,
+            lastActiveAt: now,
+            pageViews: existing.pageViews + 1,
+            exitPath: path,
+            userId: userId || existing.userId,
+          });
+        }
+        break;
+      }
+      case "end": {
+        trackingStore.endSession(sessionId);
+        break;
+      }
+      default:
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+}

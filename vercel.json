@@ -5,6 +5,12 @@
   "installCommand": "pnpm install",
   "outputDirectory": "apps/web/.next",
   "regions": ["cdg1"],
+  "crons": [
+    {
+      "path": "/api/cron/cohort-status",
+      "schedule": "*/15 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

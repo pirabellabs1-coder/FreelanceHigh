@@ -348,7 +348,7 @@ const BLOG_ARTICLES: BlogArticle[] = [
     content: "Le freelancing en Afrique francophone connaît une croissance exponentielle. Avec les bonnes compétences et la bonne stratégie, il est tout à fait possible de générer des revenus confortables depuis Dakar, Abidjan ou toute autre ville africaine.\n\n## Les compétences les plus demandées\n\nLe développement web reste la compétence la plus lucrative, suivi du design UI/UX et du marketing digital. Les freelances maîtrisant React, Node.js ou Python peuvent facturer entre 30€ et 80€ de l'heure.\n\n## Construire sa réputation\n\nSur FreelanceHigh, commencez par proposer des prix compétitifs pour vos premiers services. Livrez un travail de qualité exceptionnelle et demandez systématiquement des avis à vos clients. En 3 à 6 mois, vous aurez suffisamment d'avis positifs pour augmenter vos tarifs.\n\n## Gérer ses finances\n\nAvec les paiements Mobile Money intégrés à FreelanceHigh, vous recevez vos gains directement sur Orange Money ou Wave. Pensez à mettre de côté 20% de vos revenus pour les impôts et investissez dans votre formation continue.",
     excerpt: "Découvrez les stratégies concrètes pour atteindre 3 000€ de revenus mensuels en freelance depuis l'Afrique.",
     coverImage: "", category: "Conseils", tags: ["freelance", "revenus", "afrique", "dakar"],
-    author: "Lissanon Gildas", status: "publie", publishedAt: "2026-02-15", scheduledAt: null,
+    author: "Admin FreelanceHigh", status: "publie", publishedAt: "2026-02-15", scheduledAt: null,
     createdAt: "2026-02-10", updatedAt: "2026-02-15", views: 2450,
     metaTitle: "Comment gagner 3000€/mois en freelance depuis Dakar — FreelanceHigh",
     metaDescription: "Guide complet pour devenir freelance rentable en Afrique francophone.",
@@ -358,7 +358,7 @@ const BLOG_ARTICLES: BlogArticle[] = [
     content: "Débuter en freelance est excitant mais semé d'embûches. Voici les erreurs les plus courantes et comment les éviter.\n\n## 1. Sous-estimer ses tarifs\n\nBeaucoup de débutants bradent leurs prix par peur de ne pas trouver de clients. C'est une erreur : des tarifs trop bas attirent des clients difficiles et vous épuisent.\n\n## 2. Ne pas avoir de contrat\n\nToujours définir le périmètre de la mission par écrit. Sur FreelanceHigh, le système d'escrow et les forfaits clairement définis vous protègent.\n\n## 3. Accepter tous les projets\n\nApprenez à dire non aux projets qui ne correspondent pas à vos compétences ou qui sont mal rémunérés.\n\n## 4. Négliger sa communication\n\nRépondez rapidement aux messages de vos clients. Une bonne communication est souvent plus valorisée que la perfection technique.\n\n## 5. Ne pas investir dans son profil\n\nUn profil complet avec photo professionnelle, portfolio et certifications inspire confiance et génère plus de commandes.",
     excerpt: "Les pièges classiques du freelancing et comment les contourner pour réussir dès le départ.",
     coverImage: "", category: "Conseils", tags: ["débutant", "erreurs", "freelance", "conseils"],
-    author: "Lissanon Gildas", status: "publie", publishedAt: "2026-02-28", scheduledAt: null,
+    author: "Admin FreelanceHigh", status: "publie", publishedAt: "2026-02-28", scheduledAt: null,
     createdAt: "2026-02-25", updatedAt: "2026-02-28", views: 1820,
   },
   {
@@ -366,7 +366,7 @@ const BLOG_ARTICLES: BlogArticle[] = [
     content: "Ibrahim Traoré, développeur full-stack à Abidjan, nous raconte son parcours. Parti de zéro il y a 2 ans, il facture aujourd'hui plus de 5 000€ par mois sur FreelanceHigh.\n\n## Le début\n\n\"J'ai commencé avec un plan gratuit et un seul service : développement d'APIs Node.js. Mon premier client m'a laissé 5 étoiles et ça a tout changé.\"\n\n## La montée en puissance\n\n\"Après 3 mois et 10 commandes terminées, j'ai obtenu le badge Top Rated. Les demandes ont afflué. J'ai augmenté mes prix de 40% et les clients continuaient de venir.\"\n\n## Aujourd'hui\n\n\"Je suis passé au plan Business. Avec la commission réduite à 10%, je garde plus de mes gains. Je forme aussi d'autres développeurs via mes services de formation.\"",
     excerpt: "Comment Ibrahim est passé de 0 à 5 000€/mois en freelance depuis Abidjan en 2 ans.",
     coverImage: "", category: "Success Stories", tags: ["success", "développeur", "abidjan", "témoignage"],
-    author: "Lissanon Gildas", status: "publie", publishedAt: "2026-03-01", scheduledAt: null,
+    author: "Admin FreelanceHigh", status: "publie", publishedAt: "2026-03-01", scheduledAt: null,
     createdAt: "2026-02-28", updatedAt: "2026-03-01", views: 3100,
   },
   {
@@ -374,7 +374,7 @@ const BLOG_ARTICLES: BlogArticle[] = [
     content: "Le Mobile Money est la méthode de paiement préférée en Afrique francophone. Voici comment en tirer le meilleur parti sur FreelanceHigh...",
     excerpt: "Tout ce que vous devez savoir sur les paiements Orange Money, Wave et MTN MoMo sur FreelanceHigh.",
     coverImage: "", category: "Tutoriels", tags: ["mobile money", "paiement", "orange money", "wave"],
-    author: "Lissanon Gildas", status: "brouillon", publishedAt: null, scheduledAt: null,
+    author: "Admin FreelanceHigh", status: "brouillon", publishedAt: null, scheduledAt: null,
     createdAt: "2026-03-03", updatedAt: "2026-03-03", views: 0,
   },
 ];

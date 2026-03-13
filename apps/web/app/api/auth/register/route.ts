@@ -6,7 +6,8 @@ const registerSchema = z.object({
   email: z.string().email("Email invalide"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caracteres"),
   name: z.string().min(2, "Le nom est requis"),
-  role: z.enum(["freelance", "client", "agence"]),
+  role: z.enum(["freelance", "client", "agence"]).default("freelance"),
+  formationsRole: z.enum(["apprenant", "instructeur"]).optional(),
 });
 
 const IS_DEV_MODE = process.env.DEV_MODE === "true";
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 
-    const { email, password, name, role } = parsed.data;
+    const { email, password, name, role, formationsRole } = parsed.data;
     const passwordHash = await bcrypt.hash(password, 12);
 
     // ── MODE DEV : stockage dans le fichier JSON local ────────────────
@@ -30,6 +31,14 @@ export async function POST(request: Request) {
 
       const existing = devStore.findByEmail(email);
       if (existing) {
+        // Si l'utilisateur existe et qu'un formationsRole est demande, on met a jour
+        if (formationsRole) {
+          devStore.update(existing.id, { formationsRole } as Record<string, unknown>);
+          return NextResponse.json({
+            success: true,
+            user: { id: existing.id, email: existing.email, name: existing.name, role: existing.role },
+          }, { status: 200 });
+        }
         return NextResponse.json({ error: "Un compte avec cet email existe deja" }, { status: 409 });
       }
 
@@ -41,6 +50,7 @@ export async function POST(request: Request) {
         plan: "gratuit",
         kyc: 1,
         status: "ACTIF",
+        ...(formationsRole ? { formationsRole } : {}),
       });
 
       return NextResponse.json({
@@ -54,6 +64,17 @@ export async function POST(request: Request) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      // Si l'utilisateur existe et qu'un formationsRole est demande, on met a jour
+      if (formationsRole) {
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: { formationsRole },
+        });
+        return NextResponse.json({
+          success: true,
+          user: { id: existing.id, email: existing.email, name: existing.name, role: existing.role.toLowerCase() },
+        }, { status: 200 });
+      }
       return NextResponse.json({ error: "Un compte avec cet email existe deja" }, { status: 409 });
     }
 
@@ -65,6 +86,7 @@ export async function POST(request: Request) {
         role: role.toUpperCase() as "FREELANCE" | "CLIENT" | "AGENCE",
         plan: "GRATUIT",
         kyc: 1,
+        ...(formationsRole ? { formationsRole } : {}),
       },
       select: { id: true, email: true, name: true, role: true },
     });

@@ -27,6 +27,7 @@ const PUBLIC_ROUTES = [
   "/cookies",
   "/aide",
   "/contrats",
+  "/formations",
   "/404",
   "/maintenance",
   "/status",
@@ -35,6 +36,9 @@ const PUBLIC_ROUTES = [
 
 // Routes auth — accessibles uniquement si NON connecte
 const AUTH_ROUTES = ["/connexion", "/inscription", "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe", "/onboarding"];
+
+// Routes auth formations — accessibles même si connecté (pas de conflit avec la session principale)
+const FORMATIONS_AUTH_ROUTES = ["/formations/connexion", "/formations/inscription"];
 
 // Routes protegees par role
 const ROLE_ROUTES: Record<string, string[]> = {
@@ -123,6 +127,42 @@ export async function middleware(req: NextRequest) {
     return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
   }
 
+  // Routes instructeur formations — nécessitent authentification + rôle instructeur
+  if (pathname.startsWith("/formations/instructeur")) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return withLocaleCookie(NextResponse.redirect(new URL("/formations/connexion", req.url)));
+    }
+    const formationsRole = token.formationsRole as string | undefined;
+    const userRole = token.role as string | undefined;
+    if (userRole !== "admin" && formationsRole !== "instructeur") {
+      return withLocaleCookie(NextResponse.redirect(new URL("/formations/mes-formations", req.url)));
+    }
+    return withLocaleCookie(NextResponse.next());
+  }
+
+  // Routes apprenant formations — nécessitent authentification
+  if (pathname.startsWith("/formations/mes-formations") || pathname.startsWith("/formations/mes-produits") || pathname.startsWith("/formations/mes-cohorts") || pathname.startsWith("/formations/certificats") || pathname.startsWith("/formations/favoris") || pathname.startsWith("/formations/parametres") || pathname.startsWith("/formations/panier") || pathname.startsWith("/formations/paiement")) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return withLocaleCookie(NextResponse.redirect(new URL("/formations/connexion", req.url)));
+    }
+    return withLocaleCookie(NextResponse.next());
+  }
+
+  // Routes admin formations — nécessitent rôle admin
+  if (pathname.startsWith("/formations/admin")) {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return withLocaleCookie(NextResponse.redirect(new URL("/formations/connexion", req.url)));
+    }
+    const userRole = token.role as string | undefined;
+    if (userRole !== "admin") {
+      return withLocaleCookie(NextResponse.redirect(new URL("/formations/connexion", req.url)));
+    }
+    return withLocaleCookie(NextResponse.next());
+  }
+
   // Routes publiques — toujours accessibles
   if (isPublicRoute(pathname)) {
     // Si connecté et sur la page d'accueil → rediriger par rôle
@@ -140,6 +180,11 @@ export async function middleware(req: NextRequest) {
         return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
       }
     }
+    return withLocaleCookie(NextResponse.next());
+  }
+
+  // Routes auth formations — toujours accessibles (même si connecté)
+  if (FORMATIONS_AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
     return withLocaleCookie(NextResponse.next());
   }
 

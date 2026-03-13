@@ -19,7 +19,9 @@ export interface DevUser {
   createdAt: string;
   loginCount: number;
   lastLoginAt?: string;
+  country?: string;
   adminRole?: "super_admin" | "moderateur" | "validateur_kyc" | "analyste" | "support" | "financier";
+  formationsRole?: "apprenant" | "instructeur";
 }
 
 const DB_PATH = path.join(process.cwd(), "lib", "dev", "users.json");
@@ -41,6 +43,32 @@ const DEFAULT_USERS: DevUser[] = [
     createdAt: new Date().toISOString(),
     loginCount: 0,
     adminRole: "super_admin",
+  },
+  {
+    id: "dev-apprenant-1",
+    email: "apprenant@test.com",
+    passwordHash: BCRYPT_HASH,
+    name: "Apprenant Test",
+    role: "freelance",
+    plan: "gratuit",
+    kyc: 2,
+    status: "ACTIF",
+    createdAt: new Date().toISOString(),
+    loginCount: 0,
+    formationsRole: "apprenant",
+  },
+  {
+    id: "dev-instructeur-1",
+    email: "instructeur@test.com",
+    passwordHash: BCRYPT_HASH,
+    name: "Instructeur Test",
+    role: "freelance",
+    plan: "pro",
+    kyc: 3,
+    status: "ACTIF",
+    createdAt: new Date().toISOString(),
+    loginCount: 0,
+    formationsRole: "instructeur",
   },
 ];
 

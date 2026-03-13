@@ -60,7 +60,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const { users, orders, services, finances, disputes, monthlyRevenue, recentOrders, recentUsers } = dashboardStats;
+  const { users, orders, services, finances, disputes, monthlyRevenue, recentOrders, recentUsers, traffic } = dashboardStats;
 
   const STATS = [
     { label: "Utilisateurs", value: users.totalUsers.toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
@@ -147,6 +147,46 @@ export default function AdminDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* Traffic en direct */}
+      {traffic && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+          <h2 className="font-bold text-white mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">monitoring</span>
+            Trafic en direct
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-2xl font-black text-emerald-400">{traffic.activeSessions}</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Sessions actives</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white">{traffic.todayPageViews.toLocaleString()}</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Pages vues (24h)</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-blue-400">{traffic.todayUniques.toLocaleString()}</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Visiteurs uniques</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-amber-400">{traffic.avgSessionDuration}s</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Durée moy. session</p>
+            </div>
+          </div>
+          {traffic.topPages.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-dark">
+              <p className="text-xs text-slate-500 mb-2">Pages populaires aujourd&apos;hui</p>
+              <div className="flex flex-wrap gap-2">
+                {traffic.topPages.map((p, i) => (
+                  <span key={i} className="px-2 py-1 bg-background-dark rounded-lg text-xs text-slate-300">
+                    {p.path} <span className="text-primary font-bold">{p.views}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Revenue chart with recharts */}

@@ -1,3 +1,5 @@
+export * from "./formations";
+
 export type Currency = "EUR" | "FCFA" | "USD" | "GBP" | "MAD";
 
 export type Locale = "fr" | "en" | "ar";

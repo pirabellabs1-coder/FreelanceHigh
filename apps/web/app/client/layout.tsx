@@ -18,6 +18,7 @@ const NOTIFICATION_POLL_INTERVAL = 30_000; // 30 seconds
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const syncAll = useClientStore((s) => s.syncAll);
   const syncNotifications = useClientStore((s) => s.syncNotifications);
 
@@ -40,8 +41,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <ToastContainer />
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex flex-shrink-0">
-        <ClientSidebar />
+      <div className="hidden lg:flex flex-shrink-0 relative">
+        <ClientSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       </div>
 
       {/* Mobile sidebar overlay */}

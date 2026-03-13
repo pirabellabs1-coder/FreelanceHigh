@@ -1,0 +1,621 @@
+// POST /api/webhooks/stripe — Handler Stripe pour formations + produits numériques + marketing
+
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import prisma from "@freelancehigh/db";
+import { sendEnrollmentConfirmedEmail, sendNewStudentNotificationEmail, sendCohortEnrollmentEmail } from "@/lib/email/formations";
+
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-02-25.clover" });
+}
+
+// Désactiver le body parsing automatique de Next.js (nécessaire pour vérifier la signature)
+export const config = { api: { bodyParser: false } };
+
+export async function POST(req: NextRequest) {
+  const sig = req.headers.get("stripe-signature");
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!sig || !webhookSecret) {
+    return NextResponse.json({ error: "Configuration webhook manquante" }, { status: 400 });
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    const body = await req.text();
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  } catch (err) {
+    console.error("[Stripe Webhook] Signature invalide:", err);
+    return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
+  }
+
+  try {
+    const eventType = event.type as string;
+
+    switch (eventType) {
+      case "checkout.session.completed":
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
+      case "payment_intent.payment_failed":
+        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      case "charge.disputed":
+        await handleChargeDisputed(event.data.object as unknown as Stripe.Charge);
+        break;
+
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object as unknown as Stripe.Charge);
+        break;
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error(`[Stripe Webhook] Erreur traitement ${event.type}:`, error);
+    return NextResponse.json({ error: "Erreur traitement" }, { status: 500 });
+  }
+}
+
+// ── checkout.session.completed ──
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  const type = session.metadata?.type;
+
+  if (type === "formation") {
+    await handleFormationCheckout(session);
+  } else if (type === "cohort") {
+    await handleCohortCheckout(session);
+  } else if (type === "digital_product") {
+    await handleDigitalProductCheckout(session);
+  }
+}
+
+// ── Formation checkout (existant) ──
+
+async function handleFormationCheckout(session: Stripe.Checkout.Session) {
+  const { userId, formationIds: formationIdsJson, promoId } = session.metadata ?? {};
+
+  if (!userId || !formationIdsJson) {
+    console.error("[Stripe Webhook] Métadonnées manquantes:", session.id);
+    return;
+  }
+
+  let formationIds: string[];
+  try {
+    formationIds = JSON.parse(formationIdsJson);
+  } catch {
+    console.error("[Stripe Webhook] formationIds invalide:", formationIdsJson);
+    return;
+  }
+
+  if (!formationIds.length) return;
+
+  // Idempotence : vérifier qu'on n'a pas déjà traité cette session
+  const existingEnrollment = await prisma.enrollment.findFirst({
+    where: {
+      userId,
+      formationId: { in: formationIds },
+      stripeSessionId: session.id,
+    },
+  });
+
+  if (existingEnrollment) {
+    console.log("[Stripe Webhook] Session déjà traitée (idempotence):", session.id);
+    return;
+  }
+
+  // Récupérer les formations
+  const formations = await prisma.formation.findMany({
+    where: { id: { in: formationIds }, status: "ACTIF" },
+    include: {
+      instructeur: {
+        include: { user: { select: { email: true, name: true } } },
+      },
+    },
+  });
+
+  if (formations.length === 0) {
+    console.error("[Stripe Webhook] Aucune formation active trouvée pour:", formationIds);
+    return;
+  }
+
+  // Calculer le prix effectif par formation (avec promo si applicable)
+  let discountPct = 0;
+  if (promoId) {
+    const promo = await prisma.promoCode.findUnique({ where: { id: promoId } });
+    if (promo?.isActive) discountPct = promo.discountPct;
+  }
+
+  // Créer les enrollments et mettre à jour les stats en transaction
+  await prisma.$transaction(async (tx) => {
+    for (const formation of formations) {
+      const paidAmount = formation.price * (1 - discountPct / 100);
+      const instructeurRevenue = paidAmount * 0.7; // 70% pour l'instructeur
+
+      // Créer ou retrouver l'enrollment (upsert pour éviter les doublons)
+      const existing = await tx.enrollment.findUnique({
+        where: { userId_formationId: { userId, formationId: formation.id } },
+      });
+
+      if (existing) {
+        if (!existing.stripeSessionId) {
+          await tx.enrollment.update({
+            where: { id: existing.id },
+            data: { stripeSessionId: session.id },
+          });
+        }
+        continue;
+      }
+
+      await tx.enrollment.create({
+        data: {
+          userId,
+          formationId: formation.id,
+          paidAmount,
+          stripeSessionId: session.id,
+          progress: 0,
+        },
+      });
+
+      await tx.formation.update({
+        where: { id: formation.id },
+        data: { studentsCount: { increment: 1 } },
+      });
+
+      await tx.instructeurProfile.update({
+        where: { id: formation.instructeurId },
+        data: { totalEarned: { increment: instructeurRevenue } },
+      });
+    }
+
+    if (promoId) {
+      await tx.promoCode.update({
+        where: { id: promoId },
+        data: { usageCount: { increment: 1 } },
+      });
+    }
+
+    await tx.cartItem.deleteMany({
+      where: { userId, formationId: { in: formationIds } },
+    });
+  });
+
+  // Marquer les paniers abandonnés comme convertis
+  await prisma.abandonedCart.updateMany({
+    where: { userId, status: { not: "CONVERTI" } },
+    data: { status: "CONVERTI" },
+  }).catch(() => {});
+
+  // Créer MarketingEvent pour chaque formation
+  for (const formation of formations) {
+    prisma.marketingEvent.create({
+      data: {
+        type: "PURCHASE_COMPLETED",
+        formationId: formation.id,
+        userId,
+        metadata: {
+          sessionId: session.id,
+          amount: formation.price * (1 - discountPct / 100),
+          source: promoId ? "promo" : "direct",
+        },
+      },
+    }).catch(() => {});
+  }
+
+  // Envoyer les emails de confirmation (hors transaction)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true },
+  });
+
+  if (user?.email) {
+    for (const formation of formations) {
+      const paidAmount = formation.price * (1 - discountPct / 100);
+
+      sendEnrollmentConfirmedEmail({
+        email: user.email,
+        name: user.name ?? "Apprenant",
+        formationTitle: formation.titleFr,
+        formationSlug: formation.id,
+        paidAmount,
+        locale: "fr",
+      }).catch((err) => console.error("[Email] sendEnrollmentConfirmedEmail:", err));
+
+      const instrEmail = formation.instructeur?.user?.email;
+      if (instrEmail) {
+        sendNewStudentNotificationEmail({
+          instructeurEmail: instrEmail,
+          instructeurName: formation.instructeur?.user?.name ?? "Instructeur",
+          studentName: user.name ?? "Apprenant",
+          formationTitle: formation.titleFr,
+          paidAmount,
+        }).catch((err) => console.error("[Email] sendNewStudentNotificationEmail:", err));
+      }
+    }
+  }
+
+  console.log(
+    `[Stripe Webhook] ${formations.length} enrollment(s) créé(s) pour userId=${userId}, session=${session.id}`
+  );
+}
+
+// ── Cohort checkout ──
+
+async function handleCohortCheckout(session: Stripe.Checkout.Session) {
+  const { userId, cohortId, formationId } = session.metadata ?? {};
+
+  if (!userId || !cohortId || !formationId) {
+    console.error("[Stripe Webhook] Métadonnées cohorte manquantes:", session.id);
+    return;
+  }
+
+  // Idempotence
+  const existingEnrollment = await prisma.enrollment.findFirst({
+    where: { userId, formationId, stripeSessionId: session.id },
+  });
+
+  if (existingEnrollment) {
+    console.log("[Stripe Webhook] Cohort session déjà traitée (idempotence):", session.id);
+    return;
+  }
+
+  const cohort = await prisma.formationCohort.findUnique({
+    where: { id: cohortId },
+    include: {
+      formation: {
+        include: {
+          instructeur: {
+            include: { user: { select: { email: true, name: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  if (!cohort) {
+    console.error("[Stripe Webhook] Cohorte introuvable:", cohortId);
+    return;
+  }
+
+  const paidAmount = cohort.price;
+  const instructeurRevenue = paidAmount * 0.7;
+
+  await prisma.$transaction(async (tx) => {
+    // Atomic check: verify we haven't exceeded maxParticipants
+    const currentCohort = await tx.formationCohort.findUnique({
+      where: { id: cohortId },
+      select: { currentCount: true, maxParticipants: true },
+    });
+
+    if (!currentCohort || currentCohort.currentCount >= currentCohort.maxParticipants) {
+      throw new Error("COHORT_FULL");
+    }
+
+    // Check not already enrolled
+    const existing = await tx.enrollment.findUnique({
+      where: { userId_formationId: { userId, formationId } },
+    });
+
+    if (existing) {
+      console.log("[Stripe Webhook] Already enrolled in formation (cohort):", formationId);
+      return;
+    }
+
+    // Create enrollment with cohortId
+    await tx.enrollment.create({
+      data: {
+        userId,
+        formationId,
+        cohortId,
+        paidAmount,
+        stripeSessionId: session.id,
+        progress: 0,
+      },
+    });
+
+    // Increment counters
+    const updatedCohort = await tx.formationCohort.update({
+      where: { id: cohortId },
+      data: { currentCount: { increment: 1 } },
+    });
+
+    // Mark as COMPLET if full
+    if (updatedCohort.currentCount >= updatedCohort.maxParticipants) {
+      await tx.formationCohort.update({
+        where: { id: cohortId },
+        data: { status: "COMPLET" },
+      });
+    }
+
+    // Update formation stats
+    await tx.formation.update({
+      where: { id: formationId },
+      data: { studentsCount: { increment: 1 } },
+    });
+
+    // Credit instructor
+    await tx.instructeurProfile.update({
+      where: { id: cohort.formation.instructeurId },
+      data: { totalEarned: { increment: instructeurRevenue } },
+    });
+  });
+
+  // Emails (hors transaction, fire-and-forget)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true },
+  });
+
+  if (user?.email) {
+    sendCohortEnrollmentEmail({
+      email: user.email,
+      name: user.name ?? "Apprenant",
+      cohortTitle: cohort.titleFr,
+      formationTitle: cohort.formation.titleFr,
+      startDate: cohort.startDate,
+      endDate: cohort.endDate,
+      paidAmount,
+      cohortId,
+      locale: "fr",
+    }).catch((err) => console.error("[Email] sendCohortEnrollmentEmail:", err));
+
+    const instrEmail = cohort.formation.instructeur?.user?.email;
+    if (instrEmail) {
+      sendNewStudentNotificationEmail({
+        instructeurEmail: instrEmail,
+        instructeurName: cohort.formation.instructeur?.user?.name ?? "Instructeur",
+        studentName: user.name ?? "Apprenant",
+        formationTitle: `${cohort.titleFr} (${cohort.formation.titleFr})`,
+        paidAmount,
+      }).catch((err) => console.error("[Email] sendNewStudentNotificationEmail:", err));
+    }
+  }
+
+  console.log(
+    `[Stripe Webhook] Cohort enrollment créé: userId=${userId}, cohortId=${cohortId}, session=${session.id}`
+  );
+}
+
+// ── Digital product checkout ──
+
+async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
+  const { userId, productId, flashPromoId } = session.metadata ?? {};
+
+  if (!userId || !productId) {
+    console.error("[Stripe Webhook] Métadonnées produit manquantes:", session.id);
+    return;
+  }
+
+  // Idempotence
+  const existing = await prisma.digitalProductPurchase.findUnique({
+    where: { userId_productId: { userId, productId } },
+  });
+
+  if (existing) {
+    console.log("[Stripe Webhook] Achat produit déjà traité (idempotence):", session.id);
+    return;
+  }
+
+  const product = await prisma.digitalProduct.findUnique({
+    where: { id: productId },
+    include: {
+      instructeur: {
+        include: { user: { select: { email: true, name: true } } },
+      },
+    },
+  });
+
+  if (!product) {
+    console.error("[Stripe Webhook] Produit introuvable:", productId);
+    return;
+  }
+
+  const paidAmount = (session.amount_total ?? 0) / 100;
+
+  // Generate license key for LICENCE type products
+  const licenseKey = product.productType === "LICENCE"
+    ? generateLicenseKey()
+    : null;
+
+  await prisma.$transaction(async (tx) => {
+    // Atomic stock check + increment
+    if (product.maxBuyers !== null) {
+      const updated = await tx.digitalProduct.updateMany({
+        where: {
+          id: productId,
+          currentBuyers: { lt: product.maxBuyers },
+        },
+        data: {
+          currentBuyers: { increment: 1 },
+          salesCount: { increment: 1 },
+        },
+      });
+      if (updated.count === 0) {
+        throw new Error("STOCK_EXHAUSTED");
+      }
+    } else {
+      await tx.digitalProduct.update({
+        where: { id: productId },
+        data: { salesCount: { increment: 1 } },
+      });
+    }
+
+    // Create purchase
+    await tx.digitalProductPurchase.create({
+      data: {
+        userId,
+        productId,
+        paidAmount,
+        stripeSessionId: session.id,
+        licenseKey,
+      },
+    });
+
+    // Revenue for instructor (70%)
+    const instructeurRevenue = paidAmount * 0.7;
+    await tx.instructeurProfile.update({
+      where: { id: product.instructeurId },
+      data: { totalEarned: { increment: instructeurRevenue } },
+    });
+
+    // Increment flash promo usage
+    if (flashPromoId) {
+      await tx.flashPromotion.update({
+        where: { id: flashPromoId },
+        data: { usageCount: { increment: 1 } },
+      });
+    }
+  });
+
+  // MarketingEvent
+  prisma.marketingEvent.create({
+    data: {
+      type: "PURCHASE_COMPLETED",
+      digitalProductId: productId,
+      userId,
+      metadata: {
+        sessionId: session.id,
+        amount: paidAmount,
+        source: flashPromoId ? "flash_promo" : "direct",
+        productType: product.productType,
+      },
+    },
+  }).catch(() => {});
+
+  // Mark abandoned carts as converted
+  await prisma.abandonedCart.updateMany({
+    where: { userId, status: { not: "CONVERTI" } },
+    data: { status: "CONVERTI" },
+  }).catch(() => {});
+
+  console.log(
+    `[Stripe Webhook] Achat produit ${productId} par userId=${userId}, session=${session.id}`
+  );
+}
+
+// ── payment_intent.payment_failed ──
+
+async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const userId = paymentIntent.metadata?.userId;
+  const failureMessage = paymentIntent.last_payment_error?.message || "Erreur inconnue";
+  const failureCode = paymentIntent.last_payment_error?.code || "unknown";
+
+  // Create MarketingEvent
+  prisma.marketingEvent.create({
+    data: {
+      type: "PAYMENT_FAILED",
+      userId: userId || null,
+      formationId: paymentIntent.metadata?.formationId || null,
+      digitalProductId: paymentIntent.metadata?.productId || null,
+      metadata: {
+        paymentIntentId: paymentIntent.id,
+        failureMessage,
+        failureCode,
+        amount: (paymentIntent.amount ?? 0) / 100,
+      },
+    },
+  }).catch(() => {});
+
+  console.log(
+    `[Stripe Webhook] Paiement échoué: ${paymentIntent.id}, userId=${userId}, raison=${failureCode}`
+  );
+}
+
+// ── charge.disputed ──
+
+async function handleChargeDisputed(charge: Stripe.Charge) {
+  const paymentIntentId = typeof charge.payment_intent === "string"
+    ? charge.payment_intent
+    : charge.payment_intent?.id;
+
+  // Try to find related enrollment and mark refund requested
+  if (paymentIntentId) {
+    // Find the checkout session linked to this payment intent
+    const stripe = getStripe();
+    const sessions = await stripe.checkout.sessions.list({
+      payment_intent: paymentIntentId,
+      limit: 1,
+    });
+
+    const session = sessions.data[0];
+    if (session?.metadata?.userId) {
+      const userId = session.metadata.userId;
+
+      // Update enrollments if formation
+      if (session.metadata.type === "formation") {
+        await prisma.enrollment.updateMany({
+          where: { stripeSessionId: session.id },
+          data: { refundRequested: true },
+        }).catch(() => {});
+      }
+
+      // MarketingEvent
+      prisma.marketingEvent.create({
+        data: {
+          type: "PAYMENT_FAILED",
+          userId,
+          formationId: session.metadata.formationId || null,
+          digitalProductId: session.metadata.productId || null,
+          metadata: {
+            chargeId: charge.id,
+            disputeType: "disputed",
+            amount: (charge.amount ?? 0) / 100,
+          },
+        },
+      }).catch(() => {});
+    }
+  }
+
+  console.log(`[Stripe Webhook] Litige ouvert: charge=${charge.id}`);
+}
+
+// ── charge.refunded ──
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId = typeof charge.payment_intent === "string"
+    ? charge.payment_intent
+    : charge.payment_intent?.id;
+
+  if (paymentIntentId) {
+    const stripe = getStripe();
+    const sessions = await stripe.checkout.sessions.list({
+      payment_intent: paymentIntentId,
+      limit: 1,
+    });
+
+    const session = sessions.data[0];
+    if (session?.metadata?.userId) {
+      // Update enrollments if formation
+      if (session.metadata.type === "formation") {
+        await prisma.enrollment.updateMany({
+          where: { stripeSessionId: session.id },
+          data: {
+            refundedAt: new Date(),
+          },
+        }).catch(() => {});
+      }
+    }
+  }
+
+  console.log(`[Stripe Webhook] Remboursement: charge=${charge.id}, montant=${charge.amount_refunded / 100}€`);
+}
+
+// ── Helpers ──
+
+function generateLicenseKey(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const segments = 4;
+  const segmentLength = 4;
+  const parts: string[] = [];
+  for (let i = 0; i < segments; i++) {
+    let part = "";
+    for (let j = 0; j < segmentLength; j++) {
+      part += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    parts.push(part);
+  }
+  return parts.join("-"); // e.g. "AB3K-X9F2-M7PQ-1ZYC"
+}

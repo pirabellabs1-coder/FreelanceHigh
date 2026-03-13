@@ -8,6 +8,7 @@ import {
   projectStore,
 } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
+import { trackingStore } from "@/lib/tracking/tracking-store";
 
 // GET /api/admin/analytics — Platform analytics computed from all stores
 export async function GET() {
@@ -70,9 +71,17 @@ export async function GET() {
       }
     }
 
+    // Count users per country
+    const usersByCountry: Record<string, number> = {};
+    for (const user of users) {
+      const country = user.country || "XX";
+      usersByCountry[country] = (usersByCountry[country] ?? 0) + 1;
+    }
+
     const topCountries = Object.entries(orderCountries)
       .map(([country, data]) => ({
         country,
+        users: usersByCountry[country] ?? 0,
         orders: data.clients,
         revenue: Math.round(data.revenue * 100) / 100,
       }))
@@ -111,27 +120,14 @@ export async function GET() {
       reviews.map((r) => r.clientId)
     ).size;
 
-    const conversionFunnel = {
-      registered: totalRegistrations,
-      profileCompleted: Math.round(totalRegistrations * 0.7), // Estimated
-      firstOrder: usersWithOrders,
-      orderCompleted: usersWithCompletedOrders,
-      leftReview: usersWithReviews,
-      rates: {
-        registeredToProfileCompleted: totalRegistrations > 0
-          ? Math.round((totalRegistrations * 0.7 / totalRegistrations) * 100)
-          : 0,
-        profileToFirstOrder: totalRegistrations > 0
-          ? Math.round((usersWithOrders / totalRegistrations) * 100)
-          : 0,
-        firstOrderToCompleted: usersWithOrders > 0
-          ? Math.round((usersWithCompletedOrders / usersWithOrders) * 100)
-          : 0,
-        completedToReview: usersWithCompletedOrders > 0
-          ? Math.round((usersWithReviews / usersWithCompletedOrders) * 100)
-          : 0,
-      },
-    };
+    const profileCompleted = Math.round(totalRegistrations * 0.7);
+    const conversionFunnel = [
+      { step: "Inscrits", count: totalRegistrations, rate: 100 },
+      { step: "Profil complété", count: profileCompleted, rate: totalRegistrations > 0 ? Math.round((profileCompleted / totalRegistrations) * 100) : 0 },
+      { step: "1ère commande", count: usersWithOrders, rate: totalRegistrations > 0 ? Math.round((usersWithOrders / totalRegistrations) * 100) : 0 },
+      { step: "Commande terminée", count: usersWithCompletedOrders, rate: totalRegistrations > 0 ? Math.round((usersWithCompletedOrders / totalRegistrations) * 100) : 0 },
+      { step: "Avis laissé", count: usersWithReviews, rate: totalRegistrations > 0 ? Math.round((usersWithReviews / totalRegistrations) * 100) : 0 },
+    ];
 
     // ── Service Performance ──
     const activeServices = services.filter((s) => s.status === "actif");
@@ -150,8 +146,8 @@ export async function GET() {
       totalViews,
       totalClicks,
       totalOrders: totalServiceOrders,
-      clickThroughRate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 10000) / 100 : 0,
-      conversionRate: totalClicks > 0 ? Math.round((totalServiceOrders / totalClicks) * 10000) / 100 : 0,
+      avgCTR: totalViews > 0 ? Math.round((totalClicks / totalViews) * 10000) / 100 : 0,
+      avgConversion: totalClicks > 0 ? Math.round((totalServiceOrders / totalClicks) * 10000) / 100 : 0,
       avgRating: Math.round(avgRating * 10) / 10,
       topServices: [...services]
         .sort((a, b) => b.revenue - a.revenue)
@@ -209,23 +205,23 @@ export async function GET() {
       avgRating: reviews.length > 0
         ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
         : 0,
-      avgQuality: reviews.length > 0
+      avgQualite: reviews.length > 0
         ? Math.round((reviews.reduce((sum, r) => sum + r.qualite, 0) / reviews.length) * 10) / 10
         : 0,
       avgCommunication: reviews.length > 0
         ? Math.round((reviews.reduce((sum, r) => sum + r.communication, 0) / reviews.length) * 10) / 10
         : 0,
-      avgDelivery: reviews.length > 0
+      avgDelai: reviews.length > 0
         ? Math.round((reviews.reduce((sum, r) => sum + r.delai, 0) / reviews.length) * 10) / 10
         : 0,
-      reportedReviews: reviews.filter((r) => r.reported).length,
-      ratingDistribution: {
-        "5": reviews.filter((r) => r.rating >= 4.5).length,
-        "4": reviews.filter((r) => r.rating >= 3.5 && r.rating < 4.5).length,
-        "3": reviews.filter((r) => r.rating >= 2.5 && r.rating < 3.5).length,
-        "2": reviews.filter((r) => r.rating >= 1.5 && r.rating < 2.5).length,
-        "1": reviews.filter((r) => r.rating < 1.5).length,
-      },
+      reported: reviews.filter((r) => r.reported).length,
+      distribution: [
+        { stars: 5, count: reviews.filter((r) => r.rating >= 4.5).length },
+        { stars: 4, count: reviews.filter((r) => r.rating >= 3.5 && r.rating < 4.5).length },
+        { stars: 3, count: reviews.filter((r) => r.rating >= 2.5 && r.rating < 3.5).length },
+        { stars: 2, count: reviews.filter((r) => r.rating >= 1.5 && r.rating < 2.5).length },
+        { stars: 1, count: reviews.filter((r) => r.rating < 1.5).length },
+      ],
     };
 
     // ── Payment Method Distribution ──
@@ -234,6 +230,21 @@ export async function GET() {
       const method = tx.method ?? "carte_bancaire";
       paymentMethods[method] = (paymentMethods[method] ?? 0) + 1;
     }
+
+    // ── Traffic Analytics ──
+    const trafficStats30d = trackingStore.getStats({ period: "30d" });
+    const trafficAnalytics = {
+      pageViewsTrend: trafficStats30d.pageViewsTrend,
+      sessionsTrend: trafficStats30d.sessionsTrend,
+      topReferrers: trafficStats30d.topReferrers,
+      utmBreakdown: trafficStats30d.utmBreakdown,
+      deviceBreakdown: trafficStats30d.deviceBreakdown,
+      bounceRate: trafficStats30d.bounceRate,
+      avgSessionDuration: trafficStats30d.avgSessionDuration,
+      totalPageViews: trafficStats30d.totalPageViews,
+      uniqueVisitors: trafficStats30d.uniqueVisitors,
+      totalSessions: trafficStats30d.totalSessions,
+    };
 
     return NextResponse.json({
       revenueByCategory: revenueByCategoryArray,
@@ -245,6 +256,7 @@ export async function GET() {
       projectStats,
       reviewStats,
       paymentMethods,
+      trafficAnalytics,
     });
   } catch (error) {
     console.error("[API /admin/analytics GET]", error);

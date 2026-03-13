@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/store/dashboard";
 
@@ -130,9 +130,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
+  const { data: session } = useSession();
   const isActive = useIsActive();
   const unreadCount = useDashboardStore((s) => s.unreadCount);
   const currentPlan = useDashboardStore((s) => s.currentPlan);
+
+  const userName = session?.user?.name || "Utilisateur";
+  const userInitials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   // Augment nav items with dynamic badges
   const sections = SECTIONS.map((section) => ({
@@ -310,13 +314,13 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         )}
       >
         <div className="w-10 h-10 rounded-full border-2 border-primary/20 bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-          LG
+          {userInitials}
         </div>
         {!collapsed && (
           <>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Lissanon Gildas</p>
-              <p className="text-xs text-slate-400 truncate">Développeur Fullstack</p>
+              <p className="text-sm font-semibold text-white truncate">{userName}</p>
+              <p className="text-xs text-slate-400 truncate">{session?.user?.email || ""}</p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <Link href="/dashboard/parametres" className="text-slate-400 hover:text-primary transition-colors p-1 rounded-lg hover:bg-white/5" title="Paramètres">

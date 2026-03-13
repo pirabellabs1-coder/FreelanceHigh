@@ -29,25 +29,9 @@ interface HistoryTransaction {
 // ============================================================
 // Demo data
 // ============================================================
-const DEMO_METHODS: PaymentMethod[] = [
-  { id: "pm-1", type: "visa", label: "Visa", detail: "•••• •••• •••• 4242", icon: "credit_card", isDefault: true },
-  { id: "pm-2", type: "orange_money", label: "Orange Money", detail: "+221 77 123 4567", icon: "phone_android", isDefault: false },
-  { id: "pm-3", type: "paypal", label: "PayPal", detail: "jean@email.com", icon: "account_balance", isDefault: false },
-  { id: "pm-4", type: "sepa", label: "Virement SEPA", detail: "FR76 •••• •••• •••• 1234", icon: "account_balance", isDefault: false },
-];
+const DEMO_METHODS: PaymentMethod[] = [];
 
-const DEMO_HISTORY: HistoryTransaction[] = [
-  { id: "ht-1", date: "2026-03-01", type: "vente", description: "Commande #FH-4521 — Campagne Marketing Digital", amount: 600, status: "complete" },
-  { id: "ht-2", date: "2026-02-28", type: "vente", description: "Commande #FH-4520 — API REST Development", amount: 1200, status: "complete" },
-  { id: "ht-3", date: "2026-02-25", type: "retrait", description: "Retrait vers Visa •••• 4242", amount: -500, status: "complete" },
-  { id: "ht-4", date: "2026-02-22", type: "commission", description: "Commission plateforme (15%)", amount: -90, status: "complete" },
-  { id: "ht-5", date: "2026-02-20", type: "vente", description: "Commande #FH-4518 — Identite Visuelle Complete", amount: 350, status: "en_attente" },
-  { id: "ht-6", date: "2026-02-18", type: "bonus", description: "Bonus parrainage — Sophie Laurent", amount: 25, status: "complete" },
-  { id: "ht-7", date: "2026-02-15", type: "vente", description: "Commande #FH-4515 — Application React Native", amount: 800, status: "en_attente" },
-  { id: "ht-8", date: "2026-02-12", type: "retrait", description: "Retrait vers Orange Money", amount: -300, status: "complete" },
-  { id: "ht-9", date: "2026-02-10", type: "remboursement", description: "Remboursement partiel — Commande #FH-4510", amount: -75, status: "complete" },
-  { id: "ht-10", date: "2026-02-05", type: "vente", description: "Commande #FH-4508 — Redaction SEO 10 Articles", amount: 200, status: "complete" },
-];
+const DEMO_HISTORY: HistoryTransaction[] = [];
 
 const ADD_METHOD_OPTIONS = [
   { id: "carte", label: "Carte bancaire", icon: "credit_card", description: "Visa, Mastercard" },
@@ -91,17 +75,17 @@ export default function PaiementsPage() {
   const addToast = useToastStore((s) => s.addToast);
 
   // State
-  const [methods, setMethods] = useState<PaymentMethod[]>(DEMO_METHODS);
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [showAddMethod, setShowAddMethod] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawMethodId, setWithdrawMethodId] = useState(DEMO_METHODS[0].id);
+  const [withdrawMethodId, setWithdrawMethodId] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
 
   // Balances
-  const balanceAvailable = 2450;
-  const balancePending = 800;
-  const balanceTotal = 8750;
+  const balanceAvailable = 0;
+  const balancePending = 0;
+  const balanceTotal = 0;
 
   // Handlers
   function handleSetDefault(id: string) {
@@ -302,53 +286,63 @@ export default function PaiementsPage() {
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-border-dark">
-          {methods.map((method) => (
-            <div
-              key={method.id}
-              className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors"
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
-                method.type === "visa" ? "bg-blue-500/10 text-blue-400" :
-                method.type === "orange_money" ? "bg-orange-500/10 text-orange-400" :
-                method.type === "paypal" ? "bg-indigo-500/10 text-indigo-400" :
-                method.type === "sepa" ? "bg-emerald-500/10 text-emerald-400" :
-                method.type === "wave" ? "bg-cyan-500/10 text-cyan-400" :
-                "bg-amber-500/10 text-amber-400"
-              )}>
-                <span className="material-symbols-outlined text-xl">{METHOD_TYPE_ICONS[method.type] ?? method.icon}</span>
+          {methods.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-primary/10 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-2xl text-slate-400">credit_card_off</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm">{method.label}</p>
-                  {method.isDefault && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
-                      Par defaut
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5 font-mono">{method.detail}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                {!method.isDefault && (
-                  <button
-                    onClick={() => handleSetDefault(method.id)}
-                    title="Definir par defaut"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-lg">star</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => handleRemoveMethod(method.id)}
-                  title="Supprimer"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">delete</span>
-                </button>
-              </div>
+              <p className="font-semibold text-sm text-slate-600 dark:text-slate-300">Aucune methode de paiement</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ajoutez une methode de paiement pour pouvoir effectuer des retraits.</p>
             </div>
-          ))}
+          ) : (
+            methods.map((method) => (
+              <div
+                key={method.id}
+                className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors"
+              >
+                <div className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  method.type === "visa" ? "bg-blue-500/10 text-blue-400" :
+                  method.type === "orange_money" ? "bg-orange-500/10 text-orange-400" :
+                  method.type === "paypal" ? "bg-indigo-500/10 text-indigo-400" :
+                  method.type === "sepa" ? "bg-emerald-500/10 text-emerald-400" :
+                  method.type === "wave" ? "bg-cyan-500/10 text-cyan-400" :
+                  "bg-amber-500/10 text-amber-400"
+                )}>
+                  <span className="material-symbols-outlined text-xl">{METHOD_TYPE_ICONS[method.type] ?? method.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{method.label}</p>
+                    {method.isDefault && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">
+                        Par defaut
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5 font-mono">{method.detail}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {!method.isDefault && (
+                    <button
+                      onClick={() => handleSetDefault(method.id)}
+                      title="Definir par defaut"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-lg">star</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleRemoveMethod(method.id)}
+                    title="Supprimer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">delete</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -366,32 +360,42 @@ export default function PaiementsPage() {
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-border-dark">
-          {DEMO_HISTORY.map((tx) => {
-            const typeConf = TX_TYPE_CONFIG[tx.type] ?? TX_TYPE_CONFIG.vente;
-            const statusConf = TX_STATUS_CONFIG[tx.status];
-            return (
-              <div key={tx.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", typeConf.color)}>
-                  <span className="material-symbols-outlined">{typeConf.icon}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{tx.description}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {new Date(tx.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+          {DEMO_HISTORY.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-primary/10 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-2xl text-slate-400">receipt_long</span>
+              </div>
+              <p className="font-semibold text-sm text-slate-600 dark:text-slate-300">Aucune transaction</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Vos transactions apparaitront ici une fois que vous aurez effectue des ventes ou des retraits.</p>
+            </div>
+          ) : (
+            DEMO_HISTORY.map((tx) => {
+              const typeConf = TX_TYPE_CONFIG[tx.type] ?? TX_TYPE_CONFIG.vente;
+              const statusConf = TX_STATUS_CONFIG[tx.status];
+              return (
+                <div key={tx.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", typeConf.color)}>
+                    <span className="material-symbols-outlined">{typeConf.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{tx.description}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {new Date(tx.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full shrink-0", statusConf?.color)}>
+                    {statusConf?.label}
+                  </span>
+                  <p className={cn(
+                    "text-sm font-bold w-24 text-right shrink-0",
+                    tx.amount >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
+                  )}>
+                    {tx.amount >= 0 ? "+" : ""}€{Math.abs(tx.amount).toLocaleString("fr-FR")}
                   </p>
                 </div>
-                <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full shrink-0", statusConf?.color)}>
-                  {statusConf?.label}
-                </span>
-                <p className={cn(
-                  "text-sm font-bold w-24 text-right shrink-0",
-                  tx.amount >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
-                )}>
-                  {tx.amount >= 0 ? "+" : ""}€{Math.abs(tx.amount).toLocaleString("fr-FR")}
-                </p>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 

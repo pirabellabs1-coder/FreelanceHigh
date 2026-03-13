@@ -18,6 +18,7 @@ const ADMIN_POLL_INTERVAL = 30_000; // 30 seconds
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const syncDashboard = useAdminStore((s) => s.syncDashboard);
 
   // Initial sync on mount
@@ -37,13 +38,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div style={ADMIN_CSS_VARS} className="flex h-screen overflow-hidden bg-background-dark">
       <ToastContainer />
-      <div className="hidden lg:flex flex-shrink-0">
-        <AdminSidebar />
+      {/* Desktop sidebar */}
+      <div className="hidden lg:flex flex-shrink-0 relative">
+        <AdminSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((v) => !v)} />
       </div>
+      {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50"><AdminSidebar /></div>
+          <div className="relative z-50"><AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} /></div>
         </div>
       )}
       <div className="flex-1 flex flex-col overflow-hidden">

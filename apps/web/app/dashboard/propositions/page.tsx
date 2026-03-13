@@ -39,105 +39,9 @@ type ClientProject = {
 // Demo data
 // ---------------------------------------------------------------------------
 
-const DEMO_PROPOSALS: Proposal[] = [
-  {
-    id: "P-001",
-    projectTitle: "Refonte UI/UX Dashboard SaaS",
-    clientName: "NexGen Solutions",
-    budget: "1500-3000",
-    proposedPrice: 2200,
-    deliveryDays: 14,
-    status: "en_attente",
-    submittedAt: "2026-02-28",
-    motivation: "Fort de 5 ans d\u2019exp\u00e9rience en UI/UX...",
-  },
-  {
-    id: "P-002",
-    projectTitle: "Application Mobile E-commerce",
-    clientName: "AfriShop Ltd",
-    budget: "3000-5000",
-    proposedPrice: 4000,
-    deliveryDays: 30,
-    status: "acceptee",
-    submittedAt: "2026-02-15",
-    motivation: "Sp\u00e9cialiste React Native...",
-  },
-  {
-    id: "P-003",
-    projectTitle: "Identit\u00e9 Visuelle Compl\u00e8te",
-    clientName: "Startup Dakar",
-    budget: "500-1000",
-    proposedPrice: 750,
-    deliveryDays: 7,
-    status: "refusee",
-    submittedAt: "2026-02-10",
-    motivation: "Designer graphique professionnel...",
-  },
-  {
-    id: "P-004",
-    projectTitle: "Site Vitrine Restaurant",
-    clientName: "Le Boukarou",
-    budget: "800-1500",
-    proposedPrice: 1100,
-    deliveryDays: 10,
-    status: "en_attente",
-    submittedAt: "2026-03-01",
-    motivation: "D\u00e9veloppeur web fullstack...",
-  },
-  {
-    id: "P-005",
-    projectTitle: "Campagne Marketing Digital",
-    clientName: "TechAfrica Inc",
-    budget: "2000-4000",
-    proposedPrice: 2800,
-    deliveryDays: 21,
-    status: "en_attente",
-    submittedAt: "2026-03-02",
-    motivation: "Expert en marketing digital...",
-  },
-];
+const DEMO_PROPOSALS: Proposal[] = [];
 
-const DEMO_CLIENT_PROJECTS: ClientProject[] = [
-  {
-    id: "CP-001",
-    title: "Refonte UI/UX Dashboard SaaS",
-    description:
-      "Nous cherchons un designer UI/UX exp\u00e9riment\u00e9 pour refondre compl\u00e8tement notre dashboard SaaS. Le projet inclut la recherche utilisateur, les wireframes, les maquettes haute fid\u00e9lit\u00e9 et le handoff d\u00e9veloppeur.",
-    budget: "1500-3000",
-    deadline: "2026-04-01",
-    skills: ["UI Design", "React", "Figma"],
-    clientName: "NexGen Solutions",
-    clientRating: 4.9,
-    postedAt: "2026-02-26",
-    proposals: 8,
-  },
-  {
-    id: "CP-002",
-    title: "D\u00e9veloppement API REST Node.js",
-    description:
-      "Cr\u00e9ation d\u2019une API RESTful avec authentification JWT, gestion de fichiers, pagination avanc\u00e9e et documentation Swagger compl\u00e8te. Base PostgreSQL avec Prisma ORM.",
-    budget: "2000-4000",
-    deadline: "2026-04-15",
-    skills: ["Node.js", "TypeScript", "PostgreSQL"],
-    clientName: "DataFlow Corp",
-    clientRating: 4.7,
-    postedAt: "2026-03-01",
-    proposals: 3,
-  },
-  {
-    id: "CP-003",
-    title: "Logo et Charte Graphique",
-    description:
-      "Cr\u00e9ation d\u2019un logo et d\u2019une charte graphique compl\u00e8te pour une startup fintech bas\u00e9e \u00e0 Abidjan. Livraison attendue : logo (couleur + NB), palette, typographie, guide d\u2019utilisation.",
-    budget: "500-1000",
-    deadline: "2026-03-20",
-    skills: ["Logo Design", "Branding", "Illustrator"],
-    clientName: "FinPay Startup",
-    clientRating: 4.5,
-    postedAt: "2026-03-02",
-    proposals: 12,
-  },
-];
+const DEMO_CLIENT_PROJECTS: ClientProject[] = [];
 
 // ---------------------------------------------------------------------------
 // Status config
@@ -869,32 +773,54 @@ export default function PropositionsPage() {
         </div>
 
         {/* Project cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {DEMO_CLIENT_PROJECTS.map((project) => (
-            <ClientProjectCard
-              key={project.id}
-              project={project}
-              onSubmitProposal={handleSelectProject}
-            />
-          ))}
-        </div>
-
-        {/* Empty-state help */}
-        <div className="bg-primary/5 rounded-2xl border border-primary/20 p-5 flex items-start gap-4">
-          <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">
-            info
-          </span>
-          <div>
-            <p className="text-sm font-bold text-slate-200 mb-1">
-              Comment augmenter vos chances ?
+        {DEMO_CLIENT_PROJECTS.length === 0 ? (
+          <div className="bg-background-dark/50 rounded-2xl border border-border-dark py-16 text-center">
+            <span className="material-symbols-outlined text-4xl leading-none text-slate-600 mx-auto mb-3 block">
+              work
+            </span>
+            <p className="text-slate-500 font-semibold">
+              Aucun projet disponible pour le moment
             </p>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              R\u00e9digez une lettre de motivation personnalis\u00e9e pour
-              chaque projet. Proposez un tarif comp\u00e9titif et un d\u00e9lai
-              r\u00e9aliste. Joignez des exemples de travaux similaires.
+            <p className="text-xs text-slate-500 mt-1">
+              Revenez plus tard pour d\u00e9couvrir de nouvelles opportunit\u00e9s.
             </p>
+            <button
+              onClick={handleBackToList}
+              className="mt-4 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+            >
+              Retour aux propositions
+            </button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {DEMO_CLIENT_PROJECTS.map((project) => (
+                <ClientProjectCard
+                  key={project.id}
+                  project={project}
+                  onSubmitProposal={handleSelectProject}
+                />
+              ))}
+            </div>
+
+            {/* Help tip */}
+            <div className="bg-primary/5 rounded-2xl border border-primary/20 p-5 flex items-start gap-4">
+              <span className="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">
+                info
+              </span>
+              <div>
+                <p className="text-sm font-bold text-slate-200 mb-1">
+                  Comment augmenter vos chances ?
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  R\u00e9digez une lettre de motivation personnalis\u00e9e pour
+                  chaque projet. Proposez un tarif comp\u00e9titif et un d\u00e9lai
+                  r\u00e9aliste. Joignez des exemples de travaux similaires.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }

@@ -13,41 +13,7 @@ const favorites: Array<{
   rating: number;
   specialty: string;
   addedAt: string;
-}> = [
-  {
-    id: "fav-1",
-    userId: "u6",
-    targetId: "u1",
-    type: "freelance",
-    name: "Amadou Diallo",
-    avatar: "",
-    rating: 4.9,
-    specialty: "Developpeur Full-Stack",
-    addedAt: "2026-02-15T10:00:00Z",
-  },
-  {
-    id: "fav-2",
-    userId: "u6",
-    targetId: "s3",
-    type: "service",
-    name: "Design UI/UX Complet",
-    avatar: "",
-    rating: 4.8,
-    specialty: "Design & UI/UX",
-    addedAt: "2026-02-20T14:00:00Z",
-  },
-  {
-    id: "fav-3",
-    userId: "u6",
-    targetId: "a1",
-    type: "agence",
-    name: "TechCorp Agency",
-    avatar: "",
-    rating: 4.7,
-    specialty: "Developpement Web & Mobile",
-    addedAt: "2026-03-01T09:00:00Z",
-  },
-];
+}> = [];
 
 export async function GET() {
   const session = await getServerSession(authOptions);

@@ -38,8 +38,8 @@ const CRYPTO_ASSETS: CryptoAsset[] = [
     name: "USD Coin",
     icon: "paid",
     iconBg: "bg-blue-500/15 text-blue-400",
-    balance: 8500.0,
-    valueUSD: 8500.0,
+    balance: 0,
+    valueUSD: 0,
     network: "Ethereum",
     networkIcon: "token",
   },
@@ -49,8 +49,8 @@ const CRYPTO_ASSETS: CryptoAsset[] = [
     name: "Tether",
     icon: "currency_exchange",
     iconBg: "bg-emerald-500/15 text-emerald-400",
-    balance: 3750.85,
-    valueUSD: 3750.85,
+    balance: 0,
+    valueUSD: 0,
     network: "Polygon",
     networkIcon: "hexagon",
   },
@@ -60,67 +60,16 @@ const CRYPTO_ASSETS: CryptoAsset[] = [
     name: "Ethereum",
     icon: "diamond",
     iconBg: "bg-purple-500/15 text-purple-400",
-    balance: 0.125,
-    valueUSD: 200.0,
+    balance: 0,
+    valueUSD: 0,
     network: "Ethereum",
     networkIcon: "token",
   },
 ];
 
-const DEMO_TRANSACTIONS: Web3Transaction[] = [
-  {
-    id: "wtx1",
-    type: "received",
-    description: "Recu 500 USDC de client",
-    amount: "+500.00",
-    token: "USDC",
-    date: "2026-03-02",
-    icon: "arrow_downward",
-    iconColor: "text-emerald-400 bg-emerald-500/10",
-  },
-  {
-    id: "wtx2",
-    type: "withdrawn",
-    description: "Retrait 1 000 USDT vers banque",
-    amount: "-1,000.00",
-    token: "USDT",
-    date: "2026-03-01",
-    icon: "arrow_upward",
-    iconColor: "text-blue-400 bg-blue-500/10",
-  },
-  {
-    id: "wtx3",
-    type: "gas",
-    description: "Frais de gas",
-    amount: "-0.002",
-    token: "ETH",
-    date: "2026-02-28",
-    icon: "local_gas_station",
-    iconColor: "text-amber-400 bg-amber-500/10",
-  },
-  {
-    id: "wtx4",
-    type: "received",
-    description: "Recu 2 500 USDC de commande #1847",
-    amount: "+2,500.00",
-    token: "USDC",
-    date: "2026-02-27",
-    icon: "arrow_downward",
-    iconColor: "text-emerald-400 bg-emerald-500/10",
-  },
-  {
-    id: "wtx5",
-    type: "swapped",
-    description: "Echange 500 USDC vers USDT",
-    amount: "500.00",
-    token: "USDC -> USDT",
-    date: "2026-02-25",
-    icon: "swap_horiz",
-    iconColor: "text-purple-400 bg-purple-500/10",
-  },
-];
+const DEMO_TRANSACTIONS: Web3Transaction[] = [];
 
-const FAKE_WALLET_ADDRESS = "0x1234567890abcdef1234567890abcdef1234abcd";
+const WALLET_ADDRESS_PLACEHOLDER = "";
 
 const TOKEN_OPTIONS = [
   { value: "USDC", label: "USDC (USD Coin)" },
@@ -189,7 +138,7 @@ export default function PortefeuilleWeb3Page() {
 
   const handleCopyAddress = useCallback(() => {
     navigator.clipboard
-      .writeText(FAKE_WALLET_ADDRESS)
+      .writeText(WALLET_ADDRESS_PLACEHOLDER)
       .then(() => {
         addToast("success", "Adresse copiee dans le presse-papiers");
       })
@@ -527,51 +476,72 @@ export default function PortefeuilleWeb3Page() {
             </span>
             Historique des Transactions
           </h3>
-          <span className="text-xs text-slate-500">5 dernieres</span>
+          {DEMO_TRANSACTIONS.length > 0 && (
+            <span className="text-xs text-slate-500">
+              {DEMO_TRANSACTIONS.length} derniere{DEMO_TRANSACTIONS.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
-        <div className="divide-y divide-border-dark">
-          {DEMO_TRANSACTIONS.map((tx) => (
-            <div
-              key={tx.id}
-              className="flex items-center gap-4 px-6 py-4 hover:bg-primary/5 transition-colors"
-            >
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                  tx.iconColor
-                )}
-              >
-                <span className="material-symbols-outlined">{tx.icon}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">
-                  {tx.description}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {new Date(tx.date).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}{" "}
-                  · {tx.token}
-                </p>
-              </div>
-              <p
-                className={cn(
-                  "text-sm font-bold whitespace-nowrap",
-                  tx.amount.startsWith("+")
-                    ? "text-emerald-400"
-                    : tx.amount.startsWith("-")
-                      ? "text-red-400"
-                      : "text-slate-300"
-                )}
-              >
-                {tx.amount} {tx.token.split(" ")[0]}
-              </p>
+        {DEMO_TRANSACTIONS.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-6">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-primary text-3xl">
+                receipt_long
+              </span>
             </div>
-          ))}
-        </div>
+            <p className="font-semibold text-sm text-slate-300 mb-1">
+              Aucune transaction
+            </p>
+            <p className="text-xs text-slate-500 text-center max-w-xs">
+              Vos transactions crypto apparaitront ici une fois que vous aurez
+              effectue des depots, retraits ou echanges de tokens.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border-dark">
+            {DEMO_TRANSACTIONS.map((tx) => (
+              <div
+                key={tx.id}
+                className="flex items-center gap-4 px-6 py-4 hover:bg-primary/5 transition-colors"
+              >
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                    tx.iconColor
+                  )}
+                >
+                  <span className="material-symbols-outlined">{tx.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">
+                    {tx.description}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {new Date(tx.date).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}{" "}
+                    · {tx.token}
+                  </p>
+                </div>
+                <p
+                  className={cn(
+                    "text-sm font-bold whitespace-nowrap",
+                    tx.amount.startsWith("+")
+                      ? "text-emerald-400"
+                      : tx.amount.startsWith("-")
+                        ? "text-red-400"
+                        : "text-slate-300"
+                  )}
+                >
+                  {tx.amount} {tx.token.split(" ")[0]}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ================================================================== */}
@@ -615,7 +585,7 @@ export default function PortefeuilleWeb3Page() {
                   wallet
                 </span>
                 <code className="text-sm text-slate-300 font-mono truncate flex-1">
-                  {FAKE_WALLET_ADDRESS}
+                  {WALLET_ADDRESS_PLACEHOLDER}
                 </code>
                 <button
                   onClick={handleCopyAddress}

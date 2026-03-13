@@ -28,7 +28,7 @@ type BlogFormState = {
 
 const emptyForm: BlogFormState = {
   title: "", slug: "", content: "", excerpt: "",
-  category: "Conseils", tags: [], author: "Lissanon Gildas",
+  category: "Conseils", tags: [], author: "",
   status: "brouillon", scheduledAt: null,
   metaTitle: "", metaDescription: "",
 };

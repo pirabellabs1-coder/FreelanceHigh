@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// ── In-memory Blog Store ──
-// Blog is secondary for now — articles stored in module-level state.
-// Data resets on server restart, which is acceptable for dev mode.
-
-interface BlogArticle {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  author: string;
-  authorId: string;
-  category: string;
-  tags: string[];
-  status: "brouillon" | "publie" | "programme" | "archive";
-  publishedAt: string | null;
-  scheduledAt: string | null;
-  featuredImage: string;
-  views: number;
-  likes: number;
-  createdAt: string;
-  updatedAt: string;
-}
+const IS_DEV_MODE = process.env.DEV_MODE === "true";
 
 function generateSlug(title: string): string {
   return title
@@ -33,142 +11,127 @@ function generateSlug(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-// Seed articles for the blog
-const blogArticles: BlogArticle[] = [
-  {
-    id: "blog_1",
-    title: "Comment gagner 3000 EUR par mois en freelance depuis Dakar",
-    slug: "gagner-3000-eur-freelance-dakar",
-    content:
-      "Decouvrez les strategies eprouvees pour developper votre activite de freelance depuis l'Afrique francophone. De la creation de votre profil a l'acquisition de vos premiers clients internationaux, ce guide couvre toutes les etapes essentielles...",
-    excerpt:
-      "Les strategies pour developper son activite freelance depuis l'Afrique francophone.",
-    author: "Admin FreelanceHigh",
-    authorId: "dev-admin-1",
-    category: "Conseils",
-    tags: ["freelance", "afrique", "revenus", "dakar"],
-    status: "publie",
-    publishedAt: "2026-02-15T10:00:00Z",
-    scheduledAt: null,
-    featuredImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800",
-    views: 1247,
-    likes: 89,
-    createdAt: "2026-02-14T08:00:00Z",
-    updatedAt: "2026-02-15T10:00:00Z",
-  },
-  {
-    id: "blog_2",
-    title: "Les 10 competences les plus demandees en 2026",
-    slug: "10-competences-demandees-2026",
-    content:
-      "Le marche du freelancing evolue rapidement. Voici les competences qui dominent en 2026 : developpement IA, design UI/UX, marketing digital, cybersecurite...",
-    excerpt:
-      "Decouvrez les competences freelance les plus recherchees cette annee.",
-    author: "Admin FreelanceHigh",
-    authorId: "dev-admin-1",
-    category: "Tendances",
-    tags: ["competences", "2026", "tendances", "marche"],
-    status: "publie",
-    publishedAt: "2026-02-20T10:00:00Z",
-    scheduledAt: null,
-    featuredImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
-    views: 856,
-    likes: 62,
-    createdAt: "2026-02-19T08:00:00Z",
-    updatedAt: "2026-02-20T10:00:00Z",
-  },
-  {
-    id: "blog_3",
-    title: "Guide complet : creer son premier service sur FreelanceHigh",
-    slug: "guide-creer-premier-service",
-    content:
-      "Vous venez de vous inscrire sur FreelanceHigh ? Felicitations ! Voici un guide etape par etape pour creer un service qui attire les clients...",
-    excerpt:
-      "Guide pas a pas pour creer et optimiser votre premier service.",
-    author: "Admin FreelanceHigh",
-    authorId: "dev-admin-1",
-    category: "Tutoriels",
-    tags: ["guide", "debutant", "service", "tutoriel"],
-    status: "publie",
-    publishedAt: "2026-03-01T10:00:00Z",
-    scheduledAt: null,
-    featuredImage: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800",
-    views: 2103,
-    likes: 156,
-    createdAt: "2026-02-28T08:00:00Z",
-    updatedAt: "2026-03-01T10:00:00Z",
-  },
-  {
-    id: "blog_4",
-    title: "Success Story : De Abidjan a 5000 EUR/mois en design",
-    slug: "success-story-abidjan-design",
-    content:
-      "Rencontrez Kouame, designer UI/UX base a Abidjan, qui a construit une carriere internationale grace au freelancing...",
-    excerpt:
-      "L'histoire inspirante d'un designer ivoirien devenu freelance international.",
-    author: "Admin FreelanceHigh",
-    authorId: "dev-admin-1",
-    category: "Success Stories",
-    tags: ["success-story", "design", "abidjan", "inspiration"],
-    status: "brouillon",
-    publishedAt: null,
-    scheduledAt: null,
-    featuredImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
-    views: 0,
-    likes: 0,
-    createdAt: "2026-03-05T08:00:00Z",
-    updatedAt: "2026-03-05T08:00:00Z",
-  },
-];
+// ── DEV_MODE: in-memory blog store ──
+interface DevBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string | null;
+  coverImage: string | null;
+  category: string | null;
+  tags: string[];
+  authorId: string;
+  authorName: string;
+  status: "BROUILLON" | "PROGRAMME" | "PUBLIE";
+  publishedAt: string | null;
+  scheduledAt: string | null;
+  views: number;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const devBlogPosts: DevBlogPost[] = [];
+
+// Map status to frontend format
+function mapStatus(s: string): "brouillon" | "publie" | "programme" | "archive" {
+  switch (s) {
+    case "PUBLIE": return "publie";
+    case "PROGRAMME": return "programme";
+    default: return "brouillon";
+  }
+}
+
+function mapStatusToPrisma(s: string): "BROUILLON" | "PROGRAMME" | "PUBLIE" {
+  switch (s) {
+    case "publie": return "PUBLIE";
+    case "programme": return "PROGRAMME";
+    default: return "BROUILLON";
+  }
+}
 
 // ── GET /api/admin/blog — List all blog articles ──
 export async function GET() {
   try {
-    // Check for scheduled articles that should be published
-    const now = new Date();
-    for (const article of blogArticles) {
-      if (
-        article.status === "programme" &&
-        article.scheduledAt &&
-        new Date(article.scheduledAt) <= now
-      ) {
-        article.status = "publie";
-        article.publishedAt = article.scheduledAt;
-        article.updatedAt = now.toISOString();
+    if (IS_DEV_MODE) {
+      // Check for scheduled articles
+      const now = new Date();
+      for (const post of devBlogPosts) {
+        if (post.status === "PROGRAMME" && post.scheduledAt && new Date(post.scheduledAt) <= now) {
+          post.status = "PUBLIE";
+          post.publishedAt = post.scheduledAt;
+          post.updatedAt = now.toISOString();
+        }
       }
+
+      const categories = devBlogPosts.reduce<Record<string, number>>((acc, a) => {
+        if (a.category) acc[a.category] = (acc[a.category] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      return NextResponse.json({
+        articles: devBlogPosts.map(a => ({
+          id: a.id,
+          title: a.title,
+          slug: a.slug,
+          excerpt: a.excerpt,
+          author: a.authorName,
+          category: a.category,
+          tags: a.tags,
+          status: mapStatus(a.status),
+          publishedAt: a.publishedAt,
+          scheduledAt: a.scheduledAt,
+          featuredImage: a.coverImage ?? "",
+          views: a.views,
+          likes: 0,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+        })),
+        total: devBlogPosts.length,
+        published: devBlogPosts.filter(a => a.status === "PUBLIE").length,
+        drafts: devBlogPosts.filter(a => a.status === "BROUILLON").length,
+        scheduled: devBlogPosts.filter(a => a.status === "PROGRAMME").length,
+        categories,
+      });
     }
 
-    // Categories summary
-    const categories = blogArticles.reduce<Record<string, number>>(
-      (acc, a) => {
-        acc[a.category] = (acc[a.category] ?? 0) + 1;
-        return acc;
-      },
-      {}
-    );
+    // Production: Prisma
+    const { prisma } = await import("@freelancehigh/db");
+
+    const articles = await prisma.blogPost.findMany({
+      include: { author: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const categories = articles.reduce<Record<string, number>>((acc, a) => {
+      if (a.category) acc[a.category] = (acc[a.category] ?? 0) + 1;
+      return acc;
+    }, {});
 
     return NextResponse.json({
-      articles: blogArticles.map((a) => ({
+      articles: articles.map(a => ({
         id: a.id,
         title: a.title,
         slug: a.slug,
         excerpt: a.excerpt,
-        author: a.author,
+        author: a.author.name,
         category: a.category,
         tags: a.tags,
-        status: a.status,
-        publishedAt: a.publishedAt,
-        scheduledAt: a.scheduledAt,
-        featuredImage: a.featuredImage,
+        status: mapStatus(a.status),
+        publishedAt: a.publishedAt?.toISOString() ?? null,
+        scheduledAt: a.scheduledAt?.toISOString() ?? null,
+        featuredImage: a.coverImage ?? "",
         views: a.views,
-        likes: a.likes,
-        createdAt: a.createdAt,
-        updatedAt: a.updatedAt,
+        likes: 0,
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
       })),
-      total: blogArticles.length,
-      published: blogArticles.filter((a) => a.status === "publie").length,
-      drafts: blogArticles.filter((a) => a.status === "brouillon").length,
-      scheduled: blogArticles.filter((a) => a.status === "programme").length,
+      total: articles.length,
+      published: articles.filter(a => a.status === "PUBLIE").length,
+      drafts: articles.filter(a => a.status === "BROUILLON").length,
+      scheduled: articles.filter(a => a.status === "PROGRAMME").length,
       categories,
     });
   } catch (error) {
@@ -184,60 +147,96 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      title,
-      content,
-      excerpt,
-      author,
-      authorId,
-      category,
-      tags,
-      status,
-      scheduledAt,
-      featuredImage,
-    } = body;
+    const { title, content, excerpt, author, authorId, category, tags, status, scheduledAt, featuredImage } = body;
 
     if (!title || !content) {
-      return NextResponse.json(
-        { error: "title et content sont requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "title et content sont requis" }, { status: 400 });
     }
 
+    const slug = generateSlug(title);
     const now = new Date().toISOString();
-    const article: BlogArticle = {
-      id: `blog_${Date.now().toString(36)}`,
-      title,
-      slug: generateSlug(title),
-      content,
-      excerpt: excerpt ?? content.slice(0, 200),
-      author: author ?? "Admin FreelanceHigh",
-      authorId: authorId ?? "dev-admin-1",
-      category: category ?? "General",
-      tags: tags ?? [],
-      status: status ?? "brouillon",
-      publishedAt: status === "publie" ? now : null,
-      scheduledAt: scheduledAt ?? null,
-      featuredImage: featuredImage ?? "",
-      views: 0,
-      likes: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
+    const prismaStatus = status ? mapStatusToPrisma(status) : "BROUILLON";
 
-    blogArticles.unshift(article);
+    if (IS_DEV_MODE) {
+      const article: DevBlogPost = {
+        id: `blog_${Date.now().toString(36)}`,
+        title,
+        slug,
+        content,
+        excerpt: excerpt ?? content.slice(0, 200),
+        coverImage: featuredImage ?? null,
+        category: category ?? "General",
+        tags: tags ?? [],
+        authorId: authorId ?? "dev-admin-1",
+        authorName: author ?? "Admin FreelanceHigh",
+        status: prismaStatus,
+        publishedAt: prismaStatus === "PUBLIE" ? now : null,
+        scheduledAt: scheduledAt ?? null,
+        views: 0,
+        metaTitle: null,
+        metaDescription: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      devBlogPosts.unshift(article);
+
+      return NextResponse.json({
+        success: true,
+        message: `Article "${title}" cree`,
+        article: {
+          ...article,
+          status: mapStatus(article.status),
+          featuredImage: article.coverImage ?? "",
+          author: article.authorName,
+          likes: 0,
+        },
+      });
+    }
+
+    // Production: Prisma
+    const { prisma } = await import("@freelancehigh/db");
+
+    const article = await prisma.blogPost.create({
+      data: {
+        title,
+        slug,
+        content,
+        excerpt: excerpt ?? content.slice(0, 200),
+        coverImage: featuredImage ?? null,
+        category: category ?? "General",
+        tags: tags ?? [],
+        authorId: authorId ?? "dev-admin-1",
+        status: prismaStatus,
+        publishedAt: prismaStatus === "PUBLIE" ? new Date() : null,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      },
+      include: { author: { select: { name: true } } },
+    });
 
     return NextResponse.json({
       success: true,
       message: `Article "${title}" cree`,
-      article,
+      article: {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        excerpt: article.excerpt,
+        author: article.author.name,
+        category: article.category,
+        tags: article.tags,
+        status: mapStatus(article.status),
+        publishedAt: article.publishedAt?.toISOString() ?? null,
+        scheduledAt: article.scheduledAt?.toISOString() ?? null,
+        featuredImage: article.coverImage ?? "",
+        views: article.views,
+        likes: 0,
+        createdAt: article.createdAt.toISOString(),
+        updatedAt: article.updatedAt.toISOString(),
+      },
     });
   } catch (error) {
     console.error("[API /admin/blog POST]", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la creation de l'article" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur lors de la creation de l'article" }, { status: 500 });
   }
 }
 
@@ -248,55 +247,108 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updates } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "id est requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "id est requis" }, { status: 400 });
     }
 
-    const idx = blogArticles.findIndex((a) => a.id === id);
-    if (idx === -1) {
-      return NextResponse.json(
-        { error: "Article introuvable" },
-        { status: 404 }
-      );
+    if (IS_DEV_MODE) {
+      const idx = devBlogPosts.findIndex(a => a.id === id);
+      if (idx === -1) {
+        return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
+      }
+
+      const now = new Date().toISOString();
+      const post = devBlogPosts[idx];
+
+      if (updates.title) {
+        post.title = updates.title;
+        post.slug = generateSlug(updates.title);
+      }
+      if (updates.content !== undefined) post.content = updates.content;
+      if (updates.excerpt !== undefined) post.excerpt = updates.excerpt;
+      if (updates.category !== undefined) post.category = updates.category;
+      if (updates.tags !== undefined) post.tags = updates.tags;
+      if (updates.featuredImage !== undefined) post.coverImage = updates.featuredImage;
+      if (updates.scheduledAt !== undefined) post.scheduledAt = updates.scheduledAt;
+
+      if (updates.status) {
+        post.status = mapStatusToPrisma(updates.status);
+        if (post.status === "PUBLIE" && !post.publishedAt) {
+          post.publishedAt = now;
+        }
+      }
+
+      post.updatedAt = now;
+
+      return NextResponse.json({
+        success: true,
+        message: `Article "${post.title}" mis a jour`,
+        article: {
+          ...post,
+          status: mapStatus(post.status),
+          featuredImage: post.coverImage ?? "",
+          author: post.authorName,
+          likes: 0,
+        },
+      });
     }
 
-    const now = new Date().toISOString();
+    // Production: Prisma
+    const { prisma } = await import("@freelancehigh/db");
 
-    // Update fields
+    const existing = await prisma.blogPost.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
+    }
+
+    const data: Record<string, unknown> = {};
     if (updates.title) {
-      blogArticles[idx].title = updates.title;
-      blogArticles[idx].slug = generateSlug(updates.title);
+      data.title = updates.title;
+      data.slug = generateSlug(updates.title);
     }
-    if (updates.content !== undefined) blogArticles[idx].content = updates.content;
-    if (updates.excerpt !== undefined) blogArticles[idx].excerpt = updates.excerpt;
-    if (updates.category !== undefined) blogArticles[idx].category = updates.category;
-    if (updates.tags !== undefined) blogArticles[idx].tags = updates.tags;
-    if (updates.featuredImage !== undefined) blogArticles[idx].featuredImage = updates.featuredImage;
-    if (updates.scheduledAt !== undefined) blogArticles[idx].scheduledAt = updates.scheduledAt;
+    if (updates.content !== undefined) data.content = updates.content;
+    if (updates.excerpt !== undefined) data.excerpt = updates.excerpt;
+    if (updates.category !== undefined) data.category = updates.category;
+    if (updates.tags !== undefined) data.tags = updates.tags;
+    if (updates.featuredImage !== undefined) data.coverImage = updates.featuredImage;
+    if (updates.scheduledAt !== undefined) data.scheduledAt = updates.scheduledAt ? new Date(updates.scheduledAt) : null;
 
-    // Handle status changes
     if (updates.status) {
-      blogArticles[idx].status = updates.status;
-      if (updates.status === "publie" && !blogArticles[idx].publishedAt) {
-        blogArticles[idx].publishedAt = now;
+      data.status = mapStatusToPrisma(updates.status);
+      if (data.status === "PUBLIE" && !existing.publishedAt) {
+        data.publishedAt = new Date();
       }
     }
 
-    blogArticles[idx].updatedAt = now;
+    const article = await prisma.blogPost.update({
+      where: { id },
+      data,
+      include: { author: { select: { name: true } } },
+    });
 
     return NextResponse.json({
       success: true,
-      message: `Article "${blogArticles[idx].title}" mis a jour`,
-      article: blogArticles[idx],
+      message: `Article "${article.title}" mis a jour`,
+      article: {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        excerpt: article.excerpt,
+        author: article.author.name,
+        category: article.category,
+        tags: article.tags,
+        status: mapStatus(article.status),
+        publishedAt: article.publishedAt?.toISOString() ?? null,
+        scheduledAt: article.scheduledAt?.toISOString() ?? null,
+        featuredImage: article.coverImage ?? "",
+        views: article.views,
+        likes: 0,
+        createdAt: article.createdAt.toISOString(),
+        updatedAt: article.updatedAt.toISOString(),
+      },
     });
   } catch (error) {
     console.error("[API /admin/blog PATCH]", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la mise a jour de l'article" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur lors de la mise a jour de l'article" }, { status: 500 });
   }
 }
 
@@ -307,32 +359,32 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json(
-        { error: "id est requis (query param)" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "id est requis (query param)" }, { status: 400 });
     }
 
-    const idx = blogArticles.findIndex((a) => a.id === id);
-    if (idx === -1) {
-      return NextResponse.json(
-        { error: "Article introuvable" },
-        { status: 404 }
-      );
+    if (IS_DEV_MODE) {
+      const idx = devBlogPosts.findIndex(a => a.id === id);
+      if (idx === -1) {
+        return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
+      }
+      const title = devBlogPosts[idx].title;
+      devBlogPosts.splice(idx, 1);
+      return NextResponse.json({ success: true, message: `Article "${title}" supprime` });
     }
 
-    const title = blogArticles[idx].title;
-    blogArticles.splice(idx, 1);
+    // Production: Prisma
+    const { prisma } = await import("@freelancehigh/db");
 
-    return NextResponse.json({
-      success: true,
-      message: `Article "${title}" supprime`,
-    });
+    const existing = await prisma.blogPost.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
+    }
+
+    await prisma.blogPost.delete({ where: { id } });
+
+    return NextResponse.json({ success: true, message: `Article "${existing.title}" supprime` });
   } catch (error) {
     console.error("[API /admin/blog DELETE]", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la suppression de l'article" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur lors de la suppression de l'article" }, { status: 500 });
   }
 }

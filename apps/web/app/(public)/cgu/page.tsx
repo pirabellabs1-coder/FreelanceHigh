@@ -606,6 +606,127 @@ export default async function CguPage() {
             </div>
           </section>
 
+          {/* Article 24 */}
+          <section className="bg-neutral-dark rounded-xl border border-border-dark p-8">
+            <h2 className="text-xl font-bold text-white mb-4">Article 24 — Formations et Produits Numériques</h2>
+
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Le présent article régit les conditions spécifiques applicables à la section Formations de la Plateforme FreelanceHigh, incluant les formations en ligne, les cohortes, les certificats de complétion et les produits numériques commercialisés par les Instructeurs.
+            </p>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.1 Définitions spécifiques aux formations</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les termes suivants, lorsqu&apos;utilisés dans le présent article, ont la signification qui leur est attribuée ci-après :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Formation :</strong> un cours en ligne composé de modules, leçons, vidéos, ressources téléchargeables et éventuellement de quiz ou d&apos;exercices, publié par un Instructeur sur la Plateforme.</li>
+              <li><strong className="text-slate-300">Instructeur :</strong> un Utilisateur dont la candidature a été approuvée par FreelanceHigh et qui dispose des droits de publication de formations et de produits numériques sur la Plateforme.</li>
+              <li><strong className="text-slate-300">Apprenant :</strong> un Utilisateur inscrit à une ou plusieurs formations sur la Plateforme, qu&apos;elles soient gratuites ou payantes.</li>
+              <li><strong className="text-slate-300">Certificat de complétion :</strong> un document numérique généré automatiquement par la Plateforme attestant qu&apos;un Apprenant a complété l&apos;intégralité d&apos;une formation (100 % de progression) et, le cas échéant, obtenu le score minimum requis aux quiz.</li>
+              <li><strong className="text-slate-300">Cohorte :</strong> une session de formation avec dates de début et de fin définies, un nombre de places limité, et un accompagnement structuré par l&apos;Instructeur.</li>
+              <li><strong className="text-slate-300">Produit numérique :</strong> un fichier ou ensemble de fichiers numériques (e-book, template, code source, ressource graphique, audio, vidéo ou licence logicielle) commercialisé par un Instructeur via la Plateforme.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.2 Publication de formations</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              La publication de formations sur la Plateforme est soumise aux conditions suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li>L&apos;Instructeur doit avoir soumis une candidature approuvée par l&apos;équipe FreelanceHigh.</li>
+              <li>Chaque formation doit contenir au minimum un titre, une description, un programme structuré et du contenu pédagogique (vidéo, texte ou ressources).</li>
+              <li>Toute formation publiée est soumise à un processus de modération avant d&apos;être visible publiquement. FreelanceHigh se réserve le droit de refuser, demander des modifications ou retirer une formation qui ne respecte pas les critères de qualité ou les présentes CGU.</li>
+              <li>L&apos;Instructeur est seul responsable de l&apos;exactitude, de la qualité et de la mise à jour du contenu de ses formations.</li>
+              <li>L&apos;Instructeur garantit qu&apos;il dispose de tous les droits de propriété intellectuelle nécessaires sur le contenu publié et qu&apos;il ne porte atteinte à aucun droit de tiers.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.3 Accord Instructeur — Partage des revenus</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              En publiant des formations ou des produits numériques sur la Plateforme, l&apos;Instructeur accepte les conditions financières suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Partage des revenus :</strong> l&apos;Instructeur perçoit 70 % du prix de vente net (hors taxes et frais de transaction) de chaque inscription payante à ses formations et de chaque vente de produit numérique. FreelanceHigh retient 30 % au titre de ses frais de plateforme, d&apos;hébergement, de paiement et de marketing.</li>
+              <li><strong className="text-slate-300">Paiements :</strong> les revenus sont calculés mensuellement et virés sur le portefeuille de l&apos;Instructeur dans un délai de 30 jours après la fin du mois civil. L&apos;Instructeur peut ensuite retirer ses fonds selon les méthodes de retrait disponibles (virement SEPA, Mobile Money, PayPal, Wise).</li>
+              <li><strong className="text-slate-300">Licence non-exclusive :</strong> l&apos;Instructeur accorde à FreelanceHigh une licence non-exclusive, mondiale et révocable d&apos;héberger, afficher, promouvoir et distribuer ses formations et produits numériques sur la Plateforme et ses canaux de communication.</li>
+              <li><strong className="text-slate-300">Droit de retrait :</strong> l&apos;Instructeur peut retirer ses formations de la vente à tout moment. Les apprenants déjà inscrits conservent leur accès conformément à l&apos;article 24.4. Les revenus acquis restent dus à l&apos;Instructeur.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.4 Inscription et accès aux formations</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              L&apos;inscription à une formation (gratuite ou payante) confère à l&apos;Apprenant les droits suivants :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Durée d&apos;accès :</strong> l&apos;accès à une formation achetée est illimité dans le temps, tant que la Plateforme est en service et que la formation n&apos;a pas été retirée par son auteur. En cas de retrait par l&apos;Instructeur, l&apos;Apprenant conserve l&apos;accès au contenu déjà acquis pendant une période minimale de 12 mois.</li>
+              <li><strong className="text-slate-300">Usage personnel :</strong> l&apos;accès est strictement personnel et non transférable. Le partage de compte, la revente, la copie ou la redistribution du contenu d&apos;une formation est strictement interdit et constitue une violation des présentes CGU pouvant entraîner la suspension du compte.</li>
+              <li><strong className="text-slate-300">Révocation :</strong> FreelanceHigh se réserve le droit de révoquer l&apos;accès d&apos;un Apprenant en cas de violation des CGU, de fraude ou d&apos;abus. En cas de révocation abusive, l&apos;Apprenant peut contester la décision via le support.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.5 Cohortes</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Certaines formations proposent un système de cohortes avec les spécificités suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Inscription limitée :</strong> les cohortes disposent d&apos;un nombre de places défini par l&apos;Instructeur. L&apos;inscription est ouverte jusqu&apos;à la date limite ou jusqu&apos;au remplissage complet, selon le premier événement survenu.</li>
+              <li><strong className="text-slate-300">Dates de session :</strong> chaque cohorte a une date de début et une date de fin. Le contenu et l&apos;accompagnement sont dispensés selon un calendrier défini par l&apos;Instructeur.</li>
+              <li><strong className="text-slate-300">Conditions d&apos;annulation :</strong> une inscription à une cohorte peut être annulée avec remboursement intégral jusqu&apos;à 7 jours avant la date de début. Après le début de la cohorte, aucun remboursement n&apos;est possible sauf en cas de force majeure ou de manquement avéré de l&apos;Instructeur.</li>
+              <li><strong className="text-slate-300">Engagement de l&apos;Instructeur :</strong> l&apos;Instructeur s&apos;engage à fournir l&apos;accompagnement décrit dans la fiche de la cohorte. En cas de non-respect, les apprenants peuvent solliciter un remboursement auprès du support FreelanceHigh.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.6 Certificats de complétion</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les certificats délivrés par la Plateforme sont soumis aux conditions suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Conditions d&apos;obtention :</strong> un certificat est généré automatiquement lorsque l&apos;Apprenant a complété 100 % du contenu de la formation et, si la formation comporte des quiz notés, obtenu le score minimum requis défini par l&apos;Instructeur.</li>
+              <li><strong className="text-slate-300">Valeur informative :</strong> les certificats délivrés par FreelanceHigh ont une <strong className="text-slate-300">valeur informative uniquement</strong>. Ils ne constituent ni un diplôme reconnu par l&apos;État, ni une certification professionnelle au sens de la loi. Ils attestent de la complétion d&apos;un parcours de formation sur la Plateforme.</li>
+              <li><strong className="text-slate-300">Vérification :</strong> chaque certificat dispose d&apos;un identifiant unique et d&apos;un QR code permettant à des tiers (employeurs, recruteurs) de vérifier son authenticité via une page de vérification publique sur la Plateforme.</li>
+              <li><strong className="text-slate-300">Conservation :</strong> les certificats sont conservés indéfiniment dans le compte de l&apos;Apprenant et restent accessibles même après la suppression de la formation par l&apos;Instructeur.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.7 Produits numériques</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les produits numériques commercialisés sur la Plateforme sont soumis aux conditions suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Types de produits :</strong> les catégories autorisées incluent les e-books, templates, code source, ressources graphiques, fichiers audio, fichiers vidéo et licences logicielles. L&apos;Instructeur est responsable de la conformité de ses produits avec la législation applicable.</li>
+              <li><strong className="text-slate-300">Licences :</strong> chaque produit numérique est accompagné d&apos;une licence d&apos;utilisation définie par l&apos;Instructeur (usage personnel, usage commercial, ou les deux). L&apos;Apprenant s&apos;engage à respecter les termes de cette licence.</li>
+              <li><strong className="text-slate-300">Non-remboursable après téléchargement :</strong> conformément à l&apos;article L.221-28 du Code de la consommation, les produits numériques téléchargeables ne sont <strong className="text-slate-300">pas remboursables</strong> une fois le téléchargement effectué, l&apos;Apprenant ayant expressément renoncé à son droit de rétractation au moment de l&apos;achat.</li>
+              <li><strong className="text-slate-300">Stock limité :</strong> certains produits numériques peuvent être proposés en quantité limitée. L&apos;Instructeur peut définir un nombre maximum d&apos;acheteurs. Une fois ce nombre atteint, le produit est automatiquement retiré de la vente.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.8 Politique de remboursement des formations</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Les formations (hors produits numériques et cohortes) bénéficient de la politique de remboursement suivante :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Garantie 30 jours :</strong> l&apos;Apprenant dispose d&apos;un délai de 30 jours à compter de la date d&apos;achat pour demander un remboursement intégral, sans justification, à condition d&apos;avoir consulté moins de 30 % du contenu total de la formation.</li>
+              <li><strong className="text-slate-300">Conditions d&apos;exclusion :</strong> le remboursement est refusé si l&apos;Apprenant a consulté plus de 30 % du contenu, s&apos;il a obtenu le certificat de complétion, ou si la demande intervient au-delà du délai de 30 jours.</li>
+              <li><strong className="text-slate-300">Procédure :</strong> la demande de remboursement se fait via le support FreelanceHigh. Le remboursement est effectué par le même moyen de paiement utilisé lors de l&apos;achat dans un délai de 14 jours ouvrables.</li>
+              <li><strong className="text-slate-300">Formations gratuites :</strong> les formations gratuites ne sont pas concernées par cette politique.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.9 Contenu interdit</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              En complément des règles générales de contenu définies à l&apos;Article 15 des présentes CGU, les contenus suivants sont spécifiquement interdits dans les formations et produits numériques :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Plagiat :</strong> tout contenu copié ou reproduit sans autorisation d&apos;un tiers (autre formation, livre, article, vidéo) est strictement interdit.</li>
+              <li><strong className="text-slate-300">Contenu généré par IA non divulgué :</strong> l&apos;utilisation d&apos;intelligence artificielle pour générer tout ou partie du contenu d&apos;une formation doit être explicitement signalée. L&apos;Instructeur reste responsable de la véracité et de la qualité du contenu.</li>
+              <li><strong className="text-slate-300">Contenu obsolète ou trompeur :</strong> les formations présentant des informations sciemment erronées, dépassées ou trompeuses entraîneront la suspension de la formation et, en cas de récidive, du compte Instructeur.</li>
+              <li><strong className="text-slate-300">Violation de propriété intellectuelle :</strong> l&apos;utilisation de marques, logos, logiciels, polices ou tout autre élément protégé sans licence valide est interdite.</li>
+            </ul>
+
+            <h3 className="text-base font-semibold text-white mt-6 mb-3">24.10 Évaluations et avis</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Le système d&apos;évaluation des formations est soumis aux règles suivantes :
+            </p>
+            <ul className="text-sm text-slate-400 leading-relaxed list-disc list-inside space-y-2 mb-4 ml-4">
+              <li><strong className="text-slate-300">Système de notation :</strong> les apprenants peuvent évaluer une formation sur une échelle de 1 à 5 étoiles, accompagnée d&apos;un commentaire textuel. L&apos;évaluation ne peut être soumise qu&apos;après avoir complété au minimum 50 % du contenu de la formation.</li>
+              <li><strong className="text-slate-300">Règles :</strong> les évaluations doivent être honnêtes, factuelles et porter uniquement sur la qualité du contenu pédagogique. Les avis contenant des propos injurieux, diffamatoires, discriminatoires ou sans rapport avec la formation seront supprimés.</li>
+              <li><strong className="text-slate-300">Droit de réponse :</strong> l&apos;Instructeur peut répondre publiquement à chaque avis. Les réponses doivent rester professionnelles et constructives.</li>
+              <li><strong className="text-slate-300">Authenticité :</strong> les faux avis (achetés, échangés entre Instructeurs, ou créés par des comptes fictifs) sont strictement interdits et entraînent la suspension du compte. FreelanceHigh se réserve le droit de vérifier l&apos;authenticité des évaluations.</li>
+            </ul>
+          </section>
+
         </div>
 
         <p className="text-xs text-slate-600 mt-12 text-center">

@@ -17,10 +17,7 @@ const PAYMENT_METHODS = [
   { id: "bank", icon: "account_balance", label: "Virement Bancaire", description: "SEPA, virement international", active: false },
 ];
 
-const SAVED_METHODS = [
-  { id: "1", type: "mobile", icon: "smartphone", label: "Orange Money", detail: "+221 77 *** ** 67", default: true },
-  { id: "2", type: "card", icon: "credit_card", label: "Visa **** 4242", detail: "Expire 12/28", default: false },
-];
+const SAVED_METHODS: { id: string; type: string; icon: string; label: string; detail: string; default: boolean }[] = [];
 
 const TX_STATUS_MAP: Record<string, { label: string; cls: string }> = {
   completed: { label: "Complete", cls: "bg-primary/20 text-primary" },
@@ -58,10 +55,21 @@ function SkeletonRow() {
   );
 }
 
+const DEPOSIT_METHODS = [
+  { id: "card", icon: "credit_card", label: "Carte Bancaire", description: "Visa, Mastercard via Stripe — Instantané" },
+  { id: "mobile", icon: "smartphone", label: "Mobile Money", description: "Orange Money, Wave, MTN MoMo" },
+  { id: "bank", icon: "account_balance", label: "Virement Bancaire", description: "SEPA — 1 à 3 jours ouvrés" },
+];
+
+const DEPOSIT_PRESETS = [10, 25, 50, 100, 250, 500];
+
 export default function ClientPayments() {
   const [currency, setCurrency] = useState("EUR");
-  const [activeTab, setActiveTab] = useState<"overview" | "methods" | "invoices">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "methods" | "invoices" | "deposit">("overview");
   const [selectedMethod, setSelectedMethod] = useState("mobile");
+  const [depositMethod, setDepositMethod] = useState("card");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositLoading, setDepositLoading] = useState(false);
   const { addToast } = useToastStore();
 
   const {
@@ -83,7 +91,8 @@ export default function ClientPayments() {
 
   const TABS = [
     { key: "overview", label: "Vue d\u2019ensemble", icon: "dashboard" },
-    { key: "methods", label: "Methodes de paiement", icon: "payments" },
+    { key: "deposit", label: "Déposer des fonds", icon: "add_circle" },
+    { key: "methods", label: "Méthodes de paiement", icon: "payments" },
     { key: "invoices", label: "Factures & Historique", icon: "receipt_long" },
   ] as const;
 
@@ -273,6 +282,132 @@ export default function ClientPayments() {
         </div>
       )}
 
+      {/* Deposit Tab */}
+      {activeTab === "deposit" && (
+        <div className="space-y-6">
+          {/* Current Balance */}
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Solde actuel</p>
+                <p className="text-3xl font-black text-white">{formatAmount(credits)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Deposit form */}
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
+              <span className="material-symbols-outlined text-primary">add_circle</span>
+              Déposer des fonds
+            </h2>
+
+            {/* Amount input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-white mb-2">Montant à déposer</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-4 py-4 bg-background-dark border border-border-dark rounded-xl text-2xl font-bold text-white placeholder:text-slate-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 pr-16"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">{currency}</span>
+              </div>
+              {/* Preset amounts */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {DEPOSIT_PRESETS.map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setDepositAmount(String(amount))}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                      depositAmount === String(amount)
+                        ? "bg-primary text-background-dark shadow"
+                        : "bg-background-dark border border-border-dark text-slate-400 hover:text-white hover:border-primary/30"
+                    )}
+                  >
+                    {amount}€
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Method selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-white mb-3">Méthode de paiement</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {DEPOSIT_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setDepositMethod(m.id)}
+                    className={cn(
+                      "p-4 rounded-xl border-2 text-left transition-all",
+                      depositMethod === m.id
+                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                        : "border-border-dark bg-background-dark hover:border-primary/30"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-lg">{m.icon}</span>
+                      </div>
+                      {depositMethod === m.id && (
+                        <span className="material-symbols-outlined text-primary ml-auto" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      )}
+                    </div>
+                    <p className="font-bold text-white text-sm">{m.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{m.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Deposit button */}
+            <button
+              disabled={!depositAmount || parseFloat(depositAmount) <= 0 || depositLoading}
+              onClick={() => {
+                setDepositLoading(true);
+                // Simulate deposit
+                setTimeout(() => {
+                  setDepositLoading(false);
+                  addToast("success", `Dépôt de ${formatAmount(parseFloat(depositAmount))} initié avec succès via ${DEPOSIT_METHODS.find(m => m.id === depositMethod)?.label}`);
+                  setDepositAmount("");
+                }, 1500);
+              }}
+              className="w-full bg-primary text-background-dark text-sm font-bold py-4 rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {depositLoading ? (
+                <>
+                  <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                  Traitement en cours...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-lg">add_circle</span>
+                  Déposer {depositAmount ? formatAmount(parseFloat(depositAmount)) : "des fonds"}
+                </>
+              )}
+            </button>
+
+            {/* Info */}
+            <div className="flex items-center gap-2 mt-4 p-3 bg-blue-500/5 rounded-lg border border-blue-500/10">
+              <span className="material-symbols-outlined text-blue-400 text-lg flex-shrink-0">info</span>
+              <p className="text-xs text-slate-400">
+                Les fonds déposés seront disponibles immédiatement pour les paiements par carte.
+                Les virements bancaires peuvent prendre 1 à 3 jours ouvrés.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Methods Tab */}
       {activeTab === "methods" && (
         <div className="space-y-6">
@@ -283,21 +418,29 @@ export default function ClientPayments() {
               Methodes enregistrees
             </h2>
             <div className="space-y-3">
-              {SAVED_METHODS.map(m => (
-                <div key={m.id} className="flex items-center gap-4 p-4 bg-neutral-dark rounded-xl border border-border-dark hover:border-primary/30 transition-colors">
-                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", m.type === "mobile" ? "bg-primary/10" : "bg-blue-500/10")}>
-                    <span className={cn("material-symbols-outlined", m.type === "mobile" ? "text-primary" : "text-blue-400")}>{m.icon}</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">{m.label}</p>
-                    <p className="text-xs text-slate-500">{m.detail}</p>
-                  </div>
-                  {m.default && <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">Par defaut</span>}
-                  <button className="text-slate-500 hover:text-red-400 transition-colors">
-                    <span className="material-symbols-outlined text-lg">delete</span>
-                  </button>
+              {SAVED_METHODS.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <span className="material-symbols-outlined text-4xl mb-2 block opacity-30">credit_card_off</span>
+                  <p className="text-sm">Aucune methode de paiement enregistree.</p>
+                  <p className="text-xs mt-1">Ajoutez une methode ci-dessous pour commencer.</p>
                 </div>
-              ))}
+              ) : (
+                SAVED_METHODS.map(m => (
+                  <div key={m.id} className="flex items-center gap-4 p-4 bg-neutral-dark rounded-xl border border-border-dark hover:border-primary/30 transition-colors">
+                    <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", m.type === "mobile" ? "bg-primary/10" : "bg-blue-500/10")}>
+                      <span className={cn("material-symbols-outlined", m.type === "mobile" ? "text-primary" : "text-blue-400")}>{m.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-white">{m.label}</p>
+                      <p className="text-xs text-slate-500">{m.detail}</p>
+                    </div>
+                    {m.default && <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">Par defaut</span>}
+                    <button className="text-slate-500 hover:text-red-400 transition-colors">
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

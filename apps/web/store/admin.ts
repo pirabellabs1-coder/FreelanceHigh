@@ -14,6 +14,13 @@ export interface AdminDashboardStats {
   monthlyRevenue: { month: string; revenue: number; commission: number; orders: number }[];
   recentOrders: { id: string; serviceTitle: string; clientName: string; freelanceName: string; amount: number; status: string; createdAt: string }[];
   recentUsers: { id: string; name: string; email: string; role: string; createdAt: string }[];
+  traffic?: {
+    activeSessions: number;
+    todayPageViews: number;
+    todayUniques: number;
+    avgSessionDuration: number;
+    topPages: { path: string; views: number }[];
+  };
 }
 
 export interface AdminUser {
@@ -156,6 +163,18 @@ export interface AdminAnalytics {
   servicePerformance: { totalViews: number; totalClicks: number; avgCTR: number; avgConversion: number; avgRating: number; topServices: unknown[] };
   revenueTrends: { month: string; revenue: number; commission: number; orders: number }[];
   reviewStats: { distribution: { stars: number; count: number }[]; avgQualite: number; avgCommunication: number; avgDelai: number; reported: number };
+  trafficAnalytics?: {
+    pageViewsTrend: { date: string; views: number }[];
+    sessionsTrend: { date: string; sessions: number }[];
+    topReferrers: { referrer: string; count: number }[];
+    utmBreakdown: { source: string; medium: string; count: number }[];
+    deviceBreakdown: { mobile: number; tablet: number; desktop: number };
+    bounceRate: number;
+    avgSessionDuration: number;
+    totalPageViews: number;
+    uniqueVisitors: number;
+    totalSessions: number;
+  };
 }
 
 export interface AdminService {
@@ -427,8 +446,8 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   syncConfig: async () => {
     set({ loading: { ...get().loading, config: true } });
     try {
-      const config = await fetchAdmin<AdminConfig>("/api/admin/config");
-      set({ config, loading: { ...get().loading, config: false }, error: { ...get().error, config: null } });
+      const data = await fetchAdmin<{ config: AdminConfig }>("/api/admin/config");
+      set({ config: data.config, loading: { ...get().loading, config: false }, error: { ...get().error, config: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, config: false }, error: { ...get().error, config: (e as Error).message } });
     }
@@ -700,8 +719,8 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
 
   updateConfig: async (data) => {
     try {
-      const config = await fetchAdmin<AdminConfig>("/api/admin/config", { method: "PATCH", body: JSON.stringify(data) });
-      set({ config });
+      const res = await fetchAdmin<{ config: AdminConfig }>("/api/admin/config", { method: "PATCH", body: JSON.stringify(data) });
+      set({ config: res.config });
       return true;
     } catch { return false; }
   },

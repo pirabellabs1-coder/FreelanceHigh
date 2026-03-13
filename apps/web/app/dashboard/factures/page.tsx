@@ -17,16 +17,7 @@ interface Invoice {
   status: "payee" | "en_attente" | "en_retard";
 }
 
-const DEMO_INVOICES: Invoice[] = [
-  { id: "FH-2026-001", date: "2026-01-15", client: "Pierre Martin", description: "Logo Design Moderne", amount: 135, status: "payee" },
-  { id: "FH-2026-002", date: "2026-01-28", client: "Sophie Laurent", description: "Site WordPress E-commerce", amount: 450, status: "payee" },
-  { id: "FH-2026-003", date: "2026-02-05", client: "Amadou Diallo", description: "Redaction SEO 10 Articles", amount: 200, status: "payee" },
-  { id: "FH-2026-004", date: "2026-02-15", client: "Marie Kouassi", description: "Application React Native", amount: 800, status: "en_attente" },
-  { id: "FH-2026-005", date: "2026-02-20", client: "Jean-Paul Mbaye", description: "Identite Visuelle Complete", amount: 350, status: "en_attente" },
-  { id: "FH-2026-006", date: "2026-01-10", client: "Fatou Diop", description: "Traduction FR-EN 50 pages", amount: 175, status: "en_retard" },
-  { id: "FH-2026-007", date: "2026-03-01", client: "Ibrahim Sow", description: "Campagne Marketing Digital", amount: 600, status: "en_attente" },
-  { id: "FH-2026-008", date: "2026-02-28", client: "NexGen Solutions", description: "API REST Development", amount: 1200, status: "payee" },
-];
+const DEMO_INVOICES: Invoice[] = [];
 
 // ============================================================
 // Status config

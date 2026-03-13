@@ -2,18 +2,73 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePlatformDataStore } from "@/store/platform-data";
+
+interface BlogArticle {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  category: string;
+  tags: string[];
+  status: string;
+  publishedAt: string | null;
+  featuredImage: string;
+  views: number;
+  createdAt: string;
+}
 
 export default function BlogArticlePage() {
   const { slug } = useParams<{ slug: string }>();
-  const { blogArticles } = usePlatformDataStore();
   const t = useTranslations("blog");
 
-  const article = blogArticles.find(a => a.slug === slug && a.status === "publie");
-  const related = blogArticles.filter(a => a.status === "publie" && a.id !== article?.id && a.category === article?.category).slice(0, 3);
+  const [article, setArticle] = useState<BlogArticle | null>(null);
+  const [related, setRelated] = useState<BlogArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!article) {
+  useEffect(() => {
+    if (!slug) return;
+
+    // Fetch the article
+    fetch(`/api/blog/${slug}`)
+      .then(res => {
+        if (!res.ok) { setNotFound(true); setLoading(false); return null; }
+        return res.json();
+      })
+      .then(data => {
+        if (!data) return;
+        setArticle(data.article);
+        setLoading(false);
+
+        // Fetch related articles by same category
+        if (data.article?.category) {
+          fetch(`/api/blog?category=${encodeURIComponent(data.article.category)}&limit=4`)
+            .then(res => res.json())
+            .then(relData => {
+              const others = (relData.articles || []).filter(
+                (a: BlogArticle) => a.slug !== slug
+              ).slice(0, 3);
+              setRelated(others);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => { setNotFound(true); setLoading(false); });
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <span className="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
+      </div>
+    );
+  }
+
+  if (notFound || !article) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
         <div className="text-center">

@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import crypto from "crypto";
+import { generateSecret, generateURI, verifySync } from "otplib";
 
-function generateTOTPSecret(): string {
-  return crypto.randomBytes(20).toString("hex").slice(0, 32);
-}
+const IS_DEV_MODE = process.env.DEV_MODE === "true";
 
-// POST: Generer un nouveau secret 2FA
+// POST: Generer un nouveau secret 2FA + QR code URL
 export async function POST() {
   try {
     const session = await auth();
@@ -14,34 +12,42 @@ export async function POST() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (session.user.role !== "admin") {
-      return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
-    }
+    const secret = generateSecret();
+    const otpauthUrl = generateURI({
+      issuer: "FreelanceHigh",
+      label: session.user.email,
+      secret,
+    });
 
-    const secret = generateTOTPSecret();
-    const otpauthUrl = `otpauth://totp/FreelanceHigh:${session.user.email}?secret=${secret}&issuer=FreelanceHigh`;
-
-    // Stocker le secret en DB (non verifie)
-    try {
-      const { prisma } = await import("@freelancehigh/db");
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { twoFactorSecret: secret, twoFactorEnabled: false },
-      });
-    } catch {
-      // DB non connectee
+    // Stocker le secret temporairement (non encore confirme)
+    if (IS_DEV_MODE) {
+      const { devStore } = await import("@/lib/dev/dev-store");
+      devStore.update(session.user.id, {
+        twoFactorSecret: secret,
+        twoFactorEnabled: false,
+      } as Record<string, unknown>);
+    } else {
+      try {
+        const { prisma } = await import("@freelancehigh/db");
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { twoFactorSecret: secret, twoFactorEnabled: false },
+        });
+      } catch {
+        // DB non connectee — on continue quand meme avec le secret
+      }
     }
 
     return NextResponse.json({
       otpauthUrl,
-      // Le secret n'est PAS retourne directement — seulement l'URL otpauth pour le QR code
+      secret, // Pour saisie manuelle dans l'app authenticator
     });
   } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-// PUT: Confirmer le setup 2FA avec un code de verification
+// PUT: Confirmer le setup 2FA avec un code de verification TOTP
 export async function PUT(request: Request) {
   try {
     const session = await auth();
@@ -49,28 +55,117 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    const { code } = await request.json() as { code: string };
+    const { code } = (await request.json()) as { code: string };
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-      return NextResponse.json({ error: "Code invalide. Entrez un code a 6 chiffres." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Code invalide. Entrez un code a 6 chiffres." },
+        { status: 400 }
+      );
     }
 
-    // TODO: Verification TOTP reelle avec otplib quand installe
-    // import { authenticator } from 'otplib';
-    // const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    // const isValid = authenticator.verify({ token: code, secret: user.twoFactorSecret });
-    // if (!isValid) return NextResponse.json({ error: "Code incorrect" }, { status: 400 });
+    // Recuperer le secret stocke
+    let storedSecret: string | null = null;
 
-    try {
-      const { prisma } = await import("@freelancehigh/db");
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { twoFactorEnabled: true },
-      });
-    } catch {
-      // DB non connectee
+    if (IS_DEV_MODE) {
+      const { devStore } = await import("@/lib/dev/dev-store");
+      const user = devStore.findById(session.user.id);
+      storedSecret =
+        (user as unknown as Record<string, unknown>)?.twoFactorSecret as
+          | string
+          | null;
+    } else {
+      try {
+        const { prisma } = await import("@freelancehigh/db");
+        const user = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { twoFactorSecret: true },
+        });
+        storedSecret = user?.twoFactorSecret ?? null;
+      } catch {
+        // DB non connectee
+      }
     }
 
-    return NextResponse.json({ success: true, message: "2FA active avec succes" });
+    if (!storedSecret) {
+      return NextResponse.json(
+        {
+          error:
+            "Aucun secret 2FA en attente. Generez un nouveau QR code d'abord.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verification TOTP reelle
+    const result = verifySync({
+      token: code,
+      secret: storedSecret,
+    });
+
+    if (!result.valid) {
+      return NextResponse.json(
+        { error: "Code incorrect. Verifiez votre application authenticator." },
+        { status: 400 }
+      );
+    }
+
+    // Activer la 2FA
+    if (IS_DEV_MODE) {
+      const { devStore } = await import("@/lib/dev/dev-store");
+      devStore.update(session.user.id, {
+        twoFactorEnabled: true,
+      } as Record<string, unknown>);
+    } else {
+      try {
+        const { prisma } = await import("@freelancehigh/db");
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { twoFactorEnabled: true },
+        });
+      } catch {
+        // DB non connectee
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "2FA active avec succes",
+    });
+  } catch {
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+// DELETE: Desactiver la 2FA
+export async function DELETE() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+    }
+
+    if (IS_DEV_MODE) {
+      const { devStore } = await import("@/lib/dev/dev-store");
+      devStore.update(session.user.id, {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+      } as Record<string, unknown>);
+    } else {
+      try {
+        const { prisma } = await import("@freelancehigh/db");
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { twoFactorEnabled: false, twoFactorSecret: null },
+        });
+      } catch {
+        // DB non connectee
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "2FA desactivee",
+    });
   } catch {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }

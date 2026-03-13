@@ -36,7 +36,7 @@ export async function GET(
       customerEmail: session.user.email || undefined,
     });
 
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

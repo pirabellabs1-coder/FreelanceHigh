@@ -108,7 +108,7 @@ interface DashboardState {
   availability: AvailabilitySlot[];
   vacationMode: boolean;
   updateAvailability: (day: number, updates: Partial<AvailabilitySlot>) => void;
-  toggleVacationMode: () => void;
+  toggleVacationMode: () => Promise<void>;
 
   // Notifications settings
   notificationSettings: NotificationSetting[];
@@ -568,19 +568,25 @@ export const useDashboardStore = create<DashboardState>()(
         set((s) => ({
           availability: s.availability.map((a) => (a.day === day ? { ...a, ...updates } : a)),
         })),
-      toggleVacationMode: () =>
-        set((s) => {
-          const newMode = !s.vacationMode;
-          if (newMode) {
-            return {
-              vacationMode: newMode,
-              services: s.services.map((sv) =>
-                sv.status === "actif" ? { ...sv, status: "pause" as const } : sv
-              ),
-            };
-          }
-          return { vacationMode: newMode };
-        }),
+      toggleVacationMode: async () => {
+        const newMode = !get().vacationMode;
+        try {
+          await profileApi.update({ vacationMode: newMode });
+          set((s) => {
+            if (newMode) {
+              return {
+                vacationMode: newMode,
+                services: s.services.map((sv) =>
+                  sv.status === "actif" ? { ...sv, status: "pause" as const } : sv
+                ),
+              };
+            }
+            return { vacationMode: newMode };
+          });
+        } catch {
+          // Revert: state not changed since we only update on success
+        }
+      },
 
       // Notifications
       notificationSettings: DEMO_NOTIFICATION_SETTINGS,

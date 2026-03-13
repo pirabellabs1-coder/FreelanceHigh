@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
-// Demo automation data
+// ── Persistence ──
+const DEV_DIR = path.join(process.cwd(), "lib", "dev");
+const AUTOMATIONS_FILE = path.join(DEV_DIR, "automations.json");
+
+function ensureDir() {
+  if (!fs.existsSync(DEV_DIR)) fs.mkdirSync(DEV_DIR, { recursive: true });
+}
+
+function readScenarios(): unknown[] {
+  try {
+    if (!fs.existsSync(AUTOMATIONS_FILE)) return [];
+    return JSON.parse(fs.readFileSync(AUTOMATIONS_FILE, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeScenarios(scenarios: unknown[]) {
+  ensureDir();
+  fs.writeFileSync(AUTOMATIONS_FILE, JSON.stringify(scenarios, null, 2), "utf-8");
+}
+
+// ── Static config ──
 const TRIGGERS = [
   { id: "t1", icon: "chat_bubble", label: "Nouveau message recu", category: "Messages" },
   { id: "t2", icon: "person_add", label: "Nouveau client qui contacte", category: "Messages" },
@@ -29,36 +53,13 @@ const ACTIONS = [
   { id: "a6", icon: "discount", label: "Offrir une reduction", hasMessage: true },
 ];
 
-const DEMO_SCENARIOS = [
-  {
-    id: "sc1", name: "Accueil nouveau client", active: true,
-    trigger: TRIGGERS[1],
-    conditions: [{ condition: CONDITIONS[0], value: "Matin (6h-12h)" }],
-    actions: [{ action: ACTIONS[0], message: "Bonjour ! Merci pour votre interet. Comment puis-je vous aider ?" }],
-    triggerCount: 28, lastTriggered: "2026-03-08", createdAt: "2026-01-10",
-  },
-  {
-    id: "sc2", name: "Rappel commande livree", active: true,
-    trigger: TRIGGERS[3],
-    conditions: [],
-    actions: [{ action: ACTIONS[2], message: "Votre commande a ete livree ! N'hesitez pas a valider si tout est conforme." }],
-    triggerCount: 15, lastTriggered: "2026-03-05", createdAt: "2026-01-15",
-  },
-  {
-    id: "sc3", name: "Client fidele - reduction", active: false,
-    trigger: TRIGGERS[2],
-    conditions: [{ condition: CONDITIONS[1], value: "3" }, { condition: CONDITIONS[2], value: "100" }],
-    actions: [{ action: ACTIONS[5], message: "Merci pour votre fidelite ! Voici 10% de reduction sur votre prochaine commande." }],
-    triggerCount: 5, lastTriggered: "2026-02-20", createdAt: "2026-02-01",
-  },
-];
-
 export async function GET() {
+  const scenarios = readScenarios();
   return NextResponse.json({
     triggers: TRIGGERS,
     conditions: CONDITIONS,
     actions: ACTIONS,
-    scenarios: DEMO_SCENARIOS,
+    scenarios,
   });
 }
 
@@ -66,20 +67,32 @@ export async function POST(request: Request) {
   const body = await request.json();
 
   if (body.action === "create") {
+    const scenarios = readScenarios() as Record<string, unknown>[];
     const newScenario = {
       id: "sc" + Date.now(),
       ...body.scenario,
       triggerCount: 0,
       createdAt: new Date().toISOString().slice(0, 10),
     };
+    scenarios.push(newScenario);
+    writeScenarios(scenarios);
     return NextResponse.json({ scenario: newScenario });
   }
 
   if (body.action === "toggle") {
+    const scenarios = readScenarios() as Record<string, unknown>[];
+    const idx = scenarios.findIndex((s) => s.id === body.id);
+    if (idx >= 0) {
+      scenarios[idx].active = body.active;
+      writeScenarios(scenarios);
+    }
     return NextResponse.json({ success: true, id: body.id, active: body.active });
   }
 
   if (body.action === "delete") {
+    const scenarios = readScenarios() as Record<string, unknown>[];
+    const filtered = scenarios.filter((s) => s.id !== body.id);
+    writeScenarios(filtered);
     return NextResponse.json({ success: true, id: body.id });
   }
 

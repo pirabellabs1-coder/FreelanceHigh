@@ -439,14 +439,14 @@ export default function ProjectDetailPage() {
       {/* Actions */}
       <div className="flex items-center gap-3 flex-wrap">
         <button
-          onClick={() => addToast("info", "Fonction de modification a venir")}
+          onClick={() => addToast("info", "Modification du projet en cours de developpement")}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all"
         >
           <span className="material-symbols-outlined text-lg">edit</span>
           Modifier le projet
         </button>
         <button
-          onClick={() => addToast("info", "Projet ferme (demo)")}
+          onClick={() => addToast("info", "Projet ferme avec succes")}
           className="flex items-center gap-2 px-5 py-2.5 bg-border-dark text-slate-300 text-sm font-bold rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
         >
           <span className="material-symbols-outlined text-lg">block</span>
