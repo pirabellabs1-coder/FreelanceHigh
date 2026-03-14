@@ -282,7 +282,13 @@ export default function InscriptionPage() {
         return;
       }
 
-      // Connexion automatique apres inscription
+      // If email verification is required, redirect to verification page
+      if (data.requiresVerification) {
+        router.push(`/verifier-email?email=${encodeURIComponent(d.email)}`);
+        return;
+      }
+
+      // Fallback: Connexion automatique apres inscription (if verification not required)
       const signInResult = await signIn("credentials", {
         email: d.email,
         password: d.password,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -63,8 +63,18 @@ export async function POST(request: Request) {
         console.error("[REGISTER] Erreur envoi email bienvenue:", err)
       );
 
+      // Send verification email
+      try {
+        const { storeOTP } = await import("@/lib/auth/otp");
+        const code = storeOTP(email);
+        await sendVerificationEmail(email, name, code);
+      } catch (err) {
+        console.error("[REGISTER] Erreur envoi code verification:", err);
+      }
+
       return NextResponse.json({
         success: true,
+        requiresVerification: true,
         user: { id: user.id, email: user.email, name: user.name, role: user.role },
       }, { status: 201 });
     }
@@ -106,8 +116,18 @@ export async function POST(request: Request) {
       console.error("[REGISTER] Erreur envoi email bienvenue:", err)
     );
 
+    // Send verification email
+    try {
+      const { storeOTP } = await import("@/lib/auth/otp");
+      const code = storeOTP(email);
+      await sendVerificationEmail(email, name, code);
+    } catch (err) {
+      console.error("[REGISTER] Erreur envoi code verification:", err);
+    }
+
     return NextResponse.json({
       success: true,
+      requiresVerification: true,
       user: { id: user.id, email: user.email, name: user.name, role: user.role.toLowerCase() },
     }, { status: 201 });
 

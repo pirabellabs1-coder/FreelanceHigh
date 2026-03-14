@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // ─── Password strength ───────────────────────────────────────────────────
 type Strength = { label: string; score: number; color: string; barColor: string };
@@ -21,7 +21,17 @@ function getStrength(pwd: string): Strength {
 }
 
 export default function ReinitialiserMotDePassePage() {
+  return (
+    <Suspense fallback={null}>
+      <ReinitialiserMotDePasseContent />
+    </Suspense>
+  );
+}
+
+function ReinitialiserMotDePasseContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") || "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -29,10 +39,18 @@ export default function ReinitialiserMotDePassePage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [tokenMissing, setTokenMissing] = useState(false);
 
   const strength = password ? getStrength(password) : null;
   const mismatch = confirm.length > 0 && password !== confirm;
   const confirmOk = confirm.length > 0 && password === confirm;
+
+  // Check for missing token on mount
+  useEffect(() => {
+    if (!token) {
+      setTokenMissing(true);
+    }
+  }, [token]);
 
   // Redirect after success
   useEffect(() => {
@@ -47,16 +65,42 @@ export default function ReinitialiserMotDePassePage() {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
-    if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères.");
+    if (password.length < 10) {
+      setError("Le mot de passe doit contenir au moins 10 caracteres.");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Le mot de passe doit contenir au moins une majuscule.");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError("Le mot de passe doit contenir au moins une minuscule.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Le mot de passe doit contenir au moins un chiffre.");
       return;
     }
     setError("");
     setLoading(true);
-    // TODO: await supabase.auth.updateUser({ password })
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    setSuccess(true);
+    try {
+      const res = await fetch("/api/auth/confirm-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Une erreur est survenue.");
+        setLoading(false);
+        return;
+      }
+      setSuccess(true);
+    } catch {
+      setError("Impossible de contacter le serveur. Verifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -125,7 +169,37 @@ export default function ReinitialiserMotDePassePage() {
             <h1 className="text-slate-900 dark:text-slate-100 text-2xl font-bold">FreelanceHigh</h1>
           </div>
 
-          {!success ? (
+          {tokenMissing ? (
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                <span className="material-symbols-outlined text-red-500 text-3xl">link_off</span>
+              </div>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+                Lien invalide
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
+                Ce lien de reinitialisation est invalide ou a expire.
+                <br />
+                Veuillez demander un nouveau lien.
+              </p>
+              <Link
+                href="/mot-de-passe-oublie"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all"
+              >
+                <span className="material-symbols-outlined text-lg">mail</span>
+                Demander un nouveau lien
+              </Link>
+              <div className="mt-6">
+                <Link
+                  href="/connexion"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-primary font-semibold transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">arrow_back</span>
+                  Retour a la connexion
+                </Link>
+              </div>
+            </div>
+          ) : !success ? (
             <>
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">

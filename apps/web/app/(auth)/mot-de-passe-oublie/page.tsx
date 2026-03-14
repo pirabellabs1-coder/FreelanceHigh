@@ -8,14 +8,36 @@ export default function MotDePasseOubliePage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState("");
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
+    setError("");
     setLoading(true);
-    // TODO: await supabase.auth.resetPasswordForEmail(email, { redirectTo: '...' })
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    setSent(true);
+    try {
+      const res = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.status === 429) {
+        setError("Trop de tentatives. Reessayez dans quelques minutes.");
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Une erreur est survenue.");
+        setLoading(false);
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError("Impossible de contacter le serveur. Verifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -115,6 +137,13 @@ export default function MotDePasseOubliePage() {
                     />
                   </div>
                 </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 text-xs text-red-500 font-semibold bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-3">
+                    <span className="material-symbols-outlined text-base">error</span>
+                    {error}
+                  </div>
+                )}
 
                 <button
                   type="submit"
