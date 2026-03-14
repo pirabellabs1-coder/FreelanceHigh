@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma, IS_DEV } from "@/lib/prisma";
 import { serviceStore } from "@/lib/dev/data-store";
 
 // GET /api/services/[id] — Get a service by ID (public, increments views)
@@ -10,7 +11,39 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const service = serviceStore.getById(id);
+
+    if (IS_DEV) {
+      const service = serviceStore.getById(id);
+
+      if (!service) {
+        return NextResponse.json(
+          { error: "Service introuvable" },
+          { status: 404 }
+        );
+      }
+
+      // Increment views for this service
+      serviceStore.incrementViews(id);
+
+      // Return the service with the updated view count
+      return NextResponse.json({
+        service: { ...service, views: service.views + 1 },
+      });
+    }
+
+    // Production: Prisma
+    const service = await prisma.service.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        options: true,
+        media: true,
+        reviews: true,
+        user: {
+          include: { freelancerProfile: true },
+        },
+      },
+    });
 
     if (!service) {
       return NextResponse.json(
@@ -19,10 +52,12 @@ export async function GET(
       );
     }
 
-    // Increment views for this service
-    serviceStore.incrementViews(id);
+    // Increment views
+    await prisma.service.update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    });
 
-    // Return the service with the updated view count
     return NextResponse.json({
       service: { ...service, views: service.views + 1 },
     });
@@ -47,7 +82,70 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const service = serviceStore.getById(id);
+
+    if (IS_DEV) {
+      const service = serviceStore.getById(id);
+
+      if (!service) {
+        return NextResponse.json(
+          { error: "Service introuvable" },
+          { status: 404 }
+        );
+      }
+
+      // Verify ownership
+      if (service.userId !== session.user.id) {
+        return NextResponse.json(
+          { error: "Acces non autorise" },
+          { status: 403 }
+        );
+      }
+
+      const body = await request.json();
+
+      // Prevent updating protected fields
+      const {
+        id: _id,
+        userId: _userId,
+        createdAt: _createdAt,
+        views: _views,
+        clicks: _clicks,
+        orderCount: _orderCount,
+        revenue: _revenue,
+        rating: _rating,
+        ratingCount: _ratingCount,
+        ...allowedUpdates
+      } = body;
+
+      // Handle image updates from wizard format
+      if (body.mainImage?.url && !body.images) {
+        const images: string[] = [body.mainImage.url];
+        if (Array.isArray(body.additionalImages)) {
+          for (const img of body.additionalImages) {
+            if (img?.url) images.push(img.url);
+          }
+        }
+        allowedUpdates.images = images;
+        allowedUpdates.mainImage = body.mainImage.url;
+      }
+
+      const updatedService = serviceStore.update(id, allowedUpdates);
+
+      if (!updatedService) {
+        return NextResponse.json(
+          { error: "Impossible de mettre a jour le service" },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({ service: updatedService });
+    }
+
+    // Production: Prisma
+    const service = await prisma.service.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
 
     if (!service) {
       return NextResponse.json(
@@ -66,18 +164,16 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Prevent updating protected fields
+    // Strip protected fields before updating
     const {
       id: _id,
       userId: _userId,
       createdAt: _createdAt,
       views: _views,
-      clicks: _clicks,
       orderCount: _orderCount,
-      revenue: _revenue,
       rating: _rating,
       ratingCount: _ratingCount,
-      ...allowedUpdates
+      ...updateData
     } = body;
 
     // Handle image updates from wizard format
@@ -88,18 +184,49 @@ export async function PATCH(
           if (img?.url) images.push(img.url);
         }
       }
-      allowedUpdates.images = images;
-      allowedUpdates.mainImage = body.mainImage.url;
+      updateData.images = images;
     }
 
-    const updatedService = serviceStore.update(id, allowedUpdates);
+    // Remove any fields that don't exist on the Prisma model
+    const allowedFields = [
+      "title",
+      "slug",
+      "language",
+      "description",
+      "descriptionText",
+      "categoryId",
+      "subCategoryId",
+      "status",
+      "basePrice",
+      "price",
+      "deliveryDays",
+      "revisions",
+      "instructionsRequired",
+      "instructionsContent",
+      "draftData",
+      "draftStep",
+      "tags",
+      "images",
+      "packages",
+      "faq",
+      "extras",
+      "isBoosted",
+      "boostedUntil",
+      "refuseReason",
+    ];
 
-    if (!updatedService) {
-      return NextResponse.json(
-        { error: "Impossible de mettre a jour le service" },
-        { status: 400 }
-      );
+    const prismaData: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+      if (key in updateData && updateData[key] !== undefined) {
+        prismaData[key] = updateData[key];
+      }
     }
+
+    const updatedService = await prisma.service.update({
+      where: { id },
+      data: prismaData,
+      include: { category: true, options: true, media: true },
+    });
 
     return NextResponse.json({ service: updatedService });
   } catch (error) {
@@ -123,7 +250,45 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const service = serviceStore.getById(id);
+
+    if (IS_DEV) {
+      const service = serviceStore.getById(id);
+
+      if (!service) {
+        return NextResponse.json(
+          { error: "Service introuvable" },
+          { status: 404 }
+        );
+      }
+
+      // Verify ownership
+      if (service.userId !== session.user.id) {
+        return NextResponse.json(
+          { error: "Acces non autorise" },
+          { status: 403 }
+        );
+      }
+
+      const deleted = serviceStore.delete(id);
+
+      if (!deleted) {
+        return NextResponse.json(
+          { error: "Impossible de supprimer le service" },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Service supprime avec succes",
+      });
+    }
+
+    // Production: Prisma
+    const service = await prisma.service.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
 
     if (!service) {
       return NextResponse.json(
@@ -140,14 +305,7 @@ export async function DELETE(
       );
     }
 
-    const deleted = serviceStore.delete(id);
-
-    if (!deleted) {
-      return NextResponse.json(
-        { error: "Impossible de supprimer le service" },
-        { status: 400 }
-      );
-    }
+    await prisma.service.delete({ where: { id } });
 
     return NextResponse.json({
       success: true,

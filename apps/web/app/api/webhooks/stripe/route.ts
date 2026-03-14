@@ -1,15 +1,17 @@
-// POST /api/webhooks/stripe — Handler Stripe pour formations + produits numériques + marketing
+// POST /api/webhooks/stripe — Stripe webhook handler
+// Handles: formations, digital products, marketing, AND marketplace events (Connect, escrow)
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import prisma from "@freelancehigh/db";
 import { sendEnrollmentConfirmedEmail, sendNewStudentNotificationEmail, sendCohortEnrollmentEmail } from "@/lib/email/formations";
+import { stripe } from "@/lib/stripe";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-02-25.clover" });
 }
 
-// Désactiver le body parsing automatique de Next.js (nécessaire pour vérifier la signature)
+// Disable automatic body parsing (required for signature verification)
 export const config = { api: { bodyParser: false } };
 
 export async function POST(req: NextRequest) {
@@ -24,8 +26,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.text();
-    const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    const stripeInstance = getStripe();
+    event = stripeInstance.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     console.error("[Stripe Webhook] Signature invalide:", err);
     return NextResponse.json({ error: "Signature invalide" }, { status: 400 });
@@ -35,14 +37,26 @@ export async function POST(req: NextRequest) {
     const eventType = event.type as string;
 
     switch (eventType) {
+      // ── Checkout & Subscriptions ──
       case "checkout.session.completed":
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
+      // ── Payment Intents (marketplace escrow + failures) ──
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
 
       case "payment_intent.payment_failed":
         await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
         break;
 
+      // ── Stripe Connect account updates ──
+      case "account.updated":
+        await handleAccountUpdated(event.data.object as Stripe.Account);
+        break;
+
+      // ── Charges (disputes & refunds) ──
       case "charge.disputed":
         await handleChargeDisputed(event.data.object as unknown as Stripe.Charge);
         break;
@@ -50,6 +64,9 @@ export async function POST(req: NextRequest) {
       case "charge.refunded":
         await handleChargeRefunded(event.data.object as unknown as Stripe.Charge);
         break;
+
+      default:
+        console.log(`[Stripe Webhook] Unhandled event type: ${eventType}`);
     }
 
     return NextResponse.json({ received: true });
@@ -59,7 +76,110 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── checkout.session.completed ──
+// ── payment_intent.succeeded (marketplace escrow release) ───────────────────
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  const orderId = paymentIntent.metadata?.order_id;
+  const platform = paymentIntent.metadata?.platform;
+
+  // Only handle FreelanceHigh marketplace payment intents
+  if (platform !== "freelancehigh" || !orderId) {
+    console.log(
+      `[Stripe Webhook] payment_intent.succeeded — not a marketplace payment, skipping (pi=${paymentIntent.id})`
+    );
+    return;
+  }
+
+  try {
+    // Update order status: payment succeeded, escrow funds held
+    // For manual capture intents, 'succeeded' means the capture went through
+    // and funds have been transferred to the connected account
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: "PAID",
+        stripePaymentIntentId: paymentIntent.id,
+        paidAt: new Date(),
+      },
+    });
+
+    // Update wallet transaction: mark escrow as released
+    await prisma.walletTransaction.updateMany({
+      where: {
+        orderId,
+        escrowStatus: "held",
+      },
+      data: {
+        escrowStatus: "released",
+        releasedAt: new Date(),
+      },
+    });
+
+    console.log(
+      `[Stripe Webhook] Payment succeeded for order ${orderId} — escrow released (pi=${paymentIntent.id}, amount=${paymentIntent.amount} ${paymentIntent.currency})`
+    );
+  } catch (error) {
+    // If Prisma models don't exist yet (MVP phase), log and continue
+    console.error(
+      `[Stripe Webhook] Error updating order for payment_intent.succeeded:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+// ── account.updated (Stripe Connect account status) ─────────────────────────
+
+async function handleAccountUpdated(account: Stripe.Account) {
+  const accountId = account.id;
+
+  // Determine verification status
+  const chargesEnabled = account.charges_enabled;
+  const payoutsEnabled = account.payouts_enabled;
+  const detailsSubmitted = account.details_submitted;
+
+  let verificationStatus: string;
+  if (chargesEnabled && payoutsEnabled) {
+    verificationStatus = "verified";
+  } else if (detailsSubmitted) {
+    verificationStatus = "pending";
+  } else {
+    verificationStatus = "incomplete";
+  }
+
+  // Check for any requirements
+  const currentlyDue = account.requirements?.currently_due ?? [];
+  const pastDue = account.requirements?.past_due ?? [];
+  const hasOutstandingRequirements = currentlyDue.length > 0 || pastDue.length > 0;
+
+  try {
+    // Update the freelance profile with Stripe account status
+    await prisma.user.updateMany({
+      where: { stripeAccountId: accountId },
+      data: {
+        stripeAccountStatus: verificationStatus,
+        stripeChargesEnabled: chargesEnabled,
+        stripePayoutsEnabled: payoutsEnabled,
+        stripeDetailsSubmitted: detailsSubmitted ?? false,
+      },
+    });
+
+    console.log(
+      `[Stripe Webhook] Account updated: ${accountId} — status=${verificationStatus}, charges=${chargesEnabled}, payouts=${payoutsEnabled}${
+        hasOutstandingRequirements
+          ? `, outstanding_requirements=[${[...currentlyDue, ...pastDue].join(", ")}]`
+          : ""
+      }`
+    );
+  } catch (error) {
+    // If Prisma models don't have these fields yet, log and continue
+    console.error(
+      `[Stripe Webhook] Error updating user for account.updated:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+// ── checkout.session.completed ──────────────────────────────────────────────
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const type = session.metadata?.type;
@@ -70,10 +190,45 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     await handleCohortCheckout(session);
   } else if (type === "digital_product") {
     await handleDigitalProductCheckout(session);
+  } else if (type === "subscription") {
+    await handleSubscriptionCheckout(session);
   }
 }
 
-// ── Formation checkout (existant) ──
+// ── Subscription checkout ───────────────────────────────────────────────────
+
+async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.user_id;
+  const planId = session.metadata?.plan_id;
+
+  if (!userId || !planId) {
+    console.error("[Stripe Webhook] Subscription metadata missing:", session.id);
+    return;
+  }
+
+  try {
+    // Update user subscription tier
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionTier: planId.toUpperCase(),
+        stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
+        subscriptionUpdatedAt: new Date(),
+      },
+    });
+
+    console.log(
+      `[Stripe Webhook] Subscription activated: userId=${userId}, plan=${planId}, session=${session.id}`
+    );
+  } catch (error) {
+    console.error(
+      `[Stripe Webhook] Error updating subscription:`,
+      error instanceof Error ? error.message : error
+    );
+  }
+}
+
+// ── Formation checkout (existing) ───────────────────────────────────────────
 
 async function handleFormationCheckout(session: Stripe.Checkout.Session) {
   const { userId, formationIds: formationIdsJson, promoId } = session.metadata ?? {};
@@ -242,7 +397,7 @@ async function handleFormationCheckout(session: Stripe.Checkout.Session) {
   );
 }
 
-// ── Cohort checkout ──
+// ── Cohort checkout ─────────────────────────────────────────────────────────
 
 async function handleCohortCheckout(session: Stripe.Checkout.Session) {
   const { userId, cohortId, formationId } = session.metadata ?? {};
@@ -379,7 +534,7 @@ async function handleCohortCheckout(session: Stripe.Checkout.Session) {
   );
 }
 
-// ── Digital product checkout ──
+// ── Digital product checkout ────────────────────────────────────────────────
 
 async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
   const { userId, productId, flashPromoId } = session.metadata ?? {};
@@ -496,14 +651,37 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
   );
 }
 
-// ── payment_intent.payment_failed ──
+// ── payment_intent.payment_failed ───────────────────────────────────────────
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   const userId = paymentIntent.metadata?.userId;
+  const orderId = paymentIntent.metadata?.order_id;
   const failureMessage = paymentIntent.last_payment_error?.message || "Erreur inconnue";
   const failureCode = paymentIntent.last_payment_error?.code || "unknown";
 
-  // Create MarketingEvent
+  // Handle marketplace order payment failure
+  if (orderId && paymentIntent.metadata?.platform === "freelancehigh") {
+    try {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus: "FAILED",
+          paymentFailureReason: failureMessage,
+        },
+      });
+
+      console.log(
+        `[Stripe Webhook] Marketplace payment failed for order ${orderId}: ${failureCode} — ${failureMessage}`
+      );
+    } catch (error) {
+      console.error(
+        `[Stripe Webhook] Error updating order for payment failure:`,
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
+
+  // Create MarketingEvent (for formations/products tracking)
   prisma.marketingEvent.create({
     data: {
       type: "PAYMENT_FAILED",
@@ -515,6 +693,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
         failureMessage,
         failureCode,
         amount: (paymentIntent.amount ?? 0) / 100,
+        orderId: orderId || null,
       },
     },
   }).catch(() => {});
@@ -524,7 +703,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   );
 }
 
-// ── charge.disputed ──
+// ── charge.disputed ─────────────────────────────────────────────────────────
 
 async function handleChargeDisputed(charge: Stripe.Charge) {
   const paymentIntentId = typeof charge.payment_intent === "string"
@@ -534,8 +713,8 @@ async function handleChargeDisputed(charge: Stripe.Charge) {
   // Try to find related enrollment and mark refund requested
   if (paymentIntentId) {
     // Find the checkout session linked to this payment intent
-    const stripe = getStripe();
-    const sessions = await stripe.checkout.sessions.list({
+    const stripeInstance = getStripe();
+    const sessions = await stripeInstance.checkout.sessions.list({
       payment_intent: paymentIntentId,
       limit: 1,
     });
@@ -572,7 +751,7 @@ async function handleChargeDisputed(charge: Stripe.Charge) {
   console.log(`[Stripe Webhook] Litige ouvert: charge=${charge.id}`);
 }
 
-// ── charge.refunded ──
+// ── charge.refunded ─────────────────────────────────────────────────────────
 
 async function handleChargeRefunded(charge: Stripe.Charge) {
   const paymentIntentId = typeof charge.payment_intent === "string"
@@ -580,8 +759,8 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     : charge.payment_intent?.id;
 
   if (paymentIntentId) {
-    const stripe = getStripe();
-    const sessions = await stripe.checkout.sessions.list({
+    const stripeInstance = getStripe();
+    const sessions = await stripeInstance.checkout.sessions.list({
       payment_intent: paymentIntentId,
       limit: 1,
     });
@@ -603,7 +782,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   console.log(`[Stripe Webhook] Remboursement: charge=${charge.id}, montant=${charge.amount_refunded / 100}€`);
 }
 
-// ── Helpers ──
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function generateLicenseKey(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

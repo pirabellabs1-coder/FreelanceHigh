@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma, IS_DEV } from "@/lib/prisma";
 import { candidatureStore, projectStore } from "@/lib/dev/data-store";
 
 export async function GET() {
@@ -10,7 +11,17 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    const candidatures = candidatureStore.getByFreelance(session.user.id);
+    if (IS_DEV) {
+      const candidatures = candidatureStore.getByFreelance(session.user.id);
+
+      return NextResponse.json({ candidatures });
+    }
+
+    // Production: Prisma
+    const candidatures = await prisma.bid.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+    });
 
     return NextResponse.json({ candidatures });
   } catch (error) {
@@ -39,26 +50,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const project = projectStore.getById(projectId);
-    if (!project) {
-      return NextResponse.json(
-        { error: "Projet introuvable" },
-        { status: 404 }
-      );
+    if (IS_DEV) {
+      const project = projectStore.getById(projectId);
+      if (!project) {
+        return NextResponse.json(
+          { error: "Projet introuvable" },
+          { status: 404 }
+        );
+      }
+
+      const candidature = candidatureStore.create({
+        projectId,
+        projectTitle: project.title,
+        clientName: project.clientName,
+        freelanceId: session.user.id,
+        motivation,
+        proposedPrice: Number(proposedPrice),
+        deliveryDays: Number(deliveryDays),
+      });
+
+      // Increment proposal count on the project
+      projectStore.incrementProposals(projectId);
+
+      return NextResponse.json({ candidature }, { status: 201 });
     }
 
-    const candidature = candidatureStore.create({
-      projectId,
-      projectTitle: project.title,
-      clientName: project.clientName,
-      freelanceId: session.user.id,
-      motivation,
-      proposedPrice: Number(proposedPrice),
-      deliveryDays: Number(deliveryDays),
+    // Production: Prisma
+    const candidature = await prisma.bid.create({
+      data: {
+        userId: session.user.id,
+        projectId,
+        proposal: motivation,
+        amount: Number(proposedPrice),
+        deliveryDays: Number(deliveryDays),
+        status: "EN_ATTENTE",
+      },
     });
-
-    // Increment proposal count on the project
-    projectStore.incrementProposals(projectId);
 
     return NextResponse.json({ candidature }, { status: 201 });
   } catch (error) {

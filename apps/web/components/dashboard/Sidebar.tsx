@@ -68,8 +68,6 @@ const SECTIONS: NavSection[] = [
       { label: "Finances", href: "/dashboard/finances", icon: "payments" },
       { label: "Factures", href: "/dashboard/factures", icon: "receipt_long" },
       { label: "Paiements", href: "/dashboard/paiements", icon: "account_balance_wallet" },
-      { label: "Escrow", href: "/dashboard/escrow", icon: "lock" },
-      { label: "Wallet Web3", href: "/dashboard/portefeuille-web3", icon: "currency_bitcoin" },
     ],
   },
   {
@@ -89,17 +87,14 @@ const SECTIONS: NavSection[] = [
     title: "Outils",
     icon: "build",
     items: [
-      { label: "Certifications", href: "/dashboard/certifications", icon: "verified" },
-      { label: "Productivité", href: "/dashboard/productivite", icon: "timer" },
+      { label: "Vérification KYC", href: "/dashboard/kyc", icon: "verified_user" },
       { label: "Sécurité", href: "/dashboard/securite", icon: "shield" },
-      { label: "Automatisation", href: "/dashboard/automatisation", icon: "smart_toy" },
     ],
   },
 ];
 
 const BOTTOM_ITEMS: NavItem[] = [
   { label: "Favoris", href: "/dashboard/favoris", icon: "favorite" },
-  { label: "Affiliation", href: "/dashboard/affiliation", icon: "group_add" },
   { label: "Litiges", href: "/dashboard/litiges", icon: "gavel" },
   { label: "Abonnement", href: "/dashboard/abonnement", icon: "workspace_premium" },
   { label: "Paramètres", href: "/dashboard/parametres", icon: "settings" },
@@ -204,7 +199,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       >
         {/* Accueil — retour au feed */}
         <Link
-          href="/feed"
+          href="/explorer"
           className={cn(
             "flex items-center gap-3 rounded-xl font-semibold transition-colors mb-2",
             collapsed

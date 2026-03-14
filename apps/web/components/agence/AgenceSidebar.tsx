@@ -19,16 +19,19 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tableau de bord", href: "/agence", icon: "dashboard", exact: true },
   { label: "Equipe", href: "/agence/equipe", icon: "groups" },
   { label: "Services", href: "/agence/services", icon: "work" },
+  { label: "Projets", href: "/agence/projets", icon: "assignment" },
   { label: "Commandes", href: "/agence/commandes", icon: "shopping_cart" },
   { label: "Clients", href: "/agence/clients", icon: "people" },
+  { label: "Sous-traitance", href: "/agence/sous-traitance", icon: "handshake" },
   { label: "Messages", href: "/agence/messages", icon: "chat_bubble" },
   { label: "Finances", href: "/agence/finances", icon: "payments" },
   { label: "Factures", href: "/agence/factures", icon: "receipt_long" },
+  { label: "Contrats", href: "/agence/contrats", icon: "handshake" },
+  { label: "Ressources", href: "/agence/ressources", icon: "folder_shared" },
   { label: "Avis", href: "/agence/avis", icon: "reviews" },
   { label: "Statistiques", href: "/agence/analytics", icon: "bar_chart" },
   { label: "Boost", href: "/agence/services/boost", icon: "rocket_launch" },
   { label: "SEO", href: "/agence/services/seo", icon: "search" },
-  { label: "Automatisation", href: "/agence/automatisation", icon: "smart_toy" },
   { label: "Litiges", href: "/agence/litiges", icon: "gavel" },
   { label: "Aide", href: "/agence/aide", icon: "help" },
   { label: "Parametres", href: "/agence/parametres", icon: "settings" },
@@ -99,7 +102,7 @@ export function AgenceSidebar({ onClose, collapsed = false, onToggleCollapse }: 
       {/* Accueil — retour au feed */}
       <div className={cn("pb-2 flex-shrink-0", collapsed ? "px-2" : "px-3")}>
         <Link
-          href="/feed"
+          href="/explorer"
           className={cn(
             "flex items-center rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors",
             collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"

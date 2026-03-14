@@ -2,84 +2,76 @@
 // Revalidation toutes les 60 secondes (ISR)
 
 import { MetadataRoute } from "next";
-import prisma from "@freelancehigh/db";
 
 export const revalidate = 60;
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
+const IS_DEV = process.env.DEV_MODE === "true";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Pages statiques
+  // Pages statiques publiques
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
     { url: `${BASE_URL}/explorer`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
-    { url: `${BASE_URL}/formations`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/formations/explorer`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.8 },
-    { url: `${BASE_URL}/formations/categories`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
-    { url: `${BASE_URL}/formations/devenir-instructeur`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/tarifs`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/comment-ca-marche`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/a-propos`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
+    { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE_URL}/categories`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.6 },
     { url: `${BASE_URL}/cgu`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE_URL}/confidentialite`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE_URL}/status`, lastModified: new Date(), changeFrequency: "daily", priority: 0.3 },
   ];
 
-  // Formations actives (avec ISR 60s)
-  let formationRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const formations = await prisma.formation.findMany({
-      where: { status: "ACTIF" },
-      select: { slug: true, updatedAt: true },
-      orderBy: { studentsCount: "desc" },
-      take: 5000,
-    });
+  // Services actifs — Prisma en prod, skip en dev
+  let serviceRoutes: MetadataRoute.Sitemap = [];
+  if (!IS_DEV) {
+    try {
+      const prisma = (await import("@freelancehigh/db")).default;
+      const services = await prisma.service.findMany({
+        where: { status: "ACTIVE" },
+        select: { slug: true, updatedAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 5000,
+      });
 
-    formationRoutes = formations.map((f) => ({
-      url: `${BASE_URL}/formations/${f.slug}`,
-      lastModified: f.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }));
-  } catch (error) {
-    console.error("[sitemap] Erreur chargement formations:", error);
+      serviceRoutes = services.map((s) => ({
+        url: `${BASE_URL}/services/${s.slug}`,
+        lastModified: s.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      }));
+    } catch (error) {
+      console.error("[sitemap] Erreur chargement services:", error);
+    }
   }
 
-  // Catégories formations
-  let categoryRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const categories = await prisma.formationCategory.findMany({
-      select: { slug: true, createdAt: true },
-    });
+  // Profils freelances publics — Prisma en prod
+  let freelanceRoutes: MetadataRoute.Sitemap = [];
+  if (!IS_DEV) {
+    try {
+      const prisma = (await import("@freelancehigh/db")).default;
+      const profiles = await prisma.user.findMany({
+        where: { role: "FREELANCE", status: "ACTIVE" },
+        select: { username: true, updatedAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 5000,
+      });
 
-    categoryRoutes = categories.map((c) => ({
-      url: `${BASE_URL}/formations/categories/${c.slug}`,
-      lastModified: c.createdAt,
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    }));
-  } catch (error) {
-    console.error("[sitemap] Erreur chargement catégories:", error);
+      freelanceRoutes = profiles
+        .filter((p) => p.username)
+        .map((p) => ({
+          url: `${BASE_URL}/freelances/${p.username}`,
+          lastModified: p.updatedAt,
+          changeFrequency: "weekly" as const,
+          priority: 0.7,
+        }));
+    } catch (error) {
+      console.error("[sitemap] Erreur chargement profils:", error);
+    }
   }
 
-  // Profils instructeurs approuvés
-  let instructeurRoutes: MetadataRoute.Sitemap = [];
-  try {
-    const instructeurs = await prisma.instructeurProfile.findMany({
-      where: { status: "APPROUVE" },
-      select: { id: true, updatedAt: true },
-    });
-
-    instructeurRoutes = instructeurs.map((i) => ({
-      url: `${BASE_URL}/formations/instructeurs/${i.id}`,
-      lastModified: i.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
-  } catch (error) {
-    console.error("[sitemap] Erreur chargement instructeurs:", error);
-  }
-
-  return [...staticRoutes, ...formationRoutes, ...categoryRoutes, ...instructeurRoutes];
+  return [...staticRoutes, ...serviceRoutes, ...freelanceRoutes];
 }

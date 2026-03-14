@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { notificationStore } from "@/lib/dev/data-store";
+import { prisma, IS_DEV } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -10,10 +11,33 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    const notifications = notificationStore.getByUser(session.user.id);
-    const unreadCount = notificationStore.getUnreadCount(session.user.id);
+    if (IS_DEV) {
+      const notifications = notificationStore.getByUser(session.user.id);
+      const unreadCount = notificationStore.getUnreadCount(session.user.id);
 
-    return NextResponse.json({ notifications, unreadCount });
+      return NextResponse.json({ notifications, unreadCount });
+    } else {
+      const dbNotifications = await prisma.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      const notifications = dbNotifications.map((n) => ({
+        id: n.id,
+        userId: n.userId,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        read: n.read,
+        link: n.link || undefined,
+        createdAt: n.createdAt.toISOString(),
+      }));
+
+      const unreadCount = notifications.filter((n) => !n.read).length;
+
+      return NextResponse.json({ notifications, unreadCount });
+    }
   } catch (error) {
     console.error("[API /notifications GET]", error);
     return NextResponse.json(
@@ -33,21 +57,61 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { id, all } = body;
 
-    if (all) {
-      notificationStore.markAllRead(session.user.id);
-    } else if (id) {
-      notificationStore.markRead(id);
+    if (IS_DEV) {
+      if (all) {
+        notificationStore.markAllRead(session.user.id);
+      } else if (id) {
+        notificationStore.markRead(id);
+      } else {
+        return NextResponse.json(
+          { error: "Parametres invalides : fournir 'id' ou 'all: true'" },
+          { status: 400 }
+        );
+      }
+
+      const notifications = notificationStore.getByUser(session.user.id);
+      const unreadCount = notificationStore.getUnreadCount(session.user.id);
+
+      return NextResponse.json({ notifications, unreadCount });
     } else {
-      return NextResponse.json(
-        { error: "Parametres invalides : fournir 'id' ou 'all: true'" },
-        { status: 400 }
-      );
+      if (all) {
+        await prisma.notification.updateMany({
+          where: { userId: session.user.id, read: false },
+          data: { read: true },
+        });
+      } else if (id) {
+        await prisma.notification.update({
+          where: { id },
+          data: { read: true },
+        });
+      } else {
+        return NextResponse.json(
+          { error: "Parametres invalides : fournir 'id' ou 'all: true'" },
+          { status: 400 }
+        );
+      }
+
+      const dbNotifications = await prisma.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      const notifications = dbNotifications.map((n) => ({
+        id: n.id,
+        userId: n.userId,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        read: n.read,
+        link: n.link || undefined,
+        createdAt: n.createdAt.toISOString(),
+      }));
+
+      const unreadCount = notifications.filter((n) => !n.read).length;
+
+      return NextResponse.json({ notifications, unreadCount });
     }
-
-    const notifications = notificationStore.getByUser(session.user.id);
-    const unreadCount = notificationStore.getUnreadCount(session.user.id);
-
-    return NextResponse.json({ notifications, unreadCount });
   } catch (error) {
     console.error("[API /notifications POST]", error);
     return NextResponse.json(

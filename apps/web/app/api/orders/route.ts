@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma, IS_DEV } from "@/lib/prisma";
 import { orderStore, serviceStore, transactionStore, notificationStore, conversationStore } from "@/lib/dev/data-store";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,30 +15,52 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const statusFilter = searchParams.get("status");
 
-    let orders;
-    if (session.user.role === "freelance") {
-      orders = orderStore.getByFreelance(session.user.id);
-    } else if (session.user.role === "client") {
-      orders = orderStore.getByClient(session.user.id);
-    } else {
-      // Admin or agence — return all orders for the user across both roles
-      const freelanceOrders = orderStore.getByFreelance(session.user.id);
-      const clientOrders = orderStore.getByClient(session.user.id);
-      const seen = new Set<string>();
-      orders = [];
-      for (const o of [...freelanceOrders, ...clientOrders]) {
-        if (!seen.has(o.id)) {
-          seen.add(o.id);
-          orders.push(o);
+    if (IS_DEV) {
+      let orders;
+      if (session.user.role === "freelance") {
+        orders = orderStore.getByFreelance(session.user.id);
+      } else if (session.user.role === "client") {
+        orders = orderStore.getByClient(session.user.id);
+      } else {
+        // Admin or agence — return all orders for the user across both roles
+        const freelanceOrders = orderStore.getByFreelance(session.user.id);
+        const clientOrders = orderStore.getByClient(session.user.id);
+        const seen = new Set<string>();
+        orders = [];
+        for (const o of [...freelanceOrders, ...clientOrders]) {
+          if (!seen.has(o.id)) {
+            seen.add(o.id);
+            orders.push(o);
+          }
         }
       }
-    }
 
-    if (statusFilter) {
-      orders = orders.filter((o) => o.status === statusFilter);
-    }
+      if (statusFilter) {
+        orders = orders.filter((o) => o.status === statusFilter);
+      }
 
-    return NextResponse.json({ orders });
+      return NextResponse.json({ orders });
+    } else {
+      // Production: Prisma
+      const where: Record<string, unknown> =
+        session.user.role === "freelance"
+          ? { freelanceId: session.user.id }
+          : session.user.role === "client"
+          ? { clientId: session.user.id }
+          : { OR: [{ freelanceId: session.user.id }, { clientId: session.user.id }] };
+
+      if (statusFilter) {
+        where.status = statusFilter.toUpperCase() as string;
+      }
+
+      const orders = await prisma.order.findMany({
+        where,
+        include: { service: true, client: true, freelance: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return NextResponse.json({ orders });
+    }
   } catch (error) {
     console.error("[API /orders GET]", error);
     return NextResponse.json(
@@ -52,6 +76,14 @@ const COMMISSION_RATES: Record<string, number> = {
   pro: 0.15,
   business: 0.10,
   agence: 0.08,
+};
+
+// Prisma plan enum to commission rate mapping
+const PRISMA_COMMISSION_RATES: Record<string, number> = {
+  GRATUIT: 0.20,
+  PRO: 0.15,
+  BUSINESS: 0.10,
+  AGENCE: 0.08,
 };
 
 export async function POST(request: NextRequest) {
@@ -83,158 +115,337 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Look up the service
-    const service = serviceStore.getById(serviceId);
-    if (!service) {
-      return NextResponse.json(
-        { error: "Service introuvable" },
-        { status: 404 }
-      );
-    }
+    if (IS_DEV) {
+      // Look up the service
+      const service = serviceStore.getById(serviceId);
+      if (!service) {
+        return NextResponse.json(
+          { error: "Service introuvable" },
+          { status: 404 }
+        );
+      }
 
-    if (service.status !== "actif") {
-      return NextResponse.json(
-        { error: "Ce service n'est pas disponible" },
-        { status: 400 }
-      );
-    }
+      if (service.status !== "actif") {
+        return NextResponse.json(
+          { error: "Ce service n'est pas disponible" },
+          { status: 400 }
+        );
+      }
 
-    // Cannot order your own service
-    if (service.userId === session.user.id) {
-      return NextResponse.json(
-        { error: "Vous ne pouvez pas commander votre propre service" },
-        { status: 400 }
-      );
-    }
+      // Cannot order your own service
+      if (service.userId === session.user.id) {
+        return NextResponse.json(
+          { error: "Vous ne pouvez pas commander votre propre service" },
+          { status: 400 }
+        );
+      }
 
-    // Get package details
-    const pkg = service.packages[packageType];
-    if (!pkg) {
-      return NextResponse.json(
-        { error: "Forfait introuvable pour ce service" },
-        { status: 400 }
-      );
-    }
+      // Get package details
+      const pkg = service.packages[packageType];
+      if (!pkg) {
+        return NextResponse.json(
+          { error: "Forfait introuvable pour ce service" },
+          { status: 400 }
+        );
+      }
 
-    const amount = pkg.price;
-    const commissionRate = COMMISSION_RATES[service.vendorPlan] ?? COMMISSION_RATES.gratuit;
-    const commission = Math.round(amount * commissionRate * 100) / 100;
+      const amount = pkg.price;
+      const commissionRate = COMMISSION_RATES[service.vendorPlan] ?? COMMISSION_RATES.gratuit;
+      const commission = Math.round(amount * commissionRate * 100) / 100;
 
-    // Calculate deadline
-    const now = new Date();
-    const deadlineDate = new Date(now.getTime() + pkg.deliveryDays * 24 * 60 * 60 * 1000);
-    const deadline = deadlineDate.toISOString().slice(0, 10);
+      // Calculate deadline
+      const now = new Date();
+      const deadlineDate = new Date(now.getTime() + pkg.deliveryDays * 24 * 60 * 60 * 1000);
+      const deadline = deadlineDate.toISOString().slice(0, 10);
 
-    // Build client info from session
-    const clientName = session.user.name || "Client";
-    const clientInitials = clientName
-      .split(" ")
-      .map((w: string) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+      // Build client info from session
+      const clientName = session.user.name || "Client";
+      const clientInitials = clientName
+        .split(" ")
+        .map((w: string) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
 
-    // Create the order
-    const order = orderStore.create({
-      serviceId: service.id,
-      serviceTitle: service.title,
-      category: service.categoryName,
-      clientId: session.user.id,
-      clientName,
-      clientAvatar: clientInitials,
-      clientCountry: "FR",
-      freelanceId: service.userId,
-      status: "en_attente",
-      amount,
-      commission,
-      packageType,
-      requirements: requirements || undefined,
-      deadline,
-      deliveredAt: null,
-      completedAt: null,
-      progress: 0,
-      revisionsLeft: pkg.revisions,
-      messages: requirements
-        ? [
-            {
-              id: `m${Date.now()}`,
-              sender: "client" as const,
-              senderName: clientName,
-              content: requirements,
-              timestamp: now.toISOString(),
-              type: "text" as const,
+      // Create the order
+      const order = orderStore.create({
+        serviceId: service.id,
+        serviceTitle: service.title,
+        category: service.categoryName,
+        clientId: session.user.id,
+        clientName,
+        clientAvatar: clientInitials,
+        clientCountry: "FR",
+        freelanceId: service.userId,
+        status: "en_attente",
+        amount,
+        commission,
+        packageType,
+        requirements: requirements || undefined,
+        deadline,
+        deliveredAt: null,
+        completedAt: null,
+        progress: 0,
+        revisionsLeft: pkg.revisions,
+        messages: requirements
+          ? [
+              {
+                id: `m${Date.now()}`,
+                sender: "client" as const,
+                senderName: clientName,
+                content: requirements,
+                timestamp: now.toISOString(),
+                type: "text" as const,
+              },
+            ]
+          : [],
+        timeline: [
+          {
+            id: `t${Date.now()}`,
+            type: "created" as const,
+            title: "Commande creee",
+            description: `Forfait ${pkg.name || packageType} - ${service.title}`,
+            timestamp: now.toISOString(),
+          },
+        ],
+        files: [],
+      });
+
+      // Create escrow transaction for the freelance (pending)
+      transactionStore.add({
+        userId: service.userId,
+        type: "vente",
+        description: `Commande ${order.id} - ${service.title} (${packageType})`,
+        amount: amount - commission,
+        status: "en_attente",
+        date: now.toISOString().slice(0, 10),
+        orderId: order.id,
+      });
+
+      // Create commission transaction
+      transactionStore.add({
+        userId: service.userId,
+        type: "commission",
+        description: `Commission ${Math.round(commissionRate * 100)}% sur commande ${order.id}`,
+        amount: -commission,
+        status: "en_attente",
+        date: now.toISOString().slice(0, 10),
+        orderId: order.id,
+      });
+
+      // Notify the freelance
+      notificationStore.add({
+        userId: service.userId,
+        title: "Nouvelle commande",
+        message: `${clientName} a commande "${service.title}" (forfait ${packageType}) pour ${amount} EUR`,
+        type: "order",
+        read: false,
+        link: `/dashboard/commandes/${order.id}`,
+      });
+
+      // Notify the client
+      notificationStore.add({
+        userId: session.user.id,
+        title: "Commande confirmee",
+        message: `Votre commande "${service.title}" a ete creee avec succes. En attente d'acceptation.`,
+        type: "order",
+        read: false,
+        link: `/client/commandes/${order.id}`,
+      });
+
+      // Increment service order count
+      serviceStore.update(service.id, {
+        orderCount: service.orderCount + 1,
+      });
+
+      // Auto-create conversation between client and freelance for this order
+      conversationStore.create({
+        participants: [session.user.id, service.userId],
+        contactName: service.vendorName || "Freelance",
+        contactAvatar: service.vendorAvatar || "FL",
+        contactRole: "client",
+        orderId: order.id,
+      });
+
+      // Send order confirmation email to client (non-blocking)
+      if (session.user.email) {
+        sendOrderConfirmationEmail(session.user.email, clientName, {
+          id: order.id,
+          serviceTitle: service.title,
+          amount,
+          deadline,
+        }).catch((err) =>
+          console.error("[API /orders POST] Erreur envoi email confirmation:", err)
+        );
+      }
+
+      return NextResponse.json({ order }, { status: 201 });
+    } else {
+      // Production: Prisma
+      const service = await prisma.service.findUnique({
+        where: { id: serviceId },
+        include: { user: true },
+      });
+
+      if (!service) {
+        return NextResponse.json(
+          { error: "Service introuvable" },
+          { status: 404 }
+        );
+      }
+
+      if (service.status !== "ACTIF") {
+        return NextResponse.json(
+          { error: "Ce service n'est pas disponible" },
+          { status: 400 }
+        );
+      }
+
+      // Cannot order your own service
+      if (service.userId === session.user.id) {
+        return NextResponse.json(
+          { error: "Vous ne pouvez pas commander votre propre service" },
+          { status: 400 }
+        );
+      }
+
+      // Get package details from the JSON packages field
+      const packages = service.packages as Record<string, { price?: number; deliveryDays?: number; revisions?: number; name?: string }> | null;
+      const pkg = packages?.[packageType];
+      if (!pkg || !pkg.price) {
+        return NextResponse.json(
+          { error: "Forfait introuvable pour ce service" },
+          { status: 400 }
+        );
+      }
+
+      const amount = pkg.price;
+      const commissionRate = PRISMA_COMMISSION_RATES[service.user.plan] ?? PRISMA_COMMISSION_RATES.GRATUIT;
+      const commission = Math.round(amount * commissionRate * 100) / 100;
+
+      // Calculate deadline
+      const deliveryDays = pkg.deliveryDays ?? service.deliveryDays;
+      const deadlineDate = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
+
+      // Create the order and related records in a transaction
+      const order = await prisma.$transaction(async (tx) => {
+        // Create the order
+        const newOrder = await tx.order.create({
+          data: {
+            serviceId,
+            clientId: session.user.id,
+            freelanceId: service.userId,
+            status: "EN_ATTENTE",
+            escrowStatus: "HELD",
+            amount,
+            commission,
+            packageType,
+            requirements: requirements || null,
+            deadline: deadlineDate,
+          },
+          include: { service: true, client: true, freelance: true },
+        });
+
+        // Create escrow payment record (funds held)
+        await tx.payment.create({
+          data: {
+            orderId: newOrder.id,
+            payerId: session.user.id,
+            payeeId: service.userId,
+            amount: amount - commission,
+            currency: "EUR",
+            status: "EN_ATTENTE",
+            type: "paiement",
+            description: `Commande ${newOrder.id} - ${service.title} (${packageType})`,
+          },
+        });
+
+        // Create commission payment record
+        await tx.payment.create({
+          data: {
+            orderId: newOrder.id,
+            payerId: session.user.id,
+            amount: commission,
+            currency: "EUR",
+            status: "EN_ATTENTE",
+            type: "commission",
+            description: `Commission ${Math.round(commissionRate * 100)}% sur commande ${newOrder.id}`,
+          },
+        });
+
+        // Notify the freelance
+        await tx.notification.create({
+          data: {
+            userId: service.userId,
+            title: "Nouvelle commande",
+            message: `${session.user.name || "Client"} a commande "${service.title}" (forfait ${packageType}) pour ${amount} EUR`,
+            type: "ORDER",
+            read: false,
+            link: `/dashboard/commandes/${newOrder.id}`,
+          },
+        });
+
+        // Notify the client
+        await tx.notification.create({
+          data: {
+            userId: session.user.id,
+            title: "Commande confirmee",
+            message: `Votre commande "${service.title}" a ete creee avec succes. En attente d'acceptation.`,
+            type: "ORDER",
+            read: false,
+            link: `/client/commandes/${newOrder.id}`,
+          },
+        });
+
+        // Increment service order count
+        await tx.service.update({
+          where: { id: serviceId },
+          data: { orderCount: { increment: 1 } },
+        });
+
+        // Auto-create conversation for this order
+        const conversation = await tx.conversation.create({
+          data: {
+            type: "ORDER",
+            orderId: newOrder.id,
+            users: {
+              create: [
+                { userId: session.user.id },
+                { userId: service.userId },
+              ],
             },
-          ]
-        : [],
-      timeline: [
-        {
-          id: `t${Date.now()}`,
-          type: "created" as const,
-          title: "Commande creee",
-          description: `Forfait ${pkg.name || packageType} - ${service.title}`,
-          timestamp: now.toISOString(),
-        },
-      ],
-      files: [],
-    });
+          },
+        });
 
-    // Create escrow transaction for the freelance (pending)
-    transactionStore.add({
-      userId: service.userId,
-      type: "vente",
-      description: `Commande ${order.id} - ${service.title} (${packageType})`,
-      amount: amount - commission,
-      status: "en_attente",
-      date: now.toISOString().slice(0, 10),
-      orderId: order.id,
-    });
+        // If requirements provided, add as first message
+        if (requirements) {
+          await tx.message.create({
+            data: {
+              conversationId: conversation.id,
+              senderId: session.user.id,
+              content: requirements,
+              type: "TEXT",
+            },
+          });
+        }
 
-    // Create commission transaction
-    transactionStore.add({
-      userId: service.userId,
-      type: "commission",
-      description: `Commission ${Math.round(commissionRate * 100)}% sur commande ${order.id}`,
-      amount: -commission,
-      status: "en_attente",
-      date: now.toISOString().slice(0, 10),
-      orderId: order.id,
-    });
+        return newOrder;
+      });
 
-    // Notify the freelance
-    notificationStore.add({
-      userId: service.userId,
-      title: "Nouvelle commande",
-      message: `${clientName} a commande "${service.title}" (forfait ${packageType}) pour ${amount} EUR`,
-      type: "order",
-      read: false,
-      link: `/dashboard/commandes/${order.id}`,
-    });
+      // Send order confirmation email to client (non-blocking)
+      if (session.user.email) {
+        sendOrderConfirmationEmail(session.user.email, session.user.name || "Client", {
+          id: order.id,
+          serviceTitle: service.title,
+          amount,
+          deadline: deadlineDate.toISOString().slice(0, 10),
+        }).catch((err) =>
+          console.error("[API /orders POST] Erreur envoi email confirmation:", err)
+        );
+      }
 
-    // Notify the client
-    notificationStore.add({
-      userId: session.user.id,
-      title: "Commande confirmee",
-      message: `Votre commande "${service.title}" a ete creee avec succes. En attente d'acceptation.`,
-      type: "order",
-      read: false,
-      link: `/client/commandes/${order.id}`,
-    });
-
-    // Increment service order count
-    serviceStore.update(service.id, {
-      orderCount: service.orderCount + 1,
-    });
-
-    // Auto-create conversation between client and freelance for this order
-    conversationStore.create({
-      participants: [session.user.id, service.userId],
-      contactName: service.vendorName || "Freelance",
-      contactAvatar: service.vendorAvatar || "FL",
-      contactRole: "client",
-      orderId: order.id,
-    });
-
-    return NextResponse.json({ order }, { status: 201 });
+      return NextResponse.json({ order }, { status: 201 });
+    }
   } catch (error) {
     console.error("[API /orders POST]", error);
     return NextResponse.json(

@@ -42,7 +42,7 @@ const SECTIONS: NavSection[] = [
     title: "Finances",
     items: [
       { label: "Paiements", href: "/client/paiements", icon: "receipt_long" },
-      { label: "Wallet Web3", href: "/client/portefeuille-web3", icon: "account_balance_wallet" },
+      { label: "Factures", href: "/client/factures", icon: "description" },
       { label: "Litiges", href: "/client/litiges", icon: "gavel" },
     ],
   },
@@ -134,7 +134,7 @@ export function ClientSidebar({ collapsed = false, onToggle, onClose }: ClientSi
       {/* Accueil — retour au feed */}
       <div className={cn("pb-2", collapsed ? "px-2" : "px-3")}>
         <Link
-          href="/feed"
+          href="/explorer"
           title={collapsed ? "Accueil" : undefined}
           className={cn(
             "flex items-center rounded-xl font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors",

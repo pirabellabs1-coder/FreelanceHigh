@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -53,6 +54,11 @@ export async function POST(request: Request) {
         ...(formationsRole ? { formationsRole } : {}),
       });
 
+      // Send welcome email (non-blocking)
+      sendWelcomeEmail(email, name).catch((err) =>
+        console.error("[REGISTER] Erreur envoi email bienvenue:", err)
+      );
+
       return NextResponse.json({
         success: true,
         user: { id: user.id, email: user.email, name: user.name, role: user.role },
@@ -90,6 +96,11 @@ export async function POST(request: Request) {
       },
       select: { id: true, email: true, name: true, role: true },
     });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(email, name).catch((err) =>
+      console.error("[REGISTER] Erreur envoi email bienvenue:", err)
+    );
 
     return NextResponse.json({
       success: true,

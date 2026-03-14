@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: t("default_description"),
     icons: {
-      icon: "/favicon.ico",
+      icon: "/favicon.svg",
     },
     openGraph: {
       type: "website",
@@ -38,8 +38,8 @@ export default async function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="dark">
-      <body suppressHydrationWarning className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+      <body suppressHydrationWarning className="bg-background-light text-slate-900 font-display">
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <TrackingProvider>

@@ -102,7 +102,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
       <nav className="flex-1 overflow-y-auto px-2 space-y-0.5 py-2">
         {/* Accueil */}
         <Link
-          href="/feed"
+          href="/explorer"
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-border-dark/50 transition-colors mb-1",
             collapsed && "justify-center px-0"

@@ -17,7 +17,7 @@ function CategoryBarInner() {
     } else {
       params.set("categorie", slug);
     }
-    router.push(`/feed?${params.toString()}`);
+    router.push(`/explorer?${params.toString()}`);
   }
 
   return (
@@ -31,7 +31,7 @@ function CategoryBarInner() {
           onClick={() => {
             const params = new URLSearchParams(searchParams.toString());
             params.delete("categorie");
-            router.push(`/feed?${params.toString()}`);
+            router.push(`/explorer?${params.toString()}`);
           }}
           className={cn(
             "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-colors",

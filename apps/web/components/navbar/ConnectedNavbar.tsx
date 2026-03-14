@@ -49,7 +49,7 @@ export function ConnectedNavbar() {
     e.preventDefault();
     const q = searchQuery.trim();
     if (q) {
-      router.push(`/feed?q=${encodeURIComponent(q)}`);
+      router.push(`/explorer?q=${encodeURIComponent(q)}`);
     }
   }
 
@@ -59,7 +59,7 @@ export function ConnectedNavbar() {
     <header className="sticky top-0 z-50 bg-[#0f1117] border-b border-white/10 h-16 flex items-center px-4 lg:px-6 gap-3 shadow-sm">
       {/* Logo */}
       <Link
-        href="/feed"
+        href="/explorer"
         className="flex items-center gap-2 flex-shrink-0 group"
       >
         <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">

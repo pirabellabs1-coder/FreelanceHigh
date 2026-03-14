@@ -9,9 +9,6 @@ const PUBLIC_ROUTES = [
   "/services",
   "/freelances",
   "/agences",
-  "/freelancers",
-  "/agencies",
-  "/feed/service",
   "/offres-projets",
   "/blog",
   "/tarifs",
@@ -31,7 +28,6 @@ const PUBLIC_ROUTES = [
   "/404",
   "/maintenance",
   "/status",
-  "/feed",
 ];
 
 // Routes auth — accessibles uniquement si NON connecte
