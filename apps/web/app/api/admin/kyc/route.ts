@@ -27,8 +27,8 @@ export async function GET() {
               verification: "Verification de l'adresse email",
             },
             2: {
-              label: "Niveau 2 - Telephone",
-              verification: "Verification du numero de telephone",
+              label: "Niveau 2 - Email",
+              verification: "Verification de l'adresse email",
             },
             3: {
               label: "Niveau 3 - Identite",

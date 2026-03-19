@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { TrackingProvider } from "@/components/tracking/TrackingProvider";
 import { FontLoader } from "@/components/FontLoader";
+import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -59,6 +60,7 @@ export default async function RootLayout({
             <TrackingProvider>
               <ImpersonationBanner />
               {children}
+              <CookieConsent />
             </TrackingProvider>
           </Providers>
         </NextIntlClientProvider>

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const LEVEL_MAP: Record<number, { label: string; desc: string; color: string }> = {
   1: { label: "Niveau 1", desc: "Email verifie", color: "text-slate-400" },
-  2: { label: "Niveau 2", desc: "Telephone verifie", color: "text-blue-400" },
+  2: { label: "Niveau 2", desc: "Email verifie", color: "text-blue-400" },
   3: { label: "Niveau 3", desc: "Identite verifiee", color: "text-amber-400" },
   4: { label: "Niveau 4", desc: "Verification pro", color: "text-emerald-400" },
 };
@@ -123,7 +123,7 @@ export default function AdminKYC() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         {[
           { label: "Total demandes", value: stats.total, color: "text-primary", icon: "assignment" },
-          { label: "Niveau 2 (telephone)", value: stats.byLevel["2"] ?? 0, color: "text-blue-400", icon: "phone_android" },
+          { label: "Niveau 2 (email)", value: stats.byLevel["2"] ?? 0, color: "text-blue-400", icon: "email" },
           { label: "Niveau 3 (identite)", value: stats.byLevel["3"] ?? 0, color: "text-amber-400", icon: "badge" },
           { label: "Niveau 4 (pro)", value: stats.byLevel["4"] ?? 0, color: "text-emerald-400", icon: "workspace_premium" },
         ].map(s => (

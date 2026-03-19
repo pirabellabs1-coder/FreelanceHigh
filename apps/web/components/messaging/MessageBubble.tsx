@@ -141,7 +141,7 @@ export function MessageBubble({
         </div>
       )}
 
-      <div className={cn("max-w-[65%]", !isOwn && !showSenderInfo && "ml-11")}>
+      <div className={cn("max-w-[85%] md:max-w-[65%]", !isOwn && !showSenderInfo && "ml-11")}>
         {/* Sender info */}
         {!isOwn && showSenderInfo && (
           <p className="text-xs mb-1">

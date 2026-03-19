@@ -307,33 +307,37 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       {/* User */}
       <div
         className={cn(
-          "border-t border-border-dark flex items-center flex-shrink-0",
-          collapsed ? "p-3 justify-center" : "p-4 gap-3"
+          "border-t border-border-dark flex-shrink-0",
+          collapsed ? "p-3" : "p-4"
         )}
       >
-        <div className="w-10 h-10 rounded-full border-2 border-primary/20 bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
-          {userInitials}
-        </div>
-        {!collapsed && (
-          <>
+        <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "gap-3")}>
+          <div className="w-10 h-10 rounded-full border-2 border-primary/20 bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
+            {userInitials}
+          </div>
+          {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">{userName}</p>
               <p className="text-xs text-slate-400 truncate">{session?.user?.email || ""}</p>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Link href="/dashboard/parametres" className="text-slate-400 hover:text-primary transition-colors p-1 rounded-lg hover:bg-white/5" title="Paramètres">
-                <span className="material-symbols-outlined text-lg">settings</span>
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/connexion" })}
-                className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
-                title="Se déconnecter"
-              >
-                <span className="material-symbols-outlined text-lg">logout</span>
-              </button>
-            </div>
-          </>
-        )}
+          )}
+          <div className={cn("flex items-center flex-shrink-0", collapsed ? "gap-0" : "gap-1")}>
+            <Link
+              href="/dashboard/parametres"
+              className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-white/5"
+              title="Paramètres"
+            >
+              <span className="material-symbols-outlined text-lg">settings</span>
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/connexion" })}
+              className="text-slate-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-400/10"
+              title="Se déconnecter"
+            >
+              <span className="material-symbols-outlined text-lg">logout</span>
+            </button>
+          </div>
+        </div>
       </div>
     </aside>
   );

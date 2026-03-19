@@ -261,6 +261,13 @@ export const authOptions: NextAuthOptions = {
               user.role = "freelance";
               user.kyc = 1;
               user.plan = "gratuit";
+
+              // Send welcome email for new OAuth users
+              import("@/lib/email").then(({ sendWelcomeEmail }) => {
+                sendWelcomeEmail(email, user.name || email.split("@")[0]).catch((err) =>
+                  console.error("[AUTH OAuth] Erreur envoi email bienvenue:", err)
+                );
+              });
             } else {
               user.id = existing.id;
               user.role = existing.role;
@@ -286,6 +293,13 @@ export const authOptions: NextAuthOptions = {
                   image: user.image,
                   emailVerified: new Date(),
                 },
+              });
+
+              // Send welcome email for new OAuth users
+              import("@/lib/email").then(({ sendWelcomeEmail }) => {
+                sendWelcomeEmail(email, user.name || email.split("@")[0]).catch((err) =>
+                  console.error("[AUTH OAuth] Erreur envoi email bienvenue:", err)
+                );
               });
             }
 

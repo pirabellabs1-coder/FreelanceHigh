@@ -8,9 +8,11 @@ export default function ClientMessagesPage() {
   const userId = session?.user?.id ?? session?.user?.email ?? "u6";
 
   return (
-    <MessagingLayout
-      userId={userId}
-      userRole="client"
-    />
+    <div className="-m-4 sm:-m-6 lg:-m-8">
+      <MessagingLayout
+        userId={userId}
+        userRole="client"
+      />
+    </div>
   );
 }

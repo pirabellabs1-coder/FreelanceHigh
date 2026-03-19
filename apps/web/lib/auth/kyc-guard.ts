@@ -5,8 +5,8 @@ export const KYC_REQUIREMENTS = {
   publishService: 3,
   createFormation: 3,
   withdrawFunds: 3,
-  sendOffer: 2,
-  placeOrder: 2,
+  sendOffer: 1,
+  placeOrder: 1,
   createAgency: 3,
   eliteBadge: 4,
 } as const;
@@ -72,6 +72,5 @@ export function getKycStatusLabel(level: number): {
 } {
   if (level >= 4) return { status: "elite", label: "Elite", color: "text-purple-400", bg: "bg-purple-400/10", icon: "diamond" };
   if (level >= 3) return { status: "verified", label: "Verifie", color: "text-emerald-400", bg: "bg-emerald-400/10", icon: "verified" };
-  if (level >= 2) return { status: "partial", label: "Partiellement verifie", color: "text-amber-400", bg: "bg-amber-400/10", icon: "warning" };
   return { status: "not_verified", label: "Non verifie", color: "text-slate-400", bg: "bg-slate-400/10", icon: "shield" };
 }

@@ -35,9 +35,7 @@ export function KycRequiredBanner() {
           Verification d&apos;identite requise
         </p>
         <p className="text-xs text-amber-400/80 mt-1">
-          {kycLevel < 2
-            ? "Completez votre verification d'identite pour pouvoir publier des services, creer des formations et recevoir des paiements."
-            : "Votre telephone est verifie. Soumettez une piece d'identite (niveau 3) pour debloquer toutes les fonctionnalites."}
+          Completez votre verification d&apos;identite pour pouvoir publier des services, creer des formations et recevoir des paiements.
         </p>
         <div className="flex items-center gap-3 mt-3">
           <Link
@@ -48,7 +46,7 @@ export function KycRequiredBanner() {
             Verifier mon identite
           </Link>
           <span className="text-xs text-amber-500/60">
-            Statut actuel : {statusInfo.label} (niveau {kycLevel}/4)
+            Statut actuel : {statusInfo.label}
           </span>
         </div>
       </div>

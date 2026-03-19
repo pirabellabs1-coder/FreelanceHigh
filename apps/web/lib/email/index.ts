@@ -3,9 +3,22 @@
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const resend = new Resend(RESEND_API_KEY || "re_placeholder");
 const FROM = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
+
+// Helper: send email or log to console if Resend is not configured
+async function sendEmail(params: { from: string; to: string; subject: string; html: string }) {
+  if (!RESEND_API_KEY) {
+    console.log(`\n========== EMAIL (DEV MODE — Resend non configure) ==========`);
+    console.log(`To: ${params.to}`);
+    console.log(`Subject: ${params.subject}`);
+    console.log(`=============================================================\n`);
+    return { data: { id: "dev-" + Date.now() }, error: null };
+  }
+  return resend.emails.send(params);
+}
 
 // ── Layout HTML commun ──
 
@@ -46,17 +59,27 @@ function button(text: string, url: string): string {
 
 // ── 1. Email de bienvenue ──
 
-export async function sendWelcomeEmail(email: string, name: string) {
+export async function sendWelcomeEmail(email: string, name: string, dashboardUrl?: string) {
+  const profileUrl = dashboardUrl || `${APP_URL}/dashboard/profil`;
+  const kycUrl = `${APP_URL}/dashboard/kyc`;
   const html = emailLayout(`
     <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Bienvenue sur FreelanceHigh, ${name} !</h2>
     <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
       Votre compte a ete cree avec succes. Vous faites maintenant partie de la plus grande communaute
       de freelances en Afrique francophone et a l'international.
     </p>
-    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
-      Completez votre profil pour commencer a recevoir des commandes ou publier vos premiers services.
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 8px;">
+      <strong>Prochaines etapes :</strong>
     </p>
-    ${button("Completer mon profil", `${APP_URL}/dashboard/profil`)}
+    <ol style="color:#4b5563;line-height:1.8;margin:0 0 24px;padding-left:20px;">
+      <li>Completez votre profil (photo, bio, competences)</li>
+      <li>Verifiez votre identite pour debloquer toutes les fonctionnalites</li>
+      <li>Publiez votre premier service ou explorez les offres</li>
+    </ol>
+    ${button("Completer mon profil", profileUrl)}
+    <div style="margin:16px 0;">
+      ${button("Verifier mon identite", kycUrl)}
+    </div>
     <p style="color:#9ca3af;font-size:13px;margin:24px 0 0;">
       Si vous avez des questions, n'hesitez pas a nous contacter a
       <a href="mailto:support@freelancehigh.com" style="color:#6C2BD9;">support@freelancehigh.com</a>
@@ -64,12 +87,16 @@ export async function sendWelcomeEmail(email: string, name: string) {
     <p style="color:#4b5563;margin:24px 0 0;font-style:italic;">— Lissanon Gildas, Fondateur</p>
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: "Bienvenue sur FreelanceHigh !", html });
+  return sendEmail({ from: FROM, to: email, subject: "Bienvenue sur FreelanceHigh !", html });
 }
 
 // ── 2. Verification email (OTP) ──
 
 export async function sendVerificationEmail(email: string, name: string, code: string) {
+  // Always log the code in dev for easy testing
+  if (!RESEND_API_KEY) {
+    console.log(`\n🔑 CODE DE VERIFICATION pour ${email}: ${code}\n`);
+  }
   const html = emailLayout(`
     <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Verifiez votre adresse email</h2>
     <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
@@ -83,7 +110,7 @@ export async function sendVerificationEmail(email: string, name: string, code: s
     </p>
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: `${code} — Code de verification FreelanceHigh`, html });
+  return sendEmail({ from: FROM, to: email, subject: `${code} — Code de verification FreelanceHigh`, html });
 }
 
 // ── 3. Mot de passe oublie ──
@@ -104,7 +131,7 @@ export async function sendPasswordResetEmail(email: string, name: string, resetT
     </p>
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: "Reinitialiser votre mot de passe — FreelanceHigh", html });
+  return sendEmail({ from: FROM, to: email, subject: "Reinitialiser votre mot de passe — FreelanceHigh", html });
 }
 
 // ── 4. Confirmation de commande ──
@@ -133,7 +160,7 @@ export async function sendOrderConfirmationEmail(
     </p>
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: `Commande confirmee — ${order.serviceTitle}`, html });
+  return sendEmail({ from: FROM, to: email, subject: `Commande confirmee — ${order.serviceTitle}`, html });
 }
 
 // ── 5. Nouveau message ──
@@ -153,7 +180,7 @@ export async function sendNewMessageEmail(
     ${button("Repondre", conversationUrl)}
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: `Message de ${senderName} — FreelanceHigh`, html });
+  return sendEmail({ from: FROM, to: email, subject: `Message de ${senderName} — FreelanceHigh`, html });
 }
 
 // ── 6. Paiement recu (freelance) ──
@@ -175,5 +202,5 @@ export async function sendPaymentReceivedEmail(
     ${button("Voir mes finances", `${APP_URL}/dashboard/finances`)}
   `);
 
-  return resend.emails.send({ from: FROM, to: email, subject: `Paiement de ${payment.amount.toFixed(2)} EUR recu`, html });
+  return sendEmail({ from: FROM, to: email, subject: `Paiement de ${payment.amount.toFixed(2)} EUR recu`, html });
 }

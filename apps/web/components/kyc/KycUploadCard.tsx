@@ -29,15 +29,6 @@ const LEVELS = [
     border: "border-blue-500/20",
   },
   {
-    level: 2,
-    title: "Telephone verifie",
-    description: "Verifiez votre numero de telephone pour debloquer les offres et commandes.",
-    icon: "phone_android",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-  },
-  {
     level: 3,
     title: "Piece d'identite",
     description: "Soumettez une piece d'identite (CNI ou passeport) pour retirer des fonds et publier des services.",
@@ -58,7 +49,6 @@ const LEVELS = [
 ];
 
 const DOC_TYPES_BY_LEVEL: Record<number, { value: string; label: string }[]> = {
-  2: [{ value: "phone", label: "Verification par telephone" }],
   3: [
     { value: "cni", label: "Carte nationale d'identite" },
     { value: "passeport", label: "Passeport" },
@@ -75,7 +65,6 @@ const DOC_TYPES_BY_LEVEL: Record<number, { value: string; label: string }[]> = {
 export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCardProps) {
   const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
   const [selectedDocType, setSelectedDocType] = useState("");
-  const [phone, setPhone] = useState("");
   const [fileName, setFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -100,6 +89,8 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
 
   function isLevelCompleted(level: number): boolean {
     if (level === 1) return true;
+    // Level 2 (phone) removed — skip directly to level 3
+    if (level === 2) return currentLevel >= 2;
     return currentLevel >= level;
   }
 
@@ -119,20 +110,14 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
     setSubmitting(true);
 
     try {
-      const docType = level === 2 ? "phone" : selectedDocType;
+      const docType = selectedDocType;
       if (!docType) {
         setError("Selectionnez un type de document");
         setSubmitting(false);
         return;
       }
 
-      if (level === 2 && !phone) {
-        setError("Entrez votre numero de telephone");
-        setSubmitting(false);
-        return;
-      }
-
-      if (level >= 3 && !fileName) {
+      if (!fileName) {
         setError("Veuillez charger un document");
         setSubmitting(false);
         return;
@@ -144,7 +129,7 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
         body: JSON.stringify({
           level,
           documentType: docType,
-          documentUrl: level === 2 ? phone : `/uploads/kyc/${fileName}`,
+          documentUrl: `/uploads/kyc/${fileName}`,
         }),
       });
 
@@ -158,7 +143,6 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
       setSuccess("Demande soumise avec succes !");
       setExpandedLevel(null);
       setSelectedDocType("");
-      setPhone("");
       setFileName("");
       onRefresh();
     } catch {
@@ -168,7 +152,10 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
     }
   }
 
-  const progressPercent = (currentLevel / 4) * 100;
+  // Map actual KYC levels to display progress (1→1, 3→2, 4→3)
+  const displayLevel = currentLevel >= 4 ? 3 : currentLevel >= 3 ? 2 : 1;
+  const progressPercent = (displayLevel / 3) * 100;
+  const nextLevel = currentLevel < 3 ? 3 : currentLevel < 4 ? 4 : null;
 
   return (
     <div className="space-y-6">
@@ -176,7 +163,7 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
       <div className="bg-neutral-dark rounded-2xl border border-border-dark p-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-white">Niveau de verification</h3>
-          <span className="text-sm font-semibold text-primary">Niveau {currentLevel}/4</span>
+          <span className="text-sm font-semibold text-primary">Etape {displayLevel}/3</span>
         </div>
         <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
           <div
@@ -185,9 +172,11 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
           />
         </div>
         <p className="text-xs text-slate-400 mt-2">
-          {currentLevel === 4
+          {currentLevel >= 4
             ? "Verification complete — vous avez le badge Elite !"
-            : `Completez le niveau ${currentLevel + 1} pour debloquer plus de fonctionnalites.`}
+            : nextLevel
+              ? "Completez la prochaine etape pour debloquer plus de fonctionnalites."
+              : "Verification en cours."}
         </p>
       </div>
 
@@ -211,7 +200,9 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
           const refused = isRefused(lvl.level);
           const refusedReq = refused ? getStatusForLevel(lvl.level) : null;
           const isExpanded = expandedLevel === lvl.level;
-          const canAction = !completed && !pending && lvl.level <= currentLevel + 1;
+          // Allow level 3 when level 1 is complete (skip removed level 2)
+          const nextAllowedLevel = currentLevel < 3 ? 3 : currentLevel + 1;
+          const canAction = !completed && !pending && lvl.level <= nextAllowedLevel;
 
           return (
             <div
@@ -271,71 +262,51 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
               {/* Expanded form */}
               {isExpanded && canAction && (
                 <div className="mt-6 pt-6 border-t border-border-dark space-y-4">
-                  {lvl.level === 2 ? (
-                    <div>
-                      <label className="block text-sm font-semibold text-white mb-2">
-                        Numero de telephone
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+225 07 00 00 00 00"
-                        className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-primary"
-                      />
+                  <div>
+                    <label className="block text-sm font-semibold text-white mb-2">
+                      Type de document
+                    </label>
+                    <select
+                      value={selectedDocType}
+                      onChange={(e) => setSelectedDocType(e.target.value)}
+                      className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                    >
+                      <option value="">-- Selectionnez --</option>
+                      {DOC_TYPES_BY_LEVEL[lvl.level]?.map((dt) => (
+                        <option key={dt.value} value={dt.value}>
+                          {dt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-white mb-2">
+                      Document
+                    </label>
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                        isDragActive
+                          ? "border-primary bg-primary/5"
+                          : "border-border-dark hover:border-primary/50"
+                      }`}
+                    >
+                      <input {...getInputProps()} />
+                      <span className="material-symbols-outlined text-3xl text-slate-500 mb-2 block">
+                        cloud_upload
+                      </span>
+                      {fileName ? (
+                        <p className="text-sm text-emerald-400">{fileName}</p>
+                      ) : (
+                        <p className="text-sm text-slate-400">
+                          Glissez un fichier ici ou cliquez pour selectionner
+                        </p>
+                      )}
                       <p className="text-xs text-slate-500 mt-1">
-                        Un code OTP sera envoye pour verification.
+                        PNG, JPG ou PDF — 10 Mo max
                       </p>
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="block text-sm font-semibold text-white mb-2">
-                          Type de document
-                        </label>
-                        <select
-                          value={selectedDocType}
-                          onChange={(e) => setSelectedDocType(e.target.value)}
-                          className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
-                        >
-                          <option value="">-- Selectionnez --</option>
-                          {DOC_TYPES_BY_LEVEL[lvl.level]?.map((dt) => (
-                            <option key={dt.value} value={dt.value}>
-                              {dt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-white mb-2">
-                          Document
-                        </label>
-                        <div
-                          {...getRootProps()}
-                          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                            isDragActive
-                              ? "border-primary bg-primary/5"
-                              : "border-border-dark hover:border-primary/50"
-                          }`}
-                        >
-                          <input {...getInputProps()} />
-                          <span className="material-symbols-outlined text-3xl text-slate-500 mb-2 block">
-                            cloud_upload
-                          </span>
-                          {fileName ? (
-                            <p className="text-sm text-emerald-400">{fileName}</p>
-                          ) : (
-                            <p className="text-sm text-slate-400">
-                              Glissez un fichier ici ou cliquez pour selectionner
-                            </p>
-                          )}
-                          <p className="text-xs text-slate-500 mt-1">
-                            PNG, JPG ou PDF — 10 Mo max
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  </div>
 
                   <button
                     onClick={() => handleSubmit(lvl.level)}

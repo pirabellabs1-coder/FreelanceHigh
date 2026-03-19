@@ -26,6 +26,7 @@ interface ChatPanelProps {
   onSendSystemMessage?: (content: string) => void;
   onStartAudioCall?: () => void;
   onStartVideoCall?: () => void;
+  onMobileBack?: () => void;
 }
 
 async function uploadFileToServer(file: File, onProgress?: (pct: number) => void): Promise<{ url: string; name: string; size: number; type: string } | null> {
@@ -79,6 +80,7 @@ export function ChatPanel({
   onSendSystemMessage,
   onStartAudioCall,
   onStartVideoCall,
+  onMobileBack,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -201,12 +203,21 @@ export function ChatPanel({
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500">
+      <div className="flex-1 flex items-center justify-center text-slate-500 p-4">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-4xl text-primary/40">forum</span>
+          {onMobileBack && (
+            <button
+              onClick={onMobileBack}
+              className="md:hidden mb-4 px-4 py-2 text-sm text-primary font-semibold hover:bg-primary/10 rounded-lg transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm align-middle mr-1">arrow_back</span>
+              Retour aux conversations
+            </button>
+          )}
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-3xl md:text-4xl text-primary/40">forum</span>
           </div>
-          <p className="font-medium text-slate-400">Aucun message pour le moment</p>
+          <p className="font-medium text-slate-400 text-sm md:text-base">Aucun message pour le moment</p>
           <p className="text-xs mt-2 text-slate-600">Vos conversations avec vos clients apparaitront ici</p>
         </div>
       </div>
@@ -245,9 +256,19 @@ export function ChatPanel({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border-dark flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-border-dark flex-shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          {/* Mobile back button */}
+          {onMobileBack && (
+            <button
+              onClick={onMobileBack}
+              className="md:hidden p-1.5 -ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+              aria-label="Retour aux conversations"
+            >
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+            </button>
+          )}
+          <div className="relative flex-shrink-0">
             <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
               {otherParticipants[0]?.avatar ?? "?"}
             </div>
@@ -255,9 +276,9 @@ export function ChatPanel({
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-background-dark rounded-full" />
             )}
           </div>
-          <div>
-            <p className="font-bold text-sm text-white">{displayName}</p>
-            <p className="text-xs text-slate-500">
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-white truncate">{displayName}</p>
+            <p className="text-xs text-slate-500 truncate">
               {isOnline ? "En ligne" : "Hors ligne"}
               {conversation.orderId && ` · ${conversation.orderId}`}
               {otherParticipants.length > 1 && ` · ${otherParticipants.length} participants`}
@@ -265,11 +286,11 @@ export function ChatPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 md:gap-1 flex-shrink-0">
           {conversation.orderId && (
             <a
               href={`/dashboard/commandes/${conversation.orderId}`}
-              className="text-xs text-primary font-bold hover:underline flex items-center gap-1 mr-2"
+              className="hidden sm:flex text-xs text-primary font-bold hover:underline items-center gap-1 mr-2"
             >
               Voir la commande <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </a>
@@ -309,7 +330,7 @@ export function ChatPanel({
       </div>
 
       {/* Message filter bar */}
-      <div className="flex items-center gap-1 px-4 py-2 border-b border-border-dark/50">
+      <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-4 py-1.5 md:py-2 border-b border-border-dark/50 overflow-x-auto">
         {(["all", "voice", "calls", "files"] as const).map((filter) => {
           const labels = {
             all: { label: "Tous", icon: "forum" },
@@ -337,7 +358,7 @@ export function ChatPanel({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3">
         {filteredMessages.map((msg, i) => {
           const isOwn = msg.senderId === currentUserId;
           const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
@@ -389,14 +410,14 @@ export function ChatPanel({
       )}
 
       {/* Input */}
-      <div className="border-t border-border-dark p-4 flex-shrink-0">
-        <div className="flex gap-3">
+      <div className="border-t border-border-dark p-2 md:p-4 flex-shrink-0">
+        <div className="flex gap-1.5 md:gap-3 items-end">
           <button
             onClick={() => fileRef.current?.click()}
-            className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+            className="p-2 md:p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
             aria-label="Joindre un fichier"
           >
-            <span className="material-symbols-outlined">attach_file</span>
+            <span className="material-symbols-outlined text-xl md:text-2xl">attach_file</span>
           </button>
           <input
             ref={fileRef}

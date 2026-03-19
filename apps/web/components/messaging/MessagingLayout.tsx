@@ -55,6 +55,7 @@ export function MessagingLayout({
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showNewConvDialog, setShowNewConvDialog] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
 
   const currentUser: CallUser = useMemo(() => ({
     id: userId,
@@ -145,6 +146,17 @@ export function MessagingLayout({
     toggleScreenShareReal();
   }, [toggleScreenShareReal]);
 
+  // Handle selecting a conversation — on mobile, switch to chat view
+  const handleSelectConversation = useCallback((convId: string) => {
+    setSelectedId(convId);
+    setMobileShowChat(true);
+  }, []);
+
+  // Handle back to conversation list on mobile
+  const handleMobileBack = useCallback(() => {
+    setMobileShowChat(false);
+  }, []);
+
   return (
     <div className="flex flex-col h-[calc(100vh-56px)]">
       {/* New conversation dialog for admin */}
@@ -152,13 +164,13 @@ export function MessagingLayout({
         <NewConversationDialog
           open={showNewConvDialog}
           onClose={() => setShowNewConvDialog(false)}
-          onConversationCreated={(convId) => setSelectedId(convId)}
+          onConversationCreated={(convId) => handleSelectConversation(convId)}
         />
       )}
 
       <div className="flex flex-1 min-h-0 bg-background-dark/50 overflow-hidden">
-        {/* Conversations sidebar */}
-        <div className="w-80 border-r border-border-dark flex-shrink-0 flex flex-col">
+        {/* Conversations sidebar — hidden on mobile when chat is open */}
+        <div className={`w-full md:w-80 border-r border-border-dark flex-shrink-0 flex flex-col ${mobileShowChat ? "hidden md:flex" : "flex"}`}>
           {showAllConversations && (
             <div className="p-3 border-b border-border-dark">
               <button
@@ -174,57 +186,60 @@ export function MessagingLayout({
             conversations={myConversations}
             currentUserId={userId}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelectConversation}
             showTypeFilter={userRole === "agence"}
             showAllTypes={showAllConversations}
           />
         </div>
 
-        {/* Chat area */}
-        <ChatPanel
-          conversation={selectedConv}
-          currentUserId={userId}
-          onSendMessage={(content, type, fileName, fileSize, audioUrl, audioDuration) => {
-            if (selectedId) {
-              if (isSynced) {
-                apiSendMessage(selectedId, content, type, fileName, fileSize);
-              } else {
-                sendMessage(selectedId, content, type, fileName, fileSize, audioUrl, audioDuration);
-              }
-            }
-          }}
-          onEditMessage={(messageId, newContent) => {
-            if (selectedId) {
-              if (isSynced) {
-                apiEditMessage(selectedId, messageId, newContent);
-              } else {
-                editMessage(selectedId, messageId, newContent);
-              }
-            }
-          }}
-          onDeleteMessage={(messageId) => {
-            if (selectedId) {
-              if (isSynced) {
-                apiDeleteMessage(selectedId, messageId);
-              } else {
-                deleteMessage(selectedId, messageId);
-              }
-            }
-          }}
-          onMarkRead={() => {
-            if (selectedId) markConversationRead(selectedId);
-          }}
-          showAdminActions={showAllConversations}
-          onSendSystemMessage={
-            showAllConversations
-              ? (content) => {
-                  if (selectedId) addSystemMessage(selectedId, content);
+        {/* Chat area — hidden on mobile when conversation list is showing */}
+        <div className={`flex-1 min-w-0 ${mobileShowChat ? "flex" : "hidden md:flex"} flex-col`}>
+          <ChatPanel
+            conversation={selectedConv}
+            currentUserId={userId}
+            onSendMessage={(content, type, fileName, fileSize, audioUrl, audioDuration) => {
+              if (selectedId) {
+                if (isSynced) {
+                  apiSendMessage(selectedId, content, type, fileName, fileSize);
+                } else {
+                  sendMessage(selectedId, content, type, fileName, fileSize, audioUrl, audioDuration);
                 }
-              : undefined
-          }
-          onStartAudioCall={handleStartAudioCall}
-          onStartVideoCall={handleStartVideoCall}
-        />
+              }
+            }}
+            onEditMessage={(messageId, newContent) => {
+              if (selectedId) {
+                if (isSynced) {
+                  apiEditMessage(selectedId, messageId, newContent);
+                } else {
+                  editMessage(selectedId, messageId, newContent);
+                }
+              }
+            }}
+            onDeleteMessage={(messageId) => {
+              if (selectedId) {
+                if (isSynced) {
+                  apiDeleteMessage(selectedId, messageId);
+                } else {
+                  deleteMessage(selectedId, messageId);
+                }
+              }
+            }}
+            onMarkRead={() => {
+              if (selectedId) markConversationRead(selectedId);
+            }}
+            showAdminActions={showAllConversations}
+            onSendSystemMessage={
+              showAllConversations
+                ? (content) => {
+                    if (selectedId) addSystemMessage(selectedId, content);
+                  }
+                : undefined
+            }
+            onStartAudioCall={handleStartAudioCall}
+            onStartVideoCall={handleStartVideoCall}
+            onMobileBack={handleMobileBack}
+          />
+        </div>
       </div>
 
       {/* Call modals */}

@@ -77,19 +77,19 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
   // État enregistrement
   if (state === "recording") {
     return (
-      <div className="flex items-center gap-3 flex-1 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
+      <div className="flex items-center gap-2 md:gap-3 flex-1 bg-red-500/10 border border-red-500/30 rounded-lg px-2 md:px-4 py-2">
         {/* Indicateur pulsant */}
         <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
 
-        {/* Waveform animée */}
-        <div className="flex items-center gap-0.5 h-6 flex-1">
+        {/* Waveform animée — fewer bars on mobile */}
+        <div className="flex items-center gap-0.5 h-6 flex-1 overflow-hidden">
           {Array.from({ length: 20 }).map((_, i) => {
             const val = analyserData[i % analyserData.length] || 0;
             const height = Math.max(4, (val / 255) * 24);
             return (
               <div
                 key={i}
-                className="w-1 rounded-full bg-red-400 transition-all duration-100"
+                className="w-1 rounded-full bg-red-400 transition-all duration-100 flex-shrink-0"
                 style={{ height: `${height}px` }}
               />
             );
@@ -97,14 +97,14 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
         </div>
 
         {/* Chronomètre */}
-        <span className="text-sm font-mono text-red-400 flex-shrink-0">
+        <span className="text-xs md:text-sm font-mono text-red-400 flex-shrink-0">
           {formatDuration(duration)}
         </span>
 
         {/* Annuler */}
         <button
           onClick={cancelRecording}
-          className="p-1.5 rounded-full text-red-400 hover:bg-red-500/20 transition-colors"
+          className="p-1 md:p-1.5 rounded-full text-red-400 hover:bg-red-500/20 transition-colors flex-shrink-0"
           title="Annuler"
         >
           <span className="material-symbols-outlined text-lg">close</span>
@@ -113,7 +113,7 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
         {/* Valider */}
         <button
           onClick={stopRecording}
-          className="p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+          className="p-1 md:p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors flex-shrink-0"
           title="Terminer l'enregistrement"
         >
           <span className="material-symbols-outlined text-lg">check</span>
@@ -125,13 +125,13 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
   // État aperçu avant envoi
   if (state === "preview" && audioUrl) {
     return (
-      <div className="flex items-center gap-3 flex-1 bg-primary/10 border border-primary/30 rounded-lg px-4 py-2">
+      <div className="flex items-center gap-2 md:gap-3 flex-1 bg-primary/10 border border-primary/30 rounded-lg px-2 md:px-4 py-2">
         <audio ref={previewRef} src={audioUrl} preload="auto" />
 
         {/* Réécouter */}
         <button
           onClick={handleReplay}
-          className="p-1.5 rounded-full text-primary hover:bg-primary/20 transition-colors"
+          className="p-1 md:p-1.5 rounded-full text-primary hover:bg-primary/20 transition-colors flex-shrink-0"
           title={isPlaying ? "Arreter" : "Reecouter"}
         >
           <span className="material-symbols-outlined text-lg">
@@ -140,25 +140,25 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
         </button>
 
         {/* Barre visuelle */}
-        <div className="flex items-center gap-0.5 h-6 flex-1">
+        <div className="flex items-center gap-0.5 h-6 flex-1 overflow-hidden">
           {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={i}
-              className="w-1 rounded-full bg-primary/50"
+              className="w-1 rounded-full bg-primary/50 flex-shrink-0"
               style={{ height: `${4 + Math.random() * 16}px` }}
             />
           ))}
         </div>
 
         {/* Durée */}
-        <span className="text-sm font-mono text-primary flex-shrink-0">
+        <span className="text-xs md:text-sm font-mono text-primary flex-shrink-0">
           {formatDuration(duration)}
         </span>
 
         {/* Annuler */}
         <button
           onClick={cancelRecording}
-          className="p-1.5 rounded-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="p-1 md:p-1.5 rounded-full text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
           title="Annuler"
         >
           <span className="material-symbols-outlined text-lg">delete</span>
@@ -167,7 +167,7 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
         {/* Envoyer */}
         <button
           onClick={handleSend}
-          className="p-1.5 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors"
+          className="p-1 md:p-1.5 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors flex-shrink-0"
           title="Envoyer le message vocal"
         >
           <span className="material-symbols-outlined text-lg">send</span>
