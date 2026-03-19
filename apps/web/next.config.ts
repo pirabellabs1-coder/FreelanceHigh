@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "path";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -34,9 +35,8 @@ const nextConfig: NextConfig = {
   // Ignorer ESLint et TypeScript pendant le build (erreurs mineures, deploy test)
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
-  // En production : externaliser @prisma/client pour utiliser le binaire natif
-  // En dev avec Turbopack : le laisser se résoudre via le monorepo
-  ...(process.env.NODE_ENV === "production" ? { serverExternalPackages: ["@prisma/client"] } : {}),
+  // Monorepo: indiquer la racine pour que Next.js trace les fichiers Prisma
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
