@@ -127,52 +127,50 @@ export default function FormationsLandingPage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
 
       {/* ── HERO ────────────────────────────────────────────────── */}
-      <section className="relative px-6 lg:px-20 pt-12 pb-20">
+      <section className="relative px-3 sm:px-6 lg:px-20 pt-6 sm:pt-12 pb-10 sm:pb-20">
         <div className="max-w-7xl mx-auto">
-          <div className="relative overflow-hidden rounded-3xl bg-slate-900 min-h-[560px] flex flex-col justify-center px-8 lg:px-16 py-12">
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 min-h-[400px] sm:min-h-[560px] flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-8 sm:py-12">
             {/* Decorative blurs */}
             <div className="absolute -top-24 -right-24 size-96 bg-primary/20 blur-[150px] rounded-full" />
             <div className="absolute -bottom-24 -left-24 size-96 bg-accent/10 blur-[150px] rounded-full" />
 
             {/* Content */}
-            <div className="relative z-10 max-w-3xl space-y-8">
+            <div className="relative z-10 max-w-3xl space-y-4 sm:space-y-6 lg:space-y-8">
               <span className="inline-block px-4 py-1.5 rounded-full bg-accent/20 text-accent text-xs font-bold uppercase tracking-wider border border-accent/30">
                 {t("badge_label")}
               </span>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-tight">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.1] tracking-tight">
                 {t("hero_title")}
               </h1>
-              <p className="text-lg sm:text-xl text-slate-300 max-w-xl leading-relaxed">
+              <p className="text-sm sm:text-lg lg:text-xl text-slate-300 max-w-xl leading-relaxed">
                 {t("hero_subtitle")}
               </p>
 
               {/* Search */}
-              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-2 shadow-2xl border border-white/10 gap-2">
-                <div className="flex flex-1 items-center min-w-0">
-                  <DynamicIcon name="search" className="w-5 h-5 text-slate-400 mx-3" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t("hero_search_placeholder")}
-                    className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder:text-slate-400 text-base py-4 min-w-0"
-                  />
-                </div>
+              <form onSubmit={handleSearch} className="flex flex-row items-center w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-2xl border border-white/10">
+                <DynamicIcon name="search" className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mx-2 sm:mx-3 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t("hero_search_placeholder")}
+                  className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder:text-slate-400 text-sm sm:text-base py-2.5 sm:py-3 min-w-0"
+                />
                 <button
                   type="submit"
-                  className="bg-primary hover:bg-primary/90 text-white p-3 sm:p-4 rounded-xl transition-all shadow-lg flex-shrink-0"
+                  className="bg-primary hover:bg-primary/90 text-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl transition-all flex-shrink-0"
                   aria-label="Rechercher"
                 >
-                  <DynamicIcon name="search" className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <DynamicIcon name="search" className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </form>
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2">
                 <Link
                   href="/formations/explorer"
-                  className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 transition-all text-sm text-center"
+                  className="bg-primary hover:bg-primary/90 text-white px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg shadow-primary/30 transition-all text-xs sm:text-sm text-center"
                 >
                   {t("hero_cta_explore")}
                 </Link>

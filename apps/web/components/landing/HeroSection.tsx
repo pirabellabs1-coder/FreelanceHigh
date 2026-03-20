@@ -76,10 +76,10 @@ export function HeroSection() {
             {/* Search & Filter bar */}
             <form
               onSubmit={handleSearch}
-              className="flex flex-col sm:flex-row w-full max-w-2xl bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-2xl border border-white/10 gap-1.5 sm:gap-2"
+              className="flex flex-row items-center w-full max-w-2xl bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-2xl border border-white/10 gap-1"
             >
               {/* Category filter */}
-              <div className="relative flex items-center shrink-0">
+              <div className="relative hidden sm:flex items-center shrink-0">
                 <span className="material-symbols-outlined text-slate-400 absolute left-3 pointer-events-none text-xl">
                   category
                 </span>
