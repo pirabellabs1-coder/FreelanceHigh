@@ -2,7 +2,8 @@
 
 import { usePageTracker } from "@/lib/tracking/usePageTracker";
 
-const TRACKING_ENABLED = process.env.NODE_ENV === "production";
+// Tracking enabled in all environments — dev data goes to JSON files, prod to DB
+const TRACKING_ENABLED = true;
 
 function TrackingActive({ children }: { children: React.ReactNode }) {
   usePageTracker();

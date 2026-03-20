@@ -103,19 +103,7 @@ export default function FinancesPage() {
         addToast("error", "Erreur lors de la demande de retrait");
       }
     } catch {
-      // Fallback to local
-      const method = WITHDRAWAL_METHODS.find((m) => m.id === withdrawMethod);
-      addTransaction({
-        type: "retrait",
-        description: `Retrait vers ${method?.label || withdrawMethod}`,
-        amount: -amount,
-        status: "en_attente",
-        date: new Date().toISOString().slice(0, 10),
-        method: method?.label,
-      });
-      addToast("success", `Retrait de €${amount} demandé via ${method?.label}`);
-      setShowWithdraw(false);
-      setWithdrawAmount("");
+      addToast("error", "Erreur de connexion. Veuillez reessayer.");
     } finally {
       setWithdrawing(false);
     }

@@ -58,12 +58,18 @@ export default function CommandesPage() {
   async function handleQuickAction(order: Order, action: string) {
     if (action === "start" && order.status === "en_attente") {
       const success = await apiAcceptOrder(order.id);
-      if (!success) updateOrderStatus(order.id, "en_cours");
-      addToast("success", `Commande ${order.id} démarrée`);
+      if (success) {
+        addToast("success", `Commande demarree`);
+      } else {
+        addToast("error", "Erreur lors du demarrage de la commande");
+      }
     } else if (action === "deliver" && order.status === "en_cours") {
-      const success = await apiDeliverOrder(order.id, "Livraison effectuée", []);
-      if (!success) updateOrderStatus(order.id, "livre");
-      addToast("success", `Commande ${order.id} livrée`);
+      const success = await apiDeliverOrder(order.id, "Livraison effectuee", []);
+      if (success) {
+        addToast("success", `Commande livree`);
+      } else {
+        addToast("error", "Erreur lors de la livraison");
+      }
     }
   }
 

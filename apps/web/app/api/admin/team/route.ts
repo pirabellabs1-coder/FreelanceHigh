@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/config";
 import { devStore } from "@/lib/dev/dev-store";
 import { notificationStore } from "@/lib/dev/data-store";
 import { ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
+import { sendAdminTeamInviteEmail } from "@/lib/admin/admin-emails";
 
 // GET /api/admin/team — List admin team members
 export async function GET() {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the admin user
+    // Create the admin user with EN_ATTENTE status (pending invitation acceptance)
     const BCRYPT_HASH = "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS";
     const newUser = devStore.create({
       email,
@@ -79,13 +80,19 @@ export async function POST(request: NextRequest) {
       role: "admin",
       plan: "business",
       kyc: 4,
-      status: "ACTIF",
+      status: "EN_ATTENTE",
       adminRole: adminRole as AdminRole,
     });
 
+    // Send invitation email
+    const inviterName = session.user.name || "Admin FreelanceHigh";
+    sendAdminTeamInviteEmail(email, inviterName, adminRole).catch((err) =>
+      console.error("[TEAM] Email invitation error:", err)
+    );
+
     return NextResponse.json({
       success: true,
-      message: `${name} invite comme ${adminRole}`,
+      message: `Invitation envoyee a ${name} (${email}) comme ${adminRole}`,
       member: {
         id: newUser.id,
         name: newUser.name,

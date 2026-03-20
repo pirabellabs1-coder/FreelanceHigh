@@ -273,15 +273,85 @@ export async function GET() {
       }),
     ]);
 
-    const gmvResult = await prisma.order.aggregate({
-      where: { status: { not: "ANNULE" } },
-      _sum: { amount: true },
-    });
+    // Additional aggregations for complete dashboard
+    const [
+      gmvResult,
+      escrowResult,
+      totalPayments,
+      pendingPayments,
+      pendingWithdrawalsResult,
+      disputeCountReal,
+      orderEnAttente,
+      orderEnCours,
+      orderLivre,
+      orderRevision,
+      orderAnnule,
+      suspendedCount,
+      bannedCount,
+    ] = await Promise.all([
+      prisma.order.aggregate({
+        where: { status: { not: "ANNULE" } },
+        _sum: { amount: true },
+      }),
+      prisma.order.aggregate({
+        where: { status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION", "LIVRE"] } },
+        _sum: { amount: true },
+      }),
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: "EN_ATTENTE" } }),
+      prisma.payment.aggregate({
+        where: { type: "retrait", status: "EN_ATTENTE" },
+        _sum: { amount: true },
+      }),
+      prisma.dispute.count({ where: { status: "OUVERT" } }),
+      prisma.order.count({ where: { status: "EN_ATTENTE" } }),
+      prisma.order.count({ where: { status: "EN_COURS" } }),
+      prisma.order.count({ where: { status: "LIVRE" } }),
+      prisma.order.count({ where: { status: "REVISION" } }),
+      prisma.order.count({ where: { status: "ANNULE" } }),
+      prisma.user.count({ where: { status: "SUSPENDU" } }),
+      prisma.user.count({ where: { status: "BANNI" } }),
+    ]);
 
-    const escrowResult = await prisma.order.aggregate({
-      where: { status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION", "LIVRE"] } },
-      _sum: { amount: true },
-    });
+    // Monthly revenue for last 12 months
+    const now = new Date();
+    const monthNames = [
+      "Jan", "Fev", "Mar", "Avr", "Mai", "Jun",
+      "Jul", "Aou", "Sep", "Oct", "Nov", "Dec",
+    ];
+    const monthlyRevenue = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+      const [monthOrders, monthCommission] = await Promise.all([
+        prisma.order.aggregate({
+          where: {
+            status: "TERMINE",
+            completedAt: { gte: d, lt: nextMonth },
+          },
+          _sum: { amount: true, commission: true },
+          _count: { id: true },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            type: "commission",
+            status: "COMPLETE",
+            createdAt: { gte: d, lt: nextMonth },
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      monthlyRevenue.push({
+        month: monthNames[d.getMonth()],
+        monthKey,
+        revenue: Math.round((monthOrders._sum.amount ?? 0) * 100) / 100,
+        commission: Math.round((monthCommission._sum.amount ?? monthOrders._sum.commission ?? 0) * 100) / 100,
+        orders: monthOrders._count.id,
+      });
+    }
 
     const recentOrders = recentOrdersRaw.map((o) => ({
       id: o.id,
@@ -308,6 +378,8 @@ export async function GET() {
         freelances: freelanceCount,
         clients: clientCount,
         agencies: agencyCount,
+        suspended: suspendedCount,
+        banned: bannedCount,
       },
       orders: {
         total: totalOrders,
@@ -315,12 +387,12 @@ export async function GET() {
         completed: completedOrders,
         gmv: Math.round((gmvResult._sum.amount ?? 0) * 100) / 100,
         byStatus: {
-          en_attente: 0,
-          en_cours: 0,
-          livre: 0,
-          revision: 0,
+          en_attente: orderEnAttente,
+          en_cours: orderEnCours,
+          livre: orderLivre,
+          revision: orderRevision,
           termine: completedOrders,
-          annule: 0,
+          annule: orderAnnule,
           litige: totalDisputes,
         },
       },
@@ -334,12 +406,12 @@ export async function GET() {
       finances: {
         platformRevenue: Math.round((revenueResult._sum.amount ?? 0) * 100) / 100,
         escrowFunds: Math.round((escrowResult._sum.amount ?? 0) * 100) / 100,
-        pendingWithdrawals: 0,
-        totalTransactions: 0,
-        pendingTransactions: 0,
+        pendingWithdrawals: Math.round(Math.abs(pendingWithdrawalsResult._sum.amount ?? 0) * 100) / 100,
+        totalTransactions: totalPayments,
+        pendingTransactions: pendingPayments,
       },
       disputes: {
-        total: totalDisputes,
+        total: disputeCountReal,
       },
       reviews: {
         total: reviewStats._count.id,
@@ -348,15 +420,15 @@ export async function GET() {
           : 0,
         reported: 0,
       },
-      monthlyRevenue: [],
+      monthlyRevenue,
       recentOrders,
       recentUsers,
       traffic: {
-        activeSessions: 0,
-        todayPageViews: 0,
-        todayUniques: 0,
-        avgSessionDuration: 0,
-        topPages: [],
+        activeSessions: trackingStore.getActiveSessions(),
+        todayPageViews: trackingStore.getStats({ period: "1d" }).totalPageViews,
+        todayUniques: trackingStore.getStats({ period: "1d" }).uniqueVisitors,
+        avgSessionDuration: trackingStore.getStats({ period: "7d" }).avgSessionDuration,
+        topPages: trackingStore.getStats({ period: "1d" }).topPages.slice(0, 5),
       },
     });
   } catch (error) {

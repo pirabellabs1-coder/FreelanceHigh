@@ -833,6 +833,32 @@ model LoginAttempt {
   @@index([ipAddress, createdAt])
 }
 
+// ── Platform Configuration (key-value store) ──
+
+model PlatformConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+// ── Admin Notification Log ──
+
+model AdminNotificationLog {
+  id              String   @id @default(cuid())
+  adminId         String
+  title           String
+  message         String   @db.Text
+  targetCriteria  Json?
+  recipientCount  Int      @default(0)
+  failedCount     Int      @default(0)
+  channels        String[] @default([])
+  createdAt       DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+}
+
 // ══════════════════════════════════════════════════════════════
 // FORMATIONS PLATFORM
 // ══════════════════════════════════════════════════════════════

@@ -17,6 +17,7 @@ const CLIENT_CSS_VARS = {
 
 const IS_DEV = process.env.NODE_ENV === "development";
 const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 30_000; // 5min en dev, 30s en prod
+const DATA_SYNC_INTERVAL = IS_DEV ? 600_000 : 120_000; // 10min en dev, 2min en prod
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -24,11 +25,19 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const syncAll = useClientStore((s) => s.syncAll);
   const syncNotifications = useClientStore((s) => s.syncNotifications);
 
-  // Initialize store data on layout mount so sidebar badges are populated
+  // Initialize store data on layout mount
   useEffect(() => {
     syncAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-sync data periodically to catch admin actions and updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncAll();
+    }, DATA_SYNC_INTERVAL);
+    return () => clearInterval(interval);
+  }, [syncAll]);
 
   // Poll notifications every 30s
   useEffect(() => {

@@ -50,32 +50,29 @@ export default function ServicesPage() {
     ), [services]);
 
   // Stats pour tendances (simule un delta)
-  const trends = useMemo(() => ({
-    views: 15,
-    clicks: 5.2,
-    revenue: 0,
-  }), []);
+  const trends = useMemo(() => {
+    const totalViews = services.reduce((s, sv) => s + (sv.views ?? 0), 0);
+    const totalOrders = services.reduce((s, sv) => s + (sv.orders ?? 0), 0);
+    const totalRevenue = services.reduce((s, sv) => s + (sv.revenue ?? 0), 0);
+    return { views: totalViews, clicks: totalOrders, revenue: totalRevenue };
+  }, [services]);
 
   async function handleToggle(id: string) {
     const svc = services.find((s) => s.id === id);
     const success = await apiToggleService(id);
     if (success) {
-      addToast("success", svc?.status === "actif" ? "Service mis en pause" : "Service activé !");
+      addToast("success", svc?.status === "actif" ? "Service mis en pause" : "Service active !");
     } else {
-      // Fallback to local toggle
-      toggleServiceStatus(id);
-      addToast("success", svc?.status === "actif" ? "Service mis en pause" : "Service activé !");
+      addToast("error", "Erreur lors de la mise a jour du service. Veuillez reessayer.");
     }
   }
 
   async function handleDelete(id: string) {
     const success = await apiDeleteService(id);
     if (success) {
-      addToast("success", "Service supprimé avec succès");
+      addToast("success", "Service supprime avec succes");
     } else {
-      // Fallback to local delete
-      deleteService(id);
-      addToast("success", "Service supprimé avec succès");
+      addToast("error", "Erreur lors de la suppression du service. Veuillez reessayer.");
     }
     setDeleteModal(null);
   }
@@ -382,7 +379,7 @@ export default function ServicesPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         {s.status === "actif" && (
                           <Link
-                            href={`/services/${s.id}`}
+                            href={`/services/${s.slug || s.id}`}
                             target="_blank"
                             className="p-2 rounded-lg hover:bg-primary/20 text-primary transition-colors"
                             title="Voir en ligne"

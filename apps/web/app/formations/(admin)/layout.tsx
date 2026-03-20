@@ -128,14 +128,14 @@ export default function AdminFormationsLayout({ children }: { children: React.Re
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative z-50 w-72 max-w-[min(85vw,288px)] bg-white dark:bg-slate-900 dark:bg-neutral-dark border-r border-slate-200 dark:border-slate-700 dark:border-border-dark flex flex-col">
+          <aside className="relative z-50 w-72 max-w-[min(85vw,288px)] h-screen bg-white dark:bg-slate-900 dark:bg-neutral-dark border-r border-slate-200 dark:border-slate-700 dark:border-border-dark flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 dark:border-border-dark">
               <span className="font-bold text-sm">{t("admin_subtitle")}</span>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-white/5">
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
               {ADMIN_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -172,13 +172,13 @@ export default function AdminFormationsLayout({ children }: { children: React.Re
         <div className="flex items-center gap-4 px-4 sm:px-6 lg:px-8 py-4 border-b border-slate-200 dark:border-slate-700 dark:border-border-dark bg-white dark:bg-slate-900 dark:bg-neutral-dark">
           <button
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-white/5 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
             <span className="material-symbols-outlined">menu</span>
           </button>
 
           {/* Breadcrumb */}
-          <nav className="flex items-center text-xs sm:text-sm text-slate-500 min-w-0 overflow-x-auto whitespace-nowrap">
+          <nav className="flex-1 flex items-center text-xs sm:text-sm text-slate-500 min-w-0 overflow-x-auto whitespace-nowrap">
             <Link href="/formations" className="hover:text-primary transition-colors flex-shrink-0">{t("breadcrumb_home")}</Link>
             <span className="material-symbols-outlined text-xs mx-1 flex-shrink-0">chevron_right</span>
             <Link href="/formations/admin/dashboard" className="hover:text-primary transition-colors flex-shrink-0">{t("breadcrumb_admin")}</Link>
@@ -191,6 +191,16 @@ export default function AdminFormationsLayout({ children }: { children: React.Re
               </span>
             ))}
           </nav>
+
+          {/* Mobile logout button */}
+          <button
+            onClick={() => signOut({ callbackUrl: "/formations" })}
+            className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors flex-shrink-0"
+            title={t("logout")}
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+            <span className="text-xs font-semibold hidden sm:inline">{t("logout")}</span>
+          </button>
         </div>
 
         <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-800/50 dark:bg-background-dark min-h-0 flex-1">

@@ -93,8 +93,9 @@ export async function middleware(req: NextRequest) {
   }
 
   // ── Maintenance mode check ──
-  // Check maintenance via internal API (edge-compatible)
-  if (pathname !== "/maintenance" && !pathname.startsWith("/admin")) {
+  // Skip maintenance check for: /maintenance itself, /admin/*, /admin-login/*, /api/*
+  const skipMaintenance = pathname === "/maintenance" || pathname.startsWith("/admin") || pathname.startsWith(ADMIN_LOGIN_PREFIX);
+  if (!skipMaintenance) {
     try {
       const maintenanceRes = await fetch(new URL("/api/public/maintenance", req.url), {
         headers: { "Cache-Control": "no-cache" },

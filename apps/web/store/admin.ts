@@ -436,7 +436,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   syncCategories: async () => {
     set({ loading: { ...get().loading, categories: true } });
     try {
-      const { categories } = await fetchAdmin<{ categories: AdminCategory[] }>("/api/categories");
+      const { categories } = await fetchAdmin<{ categories: AdminCategory[] }>("/api/admin/categories");
       set({ categories, loading: { ...get().loading, categories: false }, error: { ...get().error, categories: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, categories: false }, error: { ...get().error, categories: (e as Error).message } });

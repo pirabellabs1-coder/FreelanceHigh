@@ -14,9 +14,8 @@ function getResend() {
 }
 
 function getFromAddress(): string {
-  const domainVerified = process.env.RESEND_DOMAIN_VERIFIED === "true";
-  const customFrom = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
-  return domainVerified ? customFrom : RESEND_SANDBOX_FROM;
+  // Domain noreply@freelancehigh.com is verified — DNS configured in Vercel
+  return process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
 }
 
 function getAppUrl(): string {
@@ -42,18 +41,6 @@ async function sendEmail(params: { from?: string; to: string; subject: string; h
 
     if (result.error) {
       console.error(`[EMAIL FAIL] To: ${params.to} | Subject: ${params.subject} | From: ${from} | Error:`, result.error);
-
-      // If custom domain failed, retry with sandbox
-      if (from !== RESEND_SANDBOX_FROM) {
-        console.log(`[EMAIL] Retrying with sandbox: ${RESEND_SANDBOX_FROM}`);
-        const retryResult = await getResend().emails.send({ ...params, from: RESEND_SANDBOX_FROM });
-        if (retryResult.error) {
-          console.error("[EMAIL FAIL] Sandbox retry also failed:", retryResult.error);
-        } else {
-          console.log(`[EMAIL OK] Sent via sandbox to ${params.to} (id: ${retryResult.data?.id})`);
-        }
-        return retryResult;
-      }
     } else {
       console.log(`[EMAIL OK] To: ${params.to} | Subject: ${params.subject} | ID: ${result.data?.id}`);
     }

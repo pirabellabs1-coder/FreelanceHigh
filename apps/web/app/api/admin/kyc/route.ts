@@ -5,6 +5,7 @@ import { prisma, IS_DEV } from "@/lib/prisma";
 import { notificationStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
 import { sendKycApprovedEmail, sendKycRejectedEmail } from "@/lib/email";
+import { createAuditLog } from "@/lib/admin/audit";
 
 // GET /api/admin/kyc — KYC verification queue
 export async function GET() {
@@ -265,6 +266,7 @@ export async function POST(request: NextRequest) {
                   where: { id: requestId },
                   data: {
                     status: "APPROUVE",
+                    reviewedBy: session.user.id,
                     reviewedAt: new Date(),
                   },
                 }),
@@ -275,6 +277,30 @@ export async function POST(request: NextRequest) {
             data: { kyc: newLevel },
           }),
         ]);
+
+        // Notification in-app
+        await prisma.notification.create({
+          data: {
+            userId,
+            title: "Verification KYC approuvee",
+            message: `Votre verification de niveau ${newLevel} a ete approuvee.`,
+            type: "KYC",
+            link: "/dashboard/parametres",
+          },
+        });
+
+        // Send email
+        sendKycApprovedEmail(user.email, user.name, newLevel).catch((err) =>
+          console.error("[KYC] Email approved error:", err)
+        );
+
+        // Audit log
+        await createAuditLog({
+          actorId: session.user.id,
+          action: "kyc.approved",
+          targetUserId: userId,
+          details: { previousLevel: user.kyc, newLevel, requestId },
+        });
 
         return NextResponse.json({
           success: true,
@@ -297,10 +323,35 @@ export async function POST(request: NextRequest) {
             data: {
               status: "REFUSE",
               refuseReason,
+              reviewedBy: session.user.id,
               reviewedAt: new Date(),
             },
           });
         }
+
+        // Notification in-app
+        await prisma.notification.create({
+          data: {
+            userId,
+            title: "Verification KYC refusee",
+            message: `Votre demande de verification a ete refusee. Motif : ${refuseReason}`,
+            type: "KYC",
+            link: "/dashboard/parametres",
+          },
+        });
+
+        // Send email
+        sendKycRejectedEmail(user.email, user.name, user.kyc + 1, refuseReason).catch((err) =>
+          console.error("[KYC] Email rejected error:", err)
+        );
+
+        // Audit log
+        await createAuditLog({
+          actorId: session.user.id,
+          action: "kyc.refused",
+          targetUserId: userId,
+          details: { requestedLevel: user.kyc + 1, reason: refuseReason, requestId },
+        });
 
         return NextResponse.json({
           success: true,

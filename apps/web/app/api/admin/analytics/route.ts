@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma, IS_DEV } from "@/lib/prisma";
 import {
   serviceStore,
   orderStore,
@@ -12,21 +13,13 @@ import {
 import { devStore } from "@/lib/dev/dev-store";
 import { trackingStore } from "@/lib/tracking/tracking-store";
 
-// GET /api/admin/analytics — Platform analytics computed from all stores
+// GET /api/admin/analytics — Platform analytics
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== "admin") {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
-
-    const users = devStore.getAll().filter((u) => u.role !== "admin");
-    const orders = orderStore.getAll();
-    const services = serviceStore.getAll();
-    const transactions = transactionStore.getAll();
-    const reviews = reviewStore.getAll();
-    const candidatures = candidatureStore.getAll();
-    const projects = projectStore.getAll();
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -35,235 +28,314 @@ export async function GET() {
       "Jul", "Aou", "Sep", "Oct", "Nov", "Dec",
     ];
 
-    // ── Revenue by Category ──
-    const revenueByCategory: Record<string, { revenue: number; orders: number }> = {};
-    for (const order of orders) {
-      if (order.status === "termine" || order.status === "livre") {
-        const cat = order.category || "Non categorise";
-        if (!revenueByCategory[cat]) {
-          revenueByCategory[cat] = { revenue: 0, orders: 0 };
+    if (IS_DEV) {
+      // ── DEV MODE: use dev stores (unchanged) ──
+      const users = devStore.getAll().filter((u) => u.role !== "admin");
+      const orders = orderStore.getAll();
+      const services = serviceStore.getAll();
+      const transactions = transactionStore.getAll();
+      const reviews = reviewStore.getAll();
+      const candidatures = candidatureStore.getAll();
+      const projects = projectStore.getAll();
+
+      const revenueByCategory: Record<string, { revenue: number; orders: number }> = {};
+      for (const order of orders) {
+        if (order.status === "termine" || order.status === "livre") {
+          const cat = order.category || "Non categorise";
+          if (!revenueByCategory[cat]) revenueByCategory[cat] = { revenue: 0, orders: 0 };
+          revenueByCategory[cat].revenue += order.amount;
+          revenueByCategory[cat].orders += 1;
         }
-        revenueByCategory[cat].revenue += order.amount;
-        revenueByCategory[cat].orders += 1;
       }
+
+      const usersByCountry: Record<string, number> = {};
+      for (const user of users) {
+        const country = user.country || "XX";
+        usersByCountry[country] = (usersByCountry[country] ?? 0) + 1;
+      }
+      const orderCountries: Record<string, { clients: number; revenue: number }> = {};
+      for (const order of orders) {
+        const country = order.clientCountry || "XX";
+        if (!orderCountries[country]) orderCountries[country] = { clients: 0, revenue: 0 };
+        orderCountries[country].clients += 1;
+        if (order.status === "termine") orderCountries[country].revenue += order.amount;
+      }
+
+      const registrationTrends = Array.from({ length: 12 }, (_, i) => {
+        const monthKey = `${currentYear}-${String(i + 1).padStart(2, "0")}`;
+        const mu = users.filter((u) => u.createdAt.startsWith(monthKey));
+        return { month: monthNames[i], monthKey, total: mu.length, freelances: mu.filter((u) => u.role === "freelance").length, clients: mu.filter((u) => u.role === "client").length, agencies: mu.filter((u) => u.role === "agence").length };
+      });
+
+      const totalRegistrations = users.length;
+      const usersWithOrders = new Set([...orders.map((o) => o.clientId), ...orders.map((o) => o.freelanceId)]).size;
+      const usersWithCompletedOrders = new Set(orders.filter((o) => o.status === "termine").flatMap((o) => [o.clientId, o.freelanceId])).size;
+      const usersWithReviews = new Set(reviews.map((r) => r.clientId)).size;
+      const profileCompleted = Math.round(totalRegistrations * 0.7);
+
+      const revenueTrends = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const mo = orders.filter((o) => o.status === "termine" && o.completedAt?.startsWith(monthKey));
+        return { month: monthNames[d.getMonth()], monthKey, revenue: Math.round(mo.reduce((s, o) => s + o.amount, 0) * 100) / 100, commission: Math.round(mo.reduce((s, o) => s + o.commission, 0) * 100) / 100, orders: mo.length };
+      });
+
+      const activeServices = services.filter((s) => s.status === "actif");
+      const reviewStats = {
+        totalReviews: reviews.length,
+        avgRating: reviews.length > 0 ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10 : 0,
+        avgQualite: reviews.length > 0 ? Math.round((reviews.reduce((s, r) => s + r.qualite, 0) / reviews.length) * 10) / 10 : 0,
+        avgCommunication: reviews.length > 0 ? Math.round((reviews.reduce((s, r) => s + r.communication, 0) / reviews.length) * 10) / 10 : 0,
+        avgDelai: reviews.length > 0 ? Math.round((reviews.reduce((s, r) => s + r.delai, 0) / reviews.length) * 10) / 10 : 0,
+        reported: reviews.filter((r) => r.reported).length,
+        distribution: [
+          { stars: 5, count: reviews.filter((r) => r.rating >= 4.5).length },
+          { stars: 4, count: reviews.filter((r) => r.rating >= 3.5 && r.rating < 4.5).length },
+          { stars: 3, count: reviews.filter((r) => r.rating >= 2.5 && r.rating < 3.5).length },
+          { stars: 2, count: reviews.filter((r) => r.rating >= 1.5 && r.rating < 2.5).length },
+          { stars: 1, count: reviews.filter((r) => r.rating < 1.5).length },
+        ],
+      };
+
+      const paymentMethods: Record<string, number> = {};
+      for (const tx of transactions) { const m = tx.method ?? "carte_bancaire"; paymentMethods[m] = (paymentMethods[m] ?? 0) + 1; }
+
+      const trafficStats30d = trackingStore.getStats({ period: "30d" });
+
+      return NextResponse.json({
+        revenueByCategory: Object.entries(revenueByCategory).map(([category, data]) => ({ category, revenue: Math.round(data.revenue * 100) / 100, orders: data.orders })).sort((a, b) => b.revenue - a.revenue),
+        topCountries: Object.entries(orderCountries).map(([country, data]) => ({ country, users: usersByCountry[country] ?? 0, orders: data.clients, revenue: Math.round(data.revenue * 100) / 100 })).sort((a, b) => b.revenue - a.revenue).slice(0, 10),
+        registrationTrends,
+        conversionFunnel: [
+          { step: "Inscrits", count: totalRegistrations, rate: 100 },
+          { step: "Profil complété", count: profileCompleted, rate: totalRegistrations > 0 ? Math.round((profileCompleted / totalRegistrations) * 100) : 0 },
+          { step: "1ère commande", count: usersWithOrders, rate: totalRegistrations > 0 ? Math.round((usersWithOrders / totalRegistrations) * 100) : 0 },
+          { step: "Commande terminée", count: usersWithCompletedOrders, rate: totalRegistrations > 0 ? Math.round((usersWithCompletedOrders / totalRegistrations) * 100) : 0 },
+          { step: "Avis laissé", count: usersWithReviews, rate: totalRegistrations > 0 ? Math.round((usersWithReviews / totalRegistrations) * 100) : 0 },
+        ],
+        servicePerformance: {
+          totalViews: services.reduce((s, sv) => s + sv.views, 0),
+          totalClicks: services.reduce((s, sv) => s + sv.clicks, 0),
+          totalOrders: services.reduce((s, sv) => s + sv.orderCount, 0),
+          avgCTR: 0, avgConversion: 0,
+          avgRating: activeServices.length > 0 ? Math.round(activeServices.filter((sv) => sv.ratingCount > 0).reduce((s, sv) => s + sv.rating, 0) / Math.max(1, activeServices.filter((sv) => sv.ratingCount > 0).length) * 10) / 10 : 0,
+          topServices: [...services].sort((a, b) => b.revenue - a.revenue).slice(0, 5).map((sv) => ({ id: sv.id, title: sv.title, category: sv.categoryName, revenue: sv.revenue, orders: sv.orderCount, rating: sv.rating, views: sv.views })),
+        },
+        revenueTrends,
+        projectStats: { totalProjects: projects.length, openProjects: projects.filter((p) => p.status === "ouvert").length, filledProjects: projects.filter((p) => p.status === "pourvu").length, closedProjects: projects.filter((p) => p.status === "ferme").length, totalCandidatures: candidatures.length, acceptedCandidatures: candidatures.filter((c) => c.status === "acceptee").length, avgProposalsPerProject: projects.length > 0 ? Math.round((projects.reduce((s, p) => s + p.proposals, 0) / projects.length) * 10) / 10 : 0 },
+        reviewStats,
+        paymentMethods,
+        trafficAnalytics: { pageViewsTrend: trafficStats30d.pageViewsTrend, sessionsTrend: trafficStats30d.sessionsTrend, topReferrers: trafficStats30d.topReferrers, utmBreakdown: trafficStats30d.utmBreakdown, deviceBreakdown: trafficStats30d.deviceBreakdown, bounceRate: trafficStats30d.bounceRate, avgSessionDuration: trafficStats30d.avgSessionDuration, totalPageViews: trafficStats30d.totalPageViews, uniqueVisitors: trafficStats30d.uniqueVisitors, totalSessions: trafficStats30d.totalSessions },
+      });
     }
 
-    const revenueByCategoryArray = Object.entries(revenueByCategory)
-      .map(([category, data]) => ({
-        category,
-        revenue: Math.round(data.revenue * 100) / 100,
-        orders: data.orders,
-      }))
+    // ══════════════════════════════════════════════
+    // PRODUCTION: Prisma queries on real database
+    // ══════════════════════════════════════════════
+
+    // ── Registration Trends (12 months) ──
+    const registrationTrends = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(currentYear, i, 1);
+      const nextMonth = new Date(currentYear, i + 1, 1);
+      const monthKey = `${currentYear}-${String(i + 1).padStart(2, "0")}`;
+
+      const [total, freelances, clients, agencies] = await Promise.all([
+        prisma.user.count({ where: { role: { not: "ADMIN" }, createdAt: { gte: d, lt: nextMonth } } }),
+        prisma.user.count({ where: { role: "FREELANCE", createdAt: { gte: d, lt: nextMonth } } }),
+        prisma.user.count({ where: { role: "CLIENT", createdAt: { gte: d, lt: nextMonth } } }),
+        prisma.user.count({ where: { role: "AGENCE", createdAt: { gte: d, lt: nextMonth } } }),
+      ]);
+
+      registrationTrends.push({ month: monthNames[i], monthKey, total, freelances, clients, agencies });
+    }
+
+    // ── Revenue by Category ──
+    const categoryRevenue = await prisma.order.findMany({
+      where: { status: { in: ["TERMINE", "LIVRE"] } },
+      include: { service: { include: { category: { select: { name: true } } } } },
+    });
+    const revByCat: Record<string, { revenue: number; orders: number }> = {};
+    for (const o of categoryRevenue) {
+      const cat = o.service?.category?.name || "Non categorise";
+      if (!revByCat[cat]) revByCat[cat] = { revenue: 0, orders: 0 };
+      revByCat[cat].revenue += o.amount;
+      revByCat[cat].orders += 1;
+    }
+    const revenueByCategory = Object.entries(revByCat)
+      .map(([category, data]) => ({ category, revenue: Math.round(data.revenue * 100) / 100, orders: data.orders }))
       .sort((a, b) => b.revenue - a.revenue);
 
-    // ── Top Countries (from users) ──
-    const countryCount: Record<string, number> = {};
-    for (const user of users) {
-      // Use profile country if available; for dev users we don't have country on DevUser,
-      // so we aggregate from orders/services
-      const country = "FR"; // Default — will be enriched from order data
-      countryCount[country] = (countryCount[country] ?? 0) + 1;
+    // ── Top Countries ──
+    const usersWithCountry = await prisma.user.findMany({
+      where: { role: { not: "ADMIN" }, country: { not: null } },
+      select: { country: true },
+    });
+    const userCountByCountry: Record<string, number> = {};
+    for (const u of usersWithCountry) {
+      const c = u.country || "XX";
+      userCountByCountry[c] = (userCountByCountry[c] ?? 0) + 1;
     }
 
-    // Enrich with order country data
-    const orderCountries: Record<string, { clients: number; revenue: number }> = {};
-    for (const order of orders) {
-      const country = order.clientCountry || "XX";
-      if (!orderCountries[country]) {
-        orderCountries[country] = { clients: 0, revenue: 0 };
-      }
-      orderCountries[country].clients += 1;
-      if (order.status === "termine") {
-        orderCountries[country].revenue += order.amount;
-      }
+    const ordersWithCountry = await prisma.order.findMany({
+      where: { status: "TERMINE" },
+      include: { client: { select: { country: true } } },
+    });
+    const ordersByCountry: Record<string, { orders: number; revenue: number }> = {};
+    for (const o of ordersWithCountry) {
+      const c = o.client?.country || "XX";
+      if (!ordersByCountry[c]) ordersByCountry[c] = { orders: 0, revenue: 0 };
+      ordersByCountry[c].orders += 1;
+      ordersByCountry[c].revenue += o.amount;
     }
 
-    // Count users per country
-    const usersByCountry: Record<string, number> = {};
-    for (const user of users) {
-      const country = user.country || "XX";
-      usersByCountry[country] = (usersByCountry[country] ?? 0) + 1;
-    }
-
-    const topCountries = Object.entries(orderCountries)
-      .map(([country, data]) => ({
+    const allCountries = new Set([...Object.keys(userCountByCountry), ...Object.keys(ordersByCountry)]);
+    const topCountries = [...allCountries]
+      .map((country) => ({
         country,
-        users: usersByCountry[country] ?? 0,
-        orders: data.clients,
-        revenue: Math.round(data.revenue * 100) / 100,
+        users: userCountByCountry[country] ?? 0,
+        orders: ordersByCountry[country]?.orders ?? 0,
+        revenue: Math.round((ordersByCountry[country]?.revenue ?? 0) * 100) / 100,
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
-    // ── Registration Trends (monthly for this year) ──
-    const registrationTrends = Array.from({ length: 12 }, (_, i) => {
-      const monthKey = `${currentYear}-${String(i + 1).padStart(2, "0")}`;
-      const monthUsers = users.filter((u) =>
-        u.createdAt.startsWith(monthKey)
-      );
-
-      return {
-        month: monthNames[i],
-        monthKey,
-        total: monthUsers.length,
-        freelances: monthUsers.filter((u) => u.role === "freelance").length,
-        clients: monthUsers.filter((u) => u.role === "client").length,
-        agencies: monthUsers.filter((u) => u.role === "agence").length,
-      };
-    });
-
-    // ── Conversion Funnel ──
-    const totalRegistrations = users.length;
-    const usersWithOrders = new Set([
-      ...orders.map((o) => o.clientId),
-      ...orders.map((o) => o.freelanceId),
-    ]).size;
-    const usersWithCompletedOrders = new Set(
-      orders
-        .filter((o) => o.status === "termine")
-        .flatMap((o) => [o.clientId, o.freelanceId])
-    ).size;
-    const usersWithReviews = new Set(
-      reviews.map((r) => r.clientId)
-    ).size;
-
-    const profileCompleted = Math.round(totalRegistrations * 0.7);
-    const conversionFunnel = [
-      { step: "Inscrits", count: totalRegistrations, rate: 100 },
-      { step: "Profil complété", count: profileCompleted, rate: totalRegistrations > 0 ? Math.round((profileCompleted / totalRegistrations) * 100) : 0 },
-      { step: "1ère commande", count: usersWithOrders, rate: totalRegistrations > 0 ? Math.round((usersWithOrders / totalRegistrations) * 100) : 0 },
-      { step: "Commande terminée", count: usersWithCompletedOrders, rate: totalRegistrations > 0 ? Math.round((usersWithCompletedOrders / totalRegistrations) * 100) : 0 },
-      { step: "Avis laissé", count: usersWithReviews, rate: totalRegistrations > 0 ? Math.round((usersWithReviews / totalRegistrations) * 100) : 0 },
-    ];
-
-    // ── Service Performance ──
-    const activeServices = services.filter((s) => s.status === "actif");
-    const totalViews = services.reduce((sum, s) => sum + s.views, 0);
-    const totalClicks = services.reduce((sum, s) => sum + s.clicks, 0);
-    const totalServiceOrders = services.reduce((sum, s) => sum + s.orderCount, 0);
-    const avgRating =
-      activeServices.length > 0
-        ? activeServices
-            .filter((s) => s.ratingCount > 0)
-            .reduce((sum, s) => sum + s.rating, 0) /
-          Math.max(1, activeServices.filter((s) => s.ratingCount > 0).length)
-        : 0;
-
-    const servicePerformance = {
-      totalViews,
-      totalClicks,
-      totalOrders: totalServiceOrders,
-      avgCTR: totalViews > 0 ? Math.round((totalClicks / totalViews) * 10000) / 100 : 0,
-      avgConversion: totalClicks > 0 ? Math.round((totalServiceOrders / totalClicks) * 10000) / 100 : 0,
-      avgRating: Math.round(avgRating * 10) / 10,
-      topServices: [...services]
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5)
-        .map((s) => ({
-          id: s.id,
-          title: s.title,
-          category: s.categoryName,
-          revenue: s.revenue,
-          orders: s.orderCount,
-          rating: s.rating,
-          views: s.views,
-        })),
-    };
-
-    // ── Revenue Trends (monthly) ──
-    const revenueTrends = Array.from({ length: 12 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    // ── Revenue Trends (12 months) ──
+    const revenueTrends = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-      const monthOrders = orders.filter(
-        (o) => o.status === "termine" && o.completedAt?.startsWith(monthKey)
-      );
-      const monthRevenue = monthOrders.reduce((sum, o) => sum + o.amount, 0);
-      const monthCommission = monthOrders.reduce((sum, o) => sum + o.commission, 0);
+      const [revenueAgg, commissionAgg, orderCount] = await Promise.all([
+        prisma.order.aggregate({ where: { status: "TERMINE", completedAt: { gte: d, lt: nextMonth } }, _sum: { amount: true } }),
+        prisma.payment.aggregate({ where: { type: "commission", status: "COMPLETE", createdAt: { gte: d, lt: nextMonth } }, _sum: { amount: true } }),
+        prisma.order.count({ where: { status: "TERMINE", completedAt: { gte: d, lt: nextMonth } } }),
+      ]);
 
-      return {
+      revenueTrends.push({
         month: monthNames[d.getMonth()],
         monthKey,
-        revenue: Math.round(monthRevenue * 100) / 100,
-        commission: Math.round(monthCommission * 100) / 100,
-        orders: monthOrders.length,
-      };
-    });
+        revenue: Math.round((revenueAgg._sum.amount ?? 0) * 100) / 100,
+        commission: Math.round(Math.abs(commissionAgg._sum.amount ?? 0) * 100) / 100,
+        orders: orderCount,
+      });
+    }
 
-    // ── Project & Candidature Stats ──
-    const projectStats = {
-      totalProjects: projects.length,
-      openProjects: projects.filter((p) => p.status === "ouvert").length,
-      filledProjects: projects.filter((p) => p.status === "pourvu").length,
-      closedProjects: projects.filter((p) => p.status === "ferme").length,
-      totalCandidatures: candidatures.length,
-      acceptedCandidatures: candidatures.filter((c) => c.status === "acceptee").length,
-      avgProposalsPerProject:
-        projects.length > 0
-          ? Math.round(
-              (projects.reduce((sum, p) => sum + p.proposals, 0) / projects.length) * 10
-            ) / 10
-          : 0,
-    };
+    // ── Conversion Funnel ──
+    const [totalUsers, usersWithProfile, usersWithFirstOrder, usersWithComplete, usersWithReview] = await Promise.all([
+      prisma.user.count({ where: { role: { not: "ADMIN" } } }),
+      prisma.freelancerProfile.count({ where: { bio: { not: null } } }),
+      prisma.user.count({
+        where: {
+          role: { not: "ADMIN" },
+          OR: [
+            { ordersAsClient: { some: {} } },
+            { ordersAsFreelance: { some: {} } },
+          ],
+        },
+      }),
+      prisma.user.count({
+        where: {
+          role: { not: "ADMIN" },
+          OR: [
+            { ordersAsClient: { some: { status: "TERMINE" } } },
+            { ordersAsFreelance: { some: { status: "TERMINE" } } },
+          ],
+        },
+      }),
+      prisma.user.count({ where: { reviewsGiven: { some: {} } } }),
+    ]);
+
+    const conversionFunnel = [
+      { step: "Inscrits", count: totalUsers, rate: 100 },
+      { step: "Profil complété", count: usersWithProfile, rate: totalUsers > 0 ? Math.round((usersWithProfile / totalUsers) * 100) : 0 },
+      { step: "1ère commande", count: usersWithFirstOrder, rate: totalUsers > 0 ? Math.round((usersWithFirstOrder / totalUsers) * 100) : 0 },
+      { step: "Commande terminée", count: usersWithComplete, rate: totalUsers > 0 ? Math.round((usersWithComplete / totalUsers) * 100) : 0 },
+      { step: "Avis laissé", count: usersWithReview, rate: totalUsers > 0 ? Math.round((usersWithReview / totalUsers) * 100) : 0 },
+    ];
 
     // ── Review Stats ──
+    const [reviewAgg, reviewCount, reviewDistribution] = await Promise.all([
+      prisma.review.aggregate({ _avg: { rating: true, quality: true, communication: true, timeliness: true }, _count: { id: true } }),
+      prisma.review.count(),
+      Promise.all([
+        prisma.review.count({ where: { rating: { gte: 4.5 } } }),
+        prisma.review.count({ where: { rating: { gte: 3.5, lt: 4.5 } } }),
+        prisma.review.count({ where: { rating: { gte: 2.5, lt: 3.5 } } }),
+        prisma.review.count({ where: { rating: { gte: 1.5, lt: 2.5 } } }),
+        prisma.review.count({ where: { rating: { lt: 1.5 } } }),
+      ]),
+    ]);
+
     const reviewStats = {
-      totalReviews: reviews.length,
-      avgRating: reviews.length > 0
-        ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
-        : 0,
-      avgQualite: reviews.length > 0
-        ? Math.round((reviews.reduce((sum, r) => sum + r.qualite, 0) / reviews.length) * 10) / 10
-        : 0,
-      avgCommunication: reviews.length > 0
-        ? Math.round((reviews.reduce((sum, r) => sum + r.communication, 0) / reviews.length) * 10) / 10
-        : 0,
-      avgDelai: reviews.length > 0
-        ? Math.round((reviews.reduce((sum, r) => sum + r.delai, 0) / reviews.length) * 10) / 10
-        : 0,
-      reported: reviews.filter((r) => r.reported).length,
+      totalReviews: reviewCount,
+      avgRating: Math.round((reviewAgg._avg.rating ?? 0) * 10) / 10,
+      avgQualite: Math.round((reviewAgg._avg.quality ?? 0) * 10) / 10,
+      avgCommunication: Math.round((reviewAgg._avg.communication ?? 0) * 10) / 10,
+      avgDelai: Math.round((reviewAgg._avg.timeliness ?? 0) * 10) / 10,
+      reported: 0,
       distribution: [
-        { stars: 5, count: reviews.filter((r) => r.rating >= 4.5).length },
-        { stars: 4, count: reviews.filter((r) => r.rating >= 3.5 && r.rating < 4.5).length },
-        { stars: 3, count: reviews.filter((r) => r.rating >= 2.5 && r.rating < 3.5).length },
-        { stars: 2, count: reviews.filter((r) => r.rating >= 1.5 && r.rating < 2.5).length },
-        { stars: 1, count: reviews.filter((r) => r.rating < 1.5).length },
+        { stars: 5, count: reviewDistribution[0] },
+        { stars: 4, count: reviewDistribution[1] },
+        { stars: 3, count: reviewDistribution[2] },
+        { stars: 2, count: reviewDistribution[3] },
+        { stars: 1, count: reviewDistribution[4] },
       ],
     };
 
-    // ── Payment Method Distribution ──
-    const paymentMethods: Record<string, number> = {};
-    for (const tx of transactions) {
-      const method = tx.method ?? "carte_bancaire";
-      paymentMethods[method] = (paymentMethods[method] ?? 0) + 1;
-    }
+    // ── Service Performance ──
+    const [totalViews, totalOrders, avgServiceRating, topServicesRaw] = await Promise.all([
+      prisma.service.aggregate({ _sum: { views: true } }),
+      prisma.service.aggregate({ _sum: { orderCount: true } }),
+      prisma.service.aggregate({ where: { status: "ACTIF", ratingCount: { gt: 0 } }, _avg: { rating: true } }),
+      prisma.service.findMany({ where: { status: "ACTIF" }, orderBy: { orderCount: "desc" }, take: 5, include: { category: { select: { name: true } } } }),
+    ]);
 
-    // ── Traffic Analytics ──
-    const trafficStats30d = trackingStore.getStats({ period: "30d" });
-    const trafficAnalytics = {
-      pageViewsTrend: trafficStats30d.pageViewsTrend,
-      sessionsTrend: trafficStats30d.sessionsTrend,
-      topReferrers: trafficStats30d.topReferrers,
-      utmBreakdown: trafficStats30d.utmBreakdown,
-      deviceBreakdown: trafficStats30d.deviceBreakdown,
-      bounceRate: trafficStats30d.bounceRate,
-      avgSessionDuration: trafficStats30d.avgSessionDuration,
-      totalPageViews: trafficStats30d.totalPageViews,
-      uniqueVisitors: trafficStats30d.uniqueVisitors,
-      totalSessions: trafficStats30d.totalSessions,
+    const servicePerformance = {
+      totalViews: totalViews._sum.views ?? 0,
+      totalClicks: 0,
+      totalOrders: totalOrders._sum.orderCount ?? 0,
+      avgCTR: 0,
+      avgConversion: 0,
+      avgRating: Math.round((avgServiceRating._avg.rating ?? 0) * 10) / 10,
+      topServices: topServicesRaw.map((s) => ({
+        id: s.id, title: s.title, category: s.category?.name ?? "", revenue: 0, orders: s.orderCount, rating: s.rating, views: s.views,
+      })),
     };
 
+    // ── Payment Methods ──
+    const payments = await prisma.payment.groupBy({ by: ["method"], _count: { id: true }, where: { method: { not: null } } });
+    const paymentMethods: Record<string, number> = {};
+    for (const p of payments) {
+      if (p.method) paymentMethods[p.method] = p._count.id;
+    }
+
+    // ── Traffic Analytics (still from tracking store) ──
+    const trafficStats30d = trackingStore.getStats({ period: "30d" });
+
     return NextResponse.json({
-      revenueByCategory: revenueByCategoryArray,
+      revenueByCategory,
       topCountries,
       registrationTrends,
       conversionFunnel,
       servicePerformance,
       revenueTrends,
-      projectStats,
+      projectStats: { totalProjects: 0, openProjects: 0, filledProjects: 0, closedProjects: 0, totalCandidatures: 0, acceptedCandidatures: 0, avgProposalsPerProject: 0 },
       reviewStats,
       paymentMethods,
-      trafficAnalytics,
+      trafficAnalytics: {
+        pageViewsTrend: trafficStats30d.pageViewsTrend,
+        sessionsTrend: trafficStats30d.sessionsTrend,
+        topReferrers: trafficStats30d.topReferrers,
+        utmBreakdown: trafficStats30d.utmBreakdown,
+        deviceBreakdown: trafficStats30d.deviceBreakdown,
+        bounceRate: trafficStats30d.bounceRate,
+        avgSessionDuration: trafficStats30d.avgSessionDuration,
+        totalPageViews: trafficStats30d.totalPageViews,
+        uniqueVisitors: trafficStats30d.uniqueVisitors,
+        totalSessions: trafficStats30d.totalSessions,
+      },
     });
   } catch (error) {
     console.error("[API /admin/analytics GET]", error);

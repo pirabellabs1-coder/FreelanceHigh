@@ -35,14 +35,13 @@ export async function GET() {
       });
     }
 
-    // Production: Prisma
+    // Production: Prisma — return ALL services for admin moderation (not just EN_ATTENTE)
     const services = await prisma.service.findMany({
-      where: { status: "EN_ATTENTE" },
       include: {
         user: { select: { id: true, name: true } },
         category: { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({

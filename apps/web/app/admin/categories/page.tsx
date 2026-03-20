@@ -90,26 +90,72 @@ export default function AdminCategories() {
     setModal("edit");
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.name.trim()) { addToast("warning", "Le nom est requis"); return; }
-    addToast("info", "Fonctionnalité bientôt disponible");
-    setModal(null);
+
+    try {
+      if (modal === "add") {
+        const res = await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, slug: form.slug, icon: form.icon, color: form.color, description: form.description, order: form.order }),
+        });
+        const data = await res.json();
+        if (!res.ok) { addToast("error", data.error || "Erreur lors de la creation"); return; }
+        addToast("success", `Categorie "${form.name}" creee`);
+      } else if (editId) {
+        const res = await fetch("/api/admin/categories", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editId, name: form.name, slug: form.slug, icon: form.icon, color: form.color, description: form.description, order: form.order, isActive: form.status === "actif" }),
+        });
+        const data = await res.json();
+        if (!res.ok) { addToast("error", data.error || "Erreur lors de la modification"); return; }
+        addToast("success", `Categorie "${form.name}" mise a jour`);
+      }
+      syncCategories();
+      setModal(null);
+    } catch {
+      addToast("error", "Erreur de connexion");
+    }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const cat = categories.find(c => c.id === id);
     const linkedServices = cat?.servicesCount ?? 0;
     if (linkedServices > 0) {
-      addToast("warning", `${linkedServices} service(s) utilisent cette catégorie. Réassignez-les d'abord.`);
+      addToast("warning", `${linkedServices} service(s) utilisent cette categorie. Reassignez-les d'abord.`);
       setDeleteConfirm(null);
       return;
     }
-    addToast("info", "Fonctionnalité bientôt disponible");
-    setDeleteConfirm(null);
+
+    try {
+      const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { addToast("error", data.error || "Erreur lors de la suppression"); setDeleteConfirm(null); return; }
+      addToast("success", `Categorie supprimee`);
+      syncCategories();
+      setDeleteConfirm(null);
+    } catch {
+      addToast("error", "Erreur de connexion");
+      setDeleteConfirm(null);
+    }
   }
 
-  function toggleStatus(cat: AdminCategory) {
-    addToast("info", "Fonctionnalité bientôt disponible");
+  async function toggleStatus(cat: AdminCategory) {
+    try {
+      const newActive = cat.status !== "actif";
+      const res = await fetch("/api/admin/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: cat.id, isActive: newActive }),
+      });
+      if (!res.ok) { addToast("error", "Erreur lors du changement de statut"); return; }
+      addToast("success", `Categorie "${cat.name}" ${newActive ? "activee" : "desactivee"}`);
+      syncCategories();
+    } catch {
+      addToast("error", "Erreur de connexion");
+    }
   }
 
   const activeCount = categories.filter(c => c.status === "actif").length;
