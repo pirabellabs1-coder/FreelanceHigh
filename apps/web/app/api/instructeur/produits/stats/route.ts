@@ -19,8 +19,8 @@ export async function GET(req: NextRequest) {
       where: { userId: session.user.id },
     });
 
-    if (!instructeur || instructeur.status !== "APPROUVE") {
-      return NextResponse.json({ error: "Compte instructeur non approuvé" }, { status: 403 });
+    if (!instructeur) {
+      return NextResponse.json({ error: "Profil instructeur introuvable" }, { status: 404 });
     }
 
     const { searchParams } = new URL(req.url);

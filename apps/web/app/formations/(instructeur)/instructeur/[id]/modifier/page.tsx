@@ -154,7 +154,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
       fetch("/api/formations/categories").then((r) => r.json()),
     ])
       .then(([formationData, catData]) => {
-        setCategories(catData.categories ?? []);
+        setCategories(Array.isArray(catData) ? catData : (catData.categories ?? []));
 
         if (formationData.formation) {
           const f: FormationData = formationData.formation;

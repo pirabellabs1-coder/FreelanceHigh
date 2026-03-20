@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       where: { userId: session.user.id },
     });
 
-    if (!instructeur || instructeur.status !== "APPROUVE") {
+    if (!instructeur) {
       return NextResponse.json({ error: "Profil instructeur non trouvé" }, { status: 403 });
     }
 

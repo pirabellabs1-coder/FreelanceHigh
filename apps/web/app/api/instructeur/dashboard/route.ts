@@ -17,8 +17,24 @@ export async function GET(req: NextRequest) {
       where: { userId: session.user.id },
     });
 
-    if (!instructeur || instructeur.status !== "APPROUVE") {
-      return NextResponse.json({ error: "Compte instructeur non approuvé" }, { status: 403 });
+    if (!instructeur) {
+      // No instructor profile yet — return empty stats so the dashboard renders
+      return NextResponse.json({
+        totalRevenue: 0,
+        revenueThisMonth: 0,
+        pendingRevenue: 0,
+        netRevenue: 0,
+        totalStudents: 0,
+        activeFormations: 0,
+        averageRating: 0,
+        revenueTrend: 0,
+        studentsTrend: 0,
+        revenueByMonth: [],
+        topFormations: [],
+        recentEnrollments: [],
+        recentReviews: [],
+        instructorStatus: null,
+      });
     }
 
     const { searchParams } = new URL(req.url);
@@ -188,6 +204,7 @@ export async function GET(req: NextRequest) {
       topFormations: formationStats,
       recentEnrollments,
       recentReviews,
+      instructorStatus: instructeur.status,
     });
   } catch (error) {
     console.error("[GET /api/instructeur/dashboard]", error);

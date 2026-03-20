@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 interface Category {
   id: string;
@@ -75,10 +76,10 @@ export default function FormationsCategoriesPage() {
                 className="bg-white dark:bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary/40 rounded-2xl p-6 transition-all hover:shadow-lg hover:shadow-primary/10 group"
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4"
-                  style={{ backgroundColor: `${cat.color}20` }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                  style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                 >
-                  {cat.icon}
+                  <DynamicIcon name={cat.icon || "library_books"} className="w-6 h-6" />
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                   {cat.name}

@@ -141,9 +141,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Compte instructeur introuvable" }, { status: 403 });
     }
 
-    if (instructeur.status !== "APPROUVE") {
-      return NextResponse.json({ error: "Compte instructeur non approuvé" }, { status: 403 });
-    }
+    // Note: pas de vérification APPROUVE pour publier — KYC requis uniquement pour les retraits
 
     const body = await req.json();
     const data = createProductSchema.parse(body);

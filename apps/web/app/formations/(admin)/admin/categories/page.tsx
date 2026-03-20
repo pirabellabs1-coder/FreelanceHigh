@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 interface AdminCategory {
   id: string;
@@ -119,7 +120,9 @@ export default function AdminFormationsCategoriesPage() {
           categories.map((cat) => (
             <div key={cat.id} className="bg-white dark:bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-4">
               <span className="material-symbols-outlined text-slate-400 cursor-grab">drag_indicator</span>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${cat.color}20` }}>{cat.icon}</div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                <DynamicIcon name={cat.icon || "library_books"} className="w-5 h-5" />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-slate-900 dark:text-white">{cat.name}</p>
                 <p className="text-xs text-slate-400 font-mono">/formations/categories/{cat.slug}</p>

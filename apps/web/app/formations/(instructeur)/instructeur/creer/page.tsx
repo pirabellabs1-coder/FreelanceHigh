@@ -201,7 +201,7 @@ export default function CreateFormationPage() {
   useEffect(() => {
     fetch("/api/formations/categories")
       .then((r) => r.json())
-      .then((d) => setCategories(d.categories ?? []));
+      .then((d) => setCategories(Array.isArray(d) ? d : (d.categories ?? [])));
   }, []);
 
   // Auto-save as draft
