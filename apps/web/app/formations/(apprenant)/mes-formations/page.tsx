@@ -496,7 +496,7 @@ export default function MesFormationsPage() {
             </>
           ) : (
             <>
-              <div className="text-5xl mb-4">📚</div>
+              <div className="mb-4"><span className="material-symbols-outlined text-5xl">library_books</span></div>
               <p className="text-slate-500 mb-4">
                 {tab === "completed"
                   ? (fr ? "Aucune formation complétée pour l'instant" : "No completed courses yet")
@@ -522,7 +522,7 @@ export default function MesFormationsPage() {
                     {enrollment.formation.thumbnail ? (
                       <img src={enrollment.formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-3xl opacity-30">🎓</div>
+                      <div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-3xl opacity-30">school</span></div>
                     )}
                     {isCompleted && (
                       <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center">

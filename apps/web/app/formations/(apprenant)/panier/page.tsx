@@ -192,7 +192,7 @@ export default function PanierPage() {
                     {item.formation.thumbnail ? (
                       <img src={item.formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">🎓</div>
+                      <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl opacity-30">school</span></div>
                     )}
                   </div>
 

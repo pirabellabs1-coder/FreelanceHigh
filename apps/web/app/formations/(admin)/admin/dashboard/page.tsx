@@ -559,7 +559,7 @@ export default function AdminFormationsDashboardPage() {
                 <div key={geo.country} className="flex items-center gap-3">
                   {/* Flag + Country */}
                   <div className="flex items-center gap-2 w-32 shrink-0">
-                    <span className="text-lg leading-none">{geo.flag || "🌍"}</span>
+                    <span className="text-lg leading-none">{geo.flag || <span className="material-symbols-outlined text-lg">public</span>}</span>
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
                       {geo.country}
                     </span>

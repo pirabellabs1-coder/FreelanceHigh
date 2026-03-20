@@ -63,19 +63,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profil instructeur introuvable" }, { status: 403 });
     }
 
-    // Verification KYC obligatoire pour les instructeurs (niveau 3 minimum)
-    if ((session.user.kyc ?? 1) < 3) {
-      return NextResponse.json(
-        {
-          error: "Verification d'identite requise pour creer une formation. Completez votre KYC (niveau 3 minimum).",
-          code: "KYC_REQUIRED",
-          requiredLevel: 3,
-          currentLevel: session.user.kyc ?? 1,
-          redirectTo: "/dashboard/kyc",
-        },
-        { status: 403 }
-      );
-    }
+    // Note: KYC n'est PAS requis pour creer/publier des formations
+    // KYC est requis uniquement pour les retraits de fonds (voir /api/instructeur/withdraw)
 
     const body = await req.json();
     const {

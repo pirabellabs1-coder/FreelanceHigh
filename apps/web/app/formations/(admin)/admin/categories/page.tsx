@@ -13,7 +13,7 @@ interface AdminCategory {
   _count: { formations: number };
 }
 
-const DEFAULT_FORM = { name: "", slug: "", icon: "📚", color: "#6C2BD9" };
+const DEFAULT_FORM = { name: "", slug: "", icon: "library_books", color: "#6C2BD9" };
 
 export default function AdminFormationsCategoriesPage() {
   const t = useTranslations("formations_nav");

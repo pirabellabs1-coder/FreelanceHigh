@@ -102,8 +102,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(originalPrice !== undefined && { originalPrice }),
         ...(hasCertificate !== undefined && { hasCertificate }),
         ...(minScore !== undefined && { minScore }),
-        ...(status && { status }),
-        ...(status === "EN_ATTENTE" && { publishedAt: new Date() }),
+        ...(status && { status: status === "EN_ATTENTE" ? "ACTIF" : status }),
+        ...(status === "EN_ATTENTE" && { publishedAt: new Date(), status: "ACTIF" }),
       },
     });
 

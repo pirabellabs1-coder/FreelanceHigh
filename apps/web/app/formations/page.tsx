@@ -116,10 +116,10 @@ export default function FormationsLandingPage() {
   ];
 
   const HOW_IT_WORKS = [
-    { icon: "🔍", title: t("step1_title"), desc: t("step1_desc") },
-    { icon: "💳", title: t("step2_title"), desc: t("step2_desc") },
-    { icon: "📚", title: t("step3_title"), desc: t("step3_desc") },
-    { icon: "🏆", title: t("step4_title"), desc: t("step4_desc") },
+    { icon: "search", title: t("step1_title"), desc: t("step1_desc") },
+    { icon: "payment", title: t("step2_title"), desc: t("step2_desc") },
+    { icon: "school", title: t("step3_title"), desc: t("step3_desc") },
+    { icon: "emoji_events", title: t("step4_title"), desc: t("step4_desc") },
   ];
 
   return (
@@ -221,7 +221,7 @@ export default function FormationsLandingPage() {
                   className="group bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300 text-center flex flex-col items-center gap-3"
                 >
                   <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                    {cat.icon ?? "📚"}
+                    {cat.icon ?? "library_books"}
                   </span>
                   <div>
                     <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
@@ -274,7 +274,7 @@ export default function FormationsLandingPage() {
             </div>
           ) : (
             <div className="text-center py-16 text-slate-500">
-              <span className="text-6xl mb-4 block">📚</span>
+              <span className="material-symbols-outlined text-6xl mb-4 block">library_books</span>
               <p className="text-lg">{t("coming_soon")}</p>
             </div>
           )}

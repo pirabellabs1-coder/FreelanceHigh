@@ -736,7 +736,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                     <img src={formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-blue-100">
-                      <span className="text-5xl opacity-40">🎓</span>
+                      <span className="material-symbols-outlined text-5xl opacity-40">school</span>
                     </div>
                   )}
                   {formation.previewVideo && (

@@ -175,7 +175,7 @@ export default function InstructeurMesFormationsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-slate-900 dark:bg-neutral-dark rounded-xl border dark:border-border-dark">
-          <div className="text-5xl mb-4">📚</div>
+          <div className="mb-4"><span className="material-symbols-outlined text-5xl">library_books</span></div>
           <p className="text-slate-500 mb-4">{fr ? "Aucune formation pour l'instant" : "No courses yet"}</p>
           <Link href="/formations/instructeur/creer" className="bg-primary text-white font-medium px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors inline-block">
             {fr ? "Créer ma première formation" : "Create my first course"}
@@ -193,7 +193,7 @@ export default function InstructeurMesFormationsPage() {
                     {f.thumbnail ? (
                       <img src={f.thumbnail} alt={title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">🎓</div>
+                      <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl opacity-30">school</span></div>
                     )}
                   </div>
 

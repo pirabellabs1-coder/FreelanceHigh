@@ -144,7 +144,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
                     <img src={f.thumbnail} alt={f.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-4xl">{category?.icon ?? "📚"}</span>
+                      <span className="material-symbols-outlined text-4xl">{category?.icon ?? "library_books"}</span>
                     </div>
                   )}
                 </div>

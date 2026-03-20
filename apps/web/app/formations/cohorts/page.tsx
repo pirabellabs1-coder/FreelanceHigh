@@ -133,7 +133,7 @@ export default function CohortsMarketplacePage() {
                     {c.formation.thumbnail ? (
                       <img src={c.formation.thumbnail} alt={formationTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-5xl opacity-30">🎓</div>
+                      <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-5xl opacity-30">school</span></div>
                     )}
                   </div>
                   <div className="absolute top-3 left-3">

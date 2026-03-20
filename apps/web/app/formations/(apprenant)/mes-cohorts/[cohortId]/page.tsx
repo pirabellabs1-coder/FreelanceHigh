@@ -232,7 +232,7 @@ export default function ApprenantCohortDetailPage({ params }: { params: Promise<
               {data.formation.thumbnail ? (
                 <img src={data.formation.thumbnail} alt={formationTitle} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">🎓</div>
+                <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl opacity-30">school</span></div>
               )}
             </div>
             <div className="flex-1 min-w-0">

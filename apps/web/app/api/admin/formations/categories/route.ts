@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const order = (maxOrder._max.order ?? 0) + 1;
 
     const category = await prisma.formationCategory.create({
-      data: { name, slug, icon: icon || "📚", color: color || "#6C2BD9", order },
+      data: { name, slug, icon: icon || "library_books", color: color || "#6C2BD9", order },
     });
 
     return NextResponse.json({ category });

@@ -1,5 +1,6 @@
 # Variables d'environnement — ne jamais commiter
 .env
+.admin-credentials
 .env.local
 .env.development.local
 .env.test.local

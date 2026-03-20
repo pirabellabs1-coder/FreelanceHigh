@@ -110,14 +110,14 @@ export default function DevenirInstructeurPage() {
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: "💰", title: t("benefit_revenue_title"), desc: t("benefit_revenue_desc"), color: "bg-green-500/10 text-green-500" },
-              { icon: "🌍", title: t("benefit_audience_title"), desc: t("benefit_audience_desc"), color: "bg-blue-500/10 text-blue-500" },
-              { icon: "📈", title: t("benefit_passive_title"), desc: t("benefit_passive_desc"), color: "bg-purple-500/10 text-purple-500" },
-              { icon: "🛠️", title: t("benefit_tools_title"), desc: t("benefit_tools_desc"), color: "bg-orange-500/10 text-orange-500" },
+              { icon: "payments", title: t("benefit_revenue_title"), desc: t("benefit_revenue_desc"), color: "bg-green-500/10 text-green-500" },
+              { icon: "public", title: t("benefit_audience_title"), desc: t("benefit_audience_desc"), color: "bg-blue-500/10 text-blue-500" },
+              { icon: "trending_up", title: t("benefit_passive_title"), desc: t("benefit_passive_desc"), color: "bg-purple-500/10 text-purple-500" },
+              { icon: "build", title: t("benefit_tools_title"), desc: t("benefit_tools_desc"), color: "bg-orange-500/10 text-orange-500" },
             ].map((b) => (
               <div key={b.title} className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-                <div className={`w-12 h-12 rounded-xl ${b.color} flex items-center justify-center mb-4 text-2xl`}>
-                  {b.icon}
+                <div className={`w-12 h-12 rounded-xl ${b.color} flex items-center justify-center mb-4`}>
+                  <span className="material-symbols-outlined text-2xl">{b.icon}</span>
                 </div>
                 <h3 className="font-bold text-slate-900 dark:text-white mb-2">{b.title}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{b.desc}</p>
@@ -135,13 +135,13 @@ export default function DevenirInstructeurPage() {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: "🎬", title: t("feature_builder_title"), desc: t("feature_builder_desc") },
-              { icon: "📊", title: t("feature_analytics_title"), desc: t("feature_analytics_desc") },
-              { icon: "🔒", title: t("feature_payments_title"), desc: t("feature_payments_desc") },
+              { icon: "movie", title: t("feature_builder_title"), desc: t("feature_builder_desc") },
+              { icon: "bar_chart", title: t("feature_analytics_title"), desc: t("feature_analytics_desc") },
+              { icon: "lock", title: t("feature_payments_title"), desc: t("feature_payments_desc") },
             ].map((f) => (
               <div key={f.title} className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
-                  {f.icon}
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-3xl text-primary">{f.icon}</span>
                 </div>
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{f.desc}</p>

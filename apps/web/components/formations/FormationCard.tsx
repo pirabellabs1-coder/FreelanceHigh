@@ -90,7 +90,7 @@ export default function FormationCard({
                 (formation.category.color ?? "#0e7c66") + "20",
             }}
           >
-            <span className="text-4xl opacity-60">🎓</span>
+            <span className="material-symbols-outlined text-4xl opacity-60">school</span>
           </div>
         )}
 

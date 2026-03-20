@@ -38,15 +38,15 @@ interface DigitalProductCardProps {
 }
 
 const PRODUCT_TYPE_ICONS: Record<string, string> = {
-  EBOOK: "📖",
-  TEMPLATE: "📄",
-  LICENCE: "🔑",
-  AUDIO: "🎧",
-  VIDEO: "🎬",
+  EBOOK: "menu_book",
+  TEMPLATE: "description",
+  LICENCE: "vpn_key",
+  AUDIO: "headphones",
+  VIDEO: "videocam",
 };
 
 function productIcon(productType: string): string {
-  return PRODUCT_TYPE_ICONS[productType] ?? "📦";
+  return PRODUCT_TYPE_ICONS[productType] ?? "inventory_2";
 }
 
 export default function DigitalProductCard({
@@ -75,7 +75,7 @@ export default function DigitalProductCard({
           <img src={product.banner} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-            <span className="text-5xl">{productIcon(product.productType)}</span>
+            <span className="material-symbols-outlined text-5xl">{productIcon(product.productType)}</span>
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
