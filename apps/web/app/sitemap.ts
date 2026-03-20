@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const prisma = (await import("@freelancehigh/db")).default;
       const services = await prisma.service.findMany({
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIF" },
         select: { slug: true, updatedAt: true },
         orderBy: { createdAt: "desc" },
         take: 5000,
@@ -54,16 +54,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const prisma = (await import("@freelancehigh/db")).default;
       const profiles = await prisma.user.findMany({
-        where: { role: "FREELANCE", status: "ACTIVE" },
-        select: { username: true, updatedAt: true },
+        where: { role: "FREELANCE", status: "ACTIF" },
+        select: { id: true, name: true, updatedAt: true },
         orderBy: { createdAt: "desc" },
         take: 5000,
       });
 
       freelanceRoutes = profiles
-        .filter((p) => p.username)
+        .filter((p) => p.name)
         .map((p) => ({
-          url: `${BASE_URL}/freelances/${p.username}`,
+          url: `${BASE_URL}/freelances/${p.id}`,
           lastModified: p.updatedAt,
           changeFrequency: "weekly" as const,
           priority: 0.7,
