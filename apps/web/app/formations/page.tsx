@@ -214,37 +214,39 @@ export default function FormationsLandingPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {categories.slice(0, 12).map((cat, index) => (
-                <Link
-                  key={cat.id}
-                  href={`/formations/categories/${cat.slug}`}
-                  className={`group bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300 text-center flex flex-col items-center gap-3${index >= 6 ? " hidden sm:flex" : ""}`}
-                >
-                  <DynamicIcon name={cat.icon ?? "library_books"} className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
-                      {cat.name}
-                    </p>
-                    {cat._count && (
-                      <p className="text-xs text-slate-400 mt-1">
-                        {cat._count.formations} {t("courses_label")}
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {categories.slice(0, 12).map((cat, index) => (
+                  <Link
+                    key={cat.id}
+                    href={`/formations/categories/${cat.slug}`}
+                    className={`group bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300 text-center flex flex-col items-center gap-3${index >= 6 ? " hidden sm:flex" : ""}`}
+                  >
+                    <DynamicIcon name={cat.icon ?? "library_books"} className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
+                        {cat.name}
                       </p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-            {categories.length > 12 && (
-              <div className="text-center mt-8">
-                <Link
-                  href="/formations/categories"
-                  className="text-primary hover:text-primary/80 font-semibold text-sm"
-                >
-                  {t("see_all")} ({categories.length})
-                </Link>
+                      {cat._count && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          {cat._count.formations} {t("courses_label")}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
-            )}
+              {categories.length > 12 && (
+                <div className="text-center mt-8">
+                  <Link
+                    href="/formations/categories"
+                    className="text-primary hover:text-primary/80 font-semibold text-sm"
+                  >
+                    {t("see_all")} ({categories.length})
+                  </Link>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
