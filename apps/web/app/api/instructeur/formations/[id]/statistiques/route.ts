@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         sections: {
           include: {
             lessons: {
-              select: { id: true, titleFr: true },
+              select: { id: true, title: true },
             },
           },
         },
@@ -119,7 +119,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const total = records.length;
       const completed = records.filter((p) => p.completed).length;
       return {
-        title: lesson.titleFr,
+        title: lesson.title,
         completedPct: total > 0 ? Math.round((completed / total) * 100) : 0,
       };
     });
@@ -132,7 +132,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         : 0;
 
     return NextResponse.json({
-      titleFr: formation.titleFr,
+      title: formation.title,
       studentsCount: totalStudents,
       rating: avgRating,
       reviewsCount: formation.reviews.length,

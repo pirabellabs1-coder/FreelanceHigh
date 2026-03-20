@@ -15,8 +15,7 @@ import {
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   thumbnail: string | null;
   price: number;
   isFree: boolean;
@@ -171,7 +170,7 @@ export default function FavorisPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {formations.map((formation) => {
-            const title = fr ? formation.titleFr : (formation.titleEn || formation.titleFr);
+            const title = formation.title;
 
             return (
               <div

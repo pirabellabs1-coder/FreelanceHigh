@@ -77,7 +77,7 @@ export async function GET(
         enrollment: {
           include: {
             formation: {
-              select: { titleFr: true, instructeur: { select: { user: { select: { name: true } } } } },
+              select: { title: true, instructeur: { select: { user: { select: { name: true } } } } },
             },
           },
         },
@@ -88,7 +88,7 @@ export async function GET(
     certificates = certs.map((c) => ({
       id: c.id,
       code: c.code,
-      formationTitle: c.enrollment?.formation?.titleFr ?? "Formation",
+      formationTitle: c.enrollment?.formation?.title ?? "Formation",
       instructorName: c.enrollment?.formation?.instructeur?.user?.name ?? "Instructeur",
       score: c.score,
       issuedAt: c.issuedAt.toISOString(),

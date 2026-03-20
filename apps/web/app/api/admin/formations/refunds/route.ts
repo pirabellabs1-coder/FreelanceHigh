@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
               formation: {
                 select: {
                   id: true,
-                  titleFr: true,
+                  title: true,
                   slug: true,
                   price: true,
                   instructeur: {

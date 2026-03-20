@@ -17,10 +17,8 @@ const FormationRichEditor = dynamic(
 
 interface Cohort {
   id: string;
-  titleFr: string;
-  titleEn: string;
-  descriptionFr: string | null;
-  descriptionEn: string | null;
+  title: string;
+  description: string | null;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -50,10 +48,8 @@ const STATUS_LABELS_EN: Record<string, string> = {
 };
 
 interface FormData {
-  titleFr: string;
-  titleEn: string;
-  descriptionFr: string;
-  descriptionEn: string;
+  title: string;
+  description: string;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -64,7 +60,7 @@ interface FormData {
 }
 
 const emptyForm: FormData = {
-  titleFr: "", titleEn: "", descriptionFr: "", descriptionEn: "",
+  title: "", description: "",
   startDate: "", endDate: "", enrollmentDeadline: "",
   maxParticipants: 20, price: 0, originalPrice: "", schedule: "",
 };
@@ -173,38 +169,20 @@ export default function InstructeurCohortsPage({ params }: { params: Promise<{ i
 
           {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Titre (FR)" : "Title (FR)"}</label>
-              <input required value={form.titleFr} onChange={(e) => setForm({ ...form, titleFr: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Titre (EN)" : "Title (EN)"}</label>
-              <input required value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Titre" : "Title"}</label>
+            <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Description (FR)" : "Description (FR)"}</label>
-              <FormationRichEditor
-                content={form.descriptionFr}
-                onChange={(html) => setForm({ ...form, descriptionFr: html })}
-                placeholder={fr ? "Description de la cohorte..." : "Cohort description..."}
-                minHeight={120}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Description (EN)" : "Description (EN)"}</label>
-              <FormationRichEditor
-                content={form.descriptionEn}
-                onChange={(html) => setForm({ ...form, descriptionEn: html })}
-                placeholder={fr ? "Description en anglais..." : "Description in English..."}
-                minHeight={120}
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{fr ? "Description" : "Description"}</label>
+            <FormationRichEditor
+              content={form.description}
+              onChange={(html) => setForm({ ...form, description: html })}
+              placeholder={fr ? "Description de la cohorte..." : "Cohort description..."}
+              minHeight={120}
+            />
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4">
@@ -293,7 +271,7 @@ export default function InstructeurCohortsPage({ params }: { params: Promise<{ i
       ) : (
         <div className="space-y-3">
           {cohorts.map((c) => {
-            const title = fr ? c.titleFr : (c.titleEn || c.titleFr);
+            const title = c.title;
             const placesLeft = c.maxParticipants - c.currentCount;
 
             return (

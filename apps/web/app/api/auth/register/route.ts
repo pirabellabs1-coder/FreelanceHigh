@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       // Send verification email
       try {
         const { storeOTP } = await import("@/lib/auth/otp");
-        const code = storeOTP(email);
+        const code = await storeOTP(email);
         await sendVerificationEmail(email, name, code);
       } catch (err) {
         console.error("[REGISTER] Erreur envoi code verification:", err);
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     // Send verification email
     try {
       const { storeOTP } = await import("@/lib/auth/otp");
-      const code = storeOTP(email);
+      const code = await storeOTP(email);
       await sendVerificationEmail(email, name, code);
     } catch (err) {
       console.error("[REGISTER] Erreur envoi code verification:", err);

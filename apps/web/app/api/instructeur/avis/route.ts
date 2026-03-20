@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest) {
       },
       include: {
         user: { select: { name: true, avatar: true, image: true } },
-        formation: { select: { id: true, titleFr: true, slug: true } },
+        formation: { select: { id: true, title: true, slug: true } },
       },
       orderBy: { createdAt: "desc" },
     });

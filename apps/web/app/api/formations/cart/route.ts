@@ -13,10 +13,8 @@ const cartItemInclude = {
     select: {
       id: true,
       slug: true,
-      titleFr: true,
-      titleEn: true,
-      shortDescFr: true,
-      shortDescEn: true,
+      title: true,
+      shortDesc: true,
       thumbnail: true,
       price: true,
       originalPrice: true,

@@ -16,12 +16,9 @@ interface FunnelStep {
   id: string;
   type: string;
   title: string;
-  headlineFr: string;
-  headlineEn: string;
-  descriptionFr: string;
-  descriptionEn: string;
-  ctaTextFr: string;
-  ctaTextEn: string;
+  headline: string;
+  description: string;
+  ctaText: string;
   linkedProductId: string | null;
   linkedProductTitle: string | null;
   linkedProductPrice: number | null;
@@ -112,7 +109,7 @@ export default function PublicFunnelPage() {
   useEffect(() => {
     if (funnel && funnel.steps?.[0]) {
       const firstStep = funnel.steps[0];
-      document.title = firstStep.headlineFr || "Tunnel de vente - FreelanceHigh";
+      document.title = firstStep.headline || "Tunnel de vente - FreelanceHigh";
     }
   }, [funnel]);
 
@@ -467,9 +464,9 @@ export default function PublicFunnelPage() {
 
 function LandingStep({ step, onCTA, locale }: { step: FunnelStep; onCTA: () => void; locale: string }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-blue-50 dark:from-primary/10 dark:via-slate-950 dark:to-slate-900 flex items-center">
@@ -539,9 +536,9 @@ function ProductStep({
   locale: string;
 }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   const price = step.linkedProductPrice;
   const discountedPrice =
@@ -634,9 +631,9 @@ function ProductStep({
 
 function CheckoutStep({ step, onCTA, locale }: { step: FunnelStep; onCTA: () => void; locale: string }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-950 flex items-center">
@@ -707,9 +704,9 @@ function UpsellStep({
   locale: string;
 }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   const originalPrice = step.linkedProductPrice;
   const discountedPrice =
@@ -796,9 +793,9 @@ function DownsellStep({
   locale: string;
 }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   const price = step.linkedProductPrice;
 
@@ -869,9 +866,9 @@ function ConfirmationStep({
   locale: string;
 }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   // Build order summary from accepted items
   const orderItems = allSteps.filter(
@@ -982,9 +979,9 @@ function ConfirmationStep({
 
 function ThankYouStep({ step, locale }: { step: FunnelStep; locale: string }) {
   const l = (fr: string, en: string) => locale === "en" ? en : fr;
-  const headline = locale === "en" ? (step.headlineEn || step.headlineFr) : step.headlineFr;
-  const description = locale === "en" ? (step.descriptionEn || step.descriptionFr) : step.descriptionFr;
-  const ctaText = locale === "en" ? (step.ctaTextEn || step.ctaTextFr) : step.ctaTextFr;
+  const headline = step.headline;
+  const description = step.description;
+  const ctaText = step.ctaText;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-green-950/20 dark:to-slate-950 flex items-center">

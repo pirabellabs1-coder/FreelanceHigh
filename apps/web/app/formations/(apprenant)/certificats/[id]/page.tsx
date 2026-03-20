@@ -16,8 +16,7 @@ interface CertificateDetail {
   user: { name: string };
   enrollment: {
     formation: {
-      titleFr: string;
-      titleEn: string;
+      title: string;
       slug: string;
       duration: number;
       instructeur: { user: { name: string } };
@@ -56,7 +55,7 @@ export default function CertificatDetailPage({ params }: { params: Promise<{ id:
   const shareLinkedIn = () => {
     if (!cert) return;
     const formation = cert.enrollment.formation;
-    const title = fr ? formation.titleFr : (formation.titleEn || formation.titleFr);
+    const title = formation.title;
     const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(`${window.location.origin}/formations/verification/${cert.code}`)}&title=${encodeURIComponent(title)}`;
     window.open(url, "_blank", "noopener");
   };
@@ -84,7 +83,7 @@ export default function CertificatDetailPage({ params }: { params: Promise<{ id:
   }
 
   const formation = cert.enrollment.formation;
-  const title = fr ? formation.titleFr : (formation.titleEn || formation.titleFr);
+  const title = formation.title;
 
   return (
     <div className="max-w-2xl mx-auto py-4">

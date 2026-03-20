@@ -9,10 +9,8 @@ import prisma from "@freelancehigh/db";
 import { z } from "zod";
 
 const updateProductSchema = z.object({
-  titleFr: z.string().min(3).optional(),
-  titleEn: z.string().min(3).optional(),
-  descriptionFr: z.string().optional().nullable(),
-  descriptionEn: z.string().optional().nullable(),
+  title: z.string().min(3).optional(),
+  description: z.string().optional().nullable(),
   descriptionFormat: z.enum(["text", "tiptap"]).optional(),
   productType: z.enum(["EBOOK", "PDF", "TEMPLATE", "LICENCE", "AUDIO", "VIDEO", "AUTRE"]).optional(),
   categoryId: z.string().optional(),
@@ -42,7 +40,7 @@ function getProductDetailInclude() {
         user: { select: { name: true, avatar: true, image: true } },
       },
     },
-    category: { select: { id: true, nameFr: true, nameEn: true, slug: true } },
+    category: { select: { id: true, name: true, slug: true } },
     reviews: {
       take: 10,
       orderBy: { createdAt: "desc" as const },

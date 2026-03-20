@@ -1,23 +1,23 @@
 // FreelanceHigh — Seed formations categories
 // Run: npx ts-node prisma/seed-formations.ts
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../generated/client";
 
 const prisma = new PrismaClient();
 
 const FORMATION_CATEGORIES = [
-  { nameFr: "Design & Créativité", nameEn: "Design & Creativity", slug: "design-creativite", icon: "🎨", color: "#EC4899", order: 1 },
-  { nameFr: "Développement Web", nameEn: "Web Development", slug: "developpement-web", icon: "💻", color: "#3B82F6", order: 2 },
-  { nameFr: "App Mobile", nameEn: "Mobile App", slug: "app-mobile", icon: "📱", color: "#8B5CF6", order: 3 },
-  { nameFr: "Marketing Digital", nameEn: "Digital Marketing", slug: "marketing-digital", icon: "📈", color: "#EF4444", order: 4 },
-  { nameFr: "Intelligence Artificielle", nameEn: "Artificial Intelligence", slug: "intelligence-artificielle", icon: "🤖", color: "#6366F1", order: 5 },
-  { nameFr: "Data & Business", nameEn: "Data & Business", slug: "data-business", icon: "📊", color: "#0EA5E9", order: 6 },
-  { nameFr: "Vidéo & Animation", nameEn: "Video & Animation", slug: "video-animation", icon: "🎬", color: "#F59E0B", order: 7 },
-  { nameFr: "Rédaction & Contenu", nameEn: "Writing & Content", slug: "redaction-contenu", icon: "✍️", color: "#10B981", order: 8 },
-  { nameFr: "Cybersécurité", nameEn: "Cybersecurity", slug: "cybersecurite", icon: "🔐", color: "#DC2626", order: 9 },
-  { nameFr: "Freelancing & Business", nameEn: "Freelancing & Business", slug: "freelancing-business", icon: "💼", color: "#7C3AED", order: 10 },
-  { nameFr: "Langues", nameEn: "Languages", slug: "langues", icon: "🌍", color: "#059669", order: 11 },
-  { nameFr: "Développement Personnel", nameEn: "Self Development", slug: "developpement-personnel", icon: "🎓", color: "#D97706", order: 12 },
+  { name: "Design & Créativité", slug: "design-creativite", icon: "🎨", color: "#EC4899", order: 1 },
+  { name: "Développement Web", slug: "developpement-web", icon: "💻", color: "#3B82F6", order: 2 },
+  { name: "App Mobile", slug: "app-mobile", icon: "📱", color: "#8B5CF6", order: 3 },
+  { name: "Marketing Digital", slug: "marketing-digital", icon: "📈", color: "#EF4444", order: 4 },
+  { name: "Intelligence Artificielle", slug: "intelligence-artificielle", icon: "🤖", color: "#6366F1", order: 5 },
+  { name: "Data & Business", slug: "data-business", icon: "📊", color: "#0EA5E9", order: 6 },
+  { name: "Vidéo & Animation", slug: "video-animation", icon: "🎬", color: "#F59E0B", order: 7 },
+  { name: "Rédaction & Contenu", slug: "redaction-contenu", icon: "✍️", color: "#10B981", order: 8 },
+  { name: "Cybersécurité", slug: "cybersecurite", icon: "🔐", color: "#DC2626", order: 9 },
+  { name: "Freelancing & Business", slug: "freelancing-business", icon: "💼", color: "#7C3AED", order: 10 },
+  { name: "Langues", slug: "langues", icon: "🌍", color: "#059669", order: 11 },
+  { name: "Développement Personnel", slug: "developpement-personnel", icon: "🎓", color: "#D97706", order: 12 },
 ];
 
 async function main() {
@@ -29,7 +29,7 @@ async function main() {
       update: cat,
       create: cat,
     });
-    console.log(`  ✓ ${cat.nameFr}`);
+    console.log(`  ✓ ${cat.name}`);
   }
 
   console.log(`\n✅ ${FORMATION_CATEGORIES.length} categories seeded.`);

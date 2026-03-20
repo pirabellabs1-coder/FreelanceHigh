@@ -17,8 +17,7 @@ export async function GET(
           include: {
             formation: {
               select: {
-                titleFr: true,
-                titleEn: true,
+                title: true,
                 slug: true,
                 duration: true,
                 instructeur: {
@@ -59,8 +58,7 @@ export async function GET(
         issuedAt: certificate.issuedAt,
         userName: certificate.user.name,
         userCountry: certificate.user.country,
-        formationTitleFr: formation.titleFr,
-        formationTitleEn: formation.titleEn,
+        formationTitle: formation.title,
         formationSlug: formation.slug,
         formationDuration: formation.duration,
         instructorName: formation.instructeur.user.name,

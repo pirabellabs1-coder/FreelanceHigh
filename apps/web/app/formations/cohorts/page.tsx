@@ -9,8 +9,7 @@ import { Calendar, Users, Clock, ChevronRight } from "lucide-react";
 
 interface CohortCard {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -23,12 +22,11 @@ interface CohortCard {
   formation: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     thumbnail: string | null;
     duration: number;
     level: string;
-    category: { nameFr: string; nameEn: string; slug: string };
+    category: { name: string; slug: string };
     instructeur: {
       id: string;
       user: { name: string; avatar: string | null; image: string | null };
@@ -121,9 +119,9 @@ export default function CohortsMarketplacePage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {cohorts.map((c) => {
-            const cohortTitle = fr ? c.titleFr : (c.titleEn || c.titleFr);
-            const formationTitle = fr ? c.formation.titleFr : (c.formation.titleEn || c.formation.titleFr);
-            const catName = fr ? c.formation.category.nameFr : (c.formation.category.nameEn || c.formation.category.nameFr);
+            const cohortTitle = c.title;
+            const formationTitle = c.formation.title;
+            const catName = c.formation.category.name;
             const placesLeft = c.maxParticipants - c.currentCount;
             const instrAvatar = c.formation.instructeur.user.avatar || c.formation.instructeur.user.image;
 

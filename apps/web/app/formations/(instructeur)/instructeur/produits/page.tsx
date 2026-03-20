@@ -13,8 +13,7 @@ import EmptyState from "@/components/formations/EmptyState";
 interface Product {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   productType: string;
   price: number;
   salesCount: number;
@@ -81,8 +80,7 @@ export default function InstructeurProduitsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titleFr: `${product.titleFr} - Copie`,
-          titleEn: product.titleEn ? `${product.titleEn} - Copy` : "",
+          title: `${product.title} - Copie`,
           productType: product.productType,
           price: product.price,
           status: "BROUILLON",
@@ -90,7 +88,7 @@ export default function InstructeurProduitsPage() {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setProducts((prev) => [data.product || { ...product, id: Date.now().toString(), titleFr: `${product.titleFr} - Copie`, status: "BROUILLON", salesCount: 0 }, ...prev]);
+      setProducts((prev) => [data.product || { ...product, id: Date.now().toString(), title: `${product.title} - Copie`, status: "BROUILLON", salesCount: 0 }, ...prev]);
     } catch {
       alert(fr ? "Erreur lors de la duplication" : "Error duplicating");
     }
@@ -175,7 +173,7 @@ export default function InstructeurProduitsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((product) => {
-            const title = fr ? product.titleFr : (product.titleEn || product.titleFr);
+            const title = product.title;
             const status = STATUS_MAP[product.status] || STATUS_MAP.BROUILLON;
             const typeConfig = TYPE_CONFIG[product.productType] || TYPE_CONFIG.AUTRE;
             const TypeIcon = typeConfig.icon;

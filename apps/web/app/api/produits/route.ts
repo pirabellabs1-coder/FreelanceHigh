@@ -13,7 +13,7 @@ const productInclude = {
       user: { select: { name: true, avatar: true, image: true } },
     },
   },
-  category: { select: { id: true, nameFr: true, nameEn: true, slug: true } },
+  category: { select: { id: true, name: true, slug: true } },
 } as const;
 
 // GET — Marketplace publique
@@ -42,8 +42,7 @@ export async function GET(req: NextRequest) {
     if (rating) where.rating = { gte: parseFloat(rating) };
     if (search) {
       where.OR = [
-        { titleFr: { contains: search, mode: "insensitive" } },
-        { titleEn: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -81,10 +80,8 @@ export async function GET(req: NextRequest) {
 
 // POST — Création produit numérique
 const createProductSchema = z.object({
-  titleFr: z.string().min(3),
-  titleEn: z.string().min(3),
-  descriptionFr: z.string().optional(),
-  descriptionEn: z.string().optional(),
+  title: z.string().min(3),
+  description: z.string().optional(),
   descriptionFormat: z.enum(["text", "tiptap"]).default("text"),
   productType: z.enum(["EBOOK", "PDF", "TEMPLATE", "LICENCE", "AUDIO", "VIDEO", "AUTRE"]),
   categoryId: z.string(),
@@ -121,7 +118,7 @@ export async function POST(req: NextRequest) {
     const data = createProductSchema.parse(body);
 
     // Generate unique slug
-    const baseSlug = data.titleFr
+    const baseSlug = data.title
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -132,10 +129,8 @@ export async function POST(req: NextRequest) {
     const product = await prisma.digitalProduct.create({
       data: {
         slug,
-        titleFr: data.titleFr,
-        titleEn: data.titleEn,
-        descriptionFr: data.descriptionFr,
-        descriptionEn: data.descriptionEn,
+        title: data.title,
+        description: data.description,
         descriptionFormat: data.descriptionFormat,
         productType: data.productType,
         categoryId: data.categoryId,

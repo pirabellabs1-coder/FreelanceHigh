@@ -3,7 +3,9 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
+const DOMAIN_VERIFIED = process.env.RESEND_DOMAIN_VERIFIED === "true";
+const CUSTOM_FROM = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
+const FROM = DOMAIN_VERIFIED ? CUSTOM_FROM : "FreelanceHigh <onboarding@resend.dev>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
 
 // ── Layout HTML commun formations ──

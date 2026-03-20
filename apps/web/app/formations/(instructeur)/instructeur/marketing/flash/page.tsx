@@ -141,16 +141,16 @@ export default function FlashOffersPage() {
     ])
       .then(([formData, prodData]) => {
         const mappedFormations: FormationItem[] = (formData.formations ?? []).map(
-          (f: { id: string; titleFr?: string; titleEn?: string; price?: number }) => ({
+          (f: { id: string; title?: string; price?: number }) => ({
             id: f.id,
-            title: f.titleFr || f.titleEn || "Formation sans titre",
+            title: f.title || "Formation sans titre",
             price: f.price ?? 0,
           })
         );
         const mappedProducts: ProductItem[] = (prodData.products ?? []).map(
-          (p: { id: string; titleFr?: string; titleEn?: string; price?: number }) => ({
+          (p: { id: string; title?: string; price?: number }) => ({
             id: p.id,
-            title: p.titleFr || p.titleEn || "Produit sans titre",
+            title: p.title || "Produit sans titre",
             price: p.price ?? 0,
           })
         );

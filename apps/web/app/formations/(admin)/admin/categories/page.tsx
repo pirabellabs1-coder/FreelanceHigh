@@ -5,8 +5,7 @@ import { useTranslations } from "next-intl";
 
 interface AdminCategory {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
   icon: string;
   color: string;
@@ -14,7 +13,7 @@ interface AdminCategory {
   _count: { formations: number };
 }
 
-const DEFAULT_FORM = { nameFr: "", nameEn: "", slug: "", icon: "📚", color: "#6C2BD9" };
+const DEFAULT_FORM = { name: "", slug: "", icon: "📚", color: "#6C2BD9" };
 
 export default function AdminFormationsCategoriesPage() {
   const t = useTranslations("formations_nav");
@@ -37,14 +36,14 @@ export default function AdminFormationsCategoriesPage() {
 
   const startEdit = (cat: AdminCategory) => {
     setEditingId(cat.id);
-    setForm({ nameFr: cat.nameFr, nameEn: cat.nameEn, slug: cat.slug, icon: cat.icon, color: cat.color });
+    setForm({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color });
     setShowForm(true);
   };
 
   const cancel = () => { setShowForm(false); setEditingId(null); setForm(DEFAULT_FORM); };
 
-  const autoSlug = (nameFr: string) =>
-    nameFr.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const autoSlug = (name: string) =>
+    name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const save = async () => {
     setSaving(true);
@@ -78,12 +77,8 @@ export default function AdminFormationsCategoriesPage() {
           <h2 className="font-semibold">{editingId ? t("admin_edit_category") : t("admin_new_category")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">{t("admin_name_fr")} *</label>
-              <input value={form.nameFr} onChange={(e) => setForm({ ...form, nameFr: e.target.value, slug: autoSlug(e.target.value) })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="ex: Développement Web" />
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">{t("admin_name_en")} *</label>
-              <input value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="ex: Web Development" />
+              <label className="text-xs text-slate-500 mb-1 block">Nom *</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: autoSlug(e.target.value) })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="ex: Développement Web" />
             </div>
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Slug</label>
@@ -107,7 +102,7 @@ export default function AdminFormationsCategoriesPage() {
             <button onClick={cancel} className="flex items-center gap-1.5 text-sm border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300">
               <span className="material-symbols-outlined text-lg">close</span> {t("cancel")}
             </button>
-            <button onClick={save} disabled={!form.nameFr || !form.nameEn || saving} className="flex items-center gap-1.5 text-sm bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl transition-colors disabled:opacity-50">
+            <button onClick={save} disabled={!form.name || saving} className="flex items-center gap-1.5 text-sm bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl transition-colors disabled:opacity-50">
               <span className="material-symbols-outlined text-lg">check</span> {saving ? t("saving") : t("save")}
             </button>
           </div>
@@ -126,10 +121,7 @@ export default function AdminFormationsCategoriesPage() {
               <span className="material-symbols-outlined text-slate-400 cursor-grab">drag_indicator</span>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${cat.color}20` }}>{cat.icon}</div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-slate-900 dark:text-white">{cat.nameFr}</p>
-                  <span className="text-slate-400 text-sm">/ {cat.nameEn}</span>
-                </div>
+                <p className="font-medium text-slate-900 dark:text-white">{cat.name}</p>
                 <p className="text-xs text-slate-400 font-mono">/formations/categories/{cat.slug}</p>
               </div>
               <div className="flex items-center gap-3">

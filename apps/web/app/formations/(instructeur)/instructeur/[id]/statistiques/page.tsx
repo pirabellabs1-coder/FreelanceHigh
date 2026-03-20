@@ -17,7 +17,7 @@ import ChartContainer from "@/components/formations/ChartContainer";
 import EmptyState from "@/components/formations/EmptyState";
 
 interface FormationStats {
-  titleFr: string;
+  title: string;
   studentsCount: number;
   rating: number;
   reviewsCount: number;
@@ -100,7 +100,7 @@ export default function FormationStatistiquesPage({ params }: { params: Promise<
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               {fr ? "Statistiques" : "Statistics"}
             </h1>
-            <p className="text-sm text-slate-500">{stats.titleFr}</p>
+            <p className="text-sm text-slate-500">{stats.title}</p>
           </div>
         </div>
         {/* Export PDF — bientot disponible */}

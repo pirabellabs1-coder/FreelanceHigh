@@ -22,8 +22,7 @@ export async function GET(_req: NextRequest) {
         formation: {
           select: {
             id: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             slug: true,
           },
         },
@@ -41,7 +40,7 @@ export async function GET(_req: NextRequest) {
       return {
         id: r.id,
         formationId: r.formationId,
-        formationTitle: r.formation.titleFr,
+        formationTitle: r.formation.title,
         formationSlug: r.formation.slug,
         rating: r.rating,
         comment: r.comment,

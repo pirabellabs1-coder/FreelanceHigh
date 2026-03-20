@@ -58,7 +58,7 @@ export async function GET(_req: NextRequest) {
       include: {
         formation: {
           select: {
-            titleFr: true,
+            title: true,
             instructeur: {
               select: {
                 id: true,
@@ -69,7 +69,7 @@ export async function GET(_req: NextRequest) {
         },
         digitalProduct: {
           select: {
-            titleFr: true,
+            title: true,
             instructeur: {
               select: {
                 id: true,

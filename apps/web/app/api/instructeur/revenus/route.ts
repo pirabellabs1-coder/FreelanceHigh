@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         where: { formationId: { in: formationIds } },
         include: {
           user: { select: { name: true } },
-          formation: { select: { titleFr: true, titleEn: true } },
+          formation: { select: { title: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
@@ -87,8 +87,8 @@ export async function GET(req: NextRequest) {
       amount: Math.round(e.paidAmount * INSTRUCTOR_COMMISSION * 100) / 100,
       status: new Date(e.createdAt) > thirtyDaysAgo ? "PENDING" : "COMPLETED",
       createdAt: e.createdAt,
-      description: e.formation.titleFr,
-      formation: { titleFr: e.formation.titleFr, titleEn: e.formation.titleEn },
+      description: e.formation.title,
+      formation: { title: e.formation.title },
     }));
 
     // Monthly revenue (last 6 months)

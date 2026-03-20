@@ -22,8 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           include: {
             formation: {
               select: {
-                titleFr: true,
-                titleEn: true,
+                title: true,
                 slug: true,
                 duration: true,
                 instructeur: { include: { user: { select: { name: true } } } },
@@ -47,8 +46,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       pdfUrl: raw.pdfUrl,
       user: raw.user,
       formation: {
-        titleFr: raw.enrollment.formation.titleFr,
-        titleEn: raw.enrollment.formation.titleEn,
+        title: raw.enrollment.formation.title,
         slug: raw.enrollment.formation.slug,
         duration: raw.enrollment.formation.duration,
       },

@@ -15,16 +15,14 @@ interface MyCohort {
   formation: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     thumbnail: string | null;
     duration: number;
     level: string;
   };
   cohort: {
     id: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     startDate: string;
     endDate: string;
     status: string;
@@ -171,8 +169,8 @@ export default function MesCohortsPage() {
         <div className="space-y-4">
           {filtered.map((item) => {
             if (!item.cohort) return null;
-            const cohortTitle = fr ? item.cohort.titleFr : (item.cohort.titleEn || item.cohort.titleFr);
-            const formationTitle = fr ? item.formation.titleFr : (item.formation.titleEn || item.formation.titleFr);
+            const cohortTitle = item.cohort.title;
+            const formationTitle = item.formation.title;
             const isCompleted = item.cohort.status === "TERMINE";
 
             return (

@@ -19,10 +19,8 @@ interface Participant {
 
 interface CohortDetail {
   id: string;
-  titleFr: string;
-  titleEn: string;
-  descriptionFr: string | null;
-  descriptionEn: string | null;
+  title: string;
+  description: string | null;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -32,7 +30,7 @@ interface CohortDetail {
   status: string;
   schedule: unknown;
   _count?: { enrollments: number; messages: number };
-  formation?: { titleFr: string; titleEn: string; slug: string };
+  formation?: { title: string; slug: string };
 }
 
 const STATUS_LABELS_FR: Record<string, string> = {
@@ -116,7 +114,7 @@ export default function InstructeurCohortDetailPage({ params }: { params: Promis
     </div>
   );
 
-  const title = fr ? cohort.titleFr : (cohort.titleEn || cohort.titleFr);
+  const title = cohort.title;
   const avgProgress = participants.length > 0
     ? Math.round(participants.reduce((s, p) => s + p.progress, 0) / participants.length)
     : 0;

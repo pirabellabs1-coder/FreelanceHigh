@@ -235,7 +235,7 @@ export async function GET(req: NextRequest) {
         createdAt: { gte: startDate, lte: now },
       },
       include: {
-        formation: { select: { titleFr: true, price: true } },
+        formation: { select: { title: true, price: true } },
       },
     });
 
@@ -246,7 +246,7 @@ export async function GET(req: NextRequest) {
         createdAt: { gte: startDate, lte: now },
       },
       include: {
-        digitalProduct: { select: { titleFr: true, price: true } },
+        digitalProduct: { select: { title: true, price: true } },
       },
     });
 
@@ -290,7 +290,7 @@ export async function GET(req: NextRequest) {
     // Build sales by product
     const salesMap = new Map<string, SalesByProduct>();
     for (const e of currentEnrollments) {
-      const name = e.formation?.titleFr || "Formation";
+      const name = e.formation?.title || "Formation";
       const existing = salesMap.get(name);
       if (existing) {
         existing.sales += 1;
@@ -300,7 +300,7 @@ export async function GET(req: NextRequest) {
       }
     }
     for (const p of currentPurchases) {
-      const name = p.digitalProduct?.titleFr || "Produit";
+      const name = p.digitalProduct?.title || "Produit";
       const existing = salesMap.get(name);
       if (existing) {
         existing.sales += 1;

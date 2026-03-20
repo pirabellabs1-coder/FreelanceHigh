@@ -88,8 +88,8 @@ export async function GET(req: NextRequest) {
           endsAt: { gt: now },
         },
         include: {
-          formation: { select: { id: true, titleFr: true, titleEn: true, price: true } },
-          digitalProduct: { select: { id: true, titleFr: true, titleEn: true, price: true } },
+          formation: { select: { id: true, title: true, price: true } },
+          digitalProduct: { select: { id: true, title: true, price: true } },
         },
         orderBy: { endsAt: "asc" },
       });
@@ -131,8 +131,8 @@ export async function GET(req: NextRequest) {
         ],
       },
       include: {
-        formation: { select: { titleFr: true } },
-        digitalProduct: { select: { titleFr: true } },
+        formation: { select: { title: true } },
+        digitalProduct: { select: { title: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -252,8 +252,8 @@ export async function POST(req: NextRequest) {
         maxUsage: maxUsage || null,
       },
       include: {
-        formation: { select: { titleFr: true } },
-        digitalProduct: { select: { titleFr: true } },
+        formation: { select: { title: true } },
+        digitalProduct: { select: { title: true } },
       },
     });
 

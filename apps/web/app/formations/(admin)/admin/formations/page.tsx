@@ -8,15 +8,14 @@ import { useTranslations } from "next-intl";
 interface AdminFormation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   status: string;
   price: number;
   isFree: boolean;
   rating: number;
   studentsCount: number;
   reviewsCount: number;
-  category: { nameFr: string };
+  category: { name: string };
   instructeur: { user: { name: string } };
   createdAt: string;
   publishedAt: string | null;
@@ -116,8 +115,8 @@ export default function AdminFormationsListPage() {
               filtered.map((f) => (
                 <tr key={f.id} className="hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-700/30 transition-colors">
                   <td className="p-4">
-                    <p className="font-medium text-sm line-clamp-2 max-w-xs">{f.titleFr}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{f.category.nameFr} · {f.isFree ? "Gratuit" : `${f.price.toFixed(0)}€`}</p>
+                    <p className="font-medium text-sm line-clamp-2 max-w-xs">{f.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{f.category.name} · {f.isFree ? "Gratuit" : `${f.price.toFixed(0)}€`}</p>
                   </td>
                   <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{f.instructeur.user.name}</td>
                   <td className="p-4">
@@ -142,7 +141,7 @@ export default function AdminFormationsListPage() {
                           <button onClick={() => approve(f.id)} disabled={actionLoading === f.id} className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50" title={t("admin_approve")}>
                             <span className="material-symbols-outlined text-lg">check_circle</span>
                           </button>
-                          <button onClick={() => setRejectModal({ id: f.id, title: f.titleFr })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t("admin_reject")}>
+                          <button onClick={() => setRejectModal({ id: f.id, title: f.title })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t("admin_reject")}>
                             <span className="material-symbols-outlined text-lg">cancel</span>
                           </button>
                         </>

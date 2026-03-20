@@ -6,14 +6,14 @@ import { CheckCircle, XCircle, Archive, Eye, Package } from "lucide-react";
 interface Product {
   id: string;
   slug: string;
-  titleFr: string;
+  title: string;
   productType: string;
   price: number;
   salesCount: number;
   status: string;
   createdAt: string;
   instructeur: { user: { name: string; email: string } };
-  category: { nameFr: string } | null;
+  category: { name: string } | null;
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -102,8 +102,8 @@ export default function AdminProduitsPage() {
                 return (
                   <tr key={product.id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-700/30">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{product.titleFr}</p>
-                      <p className="text-xs text-slate-400">{product.category?.nameFr}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{product.title}</p>
+                      <p className="text-xs text-slate-400">{product.category?.name}</p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-sm text-slate-700 dark:text-slate-300">{product.instructeur?.user?.name}</p>

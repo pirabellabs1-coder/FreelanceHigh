@@ -29,8 +29,7 @@ export async function POST(req: NextRequest) {
         formation: {
           select: {
             id: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             price: true,
             isFree: true,
             thumbnail: true,
@@ -153,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     // Use PaymentService for paid checkout
     const description = activeItems.length === 1
-      ? (locale === "fr" ? activeItems[0].formation.titleFr : activeItems[0].formation.titleEn)
+      ? activeItems[0].formation.title
       : `${activeItems.length} formations`;
 
     const payment = await PaymentService.createPayment({

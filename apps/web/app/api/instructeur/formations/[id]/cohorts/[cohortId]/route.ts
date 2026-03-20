@@ -7,10 +7,8 @@ import prisma from "@freelancehigh/db";
 import { z } from "zod";
 
 const updateCohortSchema = z.object({
-  titleFr: z.string().min(3).max(120).optional(),
-  titleEn: z.string().min(3).max(120).optional(),
-  descriptionFr: z.string().max(2000).optional().nullable(),
-  descriptionEn: z.string().max(2000).optional().nullable(),
+  title: z.string().min(3).max(120).optional(),
+  description: z.string().max(2000).optional().nullable(),
   startDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide").optional(),
   endDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide").optional(),
   enrollmentDeadline: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide").optional(),
@@ -59,7 +57,7 @@ export async function GET(
       include: {
         _count: { select: { enrollments: true, messages: true } },
         formation: {
-          select: { titleFr: true, titleEn: true, slug: true },
+          select: { title: true, slug: true },
         },
       },
     });
@@ -110,10 +108,8 @@ export async function PUT(
 
     const updateData: Record<string, unknown> = {};
 
-    if (data.titleFr !== undefined) updateData.titleFr = data.titleFr;
-    if (data.titleEn !== undefined) updateData.titleEn = data.titleEn;
-    if (data.descriptionFr !== undefined) updateData.descriptionFr = data.descriptionFr;
-    if (data.descriptionEn !== undefined) updateData.descriptionEn = data.descriptionEn;
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
     if (data.maxParticipants !== undefined) {
       if (data.maxParticipants < cohort.currentCount) {
         return NextResponse.json({ error: "Le nombre max ne peut pas être inférieur au nombre actuel de participants" }, { status: 400 });

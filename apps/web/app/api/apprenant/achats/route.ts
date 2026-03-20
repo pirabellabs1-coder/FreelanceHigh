@@ -23,8 +23,7 @@ export async function GET(_req: NextRequest) {
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             thumbnail: true,
             instructeur: {
               select: { user: { select: { name: true } } },
@@ -34,8 +33,7 @@ export async function GET(_req: NextRequest) {
         cohort: {
           select: {
             id: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
           },
         },
       },
@@ -50,8 +48,7 @@ export async function GET(_req: NextRequest) {
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             banner: true,
             productType: true,
             instructeur: {
@@ -91,8 +88,8 @@ export async function GET(_req: NextRequest) {
     for (const enrollment of enrollments) {
       const isCohort = !!enrollment.cohort;
       const title = isCohort
-        ? enrollment.cohort?.titleFr ?? enrollment.formation.titleFr
-        : enrollment.formation.titleFr;
+        ? enrollment.cohort?.title ?? enrollment.formation.title
+        : enrollment.formation.title;
 
       let status: "COMPLETED" | "PENDING" | "REFUNDED" = "COMPLETED";
       if (enrollment.refundedAt) status = "REFUNDED";
@@ -121,7 +118,7 @@ export async function GET(_req: NextRequest) {
       purchases.push({
         id: pp.id,
         type: "product",
-        title: pp.product.titleFr,
+        title: pp.product.title,
         amount: pp.paidAmount,
         currency: "EUR",
         status: "COMPLETED",

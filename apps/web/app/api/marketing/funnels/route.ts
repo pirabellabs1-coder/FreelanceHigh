@@ -25,8 +25,7 @@ interface FunnelStep {
   title: string;
   headlineFr: string;
   headlineEn: string;
-  descriptionFr: string;
-  descriptionEn: string;
+  description: string;
   ctaTextFr: string;
   ctaTextEn: string;
   linkedProductId: string | null;
@@ -204,8 +203,7 @@ export async function POST(req: NextRequest) {
           title: step.title || "",
           headlineFr: step.headlineFr || "",
           headlineEn: step.headlineEn || "",
-          descriptionFr: step.descriptionFr || "",
-          descriptionEn: step.descriptionEn || "",
+          description: step.description || "",
           ctaTextFr: step.ctaTextFr || "",
           ctaTextEn: step.ctaTextEn || "",
           linkedProductId: step.linkedProductId || null,
@@ -259,8 +257,7 @@ export async function POST(req: NextRequest) {
             title: step.title || "",
             headlineFr: step.headlineFr || "",
             headlineEn: step.headlineEn || "",
-            descriptionFr: step.descriptionFr || "",
-            descriptionEn: step.descriptionEn || "",
+            description: step.description || "",
             ctaTextFr: step.ctaTextFr || "",
             ctaTextEn: step.ctaTextEn || "",
             linkedProductId: step.linkedProductId || null,
@@ -310,8 +307,7 @@ export async function PUT(req: NextRequest) {
           title: step.title || "",
           headlineFr: step.headlineFr || "",
           headlineEn: step.headlineEn || "",
-          descriptionFr: step.descriptionFr || "",
-          descriptionEn: step.descriptionEn || "",
+          description: step.description || "",
           ctaTextFr: step.ctaTextFr || "",
           ctaTextEn: step.ctaTextEn || "",
           linkedProductId: step.linkedProductId || null,
@@ -369,8 +365,7 @@ export async function PUT(req: NextRequest) {
           title: step.title || "",
           headlineFr: step.headlineFr || "",
           headlineEn: step.headlineEn || "",
-          descriptionFr: step.descriptionFr || "",
-          descriptionEn: step.descriptionEn || "",
+          description: step.description || "",
           ctaTextFr: step.ctaTextFr || "",
           ctaTextEn: step.ctaTextEn || "",
           linkedProductId: step.linkedProductId || null,

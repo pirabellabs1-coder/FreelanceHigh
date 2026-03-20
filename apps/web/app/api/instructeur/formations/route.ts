@@ -26,8 +26,7 @@ export async function GET(_req: NextRequest) {
       select: {
         id: true,
         slug: true,
-        titleFr: true,
-        titleEn: true,
+        title: true,
         thumbnail: true,
         status: true,
         price: true,
@@ -80,13 +79,14 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      titleFr, titleEn, descriptionFr, descriptionEn,
+      title, description,
       categoryId, level, duration, thumbnail, previewVideo,
       price, isFree, originalPrice, hasCertificate, minScore, status,
+      locale,
     } = body;
 
-    if (!titleFr) {
-      return NextResponse.json({ error: "Le titre FR est requis" }, { status: 400 });
+    if (!title) {
+      return NextResponse.json({ error: "Le titre est requis" }, { status: 400 });
     }
 
     // Find a valid category or use the first one
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate unique slug
-    const baseSlug = (titleFr || "formation")
+    const baseSlug = (title || "formation")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -118,10 +118,9 @@ export async function POST(req: NextRequest) {
     const formation = await prisma.formation.create({
       data: {
         slug,
-        titleFr: titleFr || "",
-        titleEn: titleEn || titleFr || "",
-        descriptionFr: descriptionFr || "",
-        descriptionEn: descriptionEn || descriptionFr || "",
+        title: title || "",
+        description: description || "",
+        locale: locale || "fr",
         categoryId: resolvedCategoryId,
         level: level || "TOUS_NIVEAUX",
         duration: duration || 60,

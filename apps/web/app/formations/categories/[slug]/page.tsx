@@ -7,8 +7,7 @@ import { Star, Users, Clock } from "lucide-react";
 
 interface CategoryDetail {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
   icon: string;
   color: string;
@@ -17,8 +16,7 @@ interface CategoryDetail {
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   price: number;
   isFree: boolean;
   rating: number;
@@ -92,7 +90,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
             </Link>
             <span>/</span>
             <span className="text-slate-900 dark:text-white">
-              {category ? (lang === "fr" ? category.nameFr : category.nameEn) : slug}
+              {category ? category.name : slug}
             </span>
           </div>
           {loading ? (
@@ -110,7 +108,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                  {lang === "fr" ? category.nameFr : category.nameEn}
+                  {category.name}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-1">
                   {formations.length} {t("formation", "course")}{formations.length > 1 ? "s" : ""}
@@ -143,7 +141,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
                 {/* Thumbnail */}
                 <div className="relative h-40 bg-slate-100 dark:bg-slate-800 dark:bg-slate-700">
                   {f.thumbnail ? (
-                    <img src={f.thumbnail} alt={lang === "fr" ? f.titleFr : f.titleEn} className="w-full h-full object-cover" />
+                    <img src={f.thumbnail} alt={f.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="text-4xl">{category?.icon ?? "📚"}</span>
@@ -153,7 +151,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
                 {/* Content */}
                 <div className="p-4">
                   <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors text-sm mb-2">
-                    {lang === "fr" ? f.titleFr : f.titleEn}
+                    {f.title}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{f.instructeur.user.name}</p>
                   <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-3">

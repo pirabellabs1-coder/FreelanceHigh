@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { nameFr, nameEn, slug, icon, color } = body;
+    const { name, slug, icon, color } = body;
 
-    if (!nameFr || !nameEn || !slug) {
+    if (!name || !slug) {
       return NextResponse.json({ error: "Champs requis manquants" }, { status: 400 });
     }
 
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const order = (maxOrder._max.order ?? 0) + 1;
 
     const category = await prisma.formationCategory.create({
-      data: { nameFr, nameEn, slug, icon: icon || "📚", color: color || "#6C2BD9", order },
+      data: { name, slug, icon: icon || "📚", color: color || "#6C2BD9", order },
     });
 
     return NextResponse.json({ category });

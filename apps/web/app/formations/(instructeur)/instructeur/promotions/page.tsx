@@ -20,8 +20,8 @@ interface FlashPromotion {
   maxUsage: number | null;
   usageCount: number;
   isActive: boolean;
-  formation: { id: string; titleFr: string; titleEn: string } | null;
-  digitalProduct: { id: string; titleFr: string; titleEn: string } | null;
+  formation: { id: string; title: string } | null;
+  digitalProduct: { id: string; title: string } | null;
 }
 
 // ── Helpers ──
@@ -61,12 +61,12 @@ function getStatus(
   };
 }
 
-function getTargetLabel(promo: FlashPromotion, fr: boolean, locale: string): string {
+function getTargetLabel(promo: FlashPromotion, fr: boolean): string {
   if (promo.formation) {
-    return locale === "fr" ? promo.formation.titleFr : promo.formation.titleEn;
+    return promo.formation.title;
   }
   if (promo.digitalProduct) {
-    return locale === "fr" ? promo.digitalProduct.titleFr : promo.digitalProduct.titleEn;
+    return promo.digitalProduct.title;
   }
   return fr ? "Inconnu" : "Unknown";
 }
@@ -277,7 +277,7 @@ export default function PromotionsListPage() {
                   {/* Target */}
                   <div className="mb-2 md:mb-0">
                     <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                      {getTargetLabel(promo, fr, locale)}
+                      {getTargetLabel(promo, fr)}
                     </p>
                     <span className="text-xs text-slate-400">
                       {getTargetType(promo, fr)}

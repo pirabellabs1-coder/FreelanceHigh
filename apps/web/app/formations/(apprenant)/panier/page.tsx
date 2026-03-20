@@ -12,8 +12,7 @@ interface CartItem {
   formation: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     thumbnail: string | null;
     price: number;
     originalPrice: number | null;
@@ -184,7 +183,7 @@ export default function PanierPage() {
           {/* Cart items */}
           <div className="flex-1 space-y-4">
             {items.map((item) => {
-              const title = fr ? item.formation.titleFr : (item.formation.titleEn || item.formation.titleFr);
+              const title = item.formation.title;
               const h = Math.floor(item.formation.duration / 60);
               return (
                 <div key={item.id} className="bg-white dark:bg-slate-900 dark:bg-neutral-dark rounded-xl border dark:border-border-dark p-4 flex gap-4">

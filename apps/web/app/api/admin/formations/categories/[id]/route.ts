@@ -15,13 +15,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const { nameFr, nameEn, slug, icon, color, order } = body;
+    const { name, slug, icon, color, order } = body;
 
     const category = await prisma.formationCategory.update({
       where: { id },
       data: {
-        ...(nameFr && { nameFr }),
-        ...(nameEn && { nameEn }),
+        ...(name && { name }),
         ...(slug && { slug }),
         ...(icon && { icon }),
         ...(color && { color }),

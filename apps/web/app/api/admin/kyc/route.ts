@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma, IS_DEV } from "@/lib/prisma";
 import { notificationStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
+import { sendKycApprovedEmail, sendKycRejectedEmail } from "@/lib/email";
 
 // GET /api/admin/kyc — KYC verification queue
 export async function GET() {
@@ -188,6 +189,11 @@ export async function POST(request: NextRequest) {
             link: "/dashboard/parametres",
           });
 
+          // Send KYC approved email
+          sendKycApprovedEmail(user.email, user.name, newLevel).catch((err) =>
+            console.error("[KYC] Email approved error:", err)
+          );
+
           return NextResponse.json({
             success: true,
             message: `KYC niveau ${newLevel} approuve pour ${user.name}`,
@@ -202,6 +208,11 @@ export async function POST(request: NextRequest) {
         case "refuse": {
           const refuseReason =
             reason ?? "Documents non conformes aux exigences de la plateforme";
+
+          // Send KYC rejected email
+          sendKycRejectedEmail(user.email, user.name, user.kyc + 1, refuseReason).catch((err) =>
+            console.error("[KYC] Email rejected error:", err)
+          );
 
           notificationStore.add({
             userId,

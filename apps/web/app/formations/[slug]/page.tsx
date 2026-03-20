@@ -29,20 +29,18 @@ interface Review {
 
 interface Lesson {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   type: string;
   duration: number | null;
   isFree: boolean;
   order: number;
   quiz: { id: string } | null;
-  resources: { id: string; titleFr: string }[];
+  resources: { id: string; title: string }[];
 }
 
 interface Section {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   order: number;
   lessons: Lesson[];
 }
@@ -50,18 +48,12 @@ interface Section {
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
-  shortDescFr: string | null;
-  shortDescEn: string | null;
-  descriptionFr: string | null;
-  descriptionEn: string | null;
-  learnPointsFr: string[];
-  learnPointsEn: string[];
-  requirementsFr: string[];
-  requirementsEn: string[];
-  targetAudienceFr: string | null;
-  targetAudienceEn: string | null;
+  title: string;
+  shortDesc: string | null;
+  description: string | null;
+  learnPoints: string[];
+  requirements: string[];
+  targetAudience: string | null;
   thumbnail: string | null;
   previewVideo: string | null;
   price: number;
@@ -78,7 +70,7 @@ interface Formation {
   status: string;
   publishedAt: string | null;
   updatedAt: string;
-  category: { nameFr: string; nameEn: string; slug: string; color: string | null };
+  category: { name: string; slug: string; color: string | null };
   sections: Section[];
   reviews: Review[];
   instructeur: {
@@ -111,8 +103,7 @@ interface Formation {
 
 interface FormationCohortPublic {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -217,7 +208,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
         value: formation.price,
         currency: "EUR",
         content_id: formation.id,
-        content_name: formation.titleFr,
+        content_name: formation.title,
       });
       router.push("/formations/panier");
     } catch {}
@@ -272,13 +263,13 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
 
   if (!formation) return null;
 
-  const title = locale === "fr" ? formation.titleFr : (formation.titleEn || formation.titleFr);
-  const desc = locale === "fr" ? formation.descriptionFr : (formation.descriptionEn || formation.descriptionFr);
-  const shortDesc = locale === "fr" ? formation.shortDescFr : (formation.shortDescEn || formation.shortDescFr);
-  const learnPoints = locale === "fr" ? formation.learnPointsFr : (formation.learnPointsEn.length ? formation.learnPointsEn : formation.learnPointsFr);
-  const requirements = locale === "fr" ? formation.requirementsFr : (formation.requirementsEn.length ? formation.requirementsEn : formation.requirementsFr);
-  const targetAudience = locale === "fr" ? formation.targetAudienceFr : (formation.targetAudienceEn || formation.targetAudienceFr);
-  const catName = locale === "fr" ? formation.category.nameFr : (formation.category.nameEn || formation.category.nameFr);
+  const title = formation.title;
+  const desc = formation.description;
+  const shortDesc = formation.shortDesc;
+  const learnPoints = formation.learnPoints;
+  const requirements = formation.requirements;
+  const targetAudience = formation.targetAudience;
+  const catName = formation.category.name;
   const instrBio = locale === "fr" ? formation.instructeur.bioFr : (formation.instructeur.bioEn || formation.instructeur.bioFr);
   const instrAvatar = formation.instructeur.user.avatar || formation.instructeur.user.image;
 
@@ -486,7 +477,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
 
                 <div className="space-y-2">
                   {formation.sections.sort((a, b) => a.order - b.order).map((section) => {
-                    const sectionTitle = locale === "fr" ? section.titleFr : (section.titleEn || section.titleFr);
+                    const sectionTitle = section.title;
                     const sectionDuration = section.lessons.reduce((s, l) => s + (l.duration ?? 0), 0);
                     const isExpanded = expandedSections.has(section.id);
 
@@ -512,7 +503,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                         {isExpanded && (
                           <div className="divide-y">
                             {section.lessons.sort((a, b) => a.order - b.order).map((lesson) => {
-                              const lessonTitle = locale === "fr" ? lesson.titleFr : (lesson.titleEn || lesson.titleFr);
+                              const lessonTitle = lesson.title;
                               return (
                                 <div key={lesson.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50">
                                   <LessonTypeIcon type={lesson.type} />
@@ -673,7 +664,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                   {formation.cohorts.length} {locale === "fr" ? "session(s) de groupe disponible(s)" : "group session(s) available"}
                 </p>
                 {formation.cohorts.map((c) => {
-                  const cTitle = locale === "fr" ? c.titleFr : (c.titleEn || c.titleFr);
+                  const cTitle = c.title;
                   const placesLeft = c.maxParticipants - c.currentCount;
                   const deadlinePassed = new Date(c.enrollmentDeadline) < new Date();
 

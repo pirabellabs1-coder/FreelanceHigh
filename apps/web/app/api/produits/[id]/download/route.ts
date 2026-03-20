@@ -26,7 +26,7 @@ export async function GET(
         fileStoragePath: true,
         fileMimeType: true,
         fileSize: true,
-        titleFr: true,
+        title: true,
         isFree: true,
         instructeur: { select: { userId: true } },
       },
@@ -94,7 +94,7 @@ export async function GET(
     const fileBuffer = await fileResponse.arrayBuffer();
 
     // Sanitize filename
-    const safeTitle = product.titleFr
+    const safeTitle = product.title
       .replace(/[^a-zA-Z0-9àâäéèêëïîôùûüçÀÂÄÉÈÊËÏÎÔÙÛÜÇ\s-]/g, "")
       .replace(/\s+/g, "-")
       .substring(0, 100);

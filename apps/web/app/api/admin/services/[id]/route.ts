@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { serviceStore, notificationStore } from "@/lib/dev/data-store";
+import { devStore } from "@/lib/dev/dev-store";
+import { sendServiceApprovedEmail, sendServiceRejectedEmail } from "@/lib/email";
 
 // PATCH /api/admin/services/[id] — Admin actions: approve, refuse, feature, unfeature, pause, delete
 export async function PATCH(
@@ -39,6 +41,14 @@ export async function PATCH(
           link: "/dashboard/services",
         });
 
+        // Send service approved email
+        const approveUser = devStore.findById(service.userId);
+        if (approveUser?.email) {
+          sendServiceApprovedEmail(approveUser.email, approveUser.name, service.title).catch((err) =>
+            console.error("[SERVICE] Email approved error:", err)
+          );
+        }
+
         return NextResponse.json({
           success: true,
           message: `Service "${service.title}" approuve`,
@@ -59,6 +69,14 @@ export async function PATCH(
           read: false,
           link: "/dashboard/services",
         });
+
+        // Send service rejected email
+        const refuseUser = devStore.findById(service.userId);
+        if (refuseUser?.email) {
+          sendServiceRejectedEmail(refuseUser.email, refuseUser.name, service.title, reason || "Non conforme aux directives").catch((err) =>
+            console.error("[SERVICE] Email rejected error:", err)
+          );
+        }
 
         return NextResponse.json({
           success: true,

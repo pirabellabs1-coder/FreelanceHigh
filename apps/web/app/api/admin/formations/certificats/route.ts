@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
           user: { select: { name: true, email: true } },
           enrollment: {
             include: {
-              formation: { select: { titleFr: true, slug: true } },
+              formation: { select: { title: true, slug: true } },
             },
           },
         },

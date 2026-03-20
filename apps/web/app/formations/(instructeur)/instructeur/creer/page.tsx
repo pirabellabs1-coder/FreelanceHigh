@@ -34,20 +34,15 @@ const FormationRichEditor = dynamic(
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
 }
-
-interface LearningPoint { fr: string; en: string }
-interface Prerequisite { fr: string; en: string }
 
 interface QuizQuestion {
   type: "CHOIX_UNIQUE" | "CHOIX_MULTIPLE" | "VRAI_FAUX" | "TEXTE_LIBRE";
-  textFr: string;
-  textEn: string;
-  options: { fr: string; en: string }[];
+  text: string;
+  options: string[];
   correctAnswer: string;
-  explanationFr: string;
+  explanation: string;
 }
 
 interface VideoChapter {
@@ -57,8 +52,7 @@ interface VideoChapter {
 
 interface Lesson {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   type: "VIDEO" | "PDF" | "TEXTE" | "AUDIO" | "QUIZ";
   content?: string;
   videoUrl?: string;
@@ -69,8 +63,7 @@ interface Lesson {
   subtitleLabel?: string;
   chapters?: VideoChapter[];
   quiz?: {
-    titleFr: string;
-    titleEn: string;
+    title: string;
     passingScore: number;
     timeLimit?: number;
     questions: QuizQuestion[];
@@ -79,8 +72,7 @@ interface Lesson {
 
 interface Section {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   lessons: Lesson[];
   expanded: boolean;
 }
@@ -162,23 +154,19 @@ export default function CreateFormationPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Step 1 - Informations
-  const [titleFr, setTitleFr] = useState("");
-  const [titleEn, setTitleEn] = useState("");
-  const [descFr, setDescFr] = useState("");
-  const [descEn, setDescEn] = useState("");
-  const [shortDescFr, setShortDescFr] = useState("");
-  const [shortDescEn, setShortDescEn] = useState("");
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [shortDesc, setShortDesc] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [level, setLevel] = useState("TOUS_NIVEAUX");
   const [duration, setDuration] = useState(60);
 
   // Step 2 - Médias
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [previewVideoUrl, setPreviewVideoUrl] = useState("");
-  const [learningPoints, setLearningPoints] = useState<LearningPoint[]>([
-    { fr: "", en: "" }, { fr: "", en: "" }, { fr: "", en: "" }, { fr: "", en: "" },
-  ]);
-  const [prerequisites, setPrerequisites] = useState<Prerequisite[]>([{ fr: "", en: "" }]);
+  const [learningPoints, setLearningPoints] = useState<string[]>(["", "", "", ""]);
+  const [prerequisites, setPrerequisites] = useState<string[]>([""]);
 
   // Step 3 - Prix
   const [price, setPrice] = useState(29);
@@ -191,7 +179,7 @@ export default function CreateFormationPage() {
 
   // Step 4 - Curriculum
   const [sections, setSections] = useState<Section[]>([
-    { id: generateId(), titleFr: "Introduction", titleEn: "Introduction", lessons: [], expanded: true },
+    { id: generateId(), title: "Introduction", lessons: [], expanded: true },
   ]);
   const [addingLesson, setAddingLesson] = useState<string | null>(null);
   const [newLessonType, setNewLessonType] = useState<Lesson["type"]>("VIDEO");
@@ -242,21 +230,20 @@ export default function CreateFormationPage() {
   };
 
   const buildPayload = () => ({
-    titleFr, titleEn, descriptionFr: descFr, descriptionEn: descEn, descriptionFormat: "tiptap",
-    shortDescriptionFr: shortDescFr, shortDescriptionEn: shortDescEn,
-    categoryId, level, duration,
+    title, description: desc, descriptionFormat: "tiptap",
+    shortDescription: shortDesc, locale: "fr",
+    categoryId: categoryId || null, customCategory: customCategory || null,
+    level, duration,
     thumbnail: thumbnailUrl, previewVideo: previewVideoUrl,
-    learningPointsFr: learningPoints.map((lp) => lp.fr).filter(Boolean),
-    learningPointsEn: learningPoints.map((lp) => lp.en).filter(Boolean),
-    prerequisitesFr: prerequisites.map((p) => p.fr).filter(Boolean),
-    prerequisitesEn: prerequisites.map((p) => p.en).filter(Boolean),
+    learnPoints: learningPoints.filter(Boolean),
+    requirements: prerequisites.filter(Boolean),
     price: isFree ? 0 : price, originalPrice: originalPrice || null, isFree,
     maxStudents: hasMaxStudents ? maxStudents : null,
     hasCertificate, minScore,
     sections: sections.map((s, sIdx) => ({
-      titleFr: s.titleFr, titleEn: s.titleEn, order: sIdx,
+      title: s.title, order: sIdx,
       lessons: s.lessons.map((l, lIdx) => ({
-        titleFr: l.titleFr, titleEn: l.titleEn, type: l.type,
+        title: l.title, type: l.type,
         videoUrl: l.videoUrl, content: l.content, duration: l.duration,
         isFree: l.isFree, order: lIdx, quiz: l.quiz,
         subtitleUrl: l.subtitleUrl, subtitleStoragePath: l.subtitleStoragePath,
@@ -276,7 +263,7 @@ export default function CreateFormationPage() {
   // Section / Lesson management
   const addSection = () => {
     setSections([...sections, {
-      id: generateId(), titleFr: "Nouvelle section", titleEn: "New section",
+      id: generateId(), title: "Nouvelle section",
       lessons: [], expanded: true,
     }]);
   };
@@ -287,15 +274,15 @@ export default function CreateFormationPage() {
     s.id === id ? { ...s, expanded: !s.expanded } : s
   ));
 
-  const updateSection = (id: string, field: "titleFr" | "titleEn", val: string) =>
+  const updateSection = (id: string, field: "title", val: string) =>
     setSections(sections.map((s) => s.id === id ? { ...s, [field]: val } : s));
 
   const addLesson = (sectionId: string) => {
     const newLesson: Lesson = {
-      id: generateId(), titleFr: "", titleEn: "", type: newLessonType, isFree: false,
+      id: generateId(), title: "", type: newLessonType, isFree: false,
       ...(newLessonType === "QUIZ" ? {
         quiz: {
-          titleFr: "Quiz", titleEn: "Quiz", passingScore: 80,
+          title: "Quiz", passingScore: 80,
           questions: [],
         },
       } : {}),
@@ -320,9 +307,9 @@ export default function CreateFormationPage() {
 
   const addQuizQuestion = (sectionId: string, lessonId: string) => {
     const newQ: QuizQuestion = {
-      type: "CHOIX_UNIQUE", textFr: "", textEn: "",
-      options: [{ fr: "", en: "" }, { fr: "", en: "" }, { fr: "", en: "" }, { fr: "", en: "" }],
-      correctAnswer: "0", explanationFr: "",
+      type: "CHOIX_UNIQUE", text: "",
+      options: ["", "", "", ""],
+      correctAnswer: "0", explanation: "",
     };
     setSections(sections.map((s) =>
       s.id === sectionId ? {
@@ -376,20 +363,18 @@ export default function CreateFormationPage() {
       if (!res.ok) {
         setCsvErrors(data.details ?? [data.error]);
       } else {
-        const importedSections: Section[] = data.sections.map((s: { titleFr: string; titleEn: string; lessons: { titleFr: string; titleEn: string; type: string; videoUrl: string; duration: number; isFree: boolean }[] }) => ({
+        const importedSections: Section[] = data.sections.map((s: { title: string; lessons: { title: string; type: string; videoUrl: string; duration: number; isFree: boolean }[] }) => ({
           id: generateId(),
-          titleFr: s.titleFr,
-          titleEn: s.titleEn,
+          title: s.title,
           expanded: true,
-          lessons: s.lessons.map((l: { titleFr: string; titleEn: string; type: string; videoUrl: string; duration: number; isFree: boolean }) => ({
+          lessons: s.lessons.map((l: { title: string; type: string; videoUrl: string; duration: number; isFree: boolean }) => ({
             id: generateId(),
-            titleFr: l.titleFr,
-            titleEn: l.titleEn,
+            title: l.title,
             type: l.type as Lesson["type"],
             videoUrl: l.videoUrl || undefined,
             duration: l.duration || undefined,
             isFree: l.isFree,
-            ...(l.type === "QUIZ" ? { quiz: { titleFr: "Quiz", titleEn: "Quiz", passingScore: 80, questions: [] } } : {}),
+            ...(l.type === "QUIZ" ? { quiz: { title: "Quiz", passingScore: 80, questions: [] } } : {}),
           })),
         }));
         setCsvPreview({ sections: importedSections, stats: data.stats });
@@ -433,13 +418,13 @@ export default function CreateFormationPage() {
 
   // Checklist for step 5
   const checklist = [
-    { label: "Titre FR + EN renseignés", ok: !!(titleFr && titleEn) },
-    { label: "Description complète", ok: !!(descFr && descEn) },
+    { label: "Titre renseigné", ok: !!title },
+    { label: "Description complète", ok: !!desc },
     { label: "Image de couverture", ok: !!thumbnailUrl },
     { label: "Au moins 3 sections", ok: sections.length >= 3 },
     { label: "Au moins 5 leçons", ok: sections.reduce((acc, s) => acc + s.lessons.length, 0) >= 5 },
     { label: "Prix défini", ok: isFree || price > 0 },
-    { label: "Catégorie sélectionnée", ok: !!categoryId },
+    { label: "Catégorie sélectionnée", ok: !!(categoryId || customCategory) },
   ];
 
   const allChecked = checklist.every((c) => c.ok);
@@ -488,67 +473,37 @@ export default function CreateFormationPage() {
             <div className="space-y-6">
               <h1 className="text-xl font-bold text-white">Informations de base</h1>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Titre FR * (max 80 car.)</label>
+                  <label className="text-xs text-slate-400 mb-1 block">Titre * (max 80 caractères)</label>
                   <input
-                    value={titleFr}
-                    onChange={(e) => setTitleFr(e.target.value)}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     maxLength={80}
                     className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                    placeholder="Titre de la formation en français"
+                    placeholder="Titre de la formation"
                   />
-                  <p className="text-xs text-slate-600 mt-1 text-right">{titleFr.length}/80</p>
+                  <p className="text-xs text-slate-600 mt-1 text-right">{title.length}/80</p>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Title EN * (max 80)</label>
-                  <input
-                    value={titleEn}
-                    onChange={(e) => setTitleEn(e.target.value)}
-                    maxLength={80}
-                    className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                    placeholder="Course title in English"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Description courte FR (max 200)</label>
+                  <label className="text-xs text-slate-400 mb-1 block">Description courte (max 200)</label>
                   <textarea
-                    value={shortDescFr}
-                    onChange={(e) => setShortDescFr(e.target.value)}
+                    value={shortDesc}
+                    onChange={(e) => setShortDesc(e.target.value)}
                     maxLength={200}
                     rows={3}
                     className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                     placeholder="Description courte visible dans les cards"
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Short description EN (max 200)</label>
-                  <textarea
-                    value={shortDescEn}
-                    onChange={(e) => setShortDescEn(e.target.value)}
-                    maxLength={200}
-                    rows={3}
-                    className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                    placeholder="Short description visible in cards"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Description complète FR</label>
+                <label className="text-xs text-slate-400 mb-1 block">Description complète</label>
                 <FormationRichEditor
-                  content={descFr}
-                  onChange={setDescFr}
+                  content={desc}
+                  onChange={setDesc}
                   placeholder="Description détaillée de la formation..."
-                  minHeight={250}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Full description EN</label>
-                <FormationRichEditor
-                  content={descEn}
-                  onChange={setDescEn}
-                  placeholder="Full course description..."
                   minHeight={250}
                 />
               </div>
@@ -558,14 +513,26 @@ export default function CreateFormationPage() {
                   <label className="text-xs text-slate-400 mb-1 block">Catégorie *</label>
                   <select
                     value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
+                    onChange={(e) => {
+                      setCategoryId(e.target.value);
+                      if (e.target.value !== "__other__") setCustomCategory("");
+                    }}
                     className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <option value="">Sélectionner...</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.nameFr}</option>
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
+                    <option value="__other__">Autre...</option>
                   </select>
+                  {categoryId === "__other__" && (
+                    <input
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      className="w-full mt-2 bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Nom de votre catégorie"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">Niveau</label>
@@ -629,24 +596,14 @@ export default function CreateFormationPage() {
                         <Check className="w-3 h-3 text-green-400" />
                       </div>
                       <input
-                        value={lp.fr}
+                        value={lp}
                         onChange={(e) => {
                           const updated = [...learningPoints];
-                          updated[i] = { ...updated[i], fr: e.target.value };
+                          updated[i] = e.target.value;
                           setLearningPoints(updated);
                         }}
                         className="flex-1 bg-neutral-dark border border-border-dark rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder={`Point ${i + 1} (FR)`}
-                      />
-                      <input
-                        value={lp.en}
-                        onChange={(e) => {
-                          const updated = [...learningPoints];
-                          updated[i] = { ...updated[i], en: e.target.value };
-                          setLearningPoints(updated);
-                        }}
-                        className="flex-1 bg-neutral-dark border border-border-dark rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder={`Point ${i + 1} (EN)`}
+                        placeholder={`Point d'apprentissage ${i + 1}`}
                       />
                       {learningPoints.length > 4 && (
                         <button onClick={() => setLearningPoints(learningPoints.filter((_, j) => j !== i))}>
@@ -658,7 +615,7 @@ export default function CreateFormationPage() {
                 </div>
                 {learningPoints.length < 8 && (
                   <button
-                    onClick={() => setLearningPoints([...learningPoints, { fr: "", en: "" }])}
+                    onClick={() => setLearningPoints([...learningPoints, ""])}
                     className="mt-2 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" /> Ajouter un point
@@ -673,24 +630,14 @@ export default function CreateFormationPage() {
                   {prerequisites.map((p, i) => (
                     <div key={i} className="flex gap-2 items-center">
                       <input
-                        value={p.fr}
+                        value={p}
                         onChange={(e) => {
                           const updated = [...prerequisites];
-                          updated[i] = { ...updated[i], fr: e.target.value };
+                          updated[i] = e.target.value;
                           setPrerequisites(updated);
                         }}
                         className="flex-1 bg-neutral-dark border border-border-dark rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Prérequis (FR)"
-                      />
-                      <input
-                        value={p.en}
-                        onChange={(e) => {
-                          const updated = [...prerequisites];
-                          updated[i] = { ...updated[i], en: e.target.value };
-                          setPrerequisites(updated);
-                        }}
-                        className="flex-1 bg-neutral-dark border border-border-dark rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Prerequisite (EN)"
+                        placeholder={`Prérequis ${i + 1}`}
                       />
                       {prerequisites.length > 1 && (
                         <button onClick={() => setPrerequisites(prerequisites.filter((_, j) => j !== i))}>
@@ -701,7 +648,7 @@ export default function CreateFormationPage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => setPrerequisites([...prerequisites, { fr: "", en: "" }])}
+                  onClick={() => setPrerequisites([...prerequisites, ""])}
                   className="mt-2 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Ajouter un prérequis
@@ -934,18 +881,12 @@ export default function CreateFormationPage() {
                       <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden relative pl-6">
                         {/* Section header */}
                         <div className="flex items-center gap-3 p-4 border-b border-border-dark">
-                          <div className="flex-1 grid grid-cols-2 gap-2">
+                          <div className="flex-1">
                             <input
-                              value={section.titleFr}
-                              onChange={(e) => updateSection(section.id, "titleFr", e.target.value)}
-                              className="bg-border-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                              placeholder="Titre section FR"
-                            />
-                            <input
-                              value={section.titleEn}
-                              onChange={(e) => updateSection(section.id, "titleEn", e.target.value)}
-                              className="bg-border-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                              placeholder="Section title EN"
+                              value={section.title}
+                              onChange={(e) => updateSection(section.id, "title", e.target.value)}
+                              className="w-full bg-border-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                              placeholder="Titre de la section"
                             />
                           </div>
                           <button onClick={() => toggleSection(section.id)} className="text-slate-400 hover:text-white">
@@ -970,18 +911,12 @@ export default function CreateFormationPage() {
                                       <div className="bg-border-dark/30 border border-border-dark/50 rounded-xl p-3 relative pl-6">
                                         <div className="flex items-center gap-3 mb-2">
                                           <TypeIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                                          <div className="flex-1 grid grid-cols-2 gap-2">
+                                          <div className="flex-1">
                                             <input
-                                              value={lesson.titleFr}
-                                              onChange={(e) => updateLesson(section.id, lesson.id, { titleFr: e.target.value })}
-                                              className="bg-neutral-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                                              placeholder="Titre leçon FR"
-                                            />
-                                            <input
-                                              value={lesson.titleEn}
-                                              onChange={(e) => updateLesson(section.id, lesson.id, { titleEn: e.target.value })}
-                                              className="bg-neutral-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                                              placeholder="Lesson title EN"
+                                              value={lesson.title}
+                                              onChange={(e) => updateLesson(section.id, lesson.id, { title: e.target.value })}
+                                              className="w-full bg-neutral-dark border border-border-dark/60 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                                              placeholder="Titre de la leçon"
                                             />
                                           </div>
                                           <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
@@ -1130,14 +1065,14 @@ export default function CreateFormationPage() {
                                       </select>
                                     </div>
                                     <input
-                                      value={q.textFr}
+                                      value={q.text}
                                       onChange={(e) => {
-                                        const updatedQ = { ...q, textFr: e.target.value };
+                                        const updatedQ = { ...q, text: e.target.value };
                                         const updatedQuiz = { ...lesson.quiz!, questions: lesson.quiz!.questions.map((qq, i) => i === qIdx ? updatedQ : qq) };
                                         updateLesson(section.id, lesson.id, { quiz: updatedQuiz });
                                       }}
                                       className="w-full bg-neutral-dark border border-border-dark/60 rounded-lg px-2 py-1 text-white mb-1"
-                                      placeholder="Question (FR)"
+                                      placeholder="Question"
                                     />
                                     {q.type === "CHOIX_UNIQUE" && q.options.map((opt, oIdx) => (
                                       <div key={oIdx} className="flex items-center gap-2 mb-1">
@@ -1153,9 +1088,9 @@ export default function CreateFormationPage() {
                                           className="accent-green-500"
                                         />
                                         <input
-                                          value={opt.fr}
+                                          value={opt}
                                           onChange={(e) => {
-                                            const updatedOpts = q.options.map((o, i) => i === oIdx ? { ...o, fr: e.target.value } : o);
+                                            const updatedOpts = q.options.map((o, i) => i === oIdx ? e.target.value : o);
                                             const updatedQ = { ...q, options: updatedOpts };
                                             const updatedQuiz = { ...lesson.quiz!, questions: lesson.quiz!.questions.map((qq, i) => i === qIdx ? updatedQ : qq) };
                                             updateLesson(section.id, lesson.id, { quiz: updatedQuiz });
@@ -1277,8 +1212,8 @@ export default function CreateFormationPage() {
               {/* Summary */}
               <div className="bg-neutral-dark border border-border-dark rounded-xl p-6 space-y-3 text-sm">
                 <h2 className="font-semibold text-white">Récapitulatif</h2>
-                <div className="flex justify-between text-slate-400"><span>Titre FR</span><span className="text-white truncate max-w-xs">{titleFr || "—"}</span></div>
-                <div className="flex justify-between text-slate-400"><span>Catégorie</span><span className="text-white">{categories.find((c) => c.id === categoryId)?.nameFr || "—"}</span></div>
+                <div className="flex justify-between text-slate-400"><span>Titre</span><span className="text-white truncate max-w-xs">{title || "—"}</span></div>
+                <div className="flex justify-between text-slate-400"><span>Catégorie</span><span className="text-white">{categoryId === "__other__" ? customCategory : categories.find((c) => c.id === categoryId)?.name || "—"}</span></div>
                 <div className="flex justify-between text-slate-400"><span>Niveau</span><span className="text-white">{level}</span></div>
                 <div className="flex justify-between text-slate-400"><span>Prix</span><span className="text-white">{isFree ? "Gratuit" : `${price}€`}</span></div>
                 <div className="flex justify-between text-slate-400"><span>Sections</span><span className="text-white">{sections.length}</span></div>

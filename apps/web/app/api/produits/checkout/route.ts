@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
       where: { id: productId, status: "ACTIF" },
       select: {
         id: true,
-        titleFr: true,
-        titleEn: true,
+        title: true,
         price: true,
         isFree: true,
         maxBuyers: true,
@@ -108,7 +107,7 @@ export async function POST(req: NextRequest) {
         const { onProductPurchase } = await import("@/lib/marketing/hooks");
         onProductPurchase(session.user.id, product.id, 0, {
           source: "free_product",
-          productTitle: product.titleFr,
+          productTitle: product.title,
         }).catch(() => {});
       } catch { /* ignore */ }
 
@@ -136,7 +135,7 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       amount: Math.round(finalPrice * 100) / 100,
       currency: "EUR",
-      description: product.titleFr,
+      description: product.title,
       type: "product",
       itemId: product.id,
       metadata: {
@@ -166,7 +165,7 @@ export async function POST(req: NextRequest) {
         const { onProductPurchase } = await import("@/lib/marketing/hooks");
         onProductPurchase(session.user.id, product.id, finalPrice, {
           source: "mock_checkout",
-          productTitle: product.titleFr,
+          productTitle: product.title,
         }).catch(() => {});
       } catch { /* ignore */ }
 

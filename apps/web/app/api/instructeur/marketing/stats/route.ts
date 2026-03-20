@@ -164,8 +164,8 @@ export async function GET(req: NextRequest) {
           ],
         },
         include: {
-          formation: { select: { titleFr: true } },
-          digitalProduct: { select: { titleFr: true } },
+          formation: { select: { title: true } },
+          digitalProduct: { select: { title: true } },
         },
       }),
       prisma.flashPromotion.findMany({
@@ -178,8 +178,8 @@ export async function GET(req: NextRequest) {
           ],
         },
         include: {
-          formation: { select: { titleFr: true } },
-          digitalProduct: { select: { titleFr: true } },
+          formation: { select: { title: true } },
+          digitalProduct: { select: { title: true } },
         },
       }),
     ]);

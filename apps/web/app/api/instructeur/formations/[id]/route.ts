@@ -79,20 +79,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const {
-      titleFr, titleEn, descriptionFr, descriptionEn,
+      title, description,
       categoryId, level, duration, thumbnail, previewVideo,
       price, isFree, originalPrice, hasCertificate, minScore,
-      status, sections,
+      status, sections, locale,
     } = body;
 
     // Update formation
     const formation = await prisma.formation.update({
       where: { id },
       data: {
-        ...(titleFr && { titleFr }),
-        ...(titleEn && { titleEn }),
-        ...(descriptionFr !== undefined && { descriptionFr }),
-        ...(descriptionEn !== undefined && { descriptionEn }),
+        ...(title && { title }),
+        ...(description !== undefined && { description }),
+        ...(locale && { locale }),
         ...(categoryId && { categoryId }),
         ...(level && { level }),
         ...(duration !== undefined && { duration }),
@@ -117,8 +116,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       for (const sectionData of sections) {
         const section = await prisma.section.create({
           data: {
-            titleFr: sectionData.titleFr,
-            titleEn: sectionData.titleEn,
+            title: sectionData.title,
             order: sectionData.order,
             formationId: id,
           },
@@ -128,8 +126,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           for (const lessonData of sectionData.lessons) {
             const lesson = await prisma.lesson.create({
               data: {
-                titleFr: lessonData.titleFr,
-                titleEn: lessonData.titleEn,
+                title: lessonData.title,
                 type: lessonData.type,
                 videoUrl: lessonData.videoUrl ?? null,
                 content: lessonData.content ?? null,
@@ -148,8 +145,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             if (lessonData.type === "QUIZ" && lessonData.quiz) {
               const quiz = await prisma.quiz.create({
                 data: {
-                  titleFr: lessonData.quiz.titleFr,
-                  titleEn: lessonData.quiz.titleEn,
+                  title: lessonData.quiz.title,
                   passingScore: lessonData.quiz.passingScore ?? 80,
                   timeLimit: lessonData.quiz.timeLimit ?? null,
                   lessonId: lesson.id,
@@ -158,13 +154,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
               if (lessonData.quiz.questions && Array.isArray(lessonData.quiz.questions)) {
                 await prisma.question.createMany({
-                  data: lessonData.quiz.questions.map((q: { type: string; textFr: string; textEn: string; options: unknown[]; correctAnswer: string; explanationFr?: string }, qIdx: number) => ({
+                  data: lessonData.quiz.questions.map((q: { type: string; text: string; options: unknown[]; correctAnswer: string; explanation?: string }, qIdx: number) => ({
                     type: q.type,
-                    textFr: q.textFr,
-                    textEn: q.textEn ?? q.textFr,
+                    text: q.text,
                     options: q.options,
                     correctAnswer: q.correctAnswer,
-                    explanation: q.explanationFr ?? null,
+                    explanation: q.explanation ?? null,
                     quizId: quiz.id,
                   })),
                 });

@@ -12,10 +12,8 @@ import { z } from "zod";
 // ── Schémas Zod ────────────────────────────────────────────────────────────
 
 const createProductSchema = z.object({
-  titleFr: z.string().min(3).max(120),
-  titleEn: z.string().min(3).max(120),
-  descriptionFr: z.string().max(10000).optional().nullable(),
-  descriptionEn: z.string().max(10000).optional().nullable(),
+  title: z.string().min(3).max(120),
+  description: z.string().max(10000).optional().nullable(),
   descriptionFormat: z.enum(["text", "tiptap"]).default("text"),
   type: z.enum(["EBOOK", "PDF", "TEMPLATE", "LICENCE", "AUDIO", "VIDEO", "AUTRE"]),
   categoryId: z.string().min(1),
@@ -36,10 +34,8 @@ const createProductSchema = z.object({
 
 const updateProductSchema = z.object({
   id: z.string().min(1),
-  titleFr: z.string().min(3).max(120).optional(),
-  titleEn: z.string().min(3).max(120).optional(),
-  descriptionFr: z.string().max(10000).optional().nullable(),
-  descriptionEn: z.string().max(10000).optional().nullable(),
+  title: z.string().min(3).max(120).optional(),
+  description: z.string().max(10000).optional().nullable(),
   descriptionFormat: z.enum(["text", "tiptap"]).optional(),
   type: z.enum(["EBOOK", "PDF", "TEMPLATE", "LICENCE", "AUDIO", "VIDEO", "AUTRE"]).optional(),
   categoryId: z.string().min(1).optional(),
@@ -64,8 +60,7 @@ const updateProductSchema = z.object({
 const productListSelect = {
   id: true,
   slug: true,
-  titleFr: true,
-  titleEn: true,
+  title: true,
   productType: true,
   price: true,
   salesCount: true,
@@ -81,8 +76,8 @@ const productListSelect = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Génère un slug unique à partir d'un titre français */
-async function generateUniqueSlug(titleFr: string): Promise<string> {
-  const baseSlug = titleFr
+async function generateUniqueSlug(title: string): Promise<string> {
+  const baseSlug = title
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -153,15 +148,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createProductSchema.parse(body);
 
-    const slug = await generateUniqueSlug(data.titleFr);
+    const slug = await generateUniqueSlug(data.title);
 
     const product = await prisma.digitalProduct.create({
       data: {
         slug,
-        titleFr: data.titleFr,
-        titleEn: data.titleEn,
-        descriptionFr: data.descriptionFr ?? null,
-        descriptionEn: data.descriptionEn ?? null,
+        title: data.title,
+        description: data.description ?? null,
         descriptionFormat: data.descriptionFormat,
         productType: data.type,
         categoryId: data.categoryId,
@@ -233,10 +226,8 @@ export async function PUT(req: NextRequest) {
 
     // Construire le payload de mise à jour avec uniquement les champs fournis
     const updateData: Record<string, unknown> = {};
-    if (fields.titleFr !== undefined) updateData.titleFr = fields.titleFr;
-    if (fields.titleEn !== undefined) updateData.titleEn = fields.titleEn;
-    if (fields.descriptionFr !== undefined) updateData.descriptionFr = fields.descriptionFr;
-    if (fields.descriptionEn !== undefined) updateData.descriptionEn = fields.descriptionEn;
+    if (fields.title !== undefined) updateData.title = fields.title;
+    if (fields.description !== undefined) updateData.description = fields.description;
     if (fields.descriptionFormat !== undefined) updateData.descriptionFormat = fields.descriptionFormat;
     if (fields.type !== undefined) updateData.productType = fields.type;
     if (fields.categoryId !== undefined) updateData.categoryId = fields.categoryId;
@@ -256,8 +247,8 @@ export async function PUT(req: NextRequest) {
     if (fields.status !== undefined) updateData.status = fields.status;
 
     // Si le titre FR change, régénérer le slug
-    if (fields.titleFr !== undefined && fields.titleFr !== existing.titleFr) {
-      updateData.slug = await generateUniqueSlug(fields.titleFr);
+    if (fields.title !== undefined && fields.title !== existing.title) {
+      updateData.slug = await generateUniqueSlug(fields.title);
     }
 
     const product = await prisma.digitalProduct.update({

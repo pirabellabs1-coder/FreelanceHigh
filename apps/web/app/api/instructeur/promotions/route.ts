@@ -67,8 +67,8 @@ export async function GET(req: NextRequest) {
       where: where as never,
       orderBy: { createdAt: "desc" },
       include: {
-        formation: { select: { id: true, titleFr: true, titleEn: true } },
-        digitalProduct: { select: { id: true, titleFr: true, titleEn: true } },
+        formation: { select: { id: true, title: true } },
+        digitalProduct: { select: { id: true, title: true } },
       },
     });
 
@@ -140,8 +140,8 @@ export async function POST(req: NextRequest) {
         usageCount: 0,
       },
       include: {
-        formation: { select: { id: true, titleFr: true, titleEn: true } },
-        digitalProduct: { select: { id: true, titleFr: true, titleEn: true } },
+        formation: { select: { id: true, title: true } },
+        digitalProduct: { select: { id: true, title: true } },
       },
     });
 

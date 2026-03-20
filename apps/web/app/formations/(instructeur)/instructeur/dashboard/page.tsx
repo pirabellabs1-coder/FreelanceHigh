@@ -30,8 +30,8 @@ interface DashboardStats {
   revenueByMonth: { month: string; revenue: number }[];
   enrollmentsByMonth: { month: string; students: number }[];
   formationDistribution: { name: string; value: number }[];
-  topFormations: { id: string; titleFr: string; titleEn: string; students: number; revenue: number; rating: number }[];
-  recentEnrollments: { id?: string; name?: string; formation?: string; date?: string; createdAt?: string; user?: { name: string }; formation_obj?: { titleFr: string } }[];
+  topFormations: { id: string; title: string; students: number; revenue: number; rating: number }[];
+  recentEnrollments: { id?: string; name?: string; formation?: string; date?: string; createdAt?: string; user?: { name: string }; formation_obj?: { title: string } }[];
   recentReviews: { name?: string; rating: number; comment: string; formation?: string; date?: string }[];
 }
 
@@ -73,7 +73,7 @@ export default function InstructeurDashboardPage() {
     enrollmentsByMonth: (rawData as DashboardStats).enrollmentsByMonth ?? [],
     formationDistribution: (rawData as DashboardStats).formationDistribution ??
       ((rawData as DashboardStats).topFormations ?? []).map((f) => ({
-        name: f.titleFr?.substring(0, 20) || "Formation",
+        name: f.title?.substring(0, 20) || "Formation",
         value: f.students,
       })),
     recentEnrollments: (rawData as DashboardStats).recentEnrollments ?? [],
@@ -391,7 +391,7 @@ export default function InstructeurDashboardPage() {
           <div className="divide-y divide-slate-200">
             {(stats?.recentEnrollments ?? []).slice(0, 5).map((e, i) => {
               const name = e.name || e.user?.name || "Apprenant";
-              const formation = e.formation || (e as { formation_obj?: { titleFr: string } }).formation_obj?.titleFr || "";
+              const formation = e.formation || (e as { formation_obj?: { title: string } }).formation_obj?.title || "";
               const date = e.date || (e.createdAt ? new Date(e.createdAt).toLocaleDateString("fr-FR") : "");
               return (
                 <div key={i} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:bg-slate-800/50 transition-colors">
@@ -433,7 +433,7 @@ export default function InstructeurDashboardPage() {
           </div>
           <div className="divide-y divide-slate-200">
             {stats.topFormations.map((f, i) => {
-              const title = fr ? f.titleFr : f.titleEn || f.titleFr;
+              const title = f.title;
               return (
                 <div
                   key={f.id}

@@ -6,10 +6,8 @@ import { authOptions } from "@/lib/auth/config";
 import Papa from "papaparse";
 
 interface CsvRow {
-  section_title_fr: string;
-  section_title_en: string;
-  lesson_title_fr: string;
-  lesson_title_en: string;
+  section_title: string;
+  lesson_title: string;
   lesson_type: string;
   video_url: string;
   duration_minutes: string;
@@ -17,11 +15,9 @@ interface CsvRow {
 }
 
 interface ParsedSection {
-  titleFr: string;
-  titleEn: string;
+  title: string;
   lessons: {
-    titleFr: string;
-    titleEn: string;
+    title: string;
     type: string;
     videoUrl: string;
     duration: number;
@@ -67,12 +63,12 @@ export async function POST(req: NextRequest) {
     rows.forEach((row, i) => {
       const lineNum = i + 2; // +1 for 0-index, +1 for header
 
-      if (!row.section_title_fr?.trim()) {
-        errors.push(`Ligne ${lineNum}: section_title_fr manquant`);
+      if (!row.section_title?.trim()) {
+        errors.push(`Ligne ${lineNum}: section_title manquant`);
         return;
       }
-      if (!row.lesson_title_fr?.trim()) {
-        errors.push(`Ligne ${lineNum}: lesson_title_fr manquant`);
+      if (!row.lesson_title?.trim()) {
+        errors.push(`Ligne ${lineNum}: lesson_title manquant`);
         return;
       }
 
@@ -82,18 +78,16 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      const sectionKey = row.section_title_fr.trim();
+      const sectionKey = row.section_title.trim();
       if (!sectionsMap.has(sectionKey)) {
         sectionsMap.set(sectionKey, {
-          titleFr: row.section_title_fr.trim(),
-          titleEn: (row.section_title_en ?? row.section_title_fr).trim(),
+          title: row.section_title.trim(),
           lessons: [],
         });
       }
 
       sectionsMap.get(sectionKey)!.lessons.push({
-        titleFr: row.lesson_title_fr.trim(),
-        titleEn: (row.lesson_title_en ?? row.lesson_title_fr).trim(),
+        title: row.lesson_title.trim(),
         type,
         videoUrl: (row.video_url ?? "").trim(),
         duration: parseInt(row.duration_minutes ?? "0", 10) || 0,

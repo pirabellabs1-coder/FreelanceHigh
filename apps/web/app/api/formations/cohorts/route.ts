@@ -45,13 +45,12 @@ export async function GET(req: NextRequest) {
             select: {
               id: true,
               slug: true,
-              titleFr: true,
-              titleEn: true,
+              title: true,
               thumbnail: true,
               duration: true,
               level: true,
               category: {
-                select: { nameFr: true, nameEn: true, slug: true },
+                select: { name: true, slug: true },
               },
               instructeur: {
                 select: {

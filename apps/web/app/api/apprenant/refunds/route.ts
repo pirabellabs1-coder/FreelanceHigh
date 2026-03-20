@@ -23,8 +23,7 @@ export async function GET(_req: NextRequest) {
             formation: {
               select: {
                 id: true,
-                titleFr: true,
-                titleEn: true,
+                title: true,
                 slug: true,
                 thumbnail: true,
               },
@@ -46,8 +45,7 @@ export async function GET(_req: NextRequest) {
       createdAt: r.createdAt,
       formation: {
         id: r.enrollment.formation.id,
-        titleFr: r.enrollment.formation.titleFr,
-        titleEn: r.enrollment.formation.titleEn,
+        title: r.enrollment.formation.title,
         slug: r.enrollment.formation.slug,
         thumbnail: r.enrollment.formation.thumbnail,
       },
@@ -83,7 +81,7 @@ export async function POST(req: NextRequest) {
       where: { id: enrollmentId },
       include: {
         formation: {
-          select: { id: true, titleFr: true },
+          select: { id: true, title: true },
         },
       },
     });

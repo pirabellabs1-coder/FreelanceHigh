@@ -17,8 +17,7 @@ interface Purchase {
   product: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     productType: string;
     banner: string | null;
     fileMimeType: string | null;
@@ -98,7 +97,7 @@ export default function MesProduitsPage() {
         <div className="space-y-3">
           {purchases.map((purchase) => {
             const product = purchase.product;
-            const title = fr ? product.titleFr : (product.titleEn || product.titleFr);
+            const title = product.title;
             const remainingDownloads = purchase.maxDownloads - purchase.downloadCount;
 
             return (

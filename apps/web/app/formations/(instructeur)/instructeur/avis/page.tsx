@@ -12,7 +12,7 @@ interface Avis {
   response: string | null;
   createdAt: string;
   user: { name: string; avatar: string | null; image: string | null };
-  formation: { id: string; titleFr: string; slug: string };
+  formation: { id: string; title: string; slug: string };
 }
 
 export default function InstructeurAvisPage() {
@@ -166,7 +166,7 @@ export default function InstructeurAvisPage() {
                         ))}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 mb-2">{a.formation.titleFr} · {new Date(a.createdAt).toLocaleDateString("fr-FR")}</p>
+                    <p className="text-xs text-slate-500 mb-2">{a.formation.title} · {new Date(a.createdAt).toLocaleDateString("fr-FR")}</p>
                     <p className="text-sm text-slate-700 dark:text-slate-300">{a.comment}</p>
 
                     {/* Existing response */}

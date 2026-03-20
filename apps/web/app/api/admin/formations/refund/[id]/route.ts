@@ -26,7 +26,7 @@ export async function POST(
       include: {
         formation: {
           select: {
-            titleFr: true,
+            title: true,
             price: true,
             instructeurId: true,
           },

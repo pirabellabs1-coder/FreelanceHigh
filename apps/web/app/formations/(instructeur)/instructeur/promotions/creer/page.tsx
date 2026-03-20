@@ -13,8 +13,7 @@ import {
 
 interface TargetItem {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   type: "formation" | "product";
 }
 
@@ -66,18 +65,16 @@ export default function CreerPromotionPage() {
     ])
       .then(([formData, prodData]) => {
         const formations: TargetItem[] = (formData.formations || []).map(
-          (f: { id: string; titleFr: string; titleEn: string }) => ({
+          (f: { id: string; title: string }) => ({
             id: f.id,
-            titleFr: f.titleFr,
-            titleEn: f.titleEn,
+            title: f.title,
             type: "formation" as const,
           }),
         );
         const products: TargetItem[] = (prodData.products || []).map(
-          (p: { id: string; titleFr: string; titleEn: string }) => ({
+          (p: { id: string; title: string }) => ({
             id: p.id,
-            titleFr: p.titleFr,
-            titleEn: p.titleEn,
+            title: p.title,
             type: "product" as const,
           }),
         );
@@ -294,7 +291,7 @@ export default function CreerPromotionPage() {
                   </option>
                   {filteredTargets.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {locale === "fr" ? item.titleFr : item.titleEn}
+                      {item.title}
                     </option>
                   ))}
                 </select>
@@ -424,11 +421,7 @@ export default function CreerPromotionPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-slate-900 dark:text-white bg-white dark:bg-slate-900 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                {targets.find((t) => t.id === form.targetId)
-                  ? locale === "fr"
-                    ? targets.find((t) => t.id === form.targetId)!.titleFr
-                    : targets.find((t) => t.id === form.targetId)!.titleEn
-                  : "—"}
+                {targets.find((t) => t.id === form.targetId)?.title || "—"}
               </span>
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 &rarr;

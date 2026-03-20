@@ -23,7 +23,7 @@ export async function GET(
         fileMimeType: true,
         previewPages: true,
         watermarkEnabled: true,
-        titleFr: true,
+        title: true,
       },
     });
 

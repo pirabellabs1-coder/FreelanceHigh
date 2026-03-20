@@ -11,7 +11,7 @@ interface AdminCertificate {
   issuedAt: string;
   revokedAt: string | null;
   user: { name: string; email: string };
-  formation: { titleFr: string; slug: string };
+  formation: { title: string; slug: string };
 }
 
 export default function AdminFormationsCertificatsPage() {
@@ -50,7 +50,7 @@ export default function AdminFormationsCertificatsPage() {
     !search ||
     c.code.toLowerCase().includes(search.toLowerCase()) ||
     c.user.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.formation.titleFr.toLowerCase().includes(search.toLowerCase())
+    c.formation.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -93,7 +93,7 @@ export default function AdminFormationsCertificatsPage() {
                     <p className="text-sm">{c.user.name}</p>
                     <p className="text-xs text-slate-500">{c.user.email}</p>
                   </td>
-                  <td className="p-4"><p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1 max-w-xs">{c.formation.titleFr}</p></td>
+                  <td className="p-4"><p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1 max-w-xs">{c.formation.title}</p></td>
                   <td className="p-4"><span className="text-sm font-medium">{c.score}%</span></td>
                   <td className="p-4"><p className="text-xs text-slate-500">{new Date(c.issuedAt).toLocaleDateString("fr-FR")}</p></td>
                   <td className="p-4">
@@ -129,7 +129,7 @@ export default function AdminFormationsCertificatsPage() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRevokeModal(null)} />
           <div className="relative bg-white dark:bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h2 className="font-bold mb-2">{t("admin_revoke_certificate_title")}</h2>
-            <p className="text-sm text-slate-500 mb-1">{revokeModal.user.name} — {revokeModal.formation.titleFr}</p>
+            <p className="text-sm text-slate-500 mb-1">{revokeModal.user.name} — {revokeModal.formation.title}</p>
             <p className="font-mono text-xs text-slate-400 mb-4">{revokeModal.code}</p>
             <p className="text-sm text-red-600 mb-4">{t("admin_revoke_warning")}</p>
             <div className="flex gap-3">

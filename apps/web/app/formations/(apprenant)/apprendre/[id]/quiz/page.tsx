@@ -13,8 +13,7 @@ import {
 
 interface Question {
   id: string;
-  textFr: string;
-  textEn: string;
+  text: string;
   type: "CHOIX_UNIQUE" | "CHOIX_MULTIPLE" | "VRAI_FAUX" | "TEXTE_LIBRE";
   options: { fr: string; en: string; value: string }[];
   explanation: string | null;
@@ -22,8 +21,7 @@ interface Question {
 
 interface Quiz {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   passingScore: number;
   timeLimit: number | null;
   questions: Question[];
@@ -177,7 +175,7 @@ function ReviewQuestionView({
   detail: QuizResult["details"][number] | undefined;
   fr: boolean;
 }) {
-  const qText = fr ? question.textFr : (question.textEn || question.textFr);
+  const qText = question.text;
   const isCorrect = detail?.correct ?? false;
   const correctAnswer = detail?.correctAnswer;
   const explanation = detail?.explanation ?? question.explanation;
@@ -360,15 +358,15 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
       })
       .then((data) => {
         // Normalize question data from API:
-        // - API returns `explanationFr` but our type expects `explanation`
+        // - Map API fields to expected shape
         // - Options stored as { fr, en } without `value`; add index-based value
         const normalizedQuestions = (data.questions ?? []).map((q: Record<string, unknown>) => ({
           ...q,
-          explanation: (q.explanationFr as string) ?? (q.explanation as string) ?? null,
+          explanation: (q.explanation as string) ?? null,
           options: Array.isArray(q.options)
             ? (q.options as Record<string, string>[]).map((opt, optIdx) => ({
-                fr: opt.fr ?? opt.textFr ?? "",
-                en: opt.en ?? opt.textEn ?? "",
+                fr: opt.fr ?? opt.text ?? "",
+                en: opt.en ?? "",
                 value: opt.value ?? String(optIdx),
               }))
             : [],
@@ -443,7 +441,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const currentQ = quiz.questions[currentIdx];
-  const qText = fr ? currentQ.textFr : (currentQ.textEn || currentQ.textFr);
+  const qText = currentQ.text;
   const totalQ = quiz.questions.length;
 
   // ── Review Mode ────────────────────────────────────────────
@@ -680,7 +678,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         {/* Header with title, timer, progress */}
         <div className="bg-white dark:bg-slate-900 dark:bg-neutral-dark rounded-2xl shadow-sm border dark:border-border-dark p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="font-bold text-slate-900 dark:text-white dark:text-slate-100">{fr ? quiz.titleFr : (quiz.titleEn || quiz.titleFr)}</h1>
+            <h1 className="font-bold text-slate-900 dark:text-white dark:text-slate-100">{quiz.title}</h1>
             <div className="flex items-center gap-4">
               {/* Answered count */}
               <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">

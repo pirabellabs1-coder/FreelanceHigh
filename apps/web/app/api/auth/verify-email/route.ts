@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const code = storeOTP(email);
+    const code = await storeOTP(email);
     await sendVerificationEmail(email, name || "Utilisateur", code);
 
     return NextResponse.json({
@@ -85,7 +85,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const result = verifyOTP(email, code);
+    const result = await verifyOTP(email, code);
 
     if (!result.valid) {
       return NextResponse.json(

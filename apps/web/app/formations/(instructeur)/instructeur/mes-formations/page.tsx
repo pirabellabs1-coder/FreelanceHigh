@@ -15,8 +15,7 @@ import {
 interface InstructorFormation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   thumbnail: string | null;
   status: string;
   price: number;
@@ -185,7 +184,7 @@ export default function InstructeurMesFormationsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((f) => {
-            const title = fr ? f.titleFr : (f.titleEn || f.titleFr);
+            const title = f.title;
             return (
               <div key={f.id} className="bg-white dark:bg-slate-900 dark:bg-neutral-dark rounded-xl border dark:border-border-dark hover:border-slate-300 transition-colors p-4">
                 <div className="flex gap-4">

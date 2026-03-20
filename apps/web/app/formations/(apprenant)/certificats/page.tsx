@@ -15,8 +15,7 @@ interface Certificate {
   pdfUrl: string | null;
   enrollment: {
     formation: {
-      titleFr: string;
-      titleEn: string;
+      title: string;
       slug: string;
       thumbnail: string | null;
       instructeur: { user: { name: string } };
@@ -52,7 +51,7 @@ export default function MesCertificatsPage() {
   }, [status, router]);
 
   const shareLinkedIn = (cert: Certificate) => {
-    const title = fr ? cert.enrollment.formation.titleFr : (cert.enrollment.formation.titleEn || cert.enrollment.formation.titleFr);
+    const title = cert.enrollment.formation.title;
     const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(`${window.location.origin}/formations/verification/${cert.code}`)}&title=${encodeURIComponent(title)}`;
     window.open(url, "_blank", "noopener");
   };
@@ -118,7 +117,7 @@ export default function MesCertificatsPage() {
         <div className="space-y-4">
           {certificates.map((cert) => {
             const formation = cert.enrollment.formation;
-            const title = fr ? formation.titleFr : (formation.titleEn || formation.titleFr);
+            const title = formation.title;
 
             return (
               <div

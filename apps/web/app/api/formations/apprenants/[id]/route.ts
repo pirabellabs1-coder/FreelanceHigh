@@ -31,8 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             thumbnail: true,
             duration: true,
             instructeur: {
@@ -52,7 +51,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           include: {
             formation: {
               select: {
-                titleFr: true,
+                title: true,
                 instructeur: { select: { user: { select: { name: true } } } },
               },
             },
@@ -103,7 +102,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           id: e.id,
           formationId: e.formation?.id,
           formationSlug: e.formation?.slug,
-          formationTitle: e.formation?.titleFr ?? "Formation",
+          formationTitle: e.formation?.title ?? "Formation",
           formationThumbnail: e.formation?.thumbnail,
           instructorName: e.formation?.instructeur?.user?.name ?? "Instructeur",
           completedAt: (e.completedAt ?? e.updatedAt).toISOString(),
@@ -112,7 +111,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         certificates: certificates.map((c) => ({
           id: c.id,
           code: c.code,
-          formationTitle: c.enrollment?.formation?.titleFr ?? "Formation",
+          formationTitle: c.enrollment?.formation?.title ?? "Formation",
           instructorName: c.enrollment?.formation?.instructeur?.user?.name ?? "Instructeur",
           score: c.score,
           issuedAt: c.issuedAt.toISOString(),

@@ -42,7 +42,7 @@ export async function POST(
       targetId: id,
       targetUserId: formation.instructeur?.userId,
       metadata: {
-        formationTitle: formation.titleFr,
+        formationTitle: formation.title,
         reason,
         newStatus: status,
       },
@@ -54,7 +54,7 @@ export async function POST(
       sendFormationRejectedEmail({
         email: formation.instructeur.user.email,
         name: formation.instructeur.user.name ?? "Instructeur",
-        formationTitle: formation.titleFr,
+        formationTitle: formation.title,
         reason,
       }).catch((err) => console.error("[Email] sendFormationRejectedEmail:", err));
     }

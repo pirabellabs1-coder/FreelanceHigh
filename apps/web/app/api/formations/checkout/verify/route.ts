@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         stripeSessionId: sessionId,
       },
       include: {
-        formation: { select: { id: true, titleFr: true, titleEn: true, slug: true, thumbnail: true } },
+        formation: { select: { id: true, title: true, slug: true, thumbnail: true } },
       },
     });
 
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           {
             sessionId: sessionId,
             source: "checkout_verify",
-            formationTitle: enrollment.formation.titleFr,
+            formationTitle: enrollment.formation.title,
           }
         ).catch(() => {});
       }

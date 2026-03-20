@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
       where: { instructeurId: instructeur.id, status: "ACTIF" },
       select: {
         id: true,
-        titleFr: true,
+        title: true,
         studentsCount: true,
         rating: true,
         enrollments: { select: { paidAmount: true } },
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     });
 
     const formationPerformance = formations.map((f) => ({
-      name: f.titleFr.length > 20 ? f.titleFr.substring(0, 20) + "..." : f.titleFr,
+      name: f.title.length > 20 ? f.title.substring(0, 20) + "..." : f.title,
       students: f.studentsCount,
       rating: f.rating,
       revenue: Math.round(f.enrollments.reduce((acc, e) => acc + e.paidAmount, 0) * INSTRUCTOR_COMMISSION * 100) / 100,

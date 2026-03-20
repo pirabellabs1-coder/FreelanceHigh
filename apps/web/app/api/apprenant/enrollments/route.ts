@@ -22,8 +22,7 @@ export async function GET(_req: NextRequest) {
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             thumbnail: true,
             duration: true,
             level: true,
@@ -37,8 +36,7 @@ export async function GET(_req: NextRequest) {
         cohort: {
           select: {
             id: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             status: true,
             startDate: true,
             endDate: true,
@@ -49,7 +47,7 @@ export async function GET(_req: NextRequest) {
           orderBy: { completedAt: "desc" },
           where: { completed: true },
           include: {
-            lesson: { select: { titleFr: true, titleEn: true } },
+            lesson: { select: { title: true } },
           },
         },
       },
@@ -60,7 +58,7 @@ export async function GET(_req: NextRequest) {
     const enriched = enrollments.map((e) => ({
       ...e,
       instructeur: { user: { name: e.formation.instructeur?.user?.name ?? "" } },
-      lastLessonTitle: e.lessonProgress[0]?.lesson?.titleFr ?? null,
+      lastLessonTitle: e.lessonProgress[0]?.lesson?.title ?? null,
     }));
 
     // Stats
@@ -164,11 +162,11 @@ export async function GET(_req: NextRequest) {
     if (categoryIds.length > 0) {
       const categories = await prisma.formationCategory.findMany({
         where: { id: { in: categoryIds } },
-        select: { id: true, nameFr: true },
+        select: { id: true, name: true },
       });
       for (const cat of categories) {
         const entry = categoryProgressMap.get(cat.id);
-        if (entry) entry.name = cat.nameFr;
+        if (entry) entry.name = cat.name;
       }
     }
 

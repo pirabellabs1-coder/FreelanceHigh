@@ -10,8 +10,7 @@ import { Search, X, Star, Clock, Users, Award, ChevronUp, ChevronDown, ChevronLe
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
   _count?: { formations: number };
 }
@@ -19,10 +18,8 @@ interface Category {
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
-  shortDescFr: string | null;
-  shortDescEn: string | null;
+  title: string;
+  shortDesc: string | null;
   thumbnail: string | null;
   price: number;
   originalPrice: number | null;
@@ -35,7 +32,7 @@ interface Formation {
   hasCertificate: boolean;
   createdAt: string;
   publishedAt: string | null;
-  category: { nameFr: string; nameEn: string; color: string | null; slug: string };
+  category: { name: string; color: string | null; slug: string };
   instructeur: { user: { name: string; avatar: string | null; image: string | null } };
 }
 
@@ -87,8 +84,8 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function FormationCard({ formation, locale, t }: { formation: Formation; locale: string; t: ReturnType<typeof useTranslations> }) {
-  const title = locale === "fr" ? formation.titleFr : (formation.titleEn || formation.titleFr);
-  const catName = locale === "fr" ? formation.category.nameFr : (formation.category.nameEn || formation.category.nameFr);
+  const title = formation.title;
+  const catName = formation.category.name;
   const instructorName = formation.instructeur?.user?.name ?? "Instructeur";
   const avatarUrl = formation.instructeur?.user?.avatar || formation.instructeur?.user?.image;
   const thumbnail = formation.thumbnail;
@@ -248,7 +245,7 @@ function EmptyState({
                 href={`/formations/explorer?category=${cat.slug}`}
                 className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-emerald-500/40 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all"
               >
-                {locale === "fr" ? cat.nameFr : (cat.nameEn || cat.nameFr)}
+                {cat.name}
                 {cat._count && (
                   <span className="ml-1.5 text-slate-500">({cat._count.formations})</span>
                 )}
@@ -548,7 +545,7 @@ export default function ExplorerFormationsPage() {
                     : "bg-white dark:bg-slate-900 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white dark:hover:text-white border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                 }`}
               >
-                {locale === "fr" ? cat.nameFr : (cat.nameEn || cat.nameFr)}
+                {cat.name}
                 {cat._count && <span className="ml-1 opacity-60">({cat._count.formations})</span>}
               </button>
             ))}

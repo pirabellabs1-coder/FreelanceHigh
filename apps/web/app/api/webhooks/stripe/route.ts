@@ -376,7 +376,7 @@ async function handleFormationCheckout(session: Stripe.Checkout.Session) {
       sendEnrollmentConfirmedEmail({
         email: user.email,
         name: user.name ?? "Apprenant",
-        formationTitle: formation.titleFr,
+        formationTitle: formation.title,
         formationSlug: formation.id,
         paidAmount,
         locale: "fr",
@@ -388,7 +388,7 @@ async function handleFormationCheckout(session: Stripe.Checkout.Session) {
           instructeurEmail: instrEmail,
           instructeurName: formation.instructeur?.user?.name ?? "Instructeur",
           studentName: user.name ?? "Apprenant",
-          formationTitle: formation.titleFr,
+          formationTitle: formation.title,
           paidAmount,
         }).catch((err) => console.error("[Email] sendNewStudentNotificationEmail:", err));
       }
@@ -401,7 +401,7 @@ async function handleFormationCheckout(session: Stripe.Checkout.Session) {
     onFormationPurchase(userId, formation.id, paidAmount, {
       sessionId: session.id,
       source: promoId ? "promo" : "direct",
-      formationTitle: formation.titleFr,
+      formationTitle: formation.title,
     }).catch((err) => console.error("[Marketing Hooks] Formation purchase hook error:", err));
   }
 
@@ -521,8 +521,8 @@ async function handleCohortCheckout(session: Stripe.Checkout.Session) {
     sendCohortEnrollmentEmail({
       email: user.email,
       name: user.name ?? "Apprenant",
-      cohortTitle: cohort.titleFr,
-      formationTitle: cohort.formation.titleFr,
+      cohortTitle: cohort.title,
+      formationTitle: cohort.formation.title,
       startDate: cohort.startDate,
       endDate: cohort.endDate,
       paidAmount,
@@ -536,7 +536,7 @@ async function handleCohortCheckout(session: Stripe.Checkout.Session) {
         instructeurEmail: instrEmail,
         instructeurName: cohort.formation.instructeur?.user?.name ?? "Instructeur",
         studentName: user.name ?? "Apprenant",
-        formationTitle: `${cohort.titleFr} (${cohort.formation.titleFr})`,
+        formationTitle: `${cohort.title} (${cohort.formation.title})`,
         paidAmount,
       }).catch((err) => console.error("[Email] sendNewStudentNotificationEmail:", err));
     }
@@ -547,8 +547,8 @@ async function handleCohortCheckout(session: Stripe.Checkout.Session) {
     sessionId: session.id,
     cohortId,
     source: "cohort",
-    formationTitle: cohort.formation.titleFr,
-    cohortTitle: cohort.titleFr,
+    formationTitle: cohort.formation.title,
+    cohortTitle: cohort.title,
   }).catch((err) => console.error("[Marketing Hooks] Cohort purchase hook error:", err));
 
   console.log(
@@ -683,7 +683,7 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
       sendLicenseKeyEmail({
         email: buyer.email,
         name: buyer.name ?? "Utilisateur",
-        productTitle: product.titleFr,
+        productTitle: product.title,
         licenseKey,
         downloadUrl,
         locale: "fr",
@@ -693,7 +693,7 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
       sendDigitalProductDeliveryEmail({
         email: buyer.email,
         name: buyer.name ?? "Utilisateur",
-        productTitle: product.titleFr,
+        productTitle: product.title,
         downloadUrl,
         locale: "fr",
       }).catch((err) => console.error("[Email] sendDigitalProductDeliveryEmail:", err));
@@ -706,7 +706,7 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
         instructeurEmail: instrEmail,
         instructeurName: product.instructeur?.user?.name ?? "Instructeur",
         studentName: buyer.name ?? "Utilisateur",
-        formationTitle: `[Produit] ${product.titleFr}`,
+        formationTitle: `[Produit] ${product.title}`,
         paidAmount,
       }).catch((err) => console.error("[Email] sendNewStudentNotificationEmail (product):", err));
     }
@@ -716,7 +716,7 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
   onProductPurchase(userId, productId, paidAmount, {
     sessionId: session.id,
     source: flashPromoId ? "flash_promo" : "direct",
-    productTitle: product.titleFr,
+    productTitle: product.title,
     productType: product.productType,
   }).catch((err) => console.error("[Marketing Hooks] Product purchase hook error:", err));
 
@@ -940,7 +940,7 @@ async function handleFunnelCheckout(session: Stripe.Checkout.Session) {
         // Check if it's a formation
         const formation = await prisma.formation.findUnique({
           where: { id: itemId },
-          select: { id: true, instructeurId: true, titleFr: true, studentsCount: true },
+          select: { id: true, instructeurId: true, title: true, studentsCount: true },
         });
 
         if (formation) {

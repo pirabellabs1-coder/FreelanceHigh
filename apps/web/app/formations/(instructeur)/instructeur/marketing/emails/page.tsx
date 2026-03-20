@@ -475,19 +475,16 @@ export default function EmailSequencesPage() {
             <FeatureCard
               icon={<UserPlus className="w-5 h-5 text-cyan-500" />}
               title="Accueil automatique"
-              titleEn="Auto welcome"
               description="Accueillez chaque nouvel inscrit avec une serie d'emails personnalises"
             />
             <FeatureCard
               icon={<ShoppingCart className="w-5 h-5 text-amber-500" />}
               title="Recuperation panier"
-              titleEn="Cart recovery"
               description="Relancez automatiquement les paniers abandonnes avec des offres ciblees"
             />
             <FeatureCard
               icon={<BarChart3 className="w-5 h-5 text-green-500" />}
               title="Suivi post-achat"
-              titleEn="Post-purchase"
               description="Accompagnez vos apprenants apres l'achat pour maximiser la retention"
             />
           </div>
@@ -541,7 +538,6 @@ function FeatureCard({
 }: {
   icon: React.ReactNode;
   title: string;
-  titleEn: string;
   description: string;
 }) {
   return (

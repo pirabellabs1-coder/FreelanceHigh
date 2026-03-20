@@ -41,6 +41,7 @@ const INSTRUCTEUR_LINKS: NavLink[] = [
   { href: "/formations/instructeur/revenus", icon: "account_balance_wallet", labelKey: "revenue" },
   { href: "/formations/instructeur/avis", icon: "rate_review", labelKey: "reviews" },
   { href: "/formations/instructeur/statistiques", icon: "analytics", labelKey: "statistics" },
+  { href: "/formations/instructeur/tunnel-de-vente", icon: "filter_alt", labelKey: "sales_funnel" },
   {
     href: "/formations/instructeur/marketing",
     icon: "campaign",

@@ -25,8 +25,7 @@ interface Enrollment {
   formation: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     thumbnail: string | null;
     duration: number;
     level: string;
@@ -36,8 +35,7 @@ interface Enrollment {
   lastLessonTitle?: string;
   cohort?: {
     id: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     status: string;
     startDate: string;
     endDate: string;
@@ -95,7 +93,7 @@ export default function MesFormationsPage() {
           ? enrolls.reduce((sum: number, e: Enrollment) => sum + e.progress, 0) / enrolls.length
           : 0;
         const progressByFormation = enrolls.slice(0, 6).map((e: Enrollment) => ({
-          name: (fr ? e.formation.titleFr : (e.formation.titleEn || e.formation.titleFr)).slice(0, 20),
+          name: e.formation.title.slice(0, 20),
           progress: Math.round(e.progress),
         }));
         const weekLabels = fr
@@ -513,7 +511,7 @@ export default function MesFormationsPage() {
       ) : (
         <div className="space-y-4">
           {filtered.map((enrollment) => {
-            const title = locale === "fr" ? enrollment.formation.titleFr : (enrollment.formation.titleEn || enrollment.formation.titleFr);
+            const title = enrollment.formation.title;
             const isCompleted = enrollment.progress >= 100;
 
             return (

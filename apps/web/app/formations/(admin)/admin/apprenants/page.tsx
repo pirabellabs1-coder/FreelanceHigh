@@ -11,7 +11,7 @@ interface AdminApprenant {
   completedAt: string | null;
   paidAmount: number;
   user: { name: string; email: string; avatar: string | null; image: string | null };
-  formation: { titleFr: string; slug: string };
+  formation: { title: string; slug: string };
   certificate: { code: string } | null;
 }
 
@@ -32,7 +32,7 @@ export default function AdminApprenantsPage() {
     !search ||
     e.user.name.toLowerCase().includes(search.toLowerCase()) ||
     e.user.email.toLowerCase().includes(search.toLowerCase()) ||
-    e.formation.titleFr.toLowerCase().includes(search.toLowerCase())
+    e.formation.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -88,7 +88,7 @@ export default function AdminApprenantsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4"><p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1 max-w-xs">{e.formation.titleFr}</p></td>
+                    <td className="p-4"><p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1 max-w-xs">{e.formation.title}</p></td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 rounded-full overflow-hidden">

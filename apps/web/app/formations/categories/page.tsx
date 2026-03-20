@@ -6,8 +6,7 @@ import { useLocale } from "next-intl";
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
   icon: string;
   color: string;
@@ -82,7 +81,7 @@ export default function FormationsCategoriesPage() {
                   {cat.icon}
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                  {lang === "fr" ? cat.nameFr : cat.nameEn}
+                  {cat.name}
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   {cat._count.formations} {lang === "fr" ? "formation" : "course"}{cat._count.formations > 1 ? "s" : ""}

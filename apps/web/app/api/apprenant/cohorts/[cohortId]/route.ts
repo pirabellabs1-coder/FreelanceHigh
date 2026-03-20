@@ -38,8 +38,7 @@ export async function GET(
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             thumbnail: true,
             duration: true,
             instructeur: {
@@ -67,10 +66,8 @@ export async function GET(
 
     return NextResponse.json({
       id: cohort.id,
-      titleFr: cohort.titleFr,
-      titleEn: cohort.titleEn,
-      descriptionFr: cohort.descriptionFr,
-      descriptionEn: cohort.descriptionEn,
+      title: cohort.title,
+      description: cohort.description,
       startDate: cohort.startDate,
       endDate: cohort.endDate,
       enrollmentDeadline: cohort.enrollmentDeadline,
@@ -82,8 +79,7 @@ export async function GET(
       formation: {
         id: cohort.formation.id,
         slug: cohort.formation.slug,
-        titleFr: cohort.formation.titleFr,
-        titleEn: cohort.formation.titleEn,
+        title: cohort.formation.title,
         thumbnail: cohort.formation.thumbnail,
         duration: cohort.formation.duration,
       },

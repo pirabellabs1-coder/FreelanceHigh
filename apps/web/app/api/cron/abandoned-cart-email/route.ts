@@ -50,17 +50,17 @@ export async function GET(req: NextRequest) {
       const cartItems = await prisma.cartItem.findMany({
         where: { id: { in: cart.cartItemIds } },
         include: {
-          formation: { select: { titleFr: true, price: true, thumbnail: true, learnPointsFr: true } },
+          formation: { select: { title: true, price: true, thumbnail: true, learnPoints: true } },
         },
       });
 
       const items = cartItems
         .filter((ci) => ci.formation)
         .map((ci) => ({
-          title: ci.formation!.titleFr,
+          title: ci.formation!.title,
           price: ci.formation!.price,
           thumbnail: ci.formation!.thumbnail ?? undefined,
-          learnPoints: ci.formation!.learnPointsFr as string[],
+          learnPoints: ci.formation!.learnPoints as string[],
         }));
 
       if (items.length === 0) {

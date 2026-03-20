@@ -34,7 +34,7 @@ export async function POST(
       sendFormationApprovedEmail({
         email: formation.instructeur.user.email,
         name: formation.instructeur.user.name ?? "Instructeur",
-        formationTitle: formation.titleFr,
+        formationTitle: formation.title,
         formationSlug: formation.slug,
       }).catch((err) => console.error("[Email] sendFormationApprovedEmail:", err));
     }

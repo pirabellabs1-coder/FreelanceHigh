@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest) {
       },
       include: {
         formation: {
-          select: { id: true, titleFr: true, titleEn: true, slug: true },
+          select: { id: true, title: true, slug: true },
         },
         replies: {
           select: {
@@ -58,7 +58,7 @@ export async function GET(_req: NextRequest) {
           },
           include: {
             formation: {
-              select: { id: true, titleFr: true, titleEn: true, slug: true },
+              select: { id: true, title: true, slug: true },
             },
             replies: {
               select: {
@@ -118,7 +118,7 @@ export async function GET(_req: NextRequest) {
         id: d.id,
         title: d.title,
         formationId: d.formation.id,
-        formationTitle: d.formation.titleFr,
+        formationTitle: d.formation.title,
         formationSlug: d.formation.slug,
         repliesCount,
         unreadCount,

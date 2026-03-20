@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
           formation: {
             select: {
               id: true,
-              titleFr: true,
+              title: true,
               instructeur: {
                 select: {
                   id: true,
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
           digitalProduct: {
             select: {
               id: true,
-              titleFr: true,
+              title: true,
               instructeur: {
                 select: {
                   id: true,

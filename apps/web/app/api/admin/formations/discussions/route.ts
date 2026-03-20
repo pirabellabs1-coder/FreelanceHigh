@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         orderBy: [{ reportCount: "desc" }, { createdAt: "desc" }],
         include: {
           formation: {
-            select: { id: true, titleFr: true, slug: true },
+            select: { id: true, title: true, slug: true },
           },
           user: {
             select: { id: true, name: true, email: true },

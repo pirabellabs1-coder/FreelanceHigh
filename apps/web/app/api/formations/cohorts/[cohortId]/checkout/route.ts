@@ -25,7 +25,7 @@ export async function POST(
       where: { id: cohortId },
       include: {
         formation: {
-          select: { id: true, titleFr: true, titleEn: true, status: true, slug: true },
+          select: { id: true, title: true, status: true, slug: true },
         },
       },
     });
@@ -57,7 +57,7 @@ export async function POST(
       userId,
       amount: cohort.price,
       currency: "EUR",
-      description: `${cohort.titleFr} — ${cohort.formation.titleFr}`,
+      description: `${cohort.title} — ${cohort.formation.title}`,
       type: "cohort",
       itemId: cohortId,
       metadata: {

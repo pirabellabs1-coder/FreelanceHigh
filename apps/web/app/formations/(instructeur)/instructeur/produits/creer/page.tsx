@@ -13,8 +13,7 @@ const FormationRichEditor = dynamic(
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
 }
 
@@ -44,16 +43,14 @@ export default function CreerProduitPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Step 1: Information
-  const [titleFr, setTitleFr] = useState("");
-  const [titleEn, setTitleEn] = useState("");
+  const [title, setTitle] = useState("");
   const [productType, setProductType] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
   // Step 2: Description
-  const [descriptionFr, setDescriptionFr] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
+  const [description, setDescription] = useState("");
 
   // Step 3: File & Preview
   const [banner, setBanner] = useState("");
@@ -87,7 +84,7 @@ export default function CreerProduitPage() {
   }
 
   function canProceed(): boolean {
-    if (step === 0) return titleFr.length >= 3 && titleEn.length >= 3 && !!productType && !!categoryId;
+    if (step === 0) return title.length >= 3 && !!productType && !!categoryId;
     if (step === 1) return true; // description optional
     if (step === 2) return true; // file can be added later
     return true;
@@ -102,13 +99,11 @@ export default function CreerProduitPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titleFr,
-          titleEn,
+          title,
           productType,
           categoryId,
           tags,
-          descriptionFr: descriptionFr || undefined,
-          descriptionEn: descriptionEn || undefined,
+          description: description || undefined,
           descriptionFormat: "tiptap",
           banner: banner || undefined,
           fileUrl: fileUrl || undefined,
@@ -191,23 +186,13 @@ export default function CreerProduitPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Titre (Français) *</label>
-                <input
-                  type="text" value={titleFr} onChange={(e) => setTitleFr(e.target.value)}
-                  placeholder="Mon e-book génial"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Titre (Anglais) *</label>
-                <input
-                  type="text" value={titleEn} onChange={(e) => setTitleEn(e.target.value)}
-                  placeholder="My awesome e-book"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Titre *</label>
+              <input
+                type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+                placeholder="Mon e-book génial"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+              />
             </div>
 
             <div>
@@ -219,7 +204,7 @@ export default function CreerProduitPage() {
                 <option value="">Sélectionner une catégorie</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {locale === "fr" ? cat.nameFr : cat.nameEn}
+                    {cat.name}
                   </option>
                 ))}
               </select>
@@ -255,20 +240,11 @@ export default function CreerProduitPage() {
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Description (Français)</label>
+              <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Description</label>
               <FormationRichEditor
-                content={descriptionFr}
-                onChange={setDescriptionFr}
+                content={description}
+                onChange={setDescription}
                 placeholder="Décrivez votre produit en détail..."
-                minHeight={250}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-slate-700 dark:text-slate-300">Description (Anglais)</label>
-              <FormationRichEditor
-                content={descriptionEn}
-                onChange={setDescriptionEn}
-                placeholder="Describe your product in detail..."
                 minHeight={250}
               />
             </div>
@@ -397,8 +373,7 @@ export default function CreerProduitPage() {
             <div className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900 rounded-xl p-4 mt-6 border border-slate-200 dark:border-slate-700">
               <h3 className="text-sm font-bold mb-3 text-slate-900 dark:text-white">Récapitulatif</h3>
               <div className="text-sm space-y-1 text-slate-600 dark:text-slate-300">
-                <p><strong>Titre FR :</strong> {titleFr || "—"}</p>
-                <p><strong>Titre EN :</strong> {titleEn || "—"}</p>
+                <p><strong>Titre :</strong> {title || "—"}</p>
                 <p><strong>Type :</strong> {PRODUCT_TYPES.find((p) => p.value === productType)?.label || "—"}</p>
                 <p><strong>Prix :</strong> {isFree ? "Gratuit" : `${price.toFixed(2)}€`}</p>
                 <p><strong>Aperçu :</strong> {previewEnabled ? `${previewPages} pages${watermarkEnabled ? " (filigrané)" : ""}` : "Désactivé"}</p>

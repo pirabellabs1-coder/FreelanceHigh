@@ -39,7 +39,7 @@ export async function GET(_req: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { name: true } },
-          formation: { select: { titleFr: true } },
+          formation: { select: { title: true } },
         },
       }),
       prisma.certificate.findMany({
@@ -49,7 +49,7 @@ export async function GET(_req: NextRequest) {
           user: { select: { name: true } },
           enrollment: {
             include: {
-              formation: { select: { titleFr: true } },
+              formation: { select: { title: true } },
             },
           },
         },
@@ -145,7 +145,7 @@ export async function GET(_req: NextRequest) {
     // Top categories
     const categoriesWithCounts = await prisma.formationCategory.findMany({
       select: {
-        nameFr: true,
+        name: true,
         color: true,
         _count: { select: { formations: true } },
       },
@@ -154,7 +154,7 @@ export async function GET(_req: NextRequest) {
     });
 
     const topCategories = categoriesWithCounts.map((c) => ({
-      name: c.nameFr,
+      name: c.name,
       value: c._count.formations,
       color: c.color || "#22C55E",
     }));
@@ -163,14 +163,14 @@ export async function GET(_req: NextRequest) {
     const recentActivity = [
       ...recentEnrollments.map((e) => ({
         type: "enrollment",
-        title: `Inscription : ${e.formation.titleFr}`,
+        title: `Inscription : ${e.formation.title}`,
         user: e.user.name,
         date: new Date(e.createdAt).toLocaleDateString("fr-FR"),
         timestamp: new Date(e.createdAt).toISOString(),
       })),
       ...recentCertificates.map((c) => ({
         type: "certificate",
-        title: `Certificat : ${c.enrollment.formation.titleFr}`,
+        title: `Certificat : ${c.enrollment.formation.title}`,
         user: c.user.name,
         date: new Date(c.issuedAt).toLocaleDateString("fr-FR"),
         timestamp: new Date(c.issuedAt).toISOString(),
@@ -269,7 +269,7 @@ export async function GET(_req: NextRequest) {
     // 4. Category Radar (top 6 categories with detailed metrics)
     const categoriesForRadar = await prisma.formationCategory.findMany({
       select: {
-        nameFr: true,
+        name: true,
         formations: {
           select: {
             id: true,
@@ -302,7 +302,7 @@ export async function GET(_req: NextRequest) {
       const completionRate = studentCount > 0 ? (completedCount / studentCount) * 100 : 0;
 
       return {
-        name: cat.nameFr,
+        name: cat.name,
         formations: formationCount,
         students: studentCount,
         revenue: Math.round(revenue * 100) / 100,

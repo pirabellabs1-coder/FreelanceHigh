@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             productType: true,
             banner: true,
             fileMimeType: true,

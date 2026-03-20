@@ -7,10 +7,8 @@ import prisma from "@freelancehigh/db";
 import { z } from "zod";
 
 const createCohortSchema = z.object({
-  titleFr: z.string().min(3).max(120),
-  titleEn: z.string().min(3).max(120),
-  descriptionFr: z.string().max(2000).optional().nullable(),
-  descriptionEn: z.string().max(2000).optional().nullable(),
+  title: z.string().min(3).max(120),
+  description: z.string().max(2000).optional().nullable(),
   startDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide"),
   endDate: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide"),
   enrollmentDeadline: z.string().refine((d) => !isNaN(Date.parse(d)), "Date invalide"),
@@ -108,10 +106,8 @@ export async function POST(
     const cohort = await prisma.formationCohort.create({
       data: {
         formationId: id,
-        titleFr: data.titleFr,
-        titleEn: data.titleEn,
-        descriptionFr: data.descriptionFr ?? null,
-        descriptionEn: data.descriptionEn ?? null,
+        title: data.title,
+        description: data.description ?? null,
         startDate,
         endDate,
         enrollmentDeadline,

@@ -6,41 +6,54 @@ import { Resend } from "resend";
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const resend = new Resend(RESEND_API_KEY || "re_placeholder");
 const CUSTOM_FROM = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
-const FALLBACK_FROM = "FreelanceHigh <onboarding@resend.dev>";
+const RESEND_SANDBOX_FROM = "FreelanceHigh <onboarding@resend.dev>";
+const DOMAIN_VERIFIED = process.env.RESEND_DOMAIN_VERIFIED === "true";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
 
-// Helper: send email via Resend with fallback FROM address
-async function sendEmail(params: { from: string; to: string; subject: string; html: string }) {
+// Determine the FROM address: use custom domain only if verified, otherwise use Resend sandbox
+function getFromAddress(): string {
+  return DOMAIN_VERIFIED ? CUSTOM_FROM : RESEND_SANDBOX_FROM;
+}
+
+// Helper: send email via Resend
+async function sendEmail(params: { from?: string; to: string; subject: string; html: string }) {
+  const from = params.from ?? getFromAddress();
+
   if (!RESEND_API_KEY) {
     console.log(`\n========== EMAIL (DEV MODE — Resend non configure) ==========`);
     console.log(`To: ${params.to}`);
     console.log(`Subject: ${params.subject}`);
+    console.log(`From: ${from}`);
     console.log(`=============================================================\n`);
     return { data: { id: "dev-" + Date.now() }, error: null };
   }
 
-  // Try with configured FROM address
-  const result = await resend.emails.send(params);
+  try {
+    const result = await resend.emails.send({ ...params, from });
 
-  if (result.error) {
-    console.error(`[EMAIL] Resend error with ${params.from}:`, result.error);
+    if (result.error) {
+      console.error(`[EMAIL FAIL] To: ${params.to} | Subject: ${params.subject} | From: ${from} | Error:`, result.error);
 
-    // Retry with Resend's test address if custom domain fails
-    if (params.from !== FALLBACK_FROM) {
-      console.log(`[EMAIL] Retrying with fallback address: ${FALLBACK_FROM}`);
-      const retryResult = await resend.emails.send({ ...params, from: FALLBACK_FROM });
-      if (retryResult.error) {
-        console.error("[EMAIL] Fallback also failed:", retryResult.error);
-      } else {
-        console.log(`[EMAIL] Sent via fallback to ${params.to} (id: ${retryResult.data?.id})`);
+      // If custom domain failed, retry with sandbox
+      if (from !== RESEND_SANDBOX_FROM) {
+        console.log(`[EMAIL] Retrying with sandbox: ${RESEND_SANDBOX_FROM}`);
+        const retryResult = await resend.emails.send({ ...params, from: RESEND_SANDBOX_FROM });
+        if (retryResult.error) {
+          console.error("[EMAIL FAIL] Sandbox retry also failed:", retryResult.error);
+        } else {
+          console.log(`[EMAIL OK] Sent via sandbox to ${params.to} (id: ${retryResult.data?.id})`);
+        }
+        return retryResult;
       }
-      return retryResult;
+    } else {
+      console.log(`[EMAIL OK] To: ${params.to} | Subject: ${params.subject} | ID: ${result.data?.id}`);
     }
-  } else {
-    console.log(`[EMAIL] Sent to ${params.to} (id: ${result.data?.id})`);
-  }
 
-  return result;
+    return result;
+  } catch (err) {
+    console.error(`[EMAIL EXCEPTION] To: ${params.to} | Subject: ${params.subject} |`, err);
+    return { data: null, error: err };
+  }
 }
 
 // ── Layout HTML commun ──
@@ -110,7 +123,7 @@ export async function sendWelcomeEmail(email: string, name: string, dashboardUrl
     <p style="color:#4b5563;margin:24px 0 0;font-style:italic;">— Lissanon Gildas, Fondateur</p>
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: "Bienvenue sur FreelanceHigh !", html });
+  return sendEmail({ to: email, subject: "Bienvenue sur FreelanceHigh !", html });
 }
 
 // ── 2. Verification email (OTP) ──
@@ -133,7 +146,7 @@ export async function sendVerificationEmail(email: string, name: string, code: s
     </p>
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: `${code} — Code de verification FreelanceHigh`, html });
+  return sendEmail({ to: email, subject: `${code} — Code de verification FreelanceHigh`, html });
 }
 
 // ── 3. Mot de passe oublie ──
@@ -154,7 +167,7 @@ export async function sendPasswordResetEmail(email: string, name: string, resetT
     </p>
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: "Reinitialiser votre mot de passe — FreelanceHigh", html });
+  return sendEmail({ to: email, subject: "Reinitialiser votre mot de passe — FreelanceHigh", html });
 }
 
 // ── 4. Confirmation de commande ──
@@ -183,7 +196,7 @@ export async function sendOrderConfirmationEmail(
     </p>
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: `Commande confirmee — ${order.serviceTitle}`, html });
+  return sendEmail({ to: email, subject: `Commande confirmee — ${order.serviceTitle}`, html });
 }
 
 // ── 5. Nouveau message ──
@@ -203,7 +216,7 @@ export async function sendNewMessageEmail(
     ${button("Repondre", conversationUrl)}
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: `Message de ${senderName} — FreelanceHigh`, html });
+  return sendEmail({ to: email, subject: `Message de ${senderName} — FreelanceHigh`, html });
 }
 
 // ── 6. Paiement recu (freelance) ──
@@ -225,5 +238,132 @@ export async function sendPaymentReceivedEmail(
     ${button("Voir mes finances", `${APP_URL}/dashboard/finances`)}
   `);
 
-  return sendEmail({ from: CUSTOM_FROM, to: email, subject: `Paiement de ${payment.amount.toFixed(2)} EUR recu`, html });
+  return sendEmail({ to: email, subject: `Paiement de ${payment.amount.toFixed(2)} EUR recu`, html });
+}
+
+// ── 7. Nouvelle commande recue (freelance) ──
+
+export async function sendNewOrderFreelanceEmail(
+  email: string,
+  name: string,
+  order: { id: string; serviceTitle: string; amount: number; clientName: string }
+) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Nouvelle commande !</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
+      Bonjour ${name}, vous avez recu une nouvelle commande de <strong>${order.clientName}</strong>.
+    </p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:0 0 24px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="color:#6b7280;padding:4px 0;font-size:14px;">Service</td><td style="color:#111827;font-weight:600;text-align:right;font-size:14px;">${order.serviceTitle}</td></tr>
+        <tr><td style="color:#6b7280;padding:4px 0;font-size:14px;">Montant</td><td style="color:#6C2BD9;font-weight:700;text-align:right;font-size:16px;">${order.amount.toFixed(2)} EUR</td></tr>
+        <tr><td style="color:#6b7280;padding:4px 0;font-size:14px;">Client</td><td style="color:#111827;text-align:right;font-size:14px;">${order.clientName}</td></tr>
+      </table>
+    </div>
+    ${button("Voir la commande", `${APP_URL}/dashboard/commandes`)}
+  `);
+
+  return sendEmail({ to: email, subject: `Nouvelle commande — ${order.serviceTitle}`, html });
+}
+
+// ── 8. KYC approuve ──
+
+export async function sendKycApprovedEmail(email: string, name: string, level: number) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Verification KYC approuvee !</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+      Bonjour ${name}, votre verification de niveau ${level} a ete approuvee avec succes.
+    </p>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;">
+      <p style="color:#16a34a;font-size:18px;font-weight:700;margin:0;">Niveau ${level} verifie</p>
+    </div>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
+      De nouvelles fonctionnalites sont maintenant disponibles sur votre compte.
+    </p>
+    ${button("Voir mon profil", `${APP_URL}/dashboard/profil`)}
+  `);
+
+  return sendEmail({ to: email, subject: `Verification KYC niveau ${level} approuvee`, html });
+}
+
+// ── 9. KYC refuse ──
+
+export async function sendKycRejectedEmail(email: string, name: string, level: number, reason: string) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Verification KYC refusee</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+      Bonjour ${name}, votre demande de verification de niveau ${level} n'a pas pu etre approuvee.
+    </p>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:0 0 24px;">
+      <p style="color:#dc2626;font-weight:600;margin:0 0 4px;">Motif du refus :</p>
+      <p style="color:#991b1b;margin:0;">${reason}</p>
+    </div>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
+      Vous pouvez soumettre une nouvelle demande apres avoir corrige les elements mentionnes.
+    </p>
+    ${button("Soumettre a nouveau", `${APP_URL}/dashboard/kyc`)}
+  `);
+
+  return sendEmail({ to: email, subject: "Verification KYC refusee — FreelanceHigh", html });
+}
+
+// ── 10. Service approuve ──
+
+export async function sendServiceApprovedEmail(email: string, name: string, serviceTitle: string) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Service publie !</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+      Bonjour ${name}, votre service <strong>"${serviceTitle}"</strong> a ete approuve par notre equipe
+      et est maintenant visible sur la marketplace.
+    </p>
+    ${button("Voir mon service", `${APP_URL}/dashboard/services`)}
+    <p style="color:#9ca3af;font-size:13px;margin:16px 0 0;">
+      Pensez a partager votre service sur les reseaux sociaux pour attirer vos premiers clients !
+    </p>
+  `);
+
+  return sendEmail({ to: email, subject: `Service publie — ${serviceTitle}`, html });
+}
+
+// ── 11. Service refuse ──
+
+export async function sendServiceRejectedEmail(email: string, name: string, serviceTitle: string, reason: string) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Service non approuve</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
+      Bonjour ${name}, votre service <strong>"${serviceTitle}"</strong> n'a pas pu etre publie.
+    </p>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:0 0 24px;">
+      <p style="color:#dc2626;font-weight:600;margin:0 0 4px;">Motif :</p>
+      <p style="color:#991b1b;margin:0;">${reason}</p>
+    </div>
+    ${button("Modifier mon service", `${APP_URL}/dashboard/services`)}
+  `);
+
+  return sendEmail({ to: email, subject: `Service non approuve — ${serviceTitle}`, html });
+}
+
+// ── 12. Livraison effectuee (notification client) ──
+
+export async function sendDeliveryNotificationEmail(
+  email: string,
+  name: string,
+  order: { id: string; serviceTitle: string; freelanceName: string }
+) {
+  const html = emailLayout(`
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">Livraison effectuee !</h2>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
+      Bonjour ${name}, <strong>${order.freelanceName}</strong> a livre votre commande
+      pour le service <strong>"${order.serviceTitle}"</strong>.
+    </p>
+    <p style="color:#4b5563;line-height:1.6;margin:0 0 24px;">
+      Veuillez verifier la livraison et la valider ou demander une revision.
+    </p>
+    ${button("Voir la livraison", `${APP_URL}/client/commandes`)}
+    <p style="color:#6b7280;font-size:13px;margin:16px 0 0;">
+      Si vous ne validez pas dans les 3 jours, la livraison sera automatiquement acceptee.
+    </p>
+  `);
+
+  return sendEmail({ to: email, subject: `Livraison effectuee — ${order.serviceTitle}`, html });
 }

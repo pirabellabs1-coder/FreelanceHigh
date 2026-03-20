@@ -36,7 +36,7 @@ export async function POST(
       targetType: "digitalProduct",
       targetId: id,
       metadata: {
-        productTitle: product.titleFr,
+        productTitle: product.title,
         previousStatus: product.status,
         reason: reason || null,
       },

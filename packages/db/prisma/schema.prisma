@@ -3,6 +3,7 @@
 
 generator client {
   provider      = "prisma-client-js"
+  output        = "../generated/client"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -146,6 +147,19 @@ enum AutomationStatus {
   ACTIF
   PAUSE
   BROUILLON
+}
+
+// ── OTP Codes ──
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }
 
 // ── Models ──
@@ -872,8 +886,7 @@ enum InstructeurStatus {
 
 model FormationCategory {
   id        String   @id @default(cuid())
-  nameFr    String
-  nameEn    String
+  name      String
   slug      String   @unique
   icon      String?
   color     String?
@@ -929,19 +942,15 @@ model Formation {
   id              String          @id @default(cuid())
   slug            String          @unique
 
-  // Bilingue
-  titleFr         String
-  titleEn         String
-  shortDescFr     String?
-  shortDescEn     String?
-  descriptionFr   String?         @db.Text
-  descriptionEn   String?         @db.Text
-  learnPointsFr   String[]        @default([])
-  learnPointsEn   String[]        @default([])
-  requirementsFr  String[]        @default([])
-  requirementsEn  String[]        @default([])
-  targetAudienceFr String?        @db.Text
-  targetAudienceEn String?        @db.Text
+  // Contenu (langue unique, détectée par locale)
+  title           String
+  shortDesc       String?
+  description     String?         @db.Text
+  learnPoints     String[]        @default([])
+  requirements    String[]        @default([])
+  targetAudience  String?         @db.Text
+  locale          String          @default("fr")
+  customCategory  String?
 
   // Médias
   thumbnail       String?
@@ -1003,6 +1012,7 @@ model Formation {
   marketingEvents MarketingEvent[]    @relation("FormationMarketingEvents")
   discussions     CourseDiscussion[]
   cohorts         FormationCohort[]
+  salesPage       SalesPage?
 
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -1018,12 +1028,26 @@ model Formation {
   @@index([isFree])
 }
 
+model SalesPage {
+  id            String    @id @default(cuid())
+  formationId   String    @unique
+  instructorId  String
+  slug          String    @unique
+  blocks        Json      @default("[]") // Array de blocs typés
+  published     Boolean   @default(false)
+  formation     Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([instructorId])
+}
+
 model Section {
   id          String    @id @default(cuid())
-  titleFr     String
-  titleEn     String
-  descFr      String?
-  descEn      String?
+  title       String
+  desc        String?
   order       Int       @default(0)
   formationId String
   formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
@@ -1034,10 +1058,8 @@ model Section {
 
 model Lesson {
   id              String     @id @default(cuid())
-  titleFr         String
-  titleEn         String
-  descFr          String?    @db.Text
-  descEn          String?    @db.Text
+  title           String
+  desc            String?    @db.Text
   type            LessonType @default(VIDEO)
   content         String?    @db.Text // Pour les leçons TEXTE (HTML rich text)
   videoUrl        String?    // URL YouTube/Vimeo ou URL signée Supabase
@@ -1078,8 +1100,7 @@ model LessonResource {
 
 model Quiz {
   id           String     @id @default(cuid())
-  titleFr      String
-  titleEn      String
+  title        String
   passingScore Int        @default(80)
   timeLimit    Int?       // minutes, null = pas de limite
   lessonId     String     @unique
@@ -1091,13 +1112,11 @@ model Quiz {
 
 model Question {
   id            String       @id @default(cuid())
-  textFr        String       @db.Text
-  textEn        String       @db.Text
+  text          String       @db.Text
   type          QuestionType @default(CHOIX_UNIQUE)
-  options       Json         // Array of { textFr, textEn, value }
+  options       Json         // Array of { text, value }
   correctAnswer String       // valeur(s) correcte(s) — JSON array pour CHOIX_MULTIPLE
-  explanationFr String?      @db.Text
-  explanationEn String?      @db.Text
+  explanation   String?      @db.Text
   order         Int          @default(0)
   quizId        String
   quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
@@ -1305,12 +1324,11 @@ model DigitalProduct {
   id                String               @id @default(cuid())
   slug              String               @unique
 
-  // Bilingue
-  titleFr           String
-  titleEn           String
-  descriptionFr     String?              @db.Text
-  descriptionEn     String?              @db.Text
+  // Contenu (langue unique)
+  title             String
+  description       String?              @db.Text
   descriptionFormat String               @default("text") // "text" | "tiptap"
+  locale            String               @default("fr")
 
   // Type de produit
   productType       DigitalProductType   @default(EBOOK)
@@ -1547,11 +1565,9 @@ model FormationCohort {
   id                String       @id @default(cuid())
   formationId       String
 
-  // Bilingue
-  titleFr           String
-  titleEn           String
-  descriptionFr     String?      @db.Text
-  descriptionEn     String?      @db.Text
+  // Contenu (langue unique)
+  title             String
+  description       String?      @db.Text
 
   // Dates
   startDate         DateTime

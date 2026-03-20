@@ -6,598 +6,596 @@
    - Environments: .env.local
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 9.0min
-   Linting and checking validity of types ...
+ ✓ Compiled successfully in 9.8min
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+[Stripe] STRIPE_SECRET_KEY not configured
+[Cloudinary] CLOUDINARY_URL not configured
+   Generating static pages (0/360) ...
+   Generating static pages (90/360) 
+[Stripe] STRIPE_SECRET_KEY not configured
+[Cloudinary] CLOUDINARY_URL not configured
+prisma:error 
+Invalid `prisma.service.findMany()` invocation:
+
+{
+  where: {
+    status: "ACTIVE"
+            ~~~~~~~~
+  },
+  select: {
+    slug: true,
+    updatedAt: true
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 5000
+}
+
+Invalid value for argument `status`. Expected ServiceStatus.
+prisma:error 
+Invalid `prisma.user.findMany()` invocation:
+
+{
+  where: {
+    role: "FREELANCE",
+    status: "ACTIVE"
+            ~~~~~~~~
+  },
+  select: {
+    username: true,
+    updatedAt: true
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 5000
+}
+
+Invalid value for argument `status`. Expected UserStatus.
+   Generating static pages (180/360) 
+[sitemap] Erreur chargement services: Error [PrismaClientValidationError]: 
+Invalid `prisma.service.findMany()` invocation:
+
+{
+  where: {
+    status: "ACTIVE"
+            ~~~~~~~~
+  },
+  select: {
+    slug: true,
+    updatedAt: true
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 5000
+}
+
+Invalid value for argument `status`. Expected ServiceStatus.
+    at wn (.next/server/chunks/89596.js:29:1269)
+    at $n.handleRequestError (.next/server/chunks/89596.js:121:6850)
+    at $n.handleAndLogRequestError (.next/server/chunks/89596.js:121:6535)
+    at $n.request (.next/server/chunks/89596.js:121:6219)
+    at async f (.next/server/chunks/89596.js:130:9490)
+    at async z (.next/server/app/sitemap.xml/route.js:16:2113)
+    at async C (.next/server/app/sitemap.xml/route.js:16:3177) {
+  clientVersion: '5.22.0'
+}
+[sitemap] Erreur chargement profils: Error [PrismaClientValidationError]: 
+Invalid `prisma.user.findMany()` invocation:
+
+{
+  where: {
+    role: "FREELANCE",
+    status: "ACTIVE"
+            ~~~~~~~~
+  },
+  select: {
+    username: true,
+    updatedAt: true
+  },
+  orderBy: {
+    createdAt: "desc"
+  },
+  take: 5000
+}
+
+Invalid value for argument `status`. Expected UserStatus.
+    at wn (.next/server/chunks/89596.js:29:1269)
+    at $n.handleRequestError (.next/server/chunks/89596.js:121:6850)
+    at $n.handleAndLogRequestError (.next/server/chunks/89596.js:121:6535)
+    at $n.request (.next/server/chunks/89596.js:121:6219)
+    at async f (.next/server/chunks/89596.js:130:9490)
+    at async z (.next/server/app/sitemap.xml/route.js:16:2479)
+    at async C (.next/server/app/sitemap.xml/route.js:16:3177) {
+  clientVersion: '5.22.0'
+}
+   Generating static pages (270/360) 
+ ✓ Generating static pages (360/360)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                              Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                                                 8.32 kB         138 kB
+├ ƒ /_not-found                                                         785 B         104 kB
+├ ƒ /a-propos                                                           200 B         107 kB
+├ ƒ /admin                                                            4.54 kB         233 kB
+├ ƒ /admin/analytics                                                  5.13 kB         236 kB
+├ ƒ /admin/audit-log                                                  2.72 kB         115 kB
+├ ƒ /admin/blog                                                       5.13 kB         123 kB
+├ ƒ /admin/categories                                                 4.36 kB         122 kB
+├ ƒ /admin/commandes                                                  4.13 kB         116 kB
+├ ƒ /admin/configuration                                              5.43 kB         123 kB
+├ ƒ /admin/equipe                                                     3.12 kB         108 kB
+├ ƒ /admin/finances                                                   4.08 kB         122 kB
+├ ƒ /admin/formations                                                   785 B         104 kB
+├ ƒ /admin/formations/apprenants                                      2.28 kB         109 kB
+├ ƒ /admin/formations/categories                                      3.28 kB         110 kB
+├ ƒ /admin/formations/certificats                                     2.89 kB         110 kB
+├ ƒ /admin/formations/dashboard                                       5.93 kB         227 kB
+├ ƒ /admin/formations/finances                                        6.21 kB         214 kB
+├ ƒ /admin/formations/instructeurs                                    3.23 kB         110 kB
+├ ƒ /admin/formations/liste                                           3.57 kB         110 kB
+├ ƒ /admin/kyc                                                         3.9 kB         122 kB
+├ ƒ /admin/litiges                                                    4.31 kB         122 kB
+├ ƒ /admin/messages                                                     373 B         141 kB
+├ ƒ /admin/notifications                                              3.91 kB         122 kB
+├ ƒ /admin/plans                                                       3.2 kB         121 kB
+├ ƒ /admin/services                                                    4.2 kB         122 kB
+├ ƒ /admin/utilisateurs                                               5.04 kB         126 kB
+├ ƒ /admin/utilisateurs/[id]                                          6.26 kB         124 kB
+├ ƒ /affiliation                                                      3.52 kB         133 kB
+├ ƒ /agence                                                           8.48 kB         241 kB
+├ ƒ /agence/abonnement                                                7.15 kB         123 kB
+├ ƒ /agence/abonnement/confirmation                                   1.83 kB         105 kB
+├ ƒ /agence/abonnement/paiement                                       3.26 kB         113 kB
+├ ƒ /agence/aide                                                      5.95 kB         122 kB
+├ ƒ /agence/analytics                                                 7.18 kB         242 kB
+├ ƒ /agence/automatisation                                            10.5 kB         124 kB
+├ ƒ /agence/avis                                                      7.21 kB         235 kB
+├ ƒ /agence/candidatures                                              5.11 kB         121 kB
+├ ƒ /agence/clients                                                   5.51 kB         131 kB
+├ ƒ /agence/commandes                                                 6.73 kB         126 kB
+├ ƒ /agence/commandes/[id]                                            5.28 kB         128 kB
+├ ƒ /agence/contrats                                                  6.51 kB         123 kB
+├ ƒ /agence/equipe                                                    5.72 kB         131 kB
+├ ƒ /agence/explorer                                                  5.34 kB         121 kB
+├ ƒ /agence/factures                                                  6.89 kB         128 kB
+├ ƒ /agence/favoris                                                   4.79 kB         124 kB
+├ ƒ /agence/finances                                                  9.53 kB         226 kB
+├ ƒ /agence/freelances/[id]                                           8.18 kB         124 kB
+├ ƒ /agence/litiges                                                   7.35 kB         123 kB
+├ ƒ /agence/messages                                                    393 B         141 kB
+├ ƒ /agence/notifications                                             4.54 kB         124 kB
+├ ƒ /agence/offres                                                    5.36 kB         121 kB
+├ ƒ /agence/parametres                                                6.35 kB         131 kB
+├ ƒ /agence/portfolio                                                 4.96 kB         121 kB
+├ ƒ /agence/profil                                                    7.07 kB         132 kB
+├ ƒ /agence/projets                                                   5.79 kB         122 kB
+├ ƒ /agence/ressources                                                4.23 kB         120 kB
+├ ƒ /agence/securite                                                  4.07 kB         120 kB
+├ ƒ /agence/services                                                  5.59 kB         131 kB
+├ ƒ /agence/services/boost                                             7.1 kB         127 kB
+├ ƒ /agence/services/creer                                              147 B         193 kB
+├ ƒ /agence/services/seo                                              6.68 kB         126 kB
+├ ƒ /agence/sous-traitance                                            5.65 kB         122 kB
+├ ƒ /agences/[slug]                                                   8.09 kB         138 kB
+├ ƒ /aide                                                             6.25 kB         139 kB
+├ ƒ /api/admin/analytics                                                785 B         104 kB
+├ ƒ /api/admin/audit-log                                                785 B         104 kB
+├ ƒ /api/admin/badges                                                   785 B         104 kB
+├ ƒ /api/admin/blog                                                     785 B         104 kB
+├ ƒ /api/admin/boosts                                                   785 B         104 kB
+├ ƒ /api/admin/config                                                   785 B         104 kB
+├ ƒ /api/admin/dashboard                                                785 B         104 kB
+├ ƒ /api/admin/disputes                                                 785 B         104 kB
+├ ƒ /api/admin/email-test                                               785 B         104 kB
+├ ƒ /api/admin/finances                                                 785 B         104 kB
+├ ƒ /api/admin/finances/[id]                                            785 B         104 kB
+├ ƒ /api/admin/formations/apprenants                                    785 B         104 kB
+├ ƒ /api/admin/formations/approve/[id]                                  785 B         104 kB
+├ ƒ /api/admin/formations/audit-log                                     785 B         104 kB
+├ ƒ /api/admin/formations/categories                                    785 B         104 kB
+├ ƒ /api/admin/formations/categories/[id]                               785 B         104 kB
+├ ƒ /api/admin/formations/certificats                                   785 B         104 kB
+├ ƒ /api/admin/formations/certificats/revoke/[id]                       785 B         104 kB
+├ ƒ /api/admin/formations/cohorts                                       785 B         104 kB
+├ ƒ /api/admin/formations/cohorts/[id]                                  785 B         104 kB
+├ ƒ /api/admin/formations/config                                        785 B         104 kB
+├ ƒ /api/admin/formations/discussions                                   785 B         104 kB
+├ ƒ /api/admin/formations/discussions/[id]                              785 B         104 kB
+├ ƒ /api/admin/formations/finances                                      785 B         104 kB
+├ ƒ /api/admin/formations/finances/withdrawal/[id]                      785 B         104 kB
+├ ƒ /api/admin/formations/list                                          785 B         104 kB
+├ ƒ /api/admin/formations/marketing                                     785 B         104 kB
+├ ƒ /api/admin/formations/marketing/promotions                          785 B         104 kB
+├ ƒ /api/admin/formations/produits                                      785 B         104 kB
+├ ƒ /api/admin/formations/produits/approve/[id]                         785 B         104 kB
+├ ƒ /api/admin/formations/produits/reject/[id]                          785 B         104 kB
+├ ƒ /api/admin/formations/promo-codes                                   785 B         104 kB
+├ ƒ /api/admin/formations/promo-codes/[id]                              785 B         104 kB
+├ ƒ /api/admin/formations/refund/[id]                                   785 B         104 kB
+├ ƒ /api/admin/formations/refunds                                       785 B         104 kB
+├ ƒ /api/admin/formations/refunds/[id]                                  785 B         104 kB
+├ ƒ /api/admin/formations/reject/[id]                                   785 B         104 kB
+├ ƒ /api/admin/formations/stats                                         785 B         104 kB
+├ ƒ /api/admin/instructeurs/approve/[id]                                785 B         104 kB
+├ ƒ /api/admin/instructeurs/list                                        785 B         104 kB
+├ ƒ /api/admin/instructeurs/reject/[id]                                 785 B         104 kB
+├ ƒ /api/admin/kyc                                                      785 B         104 kB
+├ ƒ /api/admin/notifications/send                                       785 B         104 kB
+├ ƒ /api/admin/orders                                                   785 B         104 kB
+├ ƒ /api/admin/orders/[id]                                              785 B         104 kB
+├ ƒ /api/admin/services                                                 785 B         104 kB
+├ ƒ /api/admin/services/[id]                                            785 B         104 kB
+├ ƒ /api/admin/team                                                     785 B         104 kB
+├ ƒ /api/admin/users                                                    785 B         104 kB
+├ ƒ /api/admin/users/[id]                                               785 B         104 kB
+├ ƒ /api/admin/users/[id]/impersonate                                   785 B         104 kB
+├ ƒ /api/admin/users/[id]/reset-password                                785 B         104 kB
+├ ƒ /api/admin/users/search                                             785 B         104 kB
+├ ƒ /api/affiliation                                                    785 B         104 kB
+├ ƒ /api/apprenant/achats                                               785 B         104 kB
+├ ƒ /api/apprenant/certificats                                          785 B         104 kB
+├ ƒ /api/apprenant/certificats/[id]                                     785 B         104 kB
+├ ƒ /api/apprenant/cohorts                                              785 B         104 kB
+├ ƒ /api/apprenant/cohorts/[cohortId]                                   785 B         104 kB
+├ ƒ /api/apprenant/discussions                                          785 B         104 kB
+├ ƒ /api/apprenant/enrollments                                          785 B         104 kB
+├ ƒ /api/apprenant/export-pdf                                           785 B         104 kB
+├ ƒ /api/apprenant/favoris                                              785 B         104 kB
+├ ƒ /api/apprenant/notes                                                785 B         104 kB
+├ ƒ /api/apprenant/produits                                             785 B         104 kB
+├ ƒ /api/apprenant/profil                                               785 B         104 kB
+├ ƒ /api/apprenant/recommendations                                      785 B         104 kB
+├ ƒ /api/apprenant/refunds                                              785 B         104 kB
+├ ƒ /api/apprenant/reviews                                              785 B         104 kB
+├ ƒ /api/apprenant/reviews/[id]                                         785 B         104 kB
+├ ƒ /api/auth/[...nextauth]                                             785 B         104 kB
+├ ƒ /api/auth/confirm-password-reset                                    785 B         104 kB
+├ ƒ /api/auth/register                                                  785 B         104 kB
+├ ƒ /api/auth/request-password-reset                                    785 B         104 kB
+├ ƒ /api/auth/reset-password                                            785 B         104 kB
+├ ƒ /api/auth/setup-2fa                                                 785 B         104 kB
+├ ƒ /api/auth/update-formations-role                                    785 B         104 kB
+├ ƒ /api/auth/verify-2fa                                                785 B         104 kB
+├ ƒ /api/auth/verify-email                                              785 B         104 kB
+├ ƒ /api/automation                                                     785 B         104 kB
+├ ƒ /api/blog                                                           785 B         104 kB
+├ ƒ /api/blog/[slug]                                                    785 B         104 kB
+├ ƒ /api/candidatures                                                   785 B         104 kB
+├ ƒ /api/categories                                                     785 B         104 kB
+├ ƒ /api/contact                                                        785 B         104 kB
+├ ƒ /api/conversations                                                  785 B         104 kB
+├ ƒ /api/conversations/[id]/messages                                    785 B         104 kB
+├ ƒ /api/conversations/[id]/messages/[messageId]                        785 B         104 kB
+├ ƒ /api/conversations/[id]/read                                        785 B         104 kB
+├ ƒ /api/cron/abandoned-cart-check                                      785 B         104 kB
+├ ƒ /api/cron/abandoned-cart-email                                      785 B         104 kB
+├ ƒ /api/cron/cohort-status                                             785 B         104 kB
+├ ƒ /api/cron/deadline-reminder                                         785 B         104 kB
+├ ƒ /api/cron/flash-promo-expiry                                        785 B         104 kB
+├ ƒ /api/downloads                                                      785 B         104 kB
+├ ƒ /api/favorites                                                      785 B         104 kB
+├ ƒ /api/feed                                                           785 B         104 kB
+├ ƒ /api/finances/summary                                               785 B         104 kB
+├ ƒ /api/finances/transactions                                          785 B         104 kB
+├ ƒ /api/finances/withdrawal                                            785 B         104 kB
+├ ƒ /api/formations                                                     785 B         104 kB
+├ ƒ /api/formations/[id]                                                785 B         104 kB
+├ ƒ /api/formations/[id]/certificate                                    785 B         104 kB
+├ ƒ /api/formations/[id]/cohorts                                        785 B         104 kB
+├ ƒ /api/formations/[id]/discussions                                    785 B         104 kB
+├ ƒ /api/formations/[id]/discussions/[discussionId]                     785 B         104 kB
+├ ƒ /api/formations/[id]/discussions/report                             785 B         104 kB
+├ ƒ /api/formations/[id]/enroll                                         785 B         104 kB
+├ ƒ /api/formations/[id]/progress                                       785 B         104 kB
+├ ƒ /api/formations/[id]/quiz/submit                                    785 B         104 kB
+├ ƒ /api/formations/[id]/refund                                         785 B         104 kB
+├ ƒ /api/formations/[id]/reviews                                        785 B         104 kB
+├ ƒ /api/formations/[id]/reviews/[reviewId]/reply                       785 B         104 kB
+├ ƒ /api/formations/apprenants/[id]                                     785 B         104 kB
+├ ƒ /api/formations/cart                                                785 B         104 kB
+├ ƒ /api/formations/cart/promo                                          785 B         104 kB
+├ ƒ /api/formations/categories                                          785 B         104 kB
+├ ƒ /api/formations/categories/[slug]                                   785 B         104 kB
+├ ƒ /api/formations/certificats/verify/[code]                           785 B         104 kB
+├ ƒ /api/formations/checkout                                            785 B         104 kB
+├ ƒ /api/formations/checkout/verify                                     785 B         104 kB
+├ ƒ /api/formations/cohorts                                             785 B         104 kB
+├ ƒ /api/formations/cohorts/[cohortId]/checkout                         785 B         104 kB
+├ ƒ /api/formations/cohorts/[cohortId]/messages                         785 B         104 kB
+├ ƒ /api/formations/instructeurs/[id]                                   785 B         104 kB
+├ ƒ /api/formations/promo/validate                                      785 B         104 kB
+├ ƒ /api/formations/quiz/[quizId]                                       785 B         104 kB
+├ ○ /api/formations/stats                                               785 B         104 kB          1m      1y
+├ ƒ /api/formations/unsubscribe/[token]                                 785 B         104 kB
+├ ƒ /api/formations/vente/[slug]                                        785 B         104 kB
+├ ƒ /api/instructeur/apprenants                                         785 B         104 kB
+├ ƒ /api/instructeur/avis                                               785 B         104 kB
+├ ƒ /api/instructeur/candidature                                        785 B         104 kB
+├ ƒ /api/instructeur/dashboard                                          785 B         104 kB
+├ ƒ /api/instructeur/formations                                         785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]                                    785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/cohorts                            785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/cohorts/[cohortId]                 785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/cohorts/[cohortId]/messages        785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/cohorts/[cohortId]/participants    785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/duplicate                          785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/reorder                            785 B         104 kB
+├ ƒ /api/instructeur/formations/[id]/statistiques                       785 B         104 kB
+├ ƒ /api/instructeur/formations/csv-template                            785 B         104 kB
+├ ƒ /api/instructeur/formations/export-pdf                              785 B         104 kB
+├ ƒ /api/instructeur/formations/import-csv                              785 B         104 kB
+├ ƒ /api/instructeur/marketing/pixels                                   785 B         104 kB
+├ ƒ /api/instructeur/marketing/pixels/[id]                              785 B         104 kB
+├ ƒ /api/instructeur/marketing/stats                                    785 B         104 kB
+├ ƒ /api/instructeur/produits                                           785 B         104 kB
+├ ƒ /api/instructeur/produits/stats                                     785 B         104 kB
+├ ƒ /api/instructeur/profil                                             785 B         104 kB
+├ ƒ /api/instructeur/promotions                                         785 B         104 kB
+├ ƒ /api/instructeur/promotions/[id]                                    785 B         104 kB
+├ ƒ /api/instructeur/revenus                                            785 B         104 kB
+├ ƒ /api/instructeur/sales-funnel                                       785 B         104 kB
+├ ƒ /api/instructeur/sales-funnel/[id]                                  785 B         104 kB
+├ ƒ /api/instructeur/statistiques                                       785 B         104 kB
+├ ƒ /api/instructeur/withdraw                                           785 B         104 kB
+├ ƒ /api/invoices                                                       785 B         104 kB
+├ ƒ /api/invoices/[id]/pdf                                              785 B         104 kB
+├ ƒ /api/kyc                                                            785 B         104 kB
+├ ƒ /api/link-preview                                                   785 B         104 kB
+├ ƒ /api/marketing/affiliate                                            785 B         104 kB
+├ ƒ /api/marketing/affiliate/click                                      785 B         104 kB
+├ ƒ /api/marketing/affiliate/join                                       785 B         104 kB
+├ ƒ /api/marketing/affiliate/payout                                     785 B         104 kB
+├ ƒ /api/marketing/affiliate/stats                                      785 B         104 kB
+├ ƒ /api/marketing/affiliate/track                                      785 B         104 kB
+├ ƒ /api/marketing/analytics                                            785 B         104 kB
+├ ƒ /api/marketing/campaigns                                            785 B         104 kB
+├ ƒ /api/marketing/campaigns/[slug]                                     785 B         104 kB
+├ ƒ /api/marketing/discounts                                            785 B         104 kB
+├ ƒ /api/marketing/discounts/validate                                   785 B         104 kB
+├ ƒ /api/marketing/flash-offers                                         785 B         104 kB
+├ ƒ /api/marketing/funnels                                              785 B         104 kB
+├ ƒ /api/marketing/funnels/[id]/duplicate                               785 B         104 kB
+├ ƒ /api/marketing/funnels/[id]/events                                  785 B         104 kB
+├ ƒ /api/marketing/funnels/checkout                                     785 B         104 kB
+├ ƒ /api/marketing/overview                                             785 B         104 kB
+├ ƒ /api/marketing/popups                                               785 B         104 kB
+├ ƒ /api/marketing/popups/impression                                    785 B         104 kB
+├ ƒ /api/marketing/sequences                                            785 B         104 kB
+├ ƒ /api/marketing/sequences/process                                    785 B         104 kB
+├ ƒ /api/notifications                                                  785 B         104 kB
+├ ƒ /api/offres                                                         785 B         104 kB
+├ ƒ /api/offres/[id]                                                    785 B         104 kB
+├ ƒ /api/orders                                                         785 B         104 kB
+├ ƒ /api/orders/[id]                                                    785 B         104 kB
+├ ƒ /api/orders/[id]/messages                                           785 B         104 kB
+├ ƒ /api/payment-methods                                                785 B         104 kB
+├ ƒ /api/payments/cinetpay                                              785 B         104 kB
+├ ƒ /api/produits                                                       785 B         104 kB
+├ ƒ /api/produits/[id]                                                  785 B         104 kB
+├ ƒ /api/produits/[id]/download                                         785 B         104 kB
+├ ƒ /api/produits/[id]/preview                                          785 B         104 kB
+├ ƒ /api/produits/checkout                                              785 B         104 kB
+├ ƒ /api/profile                                                        785 B         104 kB
+├ ƒ /api/projects                                                       785 B         104 kB
+├ ƒ /api/projects/[id]                                                  785 B         104 kB
+├ ƒ /api/public/agences/[slug]                                          785 B         104 kB
+├ ƒ /api/public/freelances/[username]                                   785 B         104 kB
+├ ƒ /api/public/maintenance                                             785 B         104 kB
+├ ƒ /api/public/projects                                                785 B         104 kB
+├ ƒ /api/public/services                                                785 B         104 kB
+├ ƒ /api/public/services/[slug]                                         785 B         104 kB
+├ ƒ /api/public/stats                                                   785 B         104 kB
+├ ƒ /api/public/top-freelances                                          785 B         104 kB
+├ ƒ /api/public/top-services                                            785 B         104 kB
+├ ƒ /api/rank                                                           785 B         104 kB
+├ ƒ /api/reviews                                                        785 B         104 kB
+├ ƒ /api/reviews/[id]/helpful                                           785 B         104 kB
+├ ƒ /api/reviews/[id]/reply                                             785 B         104 kB
+├ ƒ /api/reviews/[id]/report                                            785 B         104 kB
+├ ƒ /api/search                                                         785 B         104 kB
+├ ƒ /api/services                                                       785 B         104 kB
+├ ƒ /api/services/[id]                                                  785 B         104 kB
+├ ƒ /api/services/[id]/boost                                            785 B         104 kB
+├ ƒ /api/services/[id]/seo                                              785 B         104 kB
+├ ƒ /api/services/[id]/toggle                                           785 B         104 kB
+├ ƒ /api/services/draft                                                 785 B         104 kB
+├ ƒ /api/services/publish                                               785 B         104 kB
+├ ƒ /api/sessions                                                       785 B         104 kB
+├ ƒ /api/signaling                                                      785 B         104 kB
+├ ƒ /api/stats                                                          785 B         104 kB
+├ ƒ /api/subscription                                                   785 B         104 kB
+├ ƒ /api/support-tickets                                                785 B         104 kB
+├ ƒ /api/tracking/event                                                 785 B         104 kB
+├ ƒ /api/tracking/sessions                                              785 B         104 kB
+├ ƒ /api/tracking/stats                                                 785 B         104 kB
+├ ƒ /api/upload/file                                                    785 B         104 kB
+├ ƒ /api/upload/image                                                   785 B         104 kB
+├ ƒ /api/upload/service-image                                           785 B         104 kB
+├ ƒ /api/webhooks/cinetpay                                              785 B         104 kB
+├ ƒ /api/webhooks/stripe                                                785 B         104 kB
+├ ƒ /blog                                                             1.71 kB         125 kB
+├ ƒ /blog/[slug]                                                      1.71 kB         125 kB
+├ ƒ /cgu                                                                200 B         107 kB
+├ ƒ /client                                                           6.81 kB         232 kB
+├ ƒ /client/aide                                                       5.2 kB         128 kB
+├ ƒ /client/avis                                                      4.27 kB         127 kB
+├ ƒ /client/commandes                                                 4.28 kB         121 kB
+├ ƒ /client/commandes/[id]                                            4.46 kB         130 kB
+├ ƒ /client/explorer                                                  7.05 kB         120 kB
+├ ƒ /client/factures                                                  4.18 kB         127 kB
+├ ƒ /client/favoris                                                   4.56 kB         121 kB
+├ ƒ /client/litiges                                                   5.11 kB         124 kB
+├ ƒ /client/messages                                                    409 B         141 kB
+├ ƒ /client/notifications                                             4.22 kB         127 kB
+├ ƒ /client/paiements                                                 6.11 kB         125 kB
+├ ƒ /client/parametres                                                5.21 kB         124 kB
+├ ƒ /client/portefeuille-web3                                          1.1 kB         108 kB
+├ ƒ /client/profil                                                    3.94 kB         116 kB
+├ ƒ /client/projets                                                   3.42 kB         126 kB
+├ ƒ /client/projets/[id]                                              4.21 kB         127 kB
+├ ƒ /client/projets/nouveau                                           5.99 kB         125 kB
+├ ƒ /client/propositions                                              4.28 kB         127 kB
+├ ƒ /client/recherche-ia                                              5.25 kB         119 kB
+├ ƒ /comment-ca-marche                                                  200 B         107 kB
+├ ƒ /confiance-securite                                                 200 B         107 kB
+├ ƒ /confidentialite                                                    200 B         107 kB
+├ ƒ /connexion                                                        4.25 kB         120 kB
+├ ƒ /contact                                                          2.13 kB         109 kB
+├ ƒ /contrats                                                           785 B         104 kB
+├ ƒ /contrats/generateur                                              6.11 kB         142 kB
+├ ƒ /cookies                                                            200 B         107 kB
+├ ƒ /dashboard                                                         7.8 kB         242 kB
+├ ƒ /dashboard/abonnement                                             4.71 kB         121 kB
+├ ƒ /dashboard/abonnement/confirmation                                1.84 kB         105 kB
+├ ƒ /dashboard/abonnement/paiement                                    3.26 kB         113 kB
+├ ƒ /dashboard/affiliation                                            7.09 kB         123 kB
+├ ƒ /dashboard/aide                                                   2.17 kB         122 kB
+├ ƒ /dashboard/aide/[slug]                                            4.93 kB         124 kB
+├ ƒ /dashboard/automatisation                                         7.13 kB         127 kB
+├ ƒ /dashboard/avis                                                   3.97 kB         120 kB
+├ ƒ /dashboard/boost                                                  5.95 kB         125 kB
+├ ƒ /dashboard/candidatures                                           5.45 kB         121 kB
+├ ƒ /dashboard/certifications                                         1.02 kB         108 kB
+├ ƒ /dashboard/commandes                                              3.89 kB         123 kB
+├ ƒ /dashboard/commandes/[id]                                         5.62 kB         128 kB
+├ ƒ /dashboard/commandes/[id]/suivi                                   7.65 kB         127 kB
+├ ƒ /dashboard/disponibilite                                           2.8 kB         119 kB
+├ ƒ /dashboard/escrow                                                 5.39 kB         125 kB
+├ ƒ /dashboard/explorer                                               6.15 kB         122 kB
+├ ƒ /dashboard/factures                                               4.45 kB         120 kB
+├ ƒ /dashboard/favoris                                                 4.1 kB         118 kB
+├ ƒ /dashboard/finances                                               8.49 kB         225 kB
+├ ƒ /dashboard/kyc                                                    5.58 kB         126 kB
+├ ƒ /dashboard/litiges                                                9.67 kB         126 kB
+├ ƒ /dashboard/messages                                                 397 B         141 kB
+├ ƒ /dashboard/notifications                                          3.71 kB         123 kB
+├ ƒ /dashboard/offres                                                 4.55 kB         121 kB
+├ ƒ /dashboard/paiements                                              5.25 kB         121 kB
+├ ƒ /dashboard/parametres                                             6.38 kB         126 kB
+├ ƒ /dashboard/portefeuille-web3                                      5.74 kB         122 kB
+├ ƒ /dashboard/portfolio                                              3.69 kB         120 kB
+├ ƒ /dashboard/productivite                                           5.26 kB         119 kB
+├ ƒ /dashboard/profil                                                 6.41 kB         122 kB
+├ ƒ /dashboard/propositions                                           5.94 kB         122 kB
+├ ƒ /dashboard/securite                                               6.19 kB         122 kB
+├ ƒ /dashboard/services                                               6.37 kB         126 kB
+├ ƒ /dashboard/services/creer                                           147 B         193 kB
+├ ƒ /dashboard/services/seo                                           5.47 kB         125 kB
+├ ƒ /dashboard/statistiques                                           4.72 kB         240 kB
+├ ƒ /developer                                                         2.7 kB         116 kB
+├ ƒ /developer/docs                                                   3.21 kB         117 kB
+├ ƒ /explorer                                                         8.22 kB         138 kB
+├ ƒ /explorer/categorie/[slug]                                        2.29 kB         132 kB
+├ ƒ /faq                                                              3.54 kB         110 kB
+├ ƒ /formations                                                       5.85 kB         129 kB
+├ ƒ /formations/[slug]                                                10.3 kB         154 kB
+├ ƒ /formations/admin                                                   785 B         104 kB
+├ ƒ /formations/admin/apprenants                                       1.7 kB         125 kB
+├ ƒ /formations/admin/audit-log                                       2.13 kB         122 kB
+├ ƒ /formations/admin/categories                                      2.13 kB         122 kB
+├ ƒ /formations/admin/certificats                                     1.96 kB         125 kB
+├ ƒ /formations/admin/cohorts                                         2.87 kB         123 kB
+├ ƒ /formations/admin/configuration                                    2.5 kB         122 kB
+├ ƒ /formations/admin/dashboard                                       7.54 kB         235 kB
+├ ƒ /formations/admin/discussions                                     2.45 kB         122 kB
+├ ƒ /formations/admin/finances                                        3.09 kB         123 kB
+├ ƒ /formations/admin/formations                                       2.4 kB         126 kB
+├ ƒ /formations/admin/instructeurs                                    2.33 kB         122 kB
+├ ƒ /formations/admin/marketing                                       2.55 kB         122 kB
+├ ƒ /formations/admin/produits                                        2.83 kB         106 kB
+├ ƒ /formations/admin/promo-codes                                     2.83 kB         123 kB
+├ ƒ /formations/apprenants/[id]                                       2.84 kB         116 kB
+├ ƒ /formations/apprendre/[id]                                        21.1 kB         153 kB
+├ ƒ /formations/apprendre/[id]/quiz                                   6.65 kB         135 kB
+├ ƒ /formations/callback                                                922 B         113 kB
+├ ƒ /formations/categories                                            1.23 kB         124 kB
+├ ƒ /formations/categories/[slug]                                     2.89 kB         126 kB
+├ ƒ /formations/certificats                                           2.95 kB         135 kB
+├ ƒ /formations/certificats/[id]                                       3.1 kB         135 kB
+├ ƒ /formations/cohorts                                               3.36 kB         136 kB
+├ ƒ /formations/connexion                                             3.49 kB         142 kB
+├ ƒ /formations/devenir-instructeur                                   3.83 kB         136 kB
+├ ƒ /formations/echec                                                 1.89 kB         125 kB
+├ ƒ /formations/explorer                                              6.52 kB         130 kB
+├ ƒ /formations/f/[slug]                                              8.24 kB         131 kB
+├ ƒ /formations/favoris                                               3.82 kB         136 kB
+├ ƒ /formations/inscription                                           2.71 kB         142 kB
+├ ƒ /formations/instructeur/[id]/cohorts                              5.31 kB         137 kB
+├ ƒ /formations/instructeur/[id]/cohorts/[cohortId]                    3.4 kB         139 kB
+├ ƒ /formations/instructeur/[id]/modifier                             9.68 kB         140 kB
+├ ƒ /formations/instructeur/[id]/statistiques                         8.27 kB         245 kB
+├ ƒ /formations/instructeur/apprenants                                3.46 kB         132 kB
+├ ƒ /formations/instructeur/avis                                      3.71 kB         132 kB
+├ ƒ /formations/instructeur/creer                                     12.3 kB         138 kB
+├ ƒ /formations/instructeur/dashboard                                 9.94 kB         264 kB
+├ ƒ /formations/instructeur/marketing                                 6.84 kB         247 kB
+├ ƒ /formations/instructeur/marketing/affilies                        6.71 kB         122 kB
+├ ƒ /formations/instructeur/marketing/affilies/tableau-de-bord        6.05 kB         113 kB
+├ ƒ /formations/instructeur/marketing/analytics                       9.53 kB         254 kB
+├ ƒ /formations/instructeur/marketing/campagnes                       8.79 kB         229 kB
+├ ƒ /formations/instructeur/marketing/emails                          6.37 kB         122 kB
+├ ƒ /formations/instructeur/marketing/emails/creer                    10.1 kB         117 kB
+├ ƒ /formations/instructeur/marketing/flash                           7.22 kB         123 kB
+├ ƒ /formations/instructeur/marketing/funnels                         8.11 kB         232 kB
+├ ƒ /formations/instructeur/marketing/funnels/creer                   10.4 kB         117 kB
+├ ƒ /formations/instructeur/marketing/pixels                          3.74 kB         119 kB
+├ ƒ /formations/instructeur/marketing/popups                          10.7 kB         126 kB
+├ ƒ /formations/instructeur/marketing/reductions                      7.94 kB         123 kB
+├ ƒ /formations/instructeur/mes-formations                            4.79 kB         146 kB
+├ ƒ /formations/instructeur/parametres                                2.94 kB         138 kB
+├ ƒ /formations/instructeur/produits                                  4.96 kB         128 kB
+├ ƒ /formations/instructeur/produits/creer                            5.42 kB         125 kB
+├ ƒ /formations/instructeur/produits/dashboard                        8.51 kB         254 kB
+├ ƒ /formations/instructeur/promotions                                 4.6 kB         136 kB
+├ ƒ /formations/instructeur/promotions/creer                          4.83 kB         128 kB
+├ ƒ /formations/instructeur/revenus                                   10.3 kB         253 kB
+├ ƒ /formations/instructeur/statistiques                              8.89 kB         254 kB
+├ ƒ /formations/instructeur/tunnel-de-vente                           3.02 kB         106 kB
+├ ƒ /formations/instructeur/tunnel-de-vente/[id]                      5.49 kB         124 kB
+├ ƒ /formations/instructeurs/[id]                                     4.47 kB         134 kB
+├ ƒ /formations/mes-achats                                            6.76 kB         244 kB
+├ ƒ /formations/mes-avis                                              3.24 kB         135 kB
+├ ƒ /formations/mes-cohorts                                            3.4 kB         136 kB
+├ ƒ /formations/mes-cohorts/[cohortId]                                3.88 kB         140 kB
+├ ƒ /formations/mes-discussions                                       2.47 kB         135 kB
+├ ƒ /formations/mes-formations                                        7.87 kB         259 kB
+├ ƒ /formations/mes-produits                                          3.24 kB         135 kB
+├ ƒ /formations/panier                                                 4.4 kB         137 kB
+├ ƒ /formations/parametres                                            2.59 kB         138 kB
+├ ƒ /formations/produits                                              4.78 kB         128 kB
+├ ƒ /formations/produits/[slug]                                       6.76 kB         150 kB
+├ ƒ /formations/succes                                                2.39 kB         126 kB
+├ ƒ /formations/vente/[slug]                                          3.76 kB         107 kB
+├ ƒ /formations/verification/[code]                                   3.54 kB         127 kB
+├ ƒ /formations/verifier-email                                        2.24 kB         106 kB
+├ ƒ /freelances/[username]                                            10.2 kB         140 kB
+├ ƒ /inscription                                                      9.41 kB         125 kB
+├ ƒ /maintenance                                                      1.12 kB         108 kB
+├ ƒ /mentions-legales                                                   200 B         107 kB
+├ ƒ /mot-de-passe-oublie                                              2.63 kB         109 kB
+├ ƒ /offres-projets                                                   7.68 kB         134 kB
+├ ƒ /onboarding                                                       3.27 kB         110 kB
+├ ƒ /reinitialiser-mot-de-passe                                       3.52 kB         110 kB
+├ ○ /robots.txt                                                         785 B         104 kB
+├ ƒ /services/[slug]                                                  7.81 kB         138 kB
+├ ○ /sitemap.xml                                                        785 B         104 kB          1m      1y
+├ ƒ /status                                                             785 B         104 kB
+├ ƒ /tarifs                                                            3.4 kB         130 kB
+└ ƒ /verifier-email                                                   2.48 kB         109 kB
++ First Load JS shared by all                                          103 kB
+  ├ chunks/21941-1c7d98255d8421e0.js                                  46.2 kB
+  ├ chunks/a3c0f6c7-f54fc9aff1e90cf9.js                               54.2 kB
+  └ other shared chunks (total)                                       2.93 kB
+
+
+ƒ Middleware                                                          55.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
 
-Failed to compile.
-
-./app/(auth)/onboarding/page.tsx
-91:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/(public)/affiliation/page.tsx
-114:5  Warning: React Hook useMemo has a missing dependency: 'TIERS'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/(public)/agences/[slug]/page.tsx
-867:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-916:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/(public)/contrats/generateur/page.tsx
-14:11  Warning: 'Template' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/(public)/freelances/[username]/page.tsx
-947:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-1030:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/(public)/offres-projets/page.tsx
-236:3  Warning: 'setContractType' is defined but never used.  @typescript-eslint/no-unused-vars
-238:3  Warning: 'setUrgency' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/(public)/services/[slug]/page.tsx
-171:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-310:9  Warning: The 'reviews' logical expression could make the dependencies of useMemo Hook (at line 324) change on every render. To fix this, wrap the initialization of 'reviews' in its own useMemo() Hook.  react-hooks/exhaustive-deps
-355:6  Warning: React Hook useMemo has a missing dependency: 'features'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-482:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-520:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-556:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-718:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/admin/analytics/page.tsx
-74:9  Warning: 'totalOrders' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/admin/categories/page.tsx
-66:10  Warning: 'editId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-111:25  Warning: 'cat' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/admin/formations/apprenants/page.tsx
-5:10  Warning: 'Users' is defined but never used.  @typescript-eslint/no-unused-vars
-5:25  Warning: 'RefreshCw' is defined but never used.  @typescript-eslint/no-unused-vars
-5:36  Warning: 'Download' is defined but never used.  @typescript-eslint/no-unused-vars
-110:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/admin/formations/certificats/page.tsx
-5:10  Warning: 'Award' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/admin/formations/dashboard/page.tsx
-11:62  Warning: 'Legend' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/admin/formations/instructeurs/page.tsx
-6:49  Warning: 'Users' is defined but never used.  @typescript-eslint/no-unused-vars
-6:56  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
-38:6  Warning: React Hook useEffect has a missing dependency: 'fetchInstructeurs'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-130:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/admin/formations/liste/page.tsx
-6:41  Warning: 'Trash2' is defined but never used.  @typescript-eslint/no-unused-vars
-6:67  Warning: 'Filter' is defined but never used.  @typescript-eslint/no-unused-vars
-35:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-46:6  Warning: React Hook useEffect has a missing dependency: 'fetchFormations'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/admin/litiges/page.tsx
-14:7  Warning: 'VERDICT_MAP' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/admin/utilisateurs/[id]/page.tsx
-5:30  Warning: 'AdminUser' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/agence/analytics/page.tsx
-58:48  Warning: 'reviewSummary' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-59:5  Warning: 'financeSummary' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-128:11  Warning: 'passives' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/agence/candidatures/page.tsx
-17:7  Warning: 'URGENCY_MAP' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/agence/freelances/[id]/page.tsx
-508:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/agence/litiges/page.tsx
-736:30  Warning: 'orderId' is defined but never used.  @typescript-eslint/no-unused-vars
-736:47  Warning: 'content' is defined but never used.  @typescript-eslint/no-unused-vars
-743:33  Warning: 'orderId' is defined but never used.  @typescript-eslint/no-unused-vars
-749:35  Warning: 'orderId' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/agence/page.tsx
-27:58  Warning: 'orders' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-27:66  Warning: 'reviews' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/agence/profil/page.tsx
-77:6  Warning: React Hook useEffect has a missing dependency: 'form'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-130:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/agence/sous-traitance/page.tsx
-296:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-416:31  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/api/admin/analytics/route.ts
-61:16  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/dashboard/route.ts
-49:13  Warning: 'completedSales' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/formations/categories/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/formations/config/route.ts
-19:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/formations/finances/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/formations/marketing/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/admin/formations/stats/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/achats/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/certificats/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/cohorts/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/discussions/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/enrollments/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/export-pdf/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/favoris/route.ts
-21:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-52:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-83:22  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-
-./app/api/apprenant/produits/route.ts
-8:27  Warning: 'req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/recommendations/route.ts
-11:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/refunds/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/apprenant/reviews/route.ts
-10:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/categories/route.ts
-112:35  Warning: 'children' is defined but never used.  @typescript-eslint/no-unused-vars
-112:45  Warning: 'tags' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/finances/withdrawal/route.ts
-5:47  Warning: 'resetAttempts' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/formations/cart/promo/route.ts
-84:30  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/apprenants/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/avis/route.ts
-8:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/candidature/route.ts
-74:27  Warning: 'req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/formations/[id]/route.ts
-161:176  Warning: 'qIdx' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/formations/route.ts
-9:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/produits/route.ts
-109:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/produits/stats/route.ts
-27:11  Warning: 'period' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/instructeur/revenus/route.ts
-7:33  Warning: 'PLATFORM_COMMISSION' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/link-preview/route.ts
-113:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/marketing/affiliate/stats/route.ts
-67:28  Warning: 'period' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/marketing/affiliate/track/route.ts
-143:11  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/marketing/campaigns/route.ts
-103:5  Error: 'devCampaigns' is never reassigned. Use 'const' instead.  prefer-const
-
-./app/api/marketing/discounts/route.ts
-136:5  Error: 'devDiscounts' is never reassigned. Use 'const' instead.  prefer-const
-140:27  Warning: 'req' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/marketing/flash-offers/route.ts
-106:5  Error: 'devFlashOffers' is never reassigned. Use 'const' instead.  prefer-const
-
-./app/api/marketing/funnels/route.ts
-274:5  Error: 'devFunnels' is never reassigned. Use 'const' instead.  prefer-const
-
-./app/api/marketing/overview/route.ts
-190:9  Warning: 'discountRevenue' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/marketing/popups/route.ts
-153:5  Error: 'devPopups' is never reassigned. Use 'const' instead.  prefer-const
-
-./app/api/marketing/sequences/route.ts
-235:5  Error: 'devSequences' is never reassigned. Use 'const' instead.  prefer-const
-593:11  Warning: 'sequence' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/profile/route.ts
-145:169  Warning: 'rest' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/public/stats/route.ts
-58:7  Warning: 'totalPaidResult' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/rank/route.ts
-6:23  Warning: 'profileStore' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/services/[id]/route.ts
-108:13  Warning: '_id' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-109:17  Warning: '_userId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-110:20  Warning: '_createdAt' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-111:16  Warning: '_views' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-112:17  Warning: '_clicks' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-113:21  Warning: '_orderCount' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-114:18  Warning: '_revenue' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-115:17  Warning: '_rating' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-116:22  Warning: '_ratingCount' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-169:11  Warning: '_id' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-170:15  Warning: '_userId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-171:18  Warning: '_createdAt' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-172:14  Warning: '_views' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-173:19  Warning: '_orderCount' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-174:15  Warning: '_rating' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-175:20  Warning: '_ratingCount' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/services/draft/route.ts
-18:35  Warning: 'userId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/services/route.ts
-14:27  Warning: '_request' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/api/webhooks/stripe/route.ts
-8:10  Warning: 'stripe' is defined but never used.  @typescript-eslint/no-unused-vars
-879:21  Warning: 'funnelSlug' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/client/avis/page.tsx
-252:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/client/explorer/page.tsx
-362:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-390:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-427:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-501:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-589:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/client/favoris/page.tsx
-174:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/client/profil/page.tsx
-194:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/client/propositions/page.tsx
-241:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-375:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/client/recherche-ia/page.tsx
-197:33  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/dashboard/commandes/[id]/suivi/page.tsx
-196:10  Warning: 'delivering' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/dashboard/explorer/page.tsx
-788:30  Warning: 'message' is defined but never used.  @typescript-eslint/no-unused-vars
-793:30  Warning: 'data' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/dashboard/paiements/page.tsx
-32:7  Warning: 'DEMO_METHODS' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/dashboard/portfolio/page.tsx
-4:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
-136:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/dashboard/profil/page.tsx
-155:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/dashboard/securite/page.tsx
-53:10  Warning: 'qrCodeUrl' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/dashboard/services/page.tsx
-26:18  Warning: 'setSearch' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-128:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-326:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/apprenants/page.tsx
-83:37  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/audit-log/page.tsx
-56:9  Warning: 't' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-69:6  Warning: React Hook useEffect has a missing dependency: 'fetchEntries'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-207:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/cohorts/page.tsx
-295:37  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/configuration/page.tsx
-27:9  Warning: 'locale' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-28:9  Warning: 't' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(admin)/admin/dashboard/page.tsx
-8:3  Warning: 'BarChart' is defined but never used.  @typescript-eslint/no-unused-vars
-8:13  Warning: 'Bar' is defined but never used.  @typescript-eslint/no-unused-vars
-8:18  Warning: 'XAxis' is defined but never used.  @typescript-eslint/no-unused-vars
-8:25  Warning: 'YAxis' is defined but never used.  @typescript-eslint/no-unused-vars
-8:32  Warning: 'CartesianGrid' is defined but never used.  @typescript-eslint/no-unused-vars
-677:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/discussions/page.tsx
-45:6  Warning: React Hook useEffect has a missing dependency: 'fetchDiscussions'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-169:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/finances/page.tsx
-114:9  Warning: 'pendingRefunds' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-266:33  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/formations/page.tsx
-43:43  Warning: React Hook useEffect has a missing dependency: 'fetchFormations'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/formations/(admin)/admin/instructeurs/page.tsx
-35:45  Warning: React Hook useEffect has a missing dependency: 'fetchInstructeurs'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-103:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(admin)/admin/marketing/page.tsx
-46:9  Warning: 't' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-55:6  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/formations/(admin)/admin/produits/page.tsx
-4:32  Warning: 'Archive' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(apprenant)/apprendre/[id]/page.tsx
-680:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-720:23  Warning: Expected an assignment or function call and instead saw an expression.  @typescript-eslint/no-unused-expressions
-
-./app/formations/(apprenant)/apprendre/[id]/quiz/page.tsx
-338:17  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(apprenant)/certificats/page.tsx
-29:17  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-131:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/favoris/page.tsx
-184:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/mes-cohorts/[cohortId]/page.tsx
-236:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-365:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-406:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/mes-cohorts/page.tsx
-188:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/mes-formations/page.tsx
-68:9  Warning: 't' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-525:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/mes-produits/page.tsx
-112:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(apprenant)/panier/page.tsx
-38:17  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-55:6  Warning: React Hook useEffect has a missing dependency: 'fetchCart'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-194:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/[id]/cohorts/[cohortId]/page.tsx
-204:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/[id]/cohorts/page.tsx
-91:6  Warning: React Hook useEffect has a missing dependency: 'fetchCohorts'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/formations/(instructeur)/instructeur/apprenants/page.tsx
-129:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/avis/page.tsx
-155:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/creer/page.tsx
-3:39  Warning: 'useCallback' is defined but never used.  @typescript-eslint/no-unused-vars
-6:47  Warning: 'Image' is defined but never used.  @typescript-eslint/no-unused-vars
-6:54  Warning: 'DollarSign' is defined but never used.  @typescript-eslint/no-unused-vars
-7:3  Warning: 'Layout' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/dashboard/page.tsx
-15:62  Warning: 'Legend' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/marketing/analytics/page.tsx
-4:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
-73:11  Warning: 'AnalyticsData' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/marketing/campagnes/page.tsx
-9:34  Warning: 'BarChart3' is defined but never used.  @typescript-eslint/no-unused-vars
-10:40  Warning: 'Globe' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/marketing/emails/creer/page.tsx
-357:9  Warning: 'insertVariable' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-628:27  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-628:53  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-941:48  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-941:79  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-1114:28  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-
-./app/formations/(instructeur)/instructeur/marketing/funnels/creer/page.tsx
-3:31  Warning: 'useCallback' is defined but never used.  @typescript-eslint/no-unused-vars
-157:62  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-163:58  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-
-./app/formations/(instructeur)/instructeur/marketing/funnels/page.tsx
-806:37  Warning: 'totalViews' is defined but never used.  @typescript-eslint/no-unused-vars
-820:17  Warning: 'widthPct' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/marketing/page.tsx
-10:3  Warning: 'ArrowRight' is defined but never used.  @typescript-eslint/no-unused-vars
-79:11  Warning: 'OverviewData' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/marketing/popups/page.tsx
-9:39  Warning: 'MousePointerClick' is defined but never used.  @typescript-eslint/no-unused-vars
-385:64  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
-940:9  Warning: 'typeConfig' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-963:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/mes-formations/page.tsx
-12:35  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
-195:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/(instructeur)/instructeur/parametres/page.tsx
-25:17  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-29:10  Warning: 'profile' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/produits/creer/page.tsx
-61:27  Warning: 'setFileStoragePath' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/produits/page.tsx
-7:23  Warning: 'ShoppingBag' is defined but never used.  @typescript-eslint/no-unused-vars
-65:6  Warning: React Hook useEffect has a missing dependency: 'fr'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./app/formations/(instructeur)/instructeur/revenus/page.tsx
-4:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
-11:46  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
-11:79  Warning: 'Wallet' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/(instructeur)/instructeur/statistiques/page.tsx
-7:18  Warning: 'LineChart' is defined but never used.  @typescript-eslint/no-unused-vars
-7:29  Warning: 'Line' is defined but never used.  @typescript-eslint/no-unused-vars
-11:47  Warning: 'ArrowUpRight' is defined but never used.  @typescript-eslint/no-unused-vars
-11:61  Warning: 'ArrowDownRight' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/[slug]/page.tsx
-546:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-624:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-745:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/apprenants/[id]/page.tsx
-118:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-220:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/categories/[slug]/page.tsx
-146:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/cohorts/page.tsx
-136:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-164:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/devenir-instructeur/page.tsx
-12:9  Warning: 'locale' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/explorer/page.tsx
-109:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-148:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-293:3  Warning: 'label' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/f/[slug]/page.tsx
-9:24  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
-54:10  Warning: 'skippedSteps' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-533:3  Warning: 'onSkip' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./app/formations/instructeurs/[id]/page.tsx
-148:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-164:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-362:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/produits/[slug]/page.tsx
-10:11  Warning: 'Heart' is defined but never used.  @typescript-eslint/no-unused-vars
-10:18  Warning: 'AlertCircle' is defined but never used.  @typescript-eslint/no-unused-vars
-198:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-277:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-430:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./app/formations/produits/page.tsx
-56:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-230:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-274:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/agence/AgenceSidebar.tsx
-49:20  Warning: 'stats' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./components/emails/CertificateEmail.tsx
-419:26  Error: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
-
-./components/emails/FormationPurchaseEmail.tsx
-153:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-348:26  Error: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
-
-./components/emails/ProductDeliveryEmail.tsx
-401:26  Error: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
-
-./components/formations/CohortChat.tsx
-46:5  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/formations/DigitalProductCard.tsx
-88:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/formations/DiscussionThread.tsx
-53:5  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-63:3  Warning: 'currentUserId' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./components/formations/FormationCard.tsx
-91:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-156:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/landing/HeroSection.tsx
-52:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/landing/HowItWorksSection.tsx
-21:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/marketing/SmartPopupRenderer.tsx
-382:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/messaging/ImageLightbox.tsx
-34:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/messaging/LinkPreview.tsx
-21:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/messaging/MessageBubble.tsx
-238:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
-
-./components/messaging/MessageContextMenu.tsx
-4:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./components/messaging/MessagingLayout.tsx
-67:60  Warning: 'duration' is defined but never used.  @typescript-eslint/no-unused-vars
-75:41  Warning: 'fromUser' is defined but never used.  @typescript-eslint/no-unused-vars
-108:6  Warning: React Hook useMemo has an unnecessary dependency: 'conversations'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
-
-./components/messaging/calls/AudioCallModal.tsx
-3:10  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
-7:15  Warning: 'CallUser' is defined but never used.  @typescript-eslint/no-unused-vars
-43:5  Warning: 'toggleCamera' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./components/messaging/calls/VideoCallModal.tsx
-4:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
-50:5  Warning: 'toggleScreenShare' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./components/messaging/calls/useWebRTC.ts
-29:3  Warning: 'stopDialTone' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./components/services/wizard/editor/RichTextEditor.tsx
-99:13  Warning: 'cursorPos' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./components/services/wizard/steps/StepExpressDelivery.tsx
-3:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
-6:39  Warning: 'role' is defined but never used.  @typescript-eslint/no-unused-vars
-
-./lib/marketing/email-sequence-processor.ts
-812:13  Warning: 'personalizedBody' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-
-./lib/payments/service.ts
-283:42  Warning: 'reason' is defined but never used.  @typescript-eslint/no-unused-vars
-
-info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
- ELIFECYCLE  Command failed with exit code 1.

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
           instructeur: {
             select: { user: { select: { name: true, email: true } } },
           },
-          category: { select: { nameFr: true } },
+          category: { select: { name: true } },
         },
       }),
       prisma.digitalProduct.count({ where: where as never }),

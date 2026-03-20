@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -256,39 +256,142 @@ export default function InscriptionPage() {
   const [registerError, setRegisterError] = useState("");
   const [registerLoading, setRegisterLoading] = useState(false);
 
-  async function next() {
-    if (step < 3) { setStep(step + 1); return; }
+  // OTP state
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [otpError, setOtpError] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(600); // 10 minutes
+  const [otpResending, setOtpResending] = useState(false);
+  const otpRefs = [
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+  ];
 
-    // Etape finale — inscription puis connexion automatique
-    setRegisterLoading(true);
-    setRegisterError("");
+  // OTP timer countdown
+  useEffect(() => {
+    if (!showOtp) return;
+    const interval = setInterval(() => {
+      setOtpTimer((t) => (t > 0 ? t - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showOtp]);
 
+  function handleOtpChange(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return;
+    const newCode = [...otpCode];
+    newCode[index] = value.slice(-1);
+    setOtpCode(newCode);
+    if (value && index < 5) otpRefs[index + 1]?.current?.focus();
+    // Auto-submit when all 6 digits filled
+    if (newCode.every((d) => d) && newCode.join("").length === 6) {
+      verifyOtp(newCode.join(""));
+    }
+  }
+
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent) {
+    if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+      otpRefs[index - 1]?.current?.focus();
+    }
+    if (e.key === "ArrowLeft" && index > 0) otpRefs[index - 1]?.current?.focus();
+    if (e.key === "ArrowRight" && index < 5) otpRefs[index + 1]?.current?.focus();
+  }
+
+  function handleOtpPaste(e: React.ClipboardEvent) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newCode = [...otpCode];
+    for (let i = 0; i < pasted.length; i++) newCode[i] = pasted[i];
+    setOtpCode(newCode);
+    if (pasted.length === 6) verifyOtp(pasted);
+  }
+
+  async function verifyOtp(code: string) {
+    setOtpLoading(true);
+    setOtpError("");
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
+      const res = await fetch("/api/auth/verify-email", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: d.email,
-          password: d.password,
-          name: `${d.prenom} ${d.nom}`.trim(),
-          role,
-        }),
+        body: JSON.stringify({ email: d.email, code }),
       });
-
       const data = await res.json();
       if (!res.ok) {
-        setRegisterError(data.error || "Erreur lors de l'inscription");
+        setOtpError(data.error || "Code invalide");
+        setOtpCode(["", "", "", "", "", ""]);
+        otpRefs[0]?.current?.focus();
+        setOtpLoading(false);
+        return;
+      }
+      // OTP verified — proceed to onboarding step 1
+      setShowOtp(false);
+      setStep(1);
+      setOtpLoading(false);
+    } catch {
+      setOtpError("Erreur de connexion. Veuillez réessayer.");
+      setOtpLoading(false);
+    }
+  }
+
+  async function resendOtp() {
+    setOtpResending(true);
+    setOtpError("");
+    try {
+      await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: d.email }),
+      });
+      setOtpTimer(600);
+      setOtpCode(["", "", "", "", "", ""]);
+      otpRefs[0]?.current?.focus();
+    } catch {
+      setOtpError("Impossible de renvoyer le code.");
+    }
+    setOtpResending(false);
+  }
+
+  async function next() {
+    // Step 0: Register + send OTP
+    if (step === 0) {
+      setRegisterLoading(true);
+      setRegisterError("");
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: d.email,
+            password: d.password,
+            name: `${d.prenom} ${d.nom}`.trim(),
+            role,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setRegisterError(data.error || "Erreur lors de l'inscription");
+          setRegisterLoading(false);
+          return;
+        }
+        // Show OTP inline screen
+        setShowOtp(true);
+        setOtpTimer(600);
         setRegisterLoading(false);
-        return;
+        setTimeout(() => otpRefs[0]?.current?.focus(), 100);
+      } catch {
+        setRegisterError("Une erreur est survenue. Veuillez réessayer.");
+        setRegisterLoading(false);
       }
+      return;
+    }
 
-      // If email verification is required, redirect to verification page
-      if (data.requiresVerification) {
-        router.push(`/verifier-email?email=${encodeURIComponent(d.email)}`);
-        return;
-      }
+    // Steps 1-2: just advance
+    if (step < 3) { setStep(step + 1); return; }
 
-      // Fallback: Connexion automatique apres inscription (if verification not required)
+    // Step 3 (final): sign in and redirect
+    setRegisterLoading(true);
+    try {
       const signInResult = await signIn("credentials", {
         email: d.email,
         password: d.password,
@@ -296,17 +399,15 @@ export default function InscriptionPage() {
       });
 
       if (signInResult?.error) {
-        // Inscription reussie mais connexion echouee — rediriger vers connexion
         router.push("/connexion?registered=1");
         return;
       }
 
-      // Rediriger vers le bon espace (refresh d'abord pour propager la session)
       router.refresh();
       const dest = role === "client" ? "/client" : role === "agence" ? "/agence" : "/dashboard";
       router.push(dest);
     } catch {
-      setRegisterError("Une erreur est survenue. Veuillez reessayer.");
+      setRegisterError("Une erreur est survenue. Veuillez réessayer.");
       setRegisterLoading(false);
     }
   }
@@ -937,45 +1038,119 @@ export default function InscriptionPage() {
           )}
 
           {/* Step content */}
-          {step === 0 && renderStep0()}
+          {step === 0 && !showOtp && renderStep0()}
+
+          {/* OTP verification screen (inline after step 0) */}
+          {step === 0 && showOtp && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-primary text-3xl">mail</span>
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Vérifiez votre email</h2>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Un code de vérification a été envoyé à <strong className="text-primary">{d.email}</strong>
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+                {otpCode.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={otpRefs[i]}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-white dark:bg-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                      otpError ? "border-red-500" : digit ? "border-primary" : "border-slate-200 dark:border-primary/20"
+                    } text-slate-900 dark:text-white`}
+                  />
+                ))}
+              </div>
+
+              {otpError && (
+                <p className="text-center text-sm text-red-500 font-medium">{otpError}</p>
+              )}
+
+              {otpLoading && (
+                <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Vérification en cours...
+                </div>
+              )}
+
+              <div className="text-center text-sm text-slate-500">
+                {otpTimer > 0 ? (
+                  <p>Le code expire dans <strong className="text-primary">{Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, "0")}</strong></p>
+                ) : (
+                  <p className="text-red-500">Le code a expiré</p>
+                )}
+              </div>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={otpResending}
+                  className="text-sm text-primary hover:text-primary/80 font-semibold disabled:opacity-50"
+                >
+                  {otpResending ? "Envoi en cours..." : "Renvoyer le code"}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setShowOtp(false); setOtpCode(["", "", "", "", "", ""]); setOtpError(""); }}
+                className="w-full text-center text-xs text-slate-500 hover:text-primary transition-colors"
+              >
+                Modifier l&apos;adresse email
+              </button>
+            </div>
+          )}
+
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
 
-          {/* Navigation buttons */}
-          <div className="flex gap-3 mt-8">
-            {step > 0 && (
+          {/* Navigation buttons — hidden during OTP */}
+          {!showOtp && (
+            <div className="flex gap-3 mt-8">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={prev}
+                  className="flex-1 py-3.5 border border-primary/30 text-slate-300 font-bold rounded-xl hover:bg-primary/10 transition-all text-sm"
+                >
+                  Retour
+                </button>
+              )}
               <button
                 type="button"
-                onClick={prev}
-                className="flex-1 py-3.5 border border-primary/30 text-slate-300 font-bold rounded-xl hover:bg-primary/10 transition-all text-sm"
+                onClick={next}
+                disabled={(step === 0 && !canProceed()) || registerLoading}
+                className={`${step > 0 ? "flex-[2]" : "w-full"} py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2`}
               >
-                Retour
+                {registerLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                    {step === 0 ? "Inscription en cours..." : "Chargement..."}
+                  </>
+                ) : step === 0 ? "S'inscrire" : step < 3 ? "Continuer" : (
+                  <>
+                    {role === "freelance" && "Accéder à mon dashboard"}
+                    {role === "client" && "Explorer le marketplace"}
+                    {role === "agence" && "Accéder à l'espace agence"}
+                  </>
+                )}
               </button>
-            )}
-            <button
-              type="button"
-              onClick={next}
-              disabled={(step === 0 && !canProceed()) || registerLoading}
-              className={`${step > 0 ? "flex-[2]" : "w-full"} py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:scale-[1.01] active:scale-95 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2`}
-            >
-              {registerLoading ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  Inscription en cours...
-                </>
-              ) : step < 3 ? "Continuer" : (
-                <>
-                  {role === "freelance" && "Acceder a mon dashboard"}
-                  {role === "client" && "Explorer le marketplace"}
-                  {role === "agence" && "Acceder a l'espace agence"}
-                </>
-              )}
-            </button>
-          </div>
+            </div>
+          )}
 
           {/* Skip link for steps 1-2 */}
-          {step > 0 && step < 3 && (
+          {step > 0 && step < 3 && !showOtp && (
             <div className="mt-4 text-center">
               <button type="button" onClick={() => setStep(3)} className="text-xs text-slate-500 hover:text-primary transition-colors font-semibold">
                 Passer cette étape
@@ -984,7 +1159,7 @@ export default function InscriptionPage() {
           )}
 
           {/* Already have account (step 0) */}
-          {step === 0 && (
+          {step === 0 && !showOtp && (
             <div className="mt-8 text-center">
               <p className="text-slate-600 dark:text-slate-400 text-sm">
                 Déjà un compte ?{" "}

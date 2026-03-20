@@ -13,10 +13,8 @@ import CohortChat from "@/components/formations/CohortChat";
 
 interface CohortDetailData {
   id: string;
-  titleFr: string;
-  titleEn: string;
-  descriptionFr: string | null;
-  descriptionEn: string | null;
+  title: string;
+  description: string | null;
   startDate: string;
   endDate: string;
   enrollmentDeadline: string;
@@ -28,8 +26,7 @@ interface CohortDetailData {
   formation: {
     id: string;
     slug: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     thumbnail: string | null;
     duration: number;
   };
@@ -113,9 +110,9 @@ export default function ApprenantCohortDetailPage({ params }: { params: Promise<
 
   if (!data) return null;
 
-  const cohortTitle = fr ? data.titleFr : (data.titleEn || data.titleFr);
-  const formationTitle = fr ? data.formation.titleFr : (data.formation.titleEn || data.formation.titleFr);
-  const desc = fr ? data.descriptionFr : (data.descriptionEn || data.descriptionFr);
+  const cohortTitle = data.title;
+  const formationTitle = data.formation.title;
+  const desc = data.description;
   const isCompleted = data.enrollment.progress >= 100;
   const schedule = Array.isArray(data.schedule) ? data.schedule : [];
 

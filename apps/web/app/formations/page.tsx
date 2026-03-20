@@ -11,8 +11,7 @@ import DigitalProductCard from "@/components/formations/DigitalProductCard";
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
   slug: string;
   icon: string | null;
   color: string | null;
@@ -22,10 +21,8 @@ interface Category {
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
-  shortDescFr: string | null;
-  shortDescEn: string | null;
+  title: string;
+  shortDesc: string | null;
   thumbnail: string | null;
   price: number;
   originalPrice: number | null;
@@ -37,15 +34,14 @@ interface Formation {
   level: string;
   hasCertificate: boolean;
   createdAt: string;
-  category: { nameFr: string; nameEn: string; color: string | null };
+  category: { name: string; color: string | null };
   instructeur: { user: { name: string; avatar: string | null; image: string | null } };
 }
 
 interface DigitalProduct {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   banner: string | null;
   price: number;
   originalPrice: number | null;
@@ -58,7 +54,7 @@ interface DigitalProduct {
   currentBuyers: number;
   previewEnabled: boolean;
   instructeur: { user: { name: string; avatar: string | null; image: string | null } };
-  category: { nameFr: string; nameEn: string; slug: string } | null;
+  category: { name: string; slug: string } | null;
 }
 
 // ── Main Page ──────────────────────────────────────────────────
@@ -229,7 +225,7 @@ export default function FormationsLandingPage() {
                   </span>
                   <div>
                     <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
-                      {locale === "en" ? (cat.nameEn || cat.nameFr) : cat.nameFr}
+                      {cat.name}
                     </p>
                     {cat._count && (
                       <p className="text-xs text-slate-400 mt-1">

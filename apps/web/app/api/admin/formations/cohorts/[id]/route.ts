@@ -45,7 +45,7 @@ export async function PUT(
       targetType: "formationCohort",
       targetId: id,
       metadata: {
-        cohortTitle: cohort.titleFr,
+        cohortTitle: cohort.title,
         previousStatus: cohort.status,
         newStatus: status,
       },

@@ -40,8 +40,7 @@ export async function GET(req: NextRequest) {
       where: { instructeurId: instructeur.id },
       select: {
         id: true,
-        titleFr: true,
-        titleEn: true,
+        title: true,
         status: true,
         studentsCount: true,
         rating: true,
@@ -81,8 +80,7 @@ export async function GET(req: NextRequest) {
       const revenue = formationEnrollments.reduce((acc, e) => acc + e.paidAmount, 0);
       return {
         id: f.id,
-        titleFr: f.titleFr,
-        titleEn: f.titleEn,
+        title: f.title,
         students: f.studentsCount,
         revenue: Math.round(revenue * INSTRUCTOR_COMMISSION * 100) / 100,
         rating: f.rating,
@@ -155,7 +153,7 @@ export async function GET(req: NextRequest) {
         id: true,
         createdAt: true,
         user: { select: { name: true, avatar: true, image: true } },
-        formation: { select: { titleFr: true } },
+        formation: { select: { title: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -170,7 +168,7 @@ export async function GET(req: NextRequest) {
         comment: true,
         createdAt: true,
         user: { select: { name: true } },
-        formation: { select: { titleFr: true } },
+        formation: { select: { title: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 5,

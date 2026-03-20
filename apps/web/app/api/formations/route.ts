@@ -47,13 +47,10 @@ export async function GET(req: NextRequest) {
         WHERE status = 'ACTIF'
           AND (
             "searchVector" @@ plainto_tsquery('french', ${searchTerm})
-            OR "searchVector" @@ plainto_tsquery('english', ${searchTerm})
-            OR "titleFr" ILIKE ${'%' + searchTerm + '%'}
-            OR "titleEn" ILIKE ${'%' + searchTerm + '%'}
+            OR "title" ILIKE ${'%' + searchTerm + '%'}
           )
         ORDER BY
-          ts_rank("searchVector", plainto_tsquery('french', ${searchTerm})) DESC,
-          ts_rank("searchVector", plainto_tsquery('english', ${searchTerm})) DESC
+          ts_rank("searchVector", plainto_tsquery('french', ${searchTerm})) DESC
       `;
 
       const matchingIds = ftsResults.map((r) => r.id);
@@ -104,13 +101,12 @@ export async function GET(req: NextRequest) {
 // ── POST — Créer une formation (instructeur) ──────────────────
 
 const createFormationSchema = z.object({
-  titleFr: z.string().min(5).max(80),
-  titleEn: z.string().min(5).max(80),
-  shortDescFr: z.string().max(200).optional(),
-  shortDescEn: z.string().max(200).optional(),
+  title: z.string().min(5).max(80),
+  shortDesc: z.string().max(200).optional(),
   categoryId: z.string().min(1),
   level: z.enum(["DEBUTANT", "INTERMEDIAIRE", "AVANCE", "TOUS_NIVEAUX"]).default("TOUS_NIVEAUX"),
   language: z.array(z.string()).default(["fr"]),
+  locale: z.string().default("fr"),
   price: z.number().min(0).max(500).default(0),
   isFree: z.boolean().default(false),
   hasCertificate: z.boolean().default(true),
@@ -139,7 +135,7 @@ export async function POST(req: NextRequest) {
     const data = createFormationSchema.parse(body);
 
     // Générer un slug unique
-    const baseSlug = data.titleFr
+    const baseSlug = data.title
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")

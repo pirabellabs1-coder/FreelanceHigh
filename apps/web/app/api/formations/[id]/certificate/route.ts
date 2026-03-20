@@ -27,8 +27,7 @@ export async function GET(
         certificate: true,
         formation: {
           select: {
-            titleFr: true,
-            titleEn: true,
+            title: true,
             instructeur: { select: { user: { select: { name: true } } } },
           },
         },
@@ -67,7 +66,7 @@ export async function GET(
     // Otherwise generate on-the-fly
     const pdfBuffer = await generateCertificatePDF({
       studentName: session.user.name ?? "Apprenant",
-      formationTitle: enrollment.formation.titleFr,
+      formationTitle: enrollment.formation.title,
       instructorName: enrollment.formation.instructeur?.user?.name ?? "Instructeur",
       score: cert.score ?? 100,
       completionDate: cert.issuedAt,

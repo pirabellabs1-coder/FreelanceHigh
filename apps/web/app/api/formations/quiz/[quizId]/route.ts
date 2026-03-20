@@ -22,11 +22,10 @@ export async function GET(
         questions: {
           select: {
             id: true,
-            textFr: true,
-            textEn: true,
+            text: true,
             type: true,
             options: true,
-            explanationFr: true,
+            explanation: true,
             // Do NOT return correctAnswer to client
           },
         },
@@ -61,8 +60,7 @@ export async function GET(
 
     return NextResponse.json({
       id: quiz.id,
-      titleFr: quiz.titleFr,
-      titleEn: quiz.titleEn,
+      title: quiz.title,
       passingScore: quiz.passingScore,
       timeLimit: quiz.timeLimit,
       questions: quiz.questions,

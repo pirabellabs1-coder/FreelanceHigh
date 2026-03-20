@@ -38,10 +38,8 @@ interface FlashPromo {
 interface Product {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
-  descriptionFr: string | null;
-  descriptionEn: string | null;
+  title: string;
+  description: string | null;
   descriptionFormat: string;
   banner: string | null;
   price: number;
@@ -60,11 +58,10 @@ interface Product {
   fileSize: number | null;
   fileMimeType: string | null;
   tags: string[];
-  category: { id: string; nameFr: string; nameEn: string; slug: string } | null;
+  category: { id: string; name: string; slug: string } | null;
   instructeur: {
     id: string;
-    bioFr: string | null;
-    bioEn: string | null;
+    bio: string | null;
     user: { name: string; avatar: string | null; image: string | null };
   };
   reviews: Review[];
@@ -124,9 +121,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     );
   }
 
-  const title = locale === "fr" ? product.titleFr : product.titleEn;
-  const description = locale === "fr" ? product.descriptionFr : product.descriptionEn;
-  const catName = product.category ? (locale === "fr" ? product.category.nameFr : product.category.nameEn) : "";
+  const title = product.title;
+  const description = product.description;
+  const catName = product.category ? product.category.name : "";
   const typeBadge = TYPE_LABELS[product.productType] || TYPE_LABELS.AUTRE;
   const instructor = product.instructeur;
 
@@ -154,10 +151,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         value: product!.price,
         currency: "EUR",
         content_id: product!.id,
-        content_name: product!.titleFr,
+        content_name: product!.title,
       });
       if (data.free) {
-        firePixelEvent("Purchase", { value: 0, currency: "EUR", content_id: product!.id, content_name: product!.titleFr });
+        firePixelEvent("Purchase", { value: 0, currency: "EUR", content_id: product!.id, content_name: product!.title });
         router.push(data.redirectUrl);
       } else if (data.url) {
         window.location.href = data.url;
@@ -437,9 +434,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     <p className="text-xs text-slate-500">Instructeur</p>
                   </div>
                 </div>
-                {(locale === "fr" ? instructor.bioFr : instructor.bioEn) && (
+                {instructor.bio && (
                   <p className="text-xs text-slate-500 mt-3 line-clamp-3">
-                    {locale === "fr" ? instructor.bioFr : instructor.bioEn}
+                    {instructor.bio}
                   </p>
                 )}
                 <Link

@@ -28,7 +28,7 @@ interface Revenue {
     status: string;
     createdAt: string;
     description: string;
-    formation?: { titleFr: string; titleEn: string };
+    formation?: { title: string };
   }[];
   monthlyRevenue: { month: string; gross: number; net: number }[];
   withdrawals: {

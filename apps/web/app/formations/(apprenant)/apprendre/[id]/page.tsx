@@ -25,8 +25,7 @@ interface LessonProgress {
 
 interface Lesson {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   type: string;
   content: string | null;
   videoUrl: string | null;
@@ -38,22 +37,20 @@ interface Lesson {
   duration: number | null;
   isFree: boolean;
   order: number;
-  resources: { id: string; titleFr: string; titleEn: string; url: string; fileType: string }[];
-  quiz: { id: string; titleFr: string; passingScore: number } | null;
+  resources: { id: string; title: string; url: string; fileType: string }[];
+  quiz: { id: string; title: string; passingScore: number } | null;
 }
 
 interface Section {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   order: number;
   lessons: Lesson[];
 }
 
 interface Formation {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   hasCertificate: boolean;
   sections: Section[];
   instructeur?: {
@@ -322,8 +319,8 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const formationTitle = fr ? formation.titleFr : (formation.titleEn || formation.titleFr);
-  const lessonTitle = fr ? currentLesson.titleFr : (currentLesson.titleEn || currentLesson.titleFr);
+  const formationTitle = formation.title;
+  const lessonTitle = currentLesson.title;
   const totalLessons = formation.sections.reduce((s, sec) => s + sec.lessons.length, 0);
   const completedLessons = lessonProgress.filter((p) => p.completed).length;
   const isCurrentComplete = lessonProgress.find((p) => p.lessonId === currentLesson.id)?.completed ?? false;
@@ -469,7 +466,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                   <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
                     <AlignLeft className="w-10 h-10 text-purple-400" />
                   </div>
-                  <p className="text-xl font-bold mb-2">{fr ? currentLesson.quiz.titleFr : (currentLesson.titleEn || currentLesson.quiz.titleFr)}</p>
+                  <p className="text-xl font-bold mb-2">{currentLesson.quiz.title}</p>
                   <p className="text-slate-400 text-sm mb-6">
                     {fr ? `Score minimum : ${currentLesson.quiz.passingScore}%` : `Passing score: ${currentLesson.quiz.passingScore}%`}
                   </p>
@@ -494,7 +491,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                   </p>
                   {nextLesson && (
                     <p className="text-sm text-slate-300 mb-4 max-w-xs mx-auto truncate">
-                      {fr ? nextLesson.titleFr : (nextLesson.titleEn || nextLesson.titleFr)}
+                      {nextLesson.title}
                     </p>
                   )}
                   <button
@@ -531,7 +528,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                         className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 bg-slate-800 px-2 py-1 rounded"
                       >
                         <FileText className="w-3 h-3" />
-                        {fr ? r.titleFr : r.titleEn}
+                        {r.title}
                       </a>
                     ))}
                   </div>
@@ -567,7 +564,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                 <ChevronLeft className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate text-left">
                   {prevLesson
-                    ? `${fr ? "Leçon précédente" : "Previous lesson"}: ${fr ? prevLesson.titleFr : (prevLesson.titleEn || prevLesson.titleFr)}`
+                    ? `${fr ? "Leçon précédente" : "Previous lesson"}: ${prevLesson.title}`
                     : (fr ? "Leçon précédente" : "Previous lesson")}
                 </span>
               </button>
@@ -578,7 +575,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
               >
                 <span className="truncate text-right">
                   {nextLesson
-                    ? `${fr ? "Leçon suivante" : "Next lesson"}: ${fr ? nextLesson.titleFr : (nextLesson.titleEn || nextLesson.titleFr)}`
+                    ? `${fr ? "Leçon suivante" : "Next lesson"}: ${nextLesson.title}`
                     : (fr ? "Leçon suivante" : "Next lesson")}
                 </span>
                 <ChevronRight className="w-4 h-4 flex-shrink-0" />
@@ -708,7 +705,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
           )}
           <div className="flex-1 overflow-y-auto">
             {formation.sections.slice().sort((a, b) => a.order - b.order).map((section) => {
-              const sTitle = fr ? section.titleFr : (section.titleEn || section.titleFr);
+              const sTitle = section.title;
               const isExpanded = expandedSections.has(section.id);
               const sCompleted = section.lessons.filter((l) => lessonProgress.find((p) => p.lessonId === l.id)?.completed).length;
 
@@ -731,7 +728,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                   {isExpanded && (
                     <div>
                       {section.lessons.slice().sort((a, b) => a.order - b.order).map((lesson) => {
-                        const lTitle = fr ? lesson.titleFr : (lesson.titleEn || lesson.titleFr);
+                        const lTitle = lesson.title;
                         const isDone = lessonProgress.find((p) => p.lessonId === lesson.id)?.completed ?? false;
                         const isCurrent = currentLesson?.id === lesson.id;
                         return (

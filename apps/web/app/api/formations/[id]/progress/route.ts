@@ -140,13 +140,13 @@ export async function PUT(
             // Send certificate email (fire-and-forget)
             const formationDetails = await prisma.formation.findUnique({
               where: { id },
-              select: { titleFr: true },
+              select: { title: true },
             });
             const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
             sendCertificateIssuedEmail({
               email: session.user.email ?? "",
               name: session.user.name ?? "Apprenant",
-              formationTitle: formationDetails?.titleFr ?? "Formation",
+              formationTitle: formationDetails?.title ?? "Formation",
               certificateCode: code,
               pdfUrl: `${baseUrl}/api/formations/${id}/certificate`,
               score: avgScore,

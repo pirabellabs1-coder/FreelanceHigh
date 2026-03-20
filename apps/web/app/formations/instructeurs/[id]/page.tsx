@@ -12,8 +12,7 @@ import { cn } from "@/lib/utils";
 interface Formation {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   price: number;
   isFree: boolean;
   rating: number;
@@ -26,8 +25,7 @@ interface Formation {
 
 interface InstructeurPublic {
   id: string;
-  bioFr: string | null;
-  bioEn: string | null;
+  bio: string | null;
   expertise: string[];
   linkedin: string | null;
   website: string | null;
@@ -131,7 +129,7 @@ export default function InstructeurPublicPage({ params }: { params: Promise<{ id
   }
 
   const avatar = instructeur.user.avatar || instructeur.user.image;
-  const bio = lang === "fr" ? instructeur.bioFr : instructeur.bioEn;
+  const bio = instructeur.bio;
   const bioLines = (bio || "").split("\n").filter(Boolean);
   const reviews = instructeur.reviews || [];
   const badges = instructeur.badges || [];
@@ -371,7 +369,7 @@ export default function InstructeurPublicPage({ params }: { params: Promise<{ id
                       </div>
                       <div className="p-4">
                         <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                          {lang === "fr" ? f.titleFr : f.titleEn}
+                          {f.title}
                         </h4>
                         <div className="flex items-center gap-2 mb-3">
                           <StarRating rating={f.rating} />

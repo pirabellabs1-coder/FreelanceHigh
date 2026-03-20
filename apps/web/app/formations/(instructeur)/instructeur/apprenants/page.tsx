@@ -12,7 +12,7 @@ interface InstructeurApprenant {
   completedAt: string | null;
   paidAmount: number;
   user: { name: string; email: string; avatar: string | null; image: string | null };
-  formation: { titleFr: string; slug: string };
+  formation: { title: string; slug: string };
 }
 
 export default function InstructeurApprenantsPage() {
@@ -28,7 +28,7 @@ export default function InstructeurApprenantsPage() {
     !search ||
     a.user.name.toLowerCase().includes(search.toLowerCase()) ||
     a.user.email.toLowerCase().includes(search.toLowerCase()) ||
-    a.formation.titleFr.toLowerCase().includes(search.toLowerCase())
+    a.formation.title.toLowerCase().includes(search.toLowerCase())
   );
 
   const exportCSV = () => {
@@ -39,7 +39,7 @@ export default function InstructeurApprenantsPage() {
       ...filtered.map((a) => [
         a.user.name,
         a.user.email,
-        a.formation.titleFr,
+        a.formation.title,
         Math.round(a.progress * 100).toString(),
         a.paidAmount.toFixed(2),
         new Date(a.createdAt).toLocaleDateString(fr ? "fr-FR" : "en-US"),
@@ -138,7 +138,7 @@ export default function InstructeurApprenantsPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="text-slate-700 dark:text-slate-300 text-sm line-clamp-1 max-w-xs">{a.formation.titleFr}</p>
+                      <p className="text-slate-700 dark:text-slate-300 text-sm line-clamp-1 max-w-xs">{a.formation.title}</p>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">

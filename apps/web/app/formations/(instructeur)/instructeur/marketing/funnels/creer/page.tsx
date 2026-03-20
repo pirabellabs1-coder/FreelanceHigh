@@ -31,12 +31,9 @@ interface FunnelStepForm {
   id: string;
   type: FunnelStepType;
   title: string;
-  headlineFr: string;
-  headlineEn: string;
-  descriptionFr: string;
-  descriptionEn: string;
-  ctaTextFr: string;
-  ctaTextEn: string;
+  headline: string;
+  description: string;
+  ctaText: string;
   linkedProductId: string | null;
   linkedProductTitle: string | null;
   linkedProductPrice: number | null;
@@ -156,13 +153,13 @@ export default function FunnelBuilderPage() {
     ]).then(([formData, prodData]) => {
       const formations = (formData.formations || []).map((f: any) => ({
         id: f.id,
-        title: f.titleFr || f.titleEn || "Formation",
+        title: f.title || "Formation",
         price: f.price || 0,
         type: "formation" as const,
       }));
       const products = (prodData.products || []).map((p: any) => ({
         id: p.id,
-        title: p.titleFr || p.titleEn || "Produit",
+        title: p.title || "Produit",
         price: p.price || 0,
         type: "product" as const,
       }));
@@ -203,12 +200,9 @@ export default function FunnelBuilderPage() {
       id: `new_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       type,
       title: stepConfig?.labelFr || type,
-      headlineFr: "",
-      headlineEn: "",
-      descriptionFr: "",
-      descriptionEn: "",
-      ctaTextFr: "",
-      ctaTextEn: "",
+      headline: "",
+      description: "",
+      ctaText: "",
       linkedProductId: null,
       linkedProductTitle: null,
       linkedProductPrice: null,
@@ -279,10 +273,10 @@ export default function FunnelBuilderPage() {
     const perStepErrors: string[] = [];
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
-      if (!s.headlineFr?.trim()) {
+      if (!s.headline?.trim()) {
         perStepErrors.push(`Étape ${i + 1} : le titre (FR) est requis`);
       }
-      if (!s.ctaTextFr?.trim()) {
+      if (!s.ctaText?.trim()) {
         perStepErrors.push(`Étape ${i + 1} : le texte CTA (FR) est requis`);
       }
       if (["PRODUCT", "UPSELL", "DOWNSELL"].includes(s.type) && !s.linkedProductId) {
@@ -325,12 +319,9 @@ export default function FunnelBuilderPage() {
         steps: steps.map((step) => ({
           type: step.type,
           title: step.title,
-          headlineFr: step.headlineFr,
-          headlineEn: step.headlineEn,
-          descriptionFr: step.descriptionFr,
-          descriptionEn: step.descriptionEn,
-          ctaTextFr: step.ctaTextFr,
-          ctaTextEn: step.ctaTextEn,
+          headline: step.headline,
+          description: step.description,
+          ctaText: step.ctaText,
           linkedProductId: step.linkedProductId,
           linkedProductTitle: step.linkedProductTitle,
           linkedProductPrice: step.linkedProductPrice,
@@ -665,15 +656,15 @@ export default function FunnelBuilderPage() {
                           <span className="text-sm font-bold">{step.title}</span>
                         </div>
 
-                        {step.headlineFr && (
+                        {step.headline && (
                           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            {step.headlineFr}
+                            {step.headline}
                           </p>
                         )}
 
-                        {step.descriptionFr && (
+                        {step.description && (
                           <p className="text-xs text-slate-500 line-clamp-2 mb-2">
-                            {step.descriptionFr}
+                            {step.description}
                           </p>
                         )}
 
@@ -700,10 +691,10 @@ export default function FunnelBuilderPage() {
                               -{step.discountPct}%
                             </span>
                           )}
-                          {step.ctaTextFr && (
+                          {step.ctaText && (
                             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                               <MousePointerClick className="w-3 h-3" />
-                              {step.ctaTextFr}
+                              {step.ctaText}
                             </span>
                           )}
                         </div>
@@ -941,8 +932,8 @@ function StepCard({
               {config?.label}
             </span>
           </div>
-          {step.headlineFr && (
-            <p className="text-xs text-slate-500 truncate">{step.headlineFr}</p>
+          {step.headline && (
+            <p className="text-xs text-slate-500 truncate">{step.headline}</p>
           )}
         </div>
 
@@ -982,82 +973,43 @@ function StepCard({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Titre principal (FR)
+                Titre principal
               </label>
               <input
                 type="text"
-                value={step.headlineFr}
-                onChange={(e) => onUpdate({ headlineFr: e.target.value })}
-                placeholder="Titre accrocheur en français"
-                className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Titre principal (EN)
-              </label>
-              <input
-                type="text"
-                value={step.headlineEn}
-                onChange={(e) => onUpdate({ headlineEn: e.target.value })}
-                placeholder="Catchy headline in English"
+                value={step.headline}
+                onChange={(e) => onUpdate({ headline: e.target.value })}
+                placeholder="Titre accrocheur"
                 className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
               />
             </div>
           </div>
 
-          {/* Description FR / EN */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Description (FR)
-              </label>
-              <MarkdownEditor
-                value={step.descriptionFr}
-                onChange={(val) => onUpdate({ descriptionFr: val })}
-                placeholder="Description en français..."
-                height={150}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Description (EN)
-              </label>
-              <MarkdownEditor
-                value={step.descriptionEn}
-                onChange={(val) => onUpdate({ descriptionEn: val })}
-                placeholder="Description in English..."
-                height={150}
-              />
-            </div>
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Description
+            </label>
+            <MarkdownEditor
+              value={step.description}
+              onChange={(val) => onUpdate({ description: val })}
+              placeholder="Description..."
+              height={150}
+            />
           </div>
 
-          {/* CTA Text FR / EN */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Texte du bouton (FR)
-              </label>
-              <input
-                type="text"
-                value={step.ctaTextFr}
-                onChange={(e) => onUpdate({ ctaTextFr: e.target.value })}
-                placeholder="Ex: Acheter maintenant"
-                className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Texte du bouton (EN)
-              </label>
-              <input
-                type="text"
-                value={step.ctaTextEn}
-                onChange={(e) => onUpdate({ ctaTextEn: e.target.value })}
-                placeholder="Ex: Buy now"
-                className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
-              />
-            </div>
+          {/* CTA Text */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Texte du bouton
+            </label>
+            <input
+              type="text"
+              value={step.ctaText}
+              onChange={(e) => onUpdate({ ctaText: e.target.value })}
+              placeholder="Ex: Acheter maintenant"
+              className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
+            />
           </div>
 
           {/* Product selection (for relevant step types) */}

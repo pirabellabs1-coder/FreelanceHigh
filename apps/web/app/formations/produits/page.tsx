@@ -12,8 +12,7 @@ import { StockCounter } from "@/components/formations/StockCounter";
 interface Product {
   id: string;
   slug: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   banner: string | null;
   price: number;
   originalPrice: number | null;
@@ -27,7 +26,7 @@ interface Product {
   maxBuyers: number | null;
   currentBuyers: number;
   tags: string[];
-  category: { nameFr: string; nameEn: string; slug: string } | null;
+  category: { name: string; slug: string } | null;
   instructeur: { user: { name: string; avatar: string | null; image: string | null } };
 }
 
@@ -211,10 +210,8 @@ export default function ProduitsMarketplacePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => {
-            const title = locale === "fr" ? product.titleFr : product.titleEn;
-            const catName = product.category
-              ? (locale === "fr" ? product.category.nameFr : product.category.nameEn)
-              : "";
+            const title = product.title;
+            const catName = product.category ? product.category.name : "";
             const badge = getTypeBadge(product.productType);
             const instructor = product.instructeur?.user;
 

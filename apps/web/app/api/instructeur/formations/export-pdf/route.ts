@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     const lessonCompletion = allLessons.map((lesson) => {
       const completed = lesson.progress.filter((p) => p.completed).length;
       return {
-        title: lesson.titleFr,
+        title: lesson.title,
         completedPct: totalStudents > 0 ? (completed / totalStudents) * 100 : 0,
       };
     });
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     }
 
     const reportData: InstructorReportData = {
-      formationTitle: formation.titleFr,
+      formationTitle: formation.title,
       instructorName: session.user.name ?? "Instructeur",
       generatedAt: new Date().toISOString(),
       studentsCount: totalStudents,

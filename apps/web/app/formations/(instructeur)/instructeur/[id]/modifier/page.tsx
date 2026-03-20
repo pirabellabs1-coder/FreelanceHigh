@@ -21,31 +21,27 @@ const FormationRichEditor = dynamic(
 
 interface Category {
   id: string;
-  nameFr: string;
-  nameEn: string;
+  name: string;
 }
 
 interface QuizQuestion {
   type: "CHOIX_UNIQUE" | "CHOIX_MULTIPLE" | "VRAI_FAUX" | "TEXTE_LIBRE";
-  textFr: string;
-  textEn: string;
+  text: string;
   options: { fr: string; en: string }[];
   correctAnswer: string;
-  explanationFr: string;
+  explanation: string;
 }
 
 interface Lesson {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   type: "VIDEO" | "PDF" | "TEXTE" | "AUDIO" | "QUIZ";
   content?: string;
   videoUrl?: string;
   duration?: number;
   isFree: boolean;
   quiz?: {
-    titleFr: string;
-    titleEn: string;
+    title: string;
     passingScore: number;
     timeLimit?: number;
     questions: QuizQuestion[];
@@ -54,20 +50,16 @@ interface Lesson {
 
 interface Section {
   id: string;
-  titleFr: string;
-  titleEn: string;
+  title: string;
   lessons: Lesson[];
   expanded: boolean;
 }
 
 interface FormationData {
   id: string;
-  titleFr: string;
-  titleEn: string;
-  shortDescFr: string;
-  shortDescEn: string;
-  descriptionFr: string;
-  descriptionEn: string;
+  title: string;
+  shortDesc: string;
+  description: string;
   thumbnail: string;
   previewVideo: string;
   price: number;
@@ -80,13 +72,11 @@ interface FormationData {
   categoryId: string;
   sections?: Array<{
     id: string;
-    titleFr: string;
-    titleEn: string;
+    title: string;
     order: number;
     lessons: Array<{
       id: string;
-      titleFr: string;
-      titleEn: string;
+      title: string;
       type: string;
       content?: string;
       videoUrl?: string;
@@ -94,8 +84,7 @@ interface FormationData {
       isFree: boolean;
       order: number;
       quiz?: {
-        titleFr: string;
-        titleEn: string;
+        title: string;
         passingScore: number;
         timeLimit?: number;
         questions: QuizQuestion[];
@@ -140,12 +129,9 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
   const [success, setSuccess] = useState(false);
 
   // ── Form state ──────────────────────────────────────────────────────────────
-  const [titleFr, setTitleFr] = useState("");
-  const [titleEn, setTitleEn] = useState("");
-  const [shortDescFr, setShortDescFr] = useState("");
-  const [shortDescEn, setShortDescEn] = useState("");
-  const [descriptionFr, setDescriptionFr] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
+  const [title, setTitle] = useState("");
+  const [shortDesc, setShortDesc] = useState("");
+  const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState("");
   const [previewVideo, setPreviewVideo] = useState("");
   const [price, setPrice] = useState(0);
@@ -173,12 +159,9 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
         if (formationData.formation) {
           const f: FormationData = formationData.formation;
           setFormation(f);
-          setTitleFr(f.titleFr || "");
-          setTitleEn(f.titleEn || "");
-          setShortDescFr(f.shortDescFr || "");
-          setShortDescEn(f.shortDescEn || "");
-          setDescriptionFr(f.descriptionFr || "");
-          setDescriptionEn(f.descriptionEn || "");
+          setTitle(f.title || "");
+          setShortDesc(f.shortDesc || "");
+          setDescription(f.description || "");
           setThumbnail(f.thumbnail || "");
           setPreviewVideo(f.previewVideo || "");
           setPrice(f.price || 0);
@@ -194,13 +177,11 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
             setSections(
               f.sections.map((s) => ({
                 id: s.id || generateId(),
-                titleFr: s.titleFr || "",
-                titleEn: s.titleEn || "",
+                title: s.title || "",
                 expanded: true,
                 lessons: (s.lessons || []).map((l) => ({
                   id: l.id || generateId(),
-                  titleFr: l.titleFr || "",
-                  titleEn: l.titleEn || "",
+                  title: l.title || "",
                   type: (l.type as Lesson["type"]) || "VIDEO",
                   content: l.content ?? undefined,
                   videoUrl: l.videoUrl ?? undefined,
@@ -228,8 +209,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
       ...sections,
       {
         id: generateId(),
-        titleFr: fr ? "Nouvelle section" : "New section",
-        titleEn: "New section",
+        title: fr ? "Nouvelle section" : "New section",
         lessons: [],
         expanded: true,
       },
@@ -244,19 +224,18 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
       s.id === sectionId ? { ...s, expanded: !s.expanded } : s
     ));
 
-  const updateSection = (sectionId: string, field: "titleFr" | "titleEn", val: string) =>
+  const updateSection = (sectionId: string, field: "title", val: string) =>
     setSections(sections.map((s) => (s.id === sectionId ? { ...s, [field]: val } : s)));
 
   // ── Lesson helpers ──────────────────────────────────────────────────────────
   const addLesson = (sectionId: string) => {
     const newLesson: Lesson = {
       id: generateId(),
-      titleFr: "",
-      titleEn: "",
+      title: "",
       type: newLessonType,
       isFree: false,
       ...(newLessonType === "QUIZ"
-        ? { quiz: { titleFr: "Quiz", titleEn: "Quiz", passingScore: 80, questions: [] } }
+        ? { quiz: { title: "Quiz", passingScore: 80, questions: [] } }
         : {}),
     };
     setSections(sections.map((s) =>
@@ -281,7 +260,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
 
   // ── Save ────────────────────────────────────────────────────────────────────
   const handleSave = async (submitForReview = false) => {
-    if (!titleFr.trim()) {
+    if (!title.trim()) {
       setError(fr ? "Le titre FR est obligatoire" : "French title is required");
       return;
     }
@@ -298,12 +277,9 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titleFr,
-          titleEn,
-          shortDescFr,
-          shortDescEn,
-          descriptionFr,
-          descriptionEn,
+          title,
+          shortDesc,
+          description,
           thumbnail,
           previewVideo,
           price: isFree ? 0 : price,
@@ -315,12 +291,10 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
           categoryId: categoryId || undefined,
           status: submitForReview ? "EN_ATTENTE" : "BROUILLON",
           sections: sections.map((s, sIdx) => ({
-            titleFr: s.titleFr,
-            titleEn: s.titleEn,
+            title: s.title,
             order: sIdx,
             lessons: s.lessons.map((l, lIdx) => ({
-              titleFr: l.titleFr,
-              titleEn: l.titleEn,
+              title: l.title,
               type: l.type,
               videoUrl: l.videoUrl ?? null,
               content: l.content ?? null,
@@ -404,7 +378,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
         </Link>
         <ChevronRight className="w-3 h-3 flex-shrink-0" />
         <span className="text-slate-900 dark:text-white font-medium truncate max-w-[200px]">
-          {formation?.titleFr || (fr ? "Modifier" : "Edit")}
+          {formation?.title || (fr ? "Modifier" : "Edit")}
         </span>
       </nav>
 
@@ -448,80 +422,42 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
         <h2 className={headingClasses}>{fr ? "Informations de base" : "Basic information"}</h2>
 
         {/* Titles */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClasses}>{fr ? "Titre FR *" : "Title FR *"}</label>
-            <input
-              value={titleFr}
-              onChange={(e) => setTitleFr(e.target.value)}
-              maxLength={80}
-              className={inputClasses}
-            />
-            <p className="text-xs text-slate-500 mt-1 text-right">{titleFr.length}/80</p>
-          </div>
-          <div>
-            <label className={labelClasses}>{fr ? "Titre EN" : "Title EN"}</label>
-            <input
-              value={titleEn}
-              onChange={(e) => setTitleEn(e.target.value)}
-              maxLength={80}
-              className={inputClasses}
-            />
-          </div>
+        <div>
+          <label className={labelClasses}>{fr ? "Titre *" : "Title *"}</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={80}
+            className={inputClasses}
+          />
+          <p className="text-xs text-slate-500 mt-1 text-right">{title.length}/80</p>
         </div>
 
-        {/* Short descriptions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClasses}>{fr ? "Description courte FR" : "Short description FR"}</label>
-            <textarea
-              value={shortDescFr}
-              onChange={(e) => setShortDescFr(e.target.value)}
-              rows={3}
-              maxLength={200}
-              className={`${inputClasses} resize-none`}
-            />
-          </div>
-          <div>
-            <label className={labelClasses}>{fr ? "Description courte EN" : "Short description EN"}</label>
-            <textarea
-              value={shortDescEn}
-              onChange={(e) => setShortDescEn(e.target.value)}
-              rows={3}
-              maxLength={200}
-              className={`${inputClasses} resize-none`}
-            />
-          </div>
+        {/* Short description */}
+        <div>
+          <label className={labelClasses}>{fr ? "Description courte" : "Short description"}</label>
+          <textarea
+            value={shortDesc}
+            onChange={(e) => setShortDesc(e.target.value)}
+            rows={3}
+            maxLength={200}
+            className={`${inputClasses} resize-none`}
+          />
         </div>
 
-        {/* Full descriptions */}
-        <div className="space-y-4">
-          <div>
-            <label className={labelClasses}>{fr ? "Description complete FR" : "Full description FR"}</label>
-            <FormationRichEditor
-              content={descriptionFr}
-              onChange={setDescriptionFr}
-              placeholder={
-                fr
-                  ? "Description detaillee de la formation en francais..."
-                  : "Detailed course description in French..."
-              }
-              minHeight={200}
-            />
-          </div>
-          <div>
-            <label className={labelClasses}>{fr ? "Description complete EN" : "Full description EN"}</label>
-            <FormationRichEditor
-              content={descriptionEn}
-              onChange={setDescriptionEn}
-              placeholder={
-                fr
-                  ? "Description detaillee en anglais..."
-                  : "Detailed course description in English..."
-              }
-              minHeight={200}
-            />
-          </div>
+        {/* Full description */}
+        <div>
+          <label className={labelClasses}>{fr ? "Description complete" : "Full description"}</label>
+          <FormationRichEditor
+            content={description}
+            onChange={setDescription}
+            placeholder={
+              fr
+                ? "Description detaillee de la formation..."
+                : "Detailed course description..."
+            }
+            minHeight={200}
+          />
         </div>
 
         {/* Category + Level + Duration */}
@@ -536,7 +472,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
               <option value="">{fr ? "Sélectionner..." : "Select..."}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {fr ? c.nameFr : (c.nameEn || c.nameFr)}
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -731,17 +667,10 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
                 </span>
 
                 <input
-                  value={section.titleFr}
-                  onChange={(e) => updateSection(section.id, "titleFr", e.target.value)}
-                  placeholder={fr ? "Titre de la section (FR)" : "Section title (FR)"}
+                  value={section.title}
+                  onChange={(e) => updateSection(section.id, "title", e.target.value)}
+                  placeholder={fr ? "Titre de la section" : "Section title"}
                   className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-700 dark:border-border-dark text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary py-0.5"
-                />
-
-                <input
-                  value={section.titleEn}
-                  onChange={(e) => updateSection(section.id, "titleEn", e.target.value)}
-                  placeholder="Section title (EN)"
-                  className="flex-1 bg-transparent border-b border-slate-200 dark:border-slate-700 dark:border-border-dark text-sm text-slate-500 dark:text-slate-400 focus:outline-none focus:border-primary py-0.5"
                 />
 
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -795,22 +724,14 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
                             <span>{typeLabel}</span>
                           </div>
 
-                          {/* Title inputs */}
+                          {/* Title input */}
                           <input
-                            value={lesson.titleFr}
+                            value={lesson.title}
                             onChange={(e) =>
-                              updateLesson(section.id, lesson.id, { titleFr: e.target.value })
+                              updateLesson(section.id, lesson.id, { title: e.target.value })
                             }
-                            placeholder={fr ? "Titre de la leçon (FR)" : "Lesson title (FR)"}
+                            placeholder={fr ? "Titre de la leçon" : "Lesson title"}
                             className="flex-1 text-sm text-slate-900 dark:text-white bg-transparent focus:outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-border-dark py-0.5"
-                          />
-                          <input
-                            value={lesson.titleEn}
-                            onChange={(e) =>
-                              updateLesson(section.id, lesson.id, { titleEn: e.target.value })
-                            }
-                            placeholder="Lesson title (EN)"
-                            className="flex-1 text-sm text-slate-400 bg-transparent focus:outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-border-dark py-0.5"
                           />
 
                           {/* Free badge */}
@@ -905,8 +826,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
                                     updateLesson(section.id, lesson.id, {
                                       quiz: {
                                         ...(lesson.quiz ?? {
-                                          titleFr: "Quiz",
-                                          titleEn: "Quiz",
+                                          title: "Quiz",
                                           questions: [],
                                         }),
                                         passingScore: parseInt(e.target.value) || 80,
@@ -1037,7 +957,7 @@ export default function ModifierFormationPage({ params }: { params: Promise<{ id
         </button>
         <button
           onClick={() => handleSave(true)}
-          disabled={saving || !titleFr}
+          disabled={saving || !title}
           className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
         >
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}

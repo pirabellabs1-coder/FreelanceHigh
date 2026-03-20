@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       prisma.formation.findMany({
         where,
         include: {
-          category: { select: { nameFr: true } },
+          category: { select: { name: true } },
           instructeur: {
             include: { user: { select: { name: true } } },
           },

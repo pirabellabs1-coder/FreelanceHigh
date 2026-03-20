@@ -37,7 +37,7 @@ export async function POST(
             id: true,
             type: true,
             correctAnswer: true,
-            explanationFr: true,
+            explanation: true,
           },
         },
         lesson: {
@@ -108,7 +108,7 @@ export async function POST(
         questionId: question.id,
         correct: isCorrect,
         correctAnswer: normalizedCorrectAnswer,
-        explanation: question.explanationFr ?? null,
+        explanation: question.explanation ?? null,
       });
     }
 
@@ -157,8 +157,7 @@ export async function POST(
           select: {
             hasCertificate: true,
             minScore: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             instructeur: { select: { user: { select: { name: true } } } },
           },
         });
@@ -176,7 +175,7 @@ export async function POST(
             try {
               const pdfBuffer = await generateCertificatePDF({
                 studentName: session.user.name ?? "Apprenant",
-                formationTitle: formation.titleFr,
+                formationTitle: formation.title,
                 instructorName: formation.instructeur?.user?.name ?? "Instructeur",
                 score,
                 completionDate: new Date(),
@@ -223,7 +222,7 @@ export async function POST(
             sendCertificateIssuedEmail({
               email: session.user.email ?? "",
               name: session.user.name ?? "Apprenant",
-              formationTitle: formation.titleFr,
+              formationTitle: formation.title,
               certificateCode,
               pdfUrl: `${baseUrl}/api/formations/${id}/certificate`,
               score,

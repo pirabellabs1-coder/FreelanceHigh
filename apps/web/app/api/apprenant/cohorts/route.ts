@@ -24,8 +24,7 @@ export async function GET(_req: NextRequest) {
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             thumbnail: true,
             duration: true,
             level: true,

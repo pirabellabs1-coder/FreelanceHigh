@@ -16,8 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           select: {
             id: true,
             slug: true,
-            titleFr: true,
-            titleEn: true,
+            title: true,
             price: true,
             isFree: true,
             rating: true,

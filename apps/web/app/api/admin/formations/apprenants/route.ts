@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       prisma.enrollment.findMany({
         include: {
           user: { select: { name: true, email: true, avatar: true, image: true } },
-          formation: { select: { titleFr: true, slug: true } },
+          formation: { select: { title: true, slug: true } },
           certificate: { select: { code: true } },
         },
         orderBy: { createdAt: "desc" },

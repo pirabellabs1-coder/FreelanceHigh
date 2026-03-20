@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest) {
       learnerName: session.user.name ?? "Apprenant",
       generatedAt: new Date().toISOString(),
       enrollments: enrollments.map((e) => ({
-        title: e.formation.titleFr,
+        title: e.formation.title,
         instructor: e.formation.instructeur?.user?.name ?? "Instructeur",
         progress: e.progress,
         enrolledAt: e.createdAt.toISOString(),

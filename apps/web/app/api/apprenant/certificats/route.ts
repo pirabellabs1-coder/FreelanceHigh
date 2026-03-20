@@ -19,8 +19,7 @@ export async function GET(_req: NextRequest) {
           include: {
             formation: {
               select: {
-                titleFr: true,
-                titleEn: true,
+                title: true,
                 slug: true,
                 thumbnail: true,
                 instructeur: { include: { user: { select: { name: true } } } },
@@ -32,7 +31,7 @@ export async function GET(_req: NextRequest) {
       orderBy: { issuedAt: "desc" },
     });
 
-    // Reshape: page accesses cert.enrollment.formation.titleFr and cert.enrollment.formation.instructeur.user.name
+    // Reshape: page accesses cert.enrollment.formation.title and cert.enrollment.formation.instructeur.user.name
     const certificates = raw.map((cert) => ({
       id: cert.id,
       code: cert.code,
@@ -41,8 +40,7 @@ export async function GET(_req: NextRequest) {
       pdfUrl: cert.pdfUrl,
       enrollment: {
         formation: {
-          titleFr: cert.enrollment.formation.titleFr,
-          titleEn: cert.enrollment.formation.titleEn,
+          title: cert.enrollment.formation.title,
           slug: cert.enrollment.formation.slug,
           thumbnail: cert.enrollment.formation.thumbnail,
           instructeur: cert.enrollment.formation.instructeur,
