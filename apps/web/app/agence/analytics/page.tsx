@@ -172,7 +172,7 @@ export default function AgenceAnalytics() {
       {/* Header + period filter */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Analytics</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Analytics</h1>
           <p className="text-slate-400 text-sm mt-1">Performance de l&apos;equipe et metriques de l&apos;agence.</p>
         </div>
         <div className="flex items-center gap-1 bg-neutral-dark border border-border-dark rounded-lg p-1">

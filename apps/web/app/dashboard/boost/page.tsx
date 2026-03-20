@@ -281,7 +281,7 @@ export default function BoostPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold mb-1">Boost de Services</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold mb-1">Boost de Services</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             Boostez la visibilité de vos services et atteignez plus de clients potentiels.
           </p>

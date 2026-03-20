@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { Star, Users, Clock } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 interface CategoryDetail {
   id: string;
@@ -101,10 +102,10 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
           ) : category && (
             <div className="flex items-center gap-4">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{ backgroundColor: `${category.color}20` }}
               >
-                {category.icon}
+                <DynamicIcon name={category.icon || "library_books"} className="w-8 h-8" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -144,7 +145,7 @@ export default function FormationCategoryPage({ params }: { params: Promise<{ sl
                     <img src={f.thumbnail} alt={f.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl">{category?.icon ?? "library_books"}</span>
+                      <DynamicIcon name={category?.icon ?? "library_books"} className="w-10 h-10" />
                     </div>
                   )}
                 </div>

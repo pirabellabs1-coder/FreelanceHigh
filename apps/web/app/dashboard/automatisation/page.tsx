@@ -224,7 +224,7 @@ export default function AutomationPage() {
               <span className="material-symbols-outlined text-[10px]">chevron_right</span>
               <span className="text-primary font-medium">Automatisation</span>
             </nav>
-            <h1 className="text-3xl font-extrabold mb-2">Automatisation Marketing</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold mb-2">Automatisation Marketing</h1>
             <p className="text-slate-500 dark:text-slate-400">
               Creez des scenarios automatises pour gagner du temps et professionnaliser vos echanges.
             </p>

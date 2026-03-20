@@ -60,7 +60,7 @@ export default function InstructeurAvisPage() {
   }));
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <h1 className="text-xl font-bold text-slate-900 dark:text-white">Avis reçus</h1>
 
       {/* Summary */}

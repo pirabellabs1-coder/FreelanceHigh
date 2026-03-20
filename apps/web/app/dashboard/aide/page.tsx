@@ -51,7 +51,7 @@ export default function AidePage() {
             help
           </span>
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-100">
           Centre d&apos;aide
         </h1>
         <p className="text-slate-400 max-w-xl mx-auto">

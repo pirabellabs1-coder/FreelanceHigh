@@ -82,7 +82,7 @@ export default function AgenceCandidatures() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-white">Candidatures</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Candidatures</h1>
         <p className="text-slate-400 text-sm mt-1">Postulez aux offres et suivez vos candidatures.</p>
       </div>
 

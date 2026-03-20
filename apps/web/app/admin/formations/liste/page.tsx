@@ -77,7 +77,7 @@ export default function AdminFormationsListePage() {
   const filtered = formations.filter((f) => !filterStatus || f.status === filterStatus);
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <h1 className="text-xl font-bold text-white">Formations — Modération</h1>
 
       {/* Sub-nav */}
@@ -119,7 +119,7 @@ export default function AdminFormationsListePage() {
       </div>
 
       {/* Table */}
-      <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+      <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-border-dark">
             <tr className="text-slate-400 text-xs uppercase">

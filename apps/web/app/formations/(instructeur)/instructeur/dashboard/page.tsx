@@ -116,7 +116,7 @@ export default function InstructeurDashboardPage() {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-6 lg:p-8 text-center">
           <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
             {fr ? "Une erreur est survenue" : "An error occurred"}
@@ -215,7 +215,7 @@ export default function InstructeurDashboardPage() {
 
       {/* Welcome empty state */}
       {stats && stats.activeFormations === 0 && stats.totalStudents === 0 && (
-        <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20 rounded-2xl p-8 text-center">
+        <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20 rounded-2xl p-4 sm:p-6 lg:p-8 text-center">
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-8 h-8 text-primary" />
           </div>

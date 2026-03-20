@@ -55,7 +55,7 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm flex-wrap">
         <Link

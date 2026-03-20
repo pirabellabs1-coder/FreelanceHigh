@@ -193,7 +193,7 @@ export default function PortefeuilleWeb3Page() {
   }
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       {/* ------------------------------------------------------------------ */}
       {/* Hero */}
       {/* ------------------------------------------------------------------ */}

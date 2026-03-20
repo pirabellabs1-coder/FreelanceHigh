@@ -9,6 +9,7 @@ import {
   Play, Award, BookOpen, Clock, TrendingUp,
   ChevronRight, Flame, Download,
 } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -306,7 +307,7 @@ export default function MesFormationsPage() {
         {/* Weekly Hours AreaChart with gradient fill */}
         <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg text-primary">timeline</span>
+            <DynamicIcon name="show_chart" className="w-5 h-5 text-primary" />
             {fr ? "Heures d'apprentissage (semaine)" : "Learning Hours (week)"}
           </h3>
           {stats.weeklyHours.length > 0 ? (
@@ -345,7 +346,7 @@ export default function MesFormationsPage() {
         {/* Skill Radar Chart */}
         <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg text-primary">radar</span>
+            <DynamicIcon name="explore" className="w-5 h-5 text-primary" />
             {fr ? "Competences par categorie" : "Skills by category"}
           </h3>
           {stats.skillRadar.length >= 3 ? (
@@ -496,7 +497,7 @@ export default function MesFormationsPage() {
             </>
           ) : (
             <>
-              <div className="mb-4"><span className="material-symbols-outlined text-5xl">library_books</span></div>
+              <div className="mb-4"><DynamicIcon name="library_books" className="w-12 h-12 mx-auto" /></div>
               <p className="text-slate-500 mb-4">
                 {tab === "completed"
                   ? (fr ? "Aucune formation complétée pour l'instant" : "No completed courses yet")
@@ -522,7 +523,7 @@ export default function MesFormationsPage() {
                     {enrollment.formation.thumbnail ? (
                       <img src={enrollment.formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-3xl opacity-30">school</span></div>
+                      <div className="absolute inset-0 flex items-center justify-center"><DynamicIcon name="school" className="w-8 h-8 opacity-30" /></div>
                     )}
                     {isCompleted && (
                       <div className="absolute inset-0 bg-green-500/90 flex items-center justify-center">
@@ -617,7 +618,7 @@ export default function MesFormationsPage() {
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">auto_awesome</span>
+              <DynamicIcon name="auto_awesome" className="w-5 h-5 text-primary" />
               {fr ? "Recommandations pour vous" : "Recommended for you"}
             </h2>
             <Link

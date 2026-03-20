@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 import AnimatedCounter from "@/components/formations/AnimatedCounter";
 import ActivityHeatmap from "@/components/formations/ActivityHeatmap";
 import RevenueWaterfall from "@/components/formations/RevenueWaterfall";
@@ -264,7 +265,7 @@ export default function AdminFormationsDashboardPage() {
   if (error) {
     return (
       <div className="text-center py-16">
-        <span className="material-symbols-outlined text-4xl text-red-400 mb-3 block">error</span>
+        <DynamicIcon name="error" className="w-10 h-10 text-red-400 mb-3 mx-auto block" />
         <p className="text-slate-600 dark:text-slate-400">{t("admin_no_data")}</p>
         <button
           onClick={() => {
@@ -345,7 +346,7 @@ export default function AdminFormationsDashboardPage() {
               href="/formations/admin/formations"
               className="hidden md:flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-sm font-medium px-3 py-2 rounded-lg border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">pending</span>
+              <DynamicIcon name="schedule" className="w-4 h-4" />
               {stats.pendingFormations} {t("admin_pending_formations")}
             </Link>
           )}
@@ -354,7 +355,7 @@ export default function AdminFormationsDashboardPage() {
               href="/formations/admin/instructeurs"
               className="hidden md:flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm font-medium px-3 py-2 rounded-lg border border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">person_alert</span>
+              <DynamicIcon name="person" className="w-4 h-4" />
               {stats.pendingInstructors} {t("admin_pending_instructors")}
             </Link>
           )}
@@ -389,7 +390,7 @@ export default function AdminFormationsDashboardPage() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center`}>
-                <span className={`material-symbols-outlined ${s.color}`}>{s.icon}</span>
+                <DynamicIcon name={s.icon} className={`w-5 h-5 ${s.color}`} />
               </div>
               {s.trend !== 0 && (
                 <span
@@ -399,9 +400,7 @@ export default function AdminFormationsDashboardPage() {
                       : "text-red-600 bg-red-50 dark:bg-red-900/20"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[14px]">
-                    {s.trend > 0 ? "trending_up" : "trending_down"}
-                  </span>
+                  <DynamicIcon name={s.trend > 0 ? "trending_up" : "trending_down"} className="w-3.5 h-3.5" />
                   {s.trend > 0 ? "+" : ""}
                   {s.trend}%
                 </span>
@@ -559,7 +558,7 @@ export default function AdminFormationsDashboardPage() {
                 <div key={geo.country} className="flex items-center gap-3">
                   {/* Flag + Country */}
                   <div className="flex items-center gap-2 w-32 shrink-0">
-                    <span className="text-lg leading-none">{geo.flag || <span className="material-symbols-outlined text-lg">public</span>}</span>
+                    <span className="text-lg leading-none">{geo.flag || <DynamicIcon name="public" className="w-5 h-5" />}</span>
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
                       {geo.country}
                     </span>
@@ -635,9 +634,7 @@ export default function AdminFormationsDashboardPage() {
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
-                        <span className="material-symbols-outlined text-[14px]">
-                          {sortIcon(col.field)}
-                        </span>
+                        <DynamicIcon name={sortIcon(col.field)} className="w-3.5 h-3.5" />
                       </span>
                     </th>
                   ))}
@@ -711,9 +708,7 @@ export default function AdminFormationsDashboardPage() {
                     {/* Rating */}
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-amber-400 text-base">
-                          star
-                        </span>
+                        <DynamicIcon name="star" className="w-4 h-4 text-amber-400" />
                         <span className="text-slate-700 dark:text-slate-300 font-medium">
                           {inst.rating.toFixed(1)}
                         </span>
@@ -745,9 +740,7 @@ export default function AdminFormationsDashboardPage() {
                               : "text-red-600 bg-red-50 dark:bg-red-900/20"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[12px]">
-                            {inst.trend > 0 ? "trending_up" : "trending_down"}
-                          </span>
+                          <DynamicIcon name={inst.trend > 0 ? "trending_up" : "trending_down"} className="w-3 h-3" />
                           {inst.trend > 0 ? "+" : ""}
                           {inst.trend}%
                         </span>
@@ -789,21 +782,20 @@ export default function AdminFormationsDashboardPage() {
                     : "bg-purple-50 dark:bg-purple-900/20"
                 }`}
               >
-                <span
-                  className={`material-symbols-outlined text-base ${
+                <DynamicIcon
+                  name={a.type === "enrollment"
+                    ? "person"
+                    : a.type === "certificate"
+                    ? "workspace_premium"
+                    : "library_books"}
+                  className={`w-4 h-4 ${
                     a.type === "enrollment"
                       ? "text-blue-600"
                       : a.type === "certificate"
                       ? "text-green-600"
                       : "text-purple-600"
                   }`}
-                >
-                  {a.type === "enrollment"
-                    ? "person_add"
-                    : a.type === "certificate"
-                    ? "workspace_premium"
-                    : "library_books"}
-                </span>
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
@@ -832,7 +824,7 @@ export default function AdminFormationsDashboardPage() {
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-yellow-600">pending</span>
+                  <DynamicIcon name="schedule" className="w-5 h-5 text-yellow-600" />
                 </div>
                 <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                   {fr ? "Formations en attente" : "Pending courses"}
@@ -851,7 +843,7 @@ export default function AdminFormationsDashboardPage() {
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-orange-600">person_alert</span>
+                  <DynamicIcon name="person" className="w-5 h-5 text-orange-600" />
                 </div>
                 <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                   {fr ? "Instructeurs en attente" : "Pending instructors"}
@@ -877,7 +869,7 @@ export default function AdminFormationsDashboardPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center mb-3">
-                <span className="material-symbols-outlined text-indigo-600">inventory_2</span>
+                <DynamicIcon name="inventory_2" className="w-5 h-5 text-indigo-600" />
               </div>
               <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.marketing.totalProducts} />
@@ -886,7 +878,7 @@ export default function AdminFormationsDashboardPage() {
             </div>
             <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center mb-3">
-                <span className="material-symbols-outlined text-pink-600">shopping_cart</span>
+                <DynamicIcon name="shopping_cart" className="w-5 h-5 text-pink-600" />
               </div>
               <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.marketing.abandonedCarts} />
@@ -900,7 +892,7 @@ export default function AdminFormationsDashboardPage() {
             </div>
             <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-3">
-                <span className="material-symbols-outlined text-red-600">error</span>
+                <DynamicIcon name="error" className="w-5 h-5 text-red-600" />
               </div>
               <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.marketing.failedPayments} />
@@ -909,7 +901,7 @@ export default function AdminFormationsDashboardPage() {
             </div>
             <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center mb-3">
-                <span className="material-symbols-outlined text-teal-600">trending_up</span>
+                <DynamicIcon name="trending_up" className="w-5 h-5 text-teal-600" />
               </div>
               <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
                 <AnimatedCounter value={stats.marketing.productRevenue} suffix=" \u20AC" />

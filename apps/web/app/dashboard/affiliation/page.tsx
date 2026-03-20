@@ -163,7 +163,7 @@ export default function AffiliationPage() {
   ];
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       <InviteModal open={showInviteModal} onClose={() => setShowInviteModal(false)} />
 
       {/* Hero Section */}
@@ -173,7 +173,7 @@ export default function AffiliationPage() {
             <span className="material-symbols-outlined text-accent text-lg">auto_awesome</span>
             <span className="text-xs font-bold text-accent uppercase tracking-wider">Programme d&apos;Affiliation</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Programme de Recompenses par Paliers</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Programme de Recompenses par Paliers</h2>
           <p className="text-slate-400 mt-1 max-w-xl">
             Parrainez des amis et debloquez des recompenses exclusives a chaque palier atteint. Plus vous parrainez, plus vos avantages augmentent.
           </p>

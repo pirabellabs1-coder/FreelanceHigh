@@ -241,7 +241,7 @@ export default function SeoPage() {
               Retour aux services
             </Link>
           </div>
-          <h1 className="text-3xl font-extrabold mb-2">Optimisation SEO</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold mb-2">Optimisation SEO</h1>
           <p className="text-slate-500 dark:text-slate-400">
             Ameliorez le classement de votre service sur Google et dans les recherches
             internes de la plateforme.

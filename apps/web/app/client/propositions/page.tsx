@@ -135,7 +135,7 @@ export default function ClientProposals() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-white">Propositions</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Propositions</h1>
         <p className="text-slate-400 text-sm mt-1">
           Propositions recues de freelances et agences pour vos projets.
         </p>

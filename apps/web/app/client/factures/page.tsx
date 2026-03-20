@@ -134,9 +134,9 @@ export default function ClientInvoices() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Factures</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Factures</h1>
           <p className="text-slate-400 text-sm mt-1">Consultez, téléchargez et exportez toutes vos factures.</p>
         </div>
         <button
@@ -230,7 +230,7 @@ export default function ClientInvoices() {
       </div>
 
       {/* Invoice table */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-x-auto">
         {isLoading ? (
           <table className="w-full">
             <thead>

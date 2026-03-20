@@ -193,7 +193,7 @@ export default function AdminBlog() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">article</span>
             Blog
           </h1>

@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import FormationCard from "@/components/formations/FormationCard";
 import DigitalProductCard from "@/components/formations/DigitalProductCard";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ export default function FormationsLandingPage() {
               {/* Search */}
               <form onSubmit={handleSearch} className="flex flex-col sm:flex-row w-full max-w-2xl bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-2 shadow-2xl border border-white/10 gap-2">
                 <div className="flex flex-1 items-center min-w-0">
-                  <span className="material-symbols-outlined text-slate-400 px-3">search</span>
+                  <DynamicIcon name="search" className="w-5 h-5 text-slate-400 mx-3" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -220,9 +221,7 @@ export default function FormationsLandingPage() {
                   href={`/formations/categories/${cat.slug}`}
                   className="group bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300 text-center flex flex-col items-center gap-3"
                 >
-                  <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
-                    {cat.icon ?? "library_books"}
-                  </span>
+                  <DynamicIcon name={cat.icon ?? "library_books"} className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
                   <div>
                     <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
                       {cat.name}
@@ -274,7 +273,7 @@ export default function FormationsLandingPage() {
             </div>
           ) : (
             <div className="text-center py-16 text-slate-500">
-              <span className="material-symbols-outlined text-6xl mb-4 block">library_books</span>
+              <DynamicIcon name="library_books" className="w-16 h-16 mb-4 mx-auto block" />
               <p className="text-lg">{t("coming_soon")}</p>
             </div>
           )}
@@ -362,8 +361,8 @@ export default function FormationsLandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {HOW_IT_WORKS.map((step, i) => (
               <div key={i} className="text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
-                  {step.icon}
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <DynamicIcon name={step.icon} className="w-8 h-8" />
                 </div>
                 <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto -mt-2 mb-4 relative z-10 shadow-lg">
                   {i + 1}

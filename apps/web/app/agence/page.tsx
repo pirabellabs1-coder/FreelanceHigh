@@ -126,7 +126,7 @@ export default function AgencyDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Tableau de bord</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Tableau de bord</h1>
           <p className="text-slate-400 text-sm mt-1">Vue globale de votre agence</p>
         </div>
         <div className="flex gap-2">

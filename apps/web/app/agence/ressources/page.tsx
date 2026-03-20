@@ -83,9 +83,9 @@ export default function AgenceRessources() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Ressources & Médias</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Ressources & Médias</h1>
           <p className="text-slate-400 text-sm mt-1">Cloud partagé de l&apos;agence — dossiers par projet et fichiers.</p>
         </div>
         <button onClick={() => setShowUpload(true)} className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
@@ -201,7 +201,7 @@ export default function AgenceRessources() {
               ))}
             </div>
           ) : (
-            <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+            <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">

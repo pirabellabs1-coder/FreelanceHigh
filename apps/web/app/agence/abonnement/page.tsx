@@ -269,7 +269,7 @@ export default function AgenceAbonnement() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-black text-white">Abonnement</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Abonnement</h1>
           <p className="text-slate-400 text-sm mt-1">
             Gérez votre plan et votre facturation.
           </p>
@@ -294,7 +294,7 @@ export default function AgenceAbonnement() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-black text-white">Abonnement</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Abonnement</h1>
           <p className="text-slate-400 text-sm mt-1">
             Gérez votre plan et votre facturation.
           </p>

@@ -197,9 +197,9 @@ export default function AgenceProjets() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Projets</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Projets</h1>
           <p className="text-slate-400 text-sm mt-1">
             Gerez tous les projets de l&apos;agence.
           </p>

@@ -168,7 +168,7 @@ export default function AdminFormationsDashboardPage() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 rounded w-1/3" style={{ backgroundColor: "#1E293B" }} />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -188,7 +188,7 @@ export default function AdminFormationsDashboardPage() {
   // Error state
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="text-center py-16">
           <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-7 h-7 text-red-400" />
@@ -212,7 +212,7 @@ export default function AdminFormationsDashboardPage() {
   const hasActivityData = stats?.recentActivity && stats.recentActivity.length > 0;
 
   return (
-    <div className="p-8 space-y-6" style={{ backgroundColor: "#0F172A" }}>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6" style={{ backgroundColor: "#0F172A" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

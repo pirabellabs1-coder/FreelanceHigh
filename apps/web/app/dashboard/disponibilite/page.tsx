@@ -33,9 +33,9 @@ export default function DisponibilitePage() {
   const pausedServices = services.filter((s) => s.status === "pause").length;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Disponibilite</h2>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Disponibilite</h2>
         <p className="text-slate-400 mt-1">Configurez vos jours et horaires de travail.</p>
       </div>
 

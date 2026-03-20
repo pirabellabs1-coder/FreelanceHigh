@@ -430,9 +430,33 @@ export default function CreateFormationPage() {
   const allChecked = checklist.every((c) => c.ok);
 
   return (
-    <div className="flex min-h-screen bg-neutral-900">
-      {/* Sidebar steps */}
-      <div className="w-56 bg-neutral-dark border-r border-border-dark flex-shrink-0 p-6">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-neutral-900">
+      {/* Mobile step indicator */}
+      <div className="lg:hidden flex items-center gap-2 px-4 py-3 bg-neutral-dark border-b border-border-dark overflow-x-auto">
+        {STEPS.map((s) => (
+          <button
+            key={s.num}
+            onClick={() => step > s.num || formationId ? setStep(s.num as Step) : undefined}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              step === s.num
+                ? "bg-primary/10 text-primary"
+                : step > s.num
+                ? "text-green-400"
+                : "text-slate-500"
+            }`}
+          >
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+              step > s.num ? "bg-green-500/20 text-green-400" : step === s.num ? "bg-primary/20 text-primary" : "bg-border-dark text-slate-500"
+            }`}>
+              {step > s.num ? <Check className="w-2.5 h-2.5" /> : s.num}
+            </div>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Desktop sidebar steps */}
+      <div className="hidden lg:flex lg:flex-col w-56 bg-neutral-dark border-r border-border-dark flex-shrink-0 p-6">
         <div className="flex items-center gap-2 mb-8">
           <BookOpen className="w-5 h-5 text-primary" />
           <span className="font-semibold text-white text-sm">Créer une formation</span>
@@ -466,7 +490,7 @@ export default function CreateFormationPage() {
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-8">
+        <div className="max-w-3xl mx-auto px-4 py-6 sm:p-8">
 
           {/* STEP 1 — Informations */}
           {step === 1 && (

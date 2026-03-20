@@ -82,10 +82,10 @@ export default function ClientHelp() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero */}
-      <div className="bg-primary/5 rounded-2xl border border-primary/10 p-8 text-center">
-        <h1 className="text-3xl font-black text-white mb-2">Centre d&apos;Aide et Support</h1>
+      <div className="bg-primary/5 rounded-2xl border border-primary/10 p-4 sm:p-6 lg:p-8 text-center">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white mb-2">Centre d&apos;Aide et Support</h1>
         <p className="text-slate-400 max-w-xl mx-auto mb-6">Comment pouvons-nous vous aider aujourd&apos;hui ? Recherchez dans notre base de connaissances ou parcourez les categories ci-dessous.</p>
 
         <div className="max-w-2xl mx-auto relative">

@@ -123,7 +123,7 @@ export default function AdminDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Administration</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Administration</h1>
           <p className="text-slate-400 text-sm mt-1">Vue globale de la plateforme FreelanceHigh.</p>
         </div>
         <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold", config?.maintenanceMode ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400")}>

@@ -185,7 +185,7 @@ export default function AgenceFinances() {
       <div className="space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-black text-white">Finances</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Finances</h1>
             <p className="text-slate-400 text-sm mt-1">Chargement des données financières...</p>
           </div>
         </div>

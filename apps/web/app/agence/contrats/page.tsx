@@ -148,7 +148,7 @@ export default function AgenceContratsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export default function AgenceContratsPage() {
             <span className="material-symbols-outlined text-2xl">description</span>
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Contrats</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Contrats</h1>
             <p className="text-slate-400 mt-1">G\u00e9rez les contrats de l&apos;agence avec vos clients.</p>
           </div>
         </div>

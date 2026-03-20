@@ -9,6 +9,7 @@ import {
   ChevronLeft, MessageSquare, BookOpen, Calendar, Users,
   Award, BarChart, Clock,
 } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 import CohortChat from "@/components/formations/CohortChat";
 
 interface CohortDetailData {
@@ -232,7 +233,7 @@ export default function ApprenantCohortDetailPage({ params }: { params: Promise<
               {data.formation.thumbnail ? (
                 <img src={data.formation.thumbnail} alt={formationTitle} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl opacity-30">school</span></div>
+                <div className="w-full h-full flex items-center justify-center"><DynamicIcon name="school" className="w-6 h-6 opacity-30" /></div>
               )}
             </div>
             <div className="flex-1 min-w-0">

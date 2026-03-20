@@ -104,10 +104,10 @@ export default function ProfilPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="max-w-3xl w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Mon Profil</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Mon Profil</h2>
           <p className="text-slate-400 mt-1">Completez votre profil pour attirer plus de clients.</p>
         </div>
         <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 flex-shrink-0">

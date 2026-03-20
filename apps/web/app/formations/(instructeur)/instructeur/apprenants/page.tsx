@@ -57,8 +57,8 @@ export default function InstructeurApprenantsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">{fr ? "Mes apprenants" : "My students"}</h1>
         <button
           onClick={exportCSV}
@@ -101,7 +101,7 @@ export default function InstructeurApprenantsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 dark:bg-neutral-dark border border-slate-200 dark:border-slate-700 dark:border-border-dark rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 dark:bg-neutral-dark border border-slate-200 dark:border-slate-700 dark:border-border-dark rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-slate-200 dark:border-slate-700 dark:border-border-dark">
             <tr className="text-slate-500 dark:text-slate-400 text-xs uppercase">

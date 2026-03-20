@@ -81,7 +81,7 @@ export default function AbonnementPage() {
       />
 
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Plans & Abonnement</h2>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Plans & Abonnement</h2>
         <p className="text-slate-400 mt-1">Gerez votre plan et votre facturation.</p>
       </div>
 

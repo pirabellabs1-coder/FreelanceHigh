@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Star, ChevronRight } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 export default function DevenirInstructeurPage() {
   const t = useTranslations("instructor_landing");
@@ -117,7 +118,7 @@ export default function DevenirInstructeurPage() {
             ].map((b) => (
               <div key={b.title} className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300">
                 <div className={`w-12 h-12 rounded-xl ${b.color} flex items-center justify-center mb-4`}>
-                  <span className="material-symbols-outlined text-2xl">{b.icon}</span>
+                  <DynamicIcon name={b.icon} className="w-6 h-6" />
                 </div>
                 <h3 className="font-bold text-slate-900 dark:text-white mb-2">{b.title}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{b.desc}</p>
@@ -141,7 +142,7 @@ export default function DevenirInstructeurPage() {
             ].map((f) => (
               <div key={f.title} className="text-center">
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <span className="material-symbols-outlined text-3xl text-primary">{f.icon}</span>
+                  <DynamicIcon name={f.icon} className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{f.desc}</p>

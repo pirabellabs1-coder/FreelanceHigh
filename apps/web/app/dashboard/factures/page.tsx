@@ -99,7 +99,7 @@ export default function FacturesPage() {
   }
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ export default function FacturesPage() {
             <span className="material-symbols-outlined text-2xl">receipt_long</span>
           </div>
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Mes Factures</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Mes Factures</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-1">Consultez, téléchargez et envoyez vos factures.</p>
           </div>
         </div>

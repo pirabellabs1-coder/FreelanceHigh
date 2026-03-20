@@ -9,6 +9,7 @@ import {
   discountPercent,
   StarRating,
 } from "@/lib/formations/format-helpers";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 // ── Data interface ──────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ export default function FormationCard({
                 (formation.category.color ?? "#0e7c66") + "20",
             }}
           >
-            <span className="material-symbols-outlined text-4xl opacity-60">school</span>
+            <DynamicIcon name="school" className="w-10 h-10 opacity-60" />
           </div>
         )}
 

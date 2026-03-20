@@ -105,9 +105,9 @@ export default function ClientPayments() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Paiements & Facturation</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Paiements & Facturation</h1>
           <p className="text-slate-400 text-sm mt-1">Gérez vos méthodes de paiement, consultez vos transactions et téléchargez vos factures.</p>
         </div>
         <div className="flex items-center gap-2">

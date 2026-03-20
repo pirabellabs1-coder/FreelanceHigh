@@ -226,7 +226,7 @@ export default function ProjectDetailPage() {
             {project.category}
           </span>
         </div>
-        <h1 className="text-3xl font-black text-white">{project.title}</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">{project.title}</h1>
       </div>
 
       {/* Stats cards */}

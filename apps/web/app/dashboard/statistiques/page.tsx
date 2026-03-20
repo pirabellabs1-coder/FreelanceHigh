@@ -68,10 +68,10 @@ export default function StatistiquesPage() {
   [services]);
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Statistiques</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Statistiques</h2>
           <p className="text-slate-400 mt-1">Analysez vos performances en detail.</p>
         </div>
         <div className="flex gap-2">

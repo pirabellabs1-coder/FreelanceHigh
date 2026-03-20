@@ -69,7 +69,7 @@ export default function AdminInstructeursPage() {
   const filtered = instructeurs.filter((i) => !filterStatus || i.status === filterStatus);
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <h1 className="text-xl font-bold text-white">Instructeurs — Modération</h1>
 
       {/* Sub-nav */}

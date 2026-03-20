@@ -160,9 +160,9 @@ export default function AgenceSousTraitance() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Sous-traitance</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Sous-traitance</h1>
           <p className="text-slate-400 text-sm mt-1">
             Trouvez des freelances externes et gérez les missions sous-traitées.
           </p>
@@ -381,7 +381,7 @@ export default function AgenceSousTraitance() {
 
           {/* Missions table */}
           {!storeLoading && missions.length > 0 && (
-            <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+            <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">

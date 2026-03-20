@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { StarRating, discountPercent } from "@/lib/formations/format-helpers";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 export interface DigitalProductCardData {
   id: string;
@@ -75,7 +76,7 @@ export default function DigitalProductCard({
           <img src={product.banner} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-            <span className="material-symbols-outlined text-5xl">{productIcon(product.productType)}</span>
+            <DynamicIcon name={productIcon(product.productType)} className="w-12 h-12" />
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">

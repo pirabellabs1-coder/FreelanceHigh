@@ -318,7 +318,7 @@ export default function FavorisPage() {
   const totalElements = freelancesFavoris.length + servicesSauvegardes.length;
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>

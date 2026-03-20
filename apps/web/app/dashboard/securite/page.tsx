@@ -204,7 +204,7 @@ export default function SecuritePage() {
   const otherSessions = sessions.filter((s) => !s.isCurrent);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Modals */}
       <ConfirmModal
         open={showDisconnectAll}
@@ -344,7 +344,7 @@ export default function SecuritePage() {
 
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Securite & 2FA</h2>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Securite & 2FA</h2>
         <p className="text-slate-400 mt-1">
           Protegez votre compte avec l&apos;authentification a deux facteurs et suivez vos sessions actives.
         </p>

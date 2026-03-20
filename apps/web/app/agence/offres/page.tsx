@@ -107,9 +107,9 @@ export default function AgenceOffres() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Offres personnalisees</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Offres personnalisees</h1>
           <p className="text-slate-400 text-sm mt-1">Envoyez des devis sur mesure a vos clients.</p>
         </div>
         <button onClick={() => { resetForm(); setShowCreate(true); }}

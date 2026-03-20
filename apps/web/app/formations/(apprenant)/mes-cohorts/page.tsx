@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Calendar, Users, MessageSquare, Play, Award } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 interface MyCohort {
   enrollmentId: string;
@@ -185,7 +186,7 @@ export default function MesCohortsPage() {
                     {item.formation.thumbnail ? (
                       <img src={item.formation.thumbnail} alt={formationTitle} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-3xl opacity-30">school</span></div>
+                      <div className="absolute inset-0 flex items-center justify-center"><DynamicIcon name="school" className="w-8 h-8 opacity-30" /></div>
                     )}
                     <div className="absolute top-2 left-2">
                       <span className="bg-primary/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">

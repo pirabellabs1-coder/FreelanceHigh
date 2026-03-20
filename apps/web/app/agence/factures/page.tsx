@@ -280,7 +280,7 @@ export default function AgenceFacturesPage() {
             <span className="material-symbols-outlined text-2xl">receipt_long</span>
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white">
               Factures
             </h1>
             <p className="text-slate-400 text-sm mt-1">

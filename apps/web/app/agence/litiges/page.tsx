@@ -761,7 +761,7 @@ export default function AgenceLitigesPage() {
             <span className="material-symbols-outlined text-2xl">gavel</span>
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Litiges</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Litiges</h1>
             <p className="text-slate-400 mt-1">
               Suivez et gérez les litiges liés aux commandes de l&apos;agence.
             </p>

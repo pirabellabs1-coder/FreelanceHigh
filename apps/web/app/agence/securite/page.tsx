@@ -99,9 +99,9 @@ export default function AgenceSecuritePage() {
     "w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Sécurité & 2FA</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Sécurité & 2FA</h1>
         <p className="text-slate-400 mt-1">Protégez le compte de votre agence.</p>
       </div>
 

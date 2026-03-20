@@ -48,7 +48,7 @@ function AuditLogSkeleton() {
         <div className="h-10 w-48 bg-neutral-dark rounded-xl animate-pulse" />
         <div className="h-10 w-40 bg-neutral-dark rounded-xl animate-pulse" />
       </div>
-      <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+      <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border-dark">
@@ -134,7 +134,7 @@ export default function AuditLogPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Journal d&apos;audit</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Journal d&apos;audit</h2>
           <p className="text-slate-400 mt-1">
             {auditLog.length} action{auditLog.length !== 1 ? "s" : ""} enregistree{auditLog.length !== 1 ? "s" : ""}
           </p>

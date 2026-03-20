@@ -99,7 +99,7 @@ export default function AgenceParametres() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-white">Paramètres</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Paramètres</h1>
         <p className="text-slate-400 text-sm mt-1">Configurez votre agence, les rôles et les préférences.{members.length > 0 && <span className="ml-2 text-slate-500">({members.length} membres)</span>}</p>
       </div>
       <div className="flex gap-6">

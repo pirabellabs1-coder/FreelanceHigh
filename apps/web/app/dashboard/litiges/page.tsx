@@ -750,7 +750,7 @@ export default function LitigesPage() {
   }
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Inline animation style for slide-in */}
       <style jsx global>{`
         @keyframes slideIn {
@@ -781,7 +781,7 @@ export default function LitigesPage() {
         <div>
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-3xl text-primary">gavel</span>
-            <h2 className="text-3xl font-extrabold tracking-tight">Mes Litiges</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Mes Litiges</h2>
           </div>
           <p className="text-slate-400 mt-1">
             Suivez vos litiges, consultez les decisions et soumettez des signalements.

@@ -15,6 +15,7 @@ import { TiptapRenderer } from "@/components/formations/TiptapRenderer";
 import { CountdownTimer } from "@/components/formations/CountdownTimer";
 import { StockCounter } from "@/components/formations/StockCounter";
 import { firePixelEvent } from "@/components/formations/PixelTracker";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -736,7 +737,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                     <img src={formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-blue-100">
-                      <span className="material-symbols-outlined text-5xl opacity-40">school</span>
+                      <DynamicIcon name="school" className="w-12 h-12 opacity-40" />
                     </div>
                   )}
                   {formation.previewVideo && (

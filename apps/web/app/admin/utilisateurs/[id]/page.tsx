@@ -423,7 +423,7 @@ export default function UserDetailPage() {
       )}
 
       {activeTab === "orders" && (
-        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-x-auto">
           {userOrders.length === 0 ? (
             <div className="py-12 text-center text-slate-500">Aucune commande</div>
           ) : (
@@ -454,7 +454,7 @@ export default function UserDetailPage() {
       )}
 
       {activeTab === "transactions" && (
-        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-x-auto">
           {userTransactions.length === 0 ? (
             <div className="py-12 text-center text-slate-500">Aucune transaction</div>
           ) : (
@@ -487,7 +487,7 @@ export default function UserDetailPage() {
       )}
 
       {activeTab === "audit" && (
-        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+        <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-x-auto">
           {userAuditEntries.length === 0 ? (
             <div className="py-12 text-center text-slate-500">
               <span className="material-symbols-outlined text-3xl mb-2">history</span>

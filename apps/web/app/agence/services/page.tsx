@@ -122,9 +122,9 @@ export default function AgenceServicesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white">Services</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Services</h1>
           <p className="text-slate-400 text-sm mt-1">
             Gérez les services publiés par votre agence.
           </p>

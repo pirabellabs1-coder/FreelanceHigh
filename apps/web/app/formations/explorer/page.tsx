@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Search, X, Star, Clock, Users, Award, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ function FormationCard({ formation, locale, t }: { formation: Formation; locale:
           <img src={thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="material-symbols-outlined text-4xl opacity-20">school</span>
+            <DynamicIcon name="school" className="w-10 h-10 opacity-20" />
           </div>
         )}
         {showBestseller && (

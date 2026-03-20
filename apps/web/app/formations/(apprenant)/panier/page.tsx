@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Trash2, ShoppingCart, ArrowRight, Tag, X, Star, Clock, Award } from "lucide-react";
+import DynamicIcon from "@/components/ui/DynamicIcon";
 
 interface CartItem {
   id: string;
@@ -192,7 +193,7 @@ export default function PanierPage() {
                     {item.formation.thumbnail ? (
                       <img src={item.formation.thumbnail} alt={title} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center"><span className="material-symbols-outlined text-2xl opacity-30">school</span></div>
+                      <div className="w-full h-full flex items-center justify-center"><DynamicIcon name="school" className="w-6 h-6 opacity-30" /></div>
                     )}
                   </div>
 

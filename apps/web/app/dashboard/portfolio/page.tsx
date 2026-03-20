@@ -63,13 +63,13 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       <ConfirmModal open={!!deleteModal} title="Supprimer le projet" message="Etes-vous sur ? Cette action est irreversible."
         confirmLabel="Supprimer" variant="danger" onConfirm={() => deleteModal && handleDelete(deleteModal)} onCancel={() => setDeleteModal(null)} />
 
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Portfolio</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Portfolio</h2>
           <p className="text-slate-400 mt-1">{portfolio.length} projet(s) · {portfolio.filter((p) => p.featured).length} en vedette</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }}

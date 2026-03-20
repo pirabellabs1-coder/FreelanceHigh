@@ -152,7 +152,7 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Aperçu du Tableau de bord</h2>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Aperçu du Tableau de bord</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Bienvenue, gérez vos revenus et vos projets en un coup d&apos;œil.</p>
         </div>
         <div className="flex gap-3">

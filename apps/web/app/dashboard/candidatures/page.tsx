@@ -202,7 +202,7 @@ export default function CandidaturesPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Candidatures</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Candidatures</h1>
         <p className="text-slate-400 mt-1">Postulez aux offres clients et suivez vos candidatures.</p>
       </div>
 

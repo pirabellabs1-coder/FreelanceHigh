@@ -229,7 +229,7 @@ export default function AgenceAvis() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-black text-white">Avis clients</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Avis clients</h1>
           <p className="text-slate-400 text-sm mt-1">Chargement en cours...</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -257,7 +257,7 @@ export default function AgenceAvis() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-black text-white">Avis clients</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Avis clients</h1>
           <p className="text-slate-400 text-sm mt-1">
             Consultez et repondez aux avis recus par l&apos;agence.
           </p>

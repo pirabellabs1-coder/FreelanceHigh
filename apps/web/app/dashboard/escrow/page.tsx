@@ -315,7 +315,7 @@ export default function EscrowPage() {
   }
 
   return (
-    <div className="max-w-full space-y-8">
+    <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
       {/* ---------------------------------------------------------------- */}
       {/* Header */}
       {/* ---------------------------------------------------------------- */}
@@ -358,7 +358,7 @@ export default function EscrowPage() {
           </div>
         </div>
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
             Securite des Paiements par Escrow
           </h2>
           <p className="text-slate-400 mt-1">

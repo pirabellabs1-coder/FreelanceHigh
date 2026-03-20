@@ -245,11 +245,11 @@ export default function SalesFunnelBuilderPage() {
     }
   };
 
-  if (loading) return <div className="p-8"><div className="h-40 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" /></div>;
-  if (!funnel) return <div className="p-8 text-center text-slate-400">Tunnel introuvable</div>;
+  if (loading) return <div className="p-4 sm:p-6 lg:p-8"><div className="h-40 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" /></div>;
+  if (!funnel) return <div className="p-4 sm:p-6 lg:p-8 text-center text-slate-400">Tunnel introuvable</div>;
 
   return (
-    <div className="p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl w-full mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

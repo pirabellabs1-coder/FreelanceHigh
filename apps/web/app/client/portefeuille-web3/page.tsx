@@ -4,10 +4,10 @@ import Link from "next/link";
 
 export default function PortefeuilleWeb3Page() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-white">Portefeuille Web3</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Portefeuille Web3</h1>
         <p className="text-slate-400 text-sm mt-1">Gerez vos paiements en crypto-monnaie sur FreelanceHigh.</p>
       </div>
 
