@@ -26,16 +26,11 @@ export interface DevUser {
 
 const DB_PATH = path.join(process.cwd(), "lib", "dev", "users.json");
 
-// Hash bcrypt de "Test1234!" — généré offline
-const BCRYPT_HASH = "$2b$12$eZw2Zre.jn/hIW2ufWpkfuGOzpur/UE/lOFHUam3kazRFvyjU75vS";
+// Hash bcrypt de "FH@dmin2026!Secure#"
+const ADMIN_HASH = "$2b$12$v/KE9UBiaJO5xpyOrsltO.t8nM92aFJRgEBHD/E03rxrUY0325O3.";
 
 const DEFAULT_USERS: DevUser[] = [
-  { id: "dev-admin-1", email: "admin@test.com", passwordHash: BCRYPT_HASH, name: "Admin FreelanceHigh", role: "admin", plan: "business", kyc: 4, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, country: "FR", adminRole: "super_admin" },
-  { id: "dev-freelance-1", email: "freelance@test.com", passwordHash: BCRYPT_HASH, name: "Marie Diallo", role: "freelance", plan: "pro", kyc: 3, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, country: "SN" },
-  { id: "dev-client-1", email: "client@test.com", passwordHash: BCRYPT_HASH, name: "Jean Dupont", role: "client", plan: "gratuit", kyc: 2, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, country: "FR" },
-  { id: "dev-agence-1", email: "agence@test.com", passwordHash: BCRYPT_HASH, name: "Studio Digital Abidjan", role: "agence", plan: "agence", kyc: 3, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, country: "CI" },
-  { id: "dev-instructeur-1", email: "instructeur@test.com", passwordHash: BCRYPT_HASH, name: "Instructeur FreelanceHigh", role: "freelance", plan: "pro", kyc: 3, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, formationsRole: "instructeur" },
-  { id: "dev-apprenant-1", email: "apprenant@test.com", passwordHash: BCRYPT_HASH, name: "Apprenant FreelanceHigh", role: "freelance", plan: "gratuit", kyc: 2, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, formationsRole: "apprenant" },
+  { id: "dev-admin-1", email: "admin@freelancehigh.com", passwordHash: ADMIN_HASH, name: "Admin FreelanceHigh", role: "admin", plan: "business", kyc: 4, status: "ACTIF", createdAt: "2026-01-01T00:00:00.000Z", loginCount: 0, country: "FR", adminRole: "super_admin", formationsRole: "instructeur" },
 ];
 
 function readUsers(): DevUser[] {

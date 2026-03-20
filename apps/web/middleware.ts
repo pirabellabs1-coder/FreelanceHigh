@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+// Route admin login secrete — pas de redirection, le token est verifie cote client+API
+const ADMIN_LOGIN_PREFIX = "/admin-login/";
+
 // Routes publiques — toujours accessibles
 const PUBLIC_ROUTES = [
   "/",
@@ -81,6 +84,11 @@ export async function middleware(req: NextRequest) {
 
   // Laisser passer les assets statiques et les routes API
   if (isStaticAsset(pathname) || isApiRoute(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Route admin-login secrete — laisser passer (la verification du token se fait cote client+API)
+  if (pathname.startsWith(ADMIN_LOGIN_PREFIX)) {
     return NextResponse.next();
   }
 

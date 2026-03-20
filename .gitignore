@@ -16,6 +16,8 @@
 
 # Identifiants admin — JAMAIS commiter
 admin-credentials/
+CREDENTIALS_TEST.md
+apps/web/lib/dev/users.json
 
 # Python
 __pycache__/
