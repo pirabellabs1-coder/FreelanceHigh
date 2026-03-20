@@ -84,15 +84,28 @@ export async function POST(request: NextRequest) {
       adminRole: adminRole as AdminRole,
     });
 
-    // Send invitation email
+    // Send invitation email (awaited — not fire-and-forget)
     const inviterName = session.user.name || "Admin FreelanceHigh";
-    sendAdminTeamInviteEmail(email, inviterName, adminRole).catch((err) =>
-      console.error("[TEAM] Email invitation error:", err)
-    );
+    let emailSent = false;
+    let emailError: string | null = null;
+    try {
+      const emailResult = await sendAdminTeamInviteEmail(email, inviterName, adminRole);
+      emailSent = !emailResult?.error;
+      if (emailResult?.error) {
+        emailError = typeof emailResult.error === "string" ? emailResult.error : "Erreur d'envoi email";
+      }
+    } catch (err) {
+      console.error("[TEAM] Email invitation error:", err);
+      emailError = (err as Error).message || "Erreur d'envoi email";
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Invitation envoyee a ${name} (${email}) comme ${adminRole}`,
+      message: emailSent
+        ? `${name} invite comme ${adminRole} — email d'invitation envoye`
+        : `${name} ajoute comme ${adminRole} — email non envoye`,
+      emailSent,
+      emailError,
       member: {
         id: newUser.id,
         name: newUser.name,

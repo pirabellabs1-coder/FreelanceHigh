@@ -180,6 +180,13 @@ model User {
   kyc             Int        @default(1)
   suspendReason   String?
 
+  // Personal info (KYC verification)
+  firstName       String?
+  lastName        String?
+  city            String?
+  address         String?
+  dateOfBirth     DateTime?
+
   // 2FA
   twoFactorEnabled Boolean  @default(false)
   twoFactorSecret  String?

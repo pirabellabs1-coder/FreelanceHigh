@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdminStore } from "@/store/admin";
 import { useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
@@ -56,8 +56,39 @@ export default function AdminNotifications() {
 
   const [sending, setSending] = useState(false);
   const [history, setHistory] = useState<SentEntry[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const selectedTarget = TARGET_OPTIONS.find((t) => t.value === form.targetKey) ?? TARGET_OPTIONS[0];
+
+  // Load notification history from API on mount
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/admin/notifications/history");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.history && Array.isArray(data.history)) {
+            setHistory(data.history.map((h: { id: string; title: string; message: string; recipientCount: number; failedCount: number; channels: string[]; createdAt: string }) => ({
+              id: h.id,
+              title: h.title,
+              message: h.message,
+              type: "info",
+              targetLabel: "Utilisateurs",
+              channel: h.channels?.[0] || "in-app",
+              count: h.recipientCount,
+              failedEmails: h.failedCount,
+              sentAt: h.createdAt,
+            })));
+          }
+        }
+      } catch {
+        // Silently fail — history is optional
+      } finally {
+        setLoadingHistory(false);
+      }
+    }
+    loadHistory();
+  }, []);
 
   async function handleSend() {
     if (!form.title.trim() || !form.message.trim()) {
@@ -75,7 +106,7 @@ export default function AdminNotifications() {
     });
     setSending(false);
 
-    if (result) {
+    if (result && result.success) {
       const entry: SentEntry = {
         id: `notif-${Date.now()}`,
         title: form.title,
@@ -87,10 +118,15 @@ export default function AdminNotifications() {
         sentAt: new Date().toISOString(),
       };
       setHistory((h) => [entry, ...h]);
-      addToast("success", `Notification envoyee a ${result.count} utilisateur${result.count > 1 ? "s" : ""}`);
+
+      if (result.failedEmails && result.failedEmails > 0) {
+        addToast("warning", `${result.count} notification(s) envoyee(s) — ${result.failedEmails} email(s) echoue(s)`);
+      } else {
+        addToast("success", `${result.count} notification(s) envoyee(s) avec succes`);
+      }
       setForm({ title: "", message: "", type: "info", targetKey: "tous", channel: "in-app" });
     } else {
-      addToast("error", "Erreur lors de l'envoi de la notification");
+      addToast("error", result?.message || "Erreur lors de l'envoi de la notification");
     }
   }
 
@@ -252,13 +288,18 @@ export default function AdminNotifications() {
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h2 className="font-bold text-white mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">history</span>
-            Historique (session)
+            Historique des envois
           </h2>
 
-          {history.length === 0 ? (
+          {loadingHistory ? (
+            <div className="text-center py-12">
+              <span className="material-symbols-outlined text-4xl text-slate-600 animate-spin">progress_activity</span>
+              <p className="text-sm text-slate-500 mt-2">Chargement de l&apos;historique...</p>
+            </div>
+          ) : history.length === 0 ? (
             <div className="text-center py-12">
               <span className="material-symbols-outlined text-4xl text-slate-600">notifications_off</span>
-              <p className="text-sm text-slate-500 mt-2">Aucune notification envoyee cette session</p>
+              <p className="text-sm text-slate-500 mt-2">Aucune notification envoyee</p>
               <p className="text-xs text-slate-600 mt-1">Les notifications envoyees apparaitront ici.</p>
             </div>
           ) : (

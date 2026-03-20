@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useAdminStore } from "@/store/admin";
+import { useToastStore } from "@/store/dashboard";
 import { ADMIN_ROLE_LABELS, ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
 
 export default function AdminTeamPage() {
   const { teamMembers, loading, syncTeam, inviteMember, updateMemberRole, removeMember } = useAdminStore();
+  const { addToast } = useToastStore();
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", name: "", adminRole: "moderateur" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -17,13 +19,21 @@ export default function AdminTeamPage() {
   }, [syncTeam]);
 
   const handleInvite = async () => {
-    if (!inviteForm.email || !inviteForm.name) return;
+    if (!inviteForm.email || !inviteForm.name) {
+      addToast("error", "Veuillez remplir l'email et le nom");
+      return;
+    }
     setActionLoading(true);
     const ok = await inviteMember(inviteForm);
     setActionLoading(false);
     if (ok) {
+      addToast("success", `Invitation envoyee a ${inviteForm.name} (${inviteForm.email})`);
       setShowInvite(false);
       setInviteForm({ email: "", name: "", adminRole: "moderateur" });
+      // Re-sync to show the new member in the list
+      syncTeam();
+    } else {
+      addToast("error", "Erreur lors de l'invitation. Verifiez que l'email n'est pas deja utilise.");
     }
   };
 

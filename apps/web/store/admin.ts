@@ -317,7 +317,7 @@ interface AdminState {
   updateConfig: (data: Record<string, unknown>) => Promise<boolean>;
 
   // Notification actions
-  sendNotification: (data: { title: string; message: string; type?: string; target?: Record<string, unknown>; channel?: string }) => Promise<{ count: number } | null>;
+  sendNotification: (data: { title: string; message: string; type?: string; target?: Record<string, unknown>; channel?: string }) => Promise<{ success: boolean; count: number; failedEmails?: number; message?: string } | null>;
 }
 
 export const useAdminStore = create<AdminState>()((set, get) => ({
@@ -729,7 +729,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
 
   sendNotification: async (data) => {
     try {
-      const result = await fetchAdmin<{ count: number }>("/api/admin/notifications/send", { method: "POST", body: JSON.stringify(data) });
+      const result = await fetchAdmin<{ success: boolean; count: number; failedEmails?: number; message?: string }>("/api/admin/notifications/send", { method: "POST", body: JSON.stringify(data) });
       return result;
     } catch { return null; }
   },

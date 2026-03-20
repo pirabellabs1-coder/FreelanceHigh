@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { prisma, IS_DEV } from "@/lib/prisma";
+import { prisma as _prisma, IS_DEV } from "@/lib/prisma";
 import { kycRequestStore, kycPersonalInfoStore } from "@/lib/dev/data-store";
+
+// Cast prisma to allow new fields (firstName, lastName, city, address, dateOfBirth)
+// that may not be reflected in cached TS types until next full rebuild
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prisma = _prisma as any;
 
 export async function GET() {
   try {

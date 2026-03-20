@@ -1,14 +1,14 @@
 // FreelanceHigh — Service d'envoi d'emails via Resend
 // Tous les emails transactionnels de la plateforme
 
-const RESEND_SANDBOX_FROM = "FreelanceHigh <onboarding@resend.dev>";
-
 // Lazy init — env vars may not be available at module load time on Vercel
 let _resend: InstanceType<typeof import("resend").Resend> | null = null;
 function getResend() {
   if (!_resend) {
     const { Resend } = require("resend") as typeof import("resend");
-    _resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder");
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
+    _resend = new Resend(apiKey);
   }
   return _resend;
 }
@@ -18,12 +18,12 @@ function getFromAddress(): string {
   return process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
 }
 
-function getAppUrl(): string {
+export function getAppUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
 }
 
-// Helper: send email via Resend
-async function sendEmail(params: { from?: string; to: string; subject: string; html: string }) {
+// Helper: send email via Resend (exported for admin-emails.ts)
+export async function sendEmail(params: { from?: string; to: string; subject: string; html: string }) {
   const from = params.from ?? getFromAddress();
 
   if (!process.env.RESEND_API_KEY) {
@@ -54,7 +54,7 @@ async function sendEmail(params: { from?: string; to: string; subject: string; h
 
 // ── Layout HTML commun ──
 
-function emailLayout(content: string): string {
+export function emailLayout(content: string): string {
   return `
 <!DOCTYPE html>
 <html lang="fr">
@@ -85,7 +85,7 @@ function emailLayout(content: string): string {
 </html>`;
 }
 
-function button(text: string, url: string): string {
+export function button(text: string, url: string): string {
   return `<a href="${url}" style="display:inline-block;background:#6C2BD9;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin:16px 0;">${text}</a>`;
 }
 

@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Create in-app notifications for all targets
     await prisma.notification.createMany({
-      data: targetUsers.map((u) => ({
+      data: targetUsers.map((u: { id: string; email: string; name: string }) => ({
         userId: u.id,
         title,
         message,
@@ -119,18 +119,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Log the notification in AdminNotificationLog
-    await prisma.adminNotificationLog.create({
-      data: {
-        adminId: session.user.id,
-        title,
-        message,
-        targetCriteria: target ?? { scope: "all_users" },
-        recipientCount: targetUsers.length,
-        failedCount: failedEmails,
-        channels: [channelInfo],
-      },
-    });
+    // Log the notification in AdminNotificationLog (non-blocking — table might not be migrated yet)
+    try {
+      await prisma.adminNotificationLog.create({
+        data: {
+          adminId: session.user.id,
+          title,
+          message,
+          targetCriteria: target ?? { scope: "all_users" },
+          recipientCount: targetUsers.length,
+          failedCount: failedEmails,
+          channels: [channelInfo],
+        },
+      });
+    } catch (logErr) {
+      console.error("[Notification] AdminNotificationLog error (table may not be migrated):", logErr);
+    }
 
     // Audit log
     await createAuditLog({

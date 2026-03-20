@@ -25,10 +25,8 @@ export async function POST(req: NextRequest) {
 
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const domainVerified = process.env.RESEND_DOMAIN_VERIFIED === "true";
-    const from = domainVerified
-      ? (process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>")
-      : "FreelanceHigh <onboarding@resend.dev>";
+    // Domain noreply@freelancehigh.com is verified
+    const from = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
 
     const result = await resend.emails.send({
       from,
