@@ -2,7 +2,7 @@
 // Generates realistic test data for the formations platform
 // Run: pnpm --filter=@freelancehigh/db seed
 
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from "@prisma/client";
 import { createId } from "@paralleldrive/cuid2";
 
 const prisma = new PrismaClient();

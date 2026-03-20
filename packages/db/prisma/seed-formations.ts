@@ -1,7 +1,7 @@
 // FreelanceHigh — Seed formations categories
 // Run: npx ts-node prisma/seed-formations.ts
 
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
