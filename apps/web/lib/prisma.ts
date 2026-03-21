@@ -4,4 +4,4 @@
 export { prisma, default as default } from "@freelancehigh/db";
 
 // Flag pour distinguer le mode développement (dev-store JSON) du mode production (Prisma/Supabase)
-export const IS_DEV = process.env.NODE_ENV === "development" && process.env.DEV_MODE === "true";
+export const IS_DEV = process.env.DEV_MODE === "true";

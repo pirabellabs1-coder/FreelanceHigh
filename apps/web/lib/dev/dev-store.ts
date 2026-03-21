@@ -24,7 +24,19 @@ export interface DevUser {
   formationsRole?: "apprenant" | "instructeur";
 }
 
-const DB_PATH = path.join(process.cwd(), "lib", "dev", "users.json");
+// __dirname est fiable en serverless (Vercel) contrairement à process.cwd()
+const DB_PATH = path.join(__dirname, "..", "..", "lib", "dev", "users.json");
+const DB_PATH_ALT = path.join(process.cwd(), "lib", "dev", "users.json");
+
+function getDbPath(): string {
+  // Try __dirname first (works on Vercel serverless), fallback to cwd
+  if (fs.existsSync(DB_PATH)) return DB_PATH;
+  if (fs.existsSync(DB_PATH_ALT)) return DB_PATH_ALT;
+  // Last resort: try apps/web relative path (monorepo root)
+  const monorepoPath = path.join(process.cwd(), "apps", "web", "lib", "dev", "users.json");
+  if (fs.existsSync(monorepoPath)) return monorepoPath;
+  return DB_PATH_ALT; // default, will create if missing
+}
 
 // Hash bcrypt de "FH@dmin2026!Secure#"
 const ADMIN_HASH = "$2b$12$v/KE9UBiaJO5xpyOrsltO.t8nM92aFJRgEBHD/E03rxrUY0325O3.";
@@ -35,11 +47,12 @@ const DEFAULT_USERS: DevUser[] = [
 
 function readUsers(): DevUser[] {
   try {
-    if (!fs.existsSync(DB_PATH)) {
+    const dbPath = getDbPath();
+    if (!fs.existsSync(dbPath)) {
       writeUsers(DEFAULT_USERS);
       return DEFAULT_USERS;
     }
-    const raw = fs.readFileSync(DB_PATH, "utf-8");
+    const raw = fs.readFileSync(dbPath, "utf-8");
     return JSON.parse(raw) as DevUser[];
   } catch {
     return DEFAULT_USERS;
@@ -48,7 +61,8 @@ function readUsers(): DevUser[] {
 
 function writeUsers(users: DevUser[]): void {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(users, null, 2), "utf-8");
+    const dbPath = getDbPath();
+    fs.writeFileSync(dbPath, JSON.stringify(users, null, 2), "utf-8");
   } catch {
     // Ignore write errors in dev
   }
