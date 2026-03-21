@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAdminStore, type AdminUser } from "@/store/admin";
 import { useAuthStore } from "@/store/auth";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { cn } from "@/lib/utils";
 

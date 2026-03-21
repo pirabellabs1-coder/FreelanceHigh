@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useClientStore } from "@/store/client";
 import { profileApi } from "@/lib/api-client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_ITEMS = [

@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { ToastContainer } from "@/components/ui/toast";
 import { DashboardNotificationBell } from "@/components/dashboard/DashboardNotificationBell";
 import { KycRequiredBanner } from "@/components/kyc/KycRequiredBanner";
+import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useDashboardStore } from "@/store/dashboard";
 import { signOut } from "next-auth/react";
 
@@ -96,6 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <KycRequiredBanner />
+        <AccessDeniedToast />
         {children}
       </main>
     </div>

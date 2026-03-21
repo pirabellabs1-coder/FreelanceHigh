@@ -244,10 +244,10 @@ export default function FreelanceProfilePage() {
   const t = useTranslations("freelance_profile");
   const locale = useLocale();
 
-  // Track profile view (deduped per session)
-  useEntityTracker("profile", freelancer?.id ?? null);
-
   const [freelancer, setFreelancer] = useState<FreelancerData | null>(null);
+
+  // Track profile view (deduped per session) — APRES la declaration de freelancer
+  useEntityTracker("profile", freelancer?.id ?? null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/email";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
 
 const registerSchema = z.object({
@@ -73,16 +73,17 @@ export async function POST(request: Request) {
         ...(formationsRole ? { formationsRole } : {}),
       });
 
-      // Send welcome email (non-blocking)
-      sendWelcomeEmail(email, name).catch((err) =>
-        console.error("[REGISTER] Erreur envoi email bienvenue:", err)
-      );
+      // Emit welcome + verification events
+      emitEvent("system.welcome", {
+        userId: user.id, userName: name, userEmail: email,
+      }).catch((err) => console.error("[REGISTER] emitEvent welcome error:", err));
 
-      // Send verification email
       try {
         const { storeOTP } = await import("@/lib/auth/otp");
         const code = await storeOTP(email);
-        await sendVerificationEmail(email, name, code);
+        await emitEvent("system.email_verification", {
+          userId: user.id, userName: name, userEmail: email, code,
+        });
       } catch (err) {
         console.error("[REGISTER] Erreur envoi code verification:", err);
       }
@@ -128,16 +129,17 @@ export async function POST(request: Request) {
       select: { id: true, email: true, name: true, role: true },
     });
 
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(email, name).catch((err) =>
-      console.error("[REGISTER] Erreur envoi email bienvenue:", err)
-    );
+    // Emit welcome + verification events
+    emitEvent("system.welcome", {
+      userId: user.id, userName: name, userEmail: email,
+    }).catch((err) => console.error("[REGISTER] emitEvent welcome error:", err));
 
-    // Send verification email
     try {
       const { storeOTP } = await import("@/lib/auth/otp");
       const code = await storeOTP(email);
-      await sendVerificationEmail(email, name, code);
+      await emitEvent("system.email_verification", {
+        userId: user.id, userName: name, userEmail: email, code,
+      });
     } catch (err) {
       console.error("[REGISTER] Erreur envoi code verification:", err);
     }

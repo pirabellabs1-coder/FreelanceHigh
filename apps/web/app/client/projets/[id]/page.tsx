@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useClientStore, type ClientProject } from "@/store/client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { candidaturesApi } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------

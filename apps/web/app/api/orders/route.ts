@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { orderStore, serviceStore, transactionStore, notificationStore, conversationStore } from "@/lib/dev/data-store";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { orderStore, serviceStore, transactionStore, conversationStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { trackingStore } from "@/lib/tracking/tracking-store";
 import { rateLimit } from "@/lib/api-rate-limit";
 import { z } from "zod";
@@ -225,26 +225,6 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
       });
 
-      // Notify the freelance
-      notificationStore.add({
-        userId: service.userId,
-        title: "Nouvelle commande",
-        message: `${clientName} a commande "${service.title}" (forfait ${packageType}) pour ${amount} EUR`,
-        type: "order",
-        read: false,
-        link: `/dashboard/commandes/${order.id}`,
-      });
-
-      // Notify the client
-      notificationStore.add({
-        userId: session.user.id,
-        title: "Commande confirmee",
-        message: `Votre commande "${service.title}" a ete creee avec succes. En attente d'acceptation.`,
-        type: "order",
-        read: false,
-        link: `/client/commandes/${order.id}`,
-      });
-
       // Increment service order count
       serviceStore.update(service.id, {
         orderCount: service.orderCount + 1,
@@ -259,17 +239,19 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
       });
 
-      // Send order confirmation email to client (non-blocking)
-      if (session.user.email) {
-        sendOrderConfirmationEmail(session.user.email, clientName, {
-          id: order.id,
-          serviceTitle: service.title,
-          amount,
-          deadline,
-        }).catch((err) =>
-          console.error("[API /orders POST] Erreur envoi email confirmation:", err)
-        );
-      }
+      // Emit order.created event (notifications + emails)
+      emitEvent("order.created", {
+        orderId: order.id,
+        serviceTitle: service.title,
+        amount,
+        freelanceId: service.userId,
+        freelanceName: service.vendorName || "Freelance",
+        freelanceEmail: service.vendorUsername ? `${service.vendorUsername}@freelancehigh.com` : "",
+        clientId: session.user.id,
+        clientName,
+        clientEmail: session.user.email || "",
+        deadline,
+      }).catch((err) => console.error("[API /orders POST] emitEvent error:", err));
 
       // Track conversion
       trackingStore.trackConversion("order_placed", service.id, {
@@ -374,30 +356,6 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Notify the freelance
-        await tx.notification.create({
-          data: {
-            userId: service.userId,
-            title: "Nouvelle commande",
-            message: `${session.user.name || "Client"} a commande "${service.title}" (forfait ${packageType}) pour ${amount} EUR`,
-            type: "ORDER",
-            read: false,
-            link: `/dashboard/commandes/${newOrder.id}`,
-          },
-        });
-
-        // Notify the client
-        await tx.notification.create({
-          data: {
-            userId: session.user.id,
-            title: "Commande confirmee",
-            message: `Votre commande "${service.title}" a ete creee avec succes. En attente d'acceptation.`,
-            type: "ORDER",
-            read: false,
-            link: `/client/commandes/${newOrder.id}`,
-          },
-        });
-
         // Increment service order count
         await tx.service.update({
           where: { id: serviceId },
@@ -433,17 +391,19 @@ export async function POST(request: NextRequest) {
         return newOrder;
       });
 
-      // Send order confirmation email to client (non-blocking)
-      if (session.user.email) {
-        sendOrderConfirmationEmail(session.user.email, session.user.name || "Client", {
-          id: order.id,
-          serviceTitle: service.title,
-          amount,
-          deadline: deadlineDate.toISOString().slice(0, 10),
-        }).catch((err) =>
-          console.error("[API /orders POST] Erreur envoi email confirmation:", err)
-        );
-      }
+      // Emit order.created event (notifications + emails)
+      emitEvent("order.created", {
+        orderId: order.id,
+        serviceTitle: service.title,
+        amount,
+        freelanceId: service.userId,
+        freelanceName: service.user.name || "Freelance",
+        freelanceEmail: service.user.email || "",
+        clientId: session.user.id,
+        clientName: session.user.name || "Client",
+        clientEmail: session.user.email || "",
+        deadline: deadlineDate.toISOString().slice(0, 10),
+      }).catch((err) => console.error("[API /orders POST] emitEvent error:", err));
 
       // Track conversion
       trackingStore.trackConversion("order_placed", serviceId, {

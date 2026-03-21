@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useClientStore } from "@/store/client";
 import { profileApi, uploadApi } from "@/lib/api-client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 
 export default function ClientProfile() {
   const { addToast } = useToastStore();
@@ -84,11 +84,14 @@ export default function ClientProfile() {
     setUploading(true);
     try {
       const result = await uploadApi.file(file, "avatar");
-      setAvatarUrl(result.file.url);
+      const url = result?.file?.url;
+      if (!url) throw new Error("URL manquante dans la reponse upload");
+      setAvatarUrl(url);
       // Update the profile with the new avatar URL
-      await profileApi.update({ photo: result.file.url });
+      await profileApi.update({ photo: url });
       addToast("success", "Photo de profil mise a jour !");
-    } catch {
+    } catch (err) {
+      console.error("[Client profil upload]", err);
       addToast("error", "Erreur lors de l'upload de la photo");
     } finally {
       setUploading(false);

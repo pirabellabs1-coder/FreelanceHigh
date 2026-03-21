@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAdminStore } from "@/store/admin";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const PLAN_KEYS = ["gratuit", "pro", "business", "agence"] as const;

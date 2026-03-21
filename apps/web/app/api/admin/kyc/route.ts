@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { notificationStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
-import { sendKycApprovedEmail, sendKycRejectedEmail } from "@/lib/email";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { createAuditLog } from "@/lib/admin/audit";
 
 // GET /api/admin/kyc — KYC verification queue
@@ -182,19 +181,10 @@ export async function POST(request: NextRequest) {
             4: "Professionnel verifie - Badge Elite",
           };
 
-          notificationStore.add({
-            userId,
-            title: "Verification KYC approuvee",
-            message: `Felicitations ! Votre verification de niveau ${newLevel} a ete approuvee. ${levelBadges[newLevel] ?? ""}`,
-            type: "system",
-            read: false,
-            link: "/dashboard/parametres",
-          });
-
-          // Send KYC approved email
-          sendKycApprovedEmail(user.email, user.name, newLevel).catch((err) =>
-            console.error("[KYC] Email approved error:", err)
-          );
+          // Emit KYC approved event (notification + email)
+          emitEvent("kyc.approved", {
+            userId, userName: user.name, userEmail: user.email, level: newLevel,
+          }).catch((err) => console.error("[KYC] emitEvent approved error:", err));
 
           return NextResponse.json({
             success: true,
@@ -211,19 +201,11 @@ export async function POST(request: NextRequest) {
           const refuseReason =
             reason ?? "Documents non conformes aux exigences de la plateforme";
 
-          // Send KYC rejected email
-          sendKycRejectedEmail(user.email, user.name, user.kyc + 1, refuseReason).catch((err) =>
-            console.error("[KYC] Email rejected error:", err)
-          );
-
-          notificationStore.add({
-            userId,
-            title: "Verification KYC refusee",
-            message: `Votre demande de verification a ete refusee. Motif : ${refuseReason}`,
-            type: "system",
-            read: false,
-            link: "/dashboard/parametres",
-          });
+          // Emit KYC rejected event (notification + email)
+          emitEvent("kyc.rejected", {
+            userId, userName: user.name, userEmail: user.email,
+            level: user.kyc + 1, reason: refuseReason,
+          }).catch((err) => console.error("[KYC] emitEvent rejected error:", err));
 
           return NextResponse.json({
             success: true,
@@ -279,21 +261,10 @@ export async function POST(request: NextRequest) {
           }),
         ]);
 
-        // Notification in-app
-        await prisma.notification.create({
-          data: {
-            userId,
-            title: "Verification KYC approuvee",
-            message: `Votre verification de niveau ${newLevel} a ete approuvee.`,
-            type: "KYC",
-            link: "/dashboard/parametres",
-          },
-        });
-
-        // Send email
-        sendKycApprovedEmail(user.email, user.name, newLevel).catch((err) =>
-          console.error("[KYC] Email approved error:", err)
-        );
+        // Emit KYC approved event (notification + email)
+        emitEvent("kyc.approved", {
+          userId, userName: user.name, userEmail: user.email, level: newLevel,
+        }).catch((err) => console.error("[KYC] emitEvent approved error:", err));
 
         // Audit log
         await createAuditLog({
@@ -330,21 +301,11 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Notification in-app
-        await prisma.notification.create({
-          data: {
-            userId,
-            title: "Verification KYC refusee",
-            message: `Votre demande de verification a ete refusee. Motif : ${refuseReason}`,
-            type: "KYC",
-            link: "/dashboard/parametres",
-          },
-        });
-
-        // Send email
-        sendKycRejectedEmail(user.email, user.name, user.kyc + 1, refuseReason).catch((err) =>
-          console.error("[KYC] Email rejected error:", err)
-        );
+        // Emit KYC rejected event (notification + email)
+        emitEvent("kyc.rejected", {
+          userId, userName: user.name, userEmail: user.email,
+          level: user.kyc + 1, reason: refuseReason,
+        }).catch((err) => console.error("[KYC] emitEvent rejected error:", err));
 
         // Audit log
         await createAuditLog({

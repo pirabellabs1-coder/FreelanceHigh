@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { transactionStore, notificationStore } from "@/lib/dev/data-store";
+import { transactionStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { checkRateLimit, recordFailedAttempt, resetAttempts } from "@/lib/auth/rate-limiter";
 
 const VALID_METHODS = ["SEPA", "PayPal", "Wave", "Orange Money", "MTN Mobile Money"];
@@ -80,15 +81,14 @@ export async function POST(request: NextRequest) {
       method,
     });
 
-    // Create notification
-    notificationStore.add({
+    // Emit withdrawal event (notification + email)
+    emitEvent("withdrawal.requested", {
       userId: session.user.id,
-      title: "Demande de retrait",
-      message: `Votre demande de retrait de ${amount.toFixed(2)} EUR vers ${method} est en cours de traitement`,
-      type: "payment",
-      read: false,
-      link: "/dashboard/finances",
-    });
+      userName: session.user.name || "Utilisateur",
+      userEmail: session.user.email || "",
+      amount,
+      method,
+    }).catch((err) => console.error("[Withdrawal] emitEvent error:", err));
 
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error) {

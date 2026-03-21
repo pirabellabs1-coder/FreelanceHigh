@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { profileApi } from "@/lib/api-client";
 import { useAgencyStore } from "@/store/agency";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [

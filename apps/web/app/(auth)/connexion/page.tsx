@@ -65,7 +65,7 @@ export default function ConnexionPage() {
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
       const userRole = session?.user?.role || role;
-      const redirectUrl = ROLE_REDIRECTS[userRole] || "/dashboard";
+      const redirectUrl = ROLE_REDIRECTS[userRole] || ROLE_REDIRECTS[role] || "/connexion";
       router.push(redirectUrl);
       router.refresh();
     } catch {
@@ -115,7 +115,7 @@ export default function ConnexionPage() {
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
       const userRole = session?.user?.role || role;
-      const redirectUrl = ROLE_REDIRECTS[userRole] || "/dashboard";
+      const redirectUrl = ROLE_REDIRECTS[userRole] || ROLE_REDIRECTS[role] || "/connexion";
       router.push(redirectUrl);
       router.refresh();
     } catch {
@@ -124,13 +124,15 @@ export default function ConnexionPage() {
     }
   }
 
-  // Social login handlers
+  // Social login handlers — set role cookie + redirect par role
   function handleGoogleSignIn() {
-    signIn("google", { callbackUrl: "/dashboard" });
+    document.cookie = `pendingRole=${role};path=/;max-age=600;samesite=lax`;
+    signIn("google", { callbackUrl: ROLE_REDIRECTS[role] });
   }
 
   function handleLinkedInSignIn() {
-    signIn("linkedin", { callbackUrl: "/dashboard" });
+    document.cookie = `pendingRole=${role};path=/;max-age=600;samesite=lax`;
+    signIn("linkedin", { callbackUrl: ROLE_REDIRECTS[role] });
   }
 
   // ── 2FA Challenge UI ──

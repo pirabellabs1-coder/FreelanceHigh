@@ -8,6 +8,17 @@ import { signIn } from "next-auth/react";
 // ─── Types ──────────────────────────────────────────────────────────────
 type Role = "freelance" | "client" | "agence";
 
+// ─── Role redirect map ──────────────────────────────────────────────────
+const ROLE_CALLBACKS: Record<Role, string> = {
+  freelance: "/dashboard",
+  client: "/client",
+  agence: "/agence",
+};
+
+function setRoleCookie(r: Role) {
+  document.cookie = `pendingRole=${r};path=/;max-age=600;samesite=lax`;
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────
 const ROLES: { id: Role; label: string; icon: string; desc: string }[] = [
   { id: "freelance", label: "Freelance", icon: "person", desc: "Je propose mes services" },
@@ -489,7 +500,7 @@ export default function InscriptionPage() {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: role === "client" ? "/client" : "/dashboard" })}
+            onClick={() => { if (role) setRoleCookie(role); signIn("google", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
             className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -502,7 +513,7 @@ export default function InscriptionPage() {
           </button>
           <button
             type="button"
-            onClick={() => signIn("linkedin", { callbackUrl: role === "client" ? "/client" : "/dashboard" })}
+            onClick={() => { if (role) setRoleCookie(role); signIn("linkedin", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
             className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
           >
             <svg className="w-5 h-5" fill="#0077b5" viewBox="0 0 24 24">

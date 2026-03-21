@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/api-rate-limit";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { generateResetToken } from "@/lib/auth/password-reset";
 import { IS_DEV } from "@/lib/env";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
@@ -64,9 +64,11 @@ export async function POST(request: NextRequest) {
     if (userExists) {
       const token = generateResetToken(email);
       try {
-        await sendPasswordResetEmail(email, userName, token);
+        await emitEvent("system.password_reset", {
+          userId: "", userName, userEmail: email, resetToken: token,
+        });
       } catch (err) {
-        console.error("[PASSWORD RESET] Email send error:", err);
+        console.error("[PASSWORD RESET] emitEvent error:", err);
       }
     }
 

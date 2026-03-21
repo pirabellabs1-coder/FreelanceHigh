@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useCallback } from "react";
 import { useAgencyStore } from "@/store/agency";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 import {
   BarChart, LineChart, PieChart, AreaChart, Cell,

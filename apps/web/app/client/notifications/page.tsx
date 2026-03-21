@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useClientStore } from "@/store/client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/client/EmptyState";
 
@@ -13,6 +13,13 @@ const TYPE_ICON_MAP: Record<string, { icon: string; color: string }> = {
   system: { icon: "settings", color: "text-slate-400 bg-slate-500/10" },
   order: { icon: "shopping_cart", color: "text-primary bg-primary/10" },
   review: { icon: "star", color: "text-amber-400 bg-amber-500/10" },
+  offer: { icon: "local_offer", color: "text-orange-400 bg-orange-500/10" },
+  agency: { icon: "business", color: "text-cyan-400 bg-cyan-500/10" },
+  course: { icon: "school", color: "text-indigo-400 bg-indigo-500/10" },
+  product: { icon: "inventory_2", color: "text-pink-400 bg-pink-500/10" },
+  service: { icon: "design_services", color: "text-violet-400 bg-violet-500/10" },
+  boost: { icon: "rocket_launch", color: "text-rose-400 bg-rose-500/10" },
+  kyc: { icon: "verified", color: "text-purple-400 bg-purple-500/10" },
 };
 
 const PREF_SECTIONS = [

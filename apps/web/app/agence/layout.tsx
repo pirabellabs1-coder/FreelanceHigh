@@ -5,6 +5,7 @@ import { AgenceSidebar } from "@/components/agence/AgenceSidebar";
 import { AgenceHeader } from "@/components/agence/AgenceHeader";
 import { ToastContainer } from "@/components/ui/toast";
 import { KycRequiredBanner } from "@/components/kyc/KycRequiredBanner";
+import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useAgencyStore } from "@/store/agency";
 import { signOut } from "next-auth/react";
 
@@ -78,6 +79,7 @@ export default function AgenceLayout({ children }: { children: React.ReactNode }
         </div>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <KycRequiredBanner />
+          <AccessDeniedToast />
           {children}
         </main>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<string, string> = {

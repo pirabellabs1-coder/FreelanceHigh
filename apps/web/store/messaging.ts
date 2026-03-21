@@ -6,17 +6,13 @@
 
 import { create } from "zustand";
 
-// Show a toast error message without importing @/store/dashboard.
-// We use dynamic import() instead of require() because Turbopack still
-// treats require() as a static dependency — even inside a function body —
-// which can cause "Cannot access 'y' before initialization" (TDZ error)
-// when Turbopack evaluates messaging.ts before dashboard.ts finishes.
-async function showErrorToast(message: string) {
+// Import toast directement depuis le fichier leger (pas de dependances lourdes)
+import { useToastStore } from "@/store/toast";
+
+function showErrorToast(message: string) {
   try {
-    const { useToastStore } = await import("@/store/dashboard");
     useToastStore.getState().addToast("error", message);
   } catch {
-    // Toast unavailable — silent fallback
     console.error("[MessagingStore toast fallback]", message);
   }
 }

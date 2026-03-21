@@ -10,7 +10,15 @@ const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   message: { icon: "chat", color: "text-blue-400" },
   order: { icon: "shopping_cart", color: "text-green-400" },
   kyc: { icon: "verified", color: "text-purple-400" },
+  payment: { icon: "payments", color: "text-emerald-400" },
   system: { icon: "info", color: "text-slate-400" },
+  offer: { icon: "local_offer", color: "text-orange-400" },
+  review: { icon: "star", color: "text-yellow-400" },
+  agency: { icon: "business", color: "text-cyan-400" },
+  course: { icon: "school", color: "text-indigo-400" },
+  product: { icon: "inventory_2", color: "text-pink-400" },
+  service: { icon: "design_services", color: "text-violet-400" },
+  boost: { icon: "rocket_launch", color: "text-rose-400" },
 };
 
 function timeAgo(dateStr: string): string {

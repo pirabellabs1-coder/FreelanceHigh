@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
 import { profileApi } from "@/lib/api-client";
 import { cn } from "@/lib/utils";

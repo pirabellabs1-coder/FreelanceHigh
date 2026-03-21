@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { orderStore, transactionStore, notificationStore } from "@/lib/dev/data-store";
+import { orderStore, transactionStore } from "@/lib/dev/data-store";
+import { createNotification } from "@/lib/notifications/service";
 import { createAuditLog } from "@/lib/admin/audit";
 
 // GET /api/admin/disputes — All disputes
@@ -116,8 +117,8 @@ export async function POST(request: NextRequest) {
 
       if (action === "examine") {
         orderStore.update(orderId, { timeline: [...order.timeline, { id: `t${Date.now()}`, type: "message", title: "Litige en cours d'examen", description: resolution ?? "L'administration examine ce litige.", timestamp: now }] });
-        notificationStore.add({ userId: order.clientId, title: "Litige en cours d'examen", message: `Votre litige concernant "${order.serviceTitle}" est en cours d'examen.`, type: "order", read: false, link: `/client/commandes/${orderId}` });
-        notificationStore.add({ userId: order.freelanceId, title: "Litige en cours d'examen", message: `Le litige concernant "${order.serviceTitle}" est en cours d'examen.`, type: "order", read: false, link: `/dashboard/commandes/${orderId}` });
+        createNotification({ userId: order.clientId, title: "Litige en cours d'examen", message: `Votre litige concernant "${order.serviceTitle}" est en cours d'examen.`, type: "order", link: `/client/commandes/${orderId}` });
+        createNotification({ userId: order.freelanceId, title: "Litige en cours d'examen", message: `Le litige concernant "${order.serviceTitle}" est en cours d'examen.`, type: "order", link: `/dashboard/commandes/${orderId}` });
         return NextResponse.json({ success: true, message: `Litige ${orderId} marque comme en cours d'examen` });
       }
 
@@ -130,14 +131,14 @@ export async function POST(request: NextRequest) {
           newStatus = "termine";
           verdictDescription = `Verdict en faveur du freelance. ${resolution ?? "Les fonds seront liberes."}`;
           transactionStore.add({ userId: order.freelanceId, type: "vente", description: `Paiement apres litige - ${order.serviceTitle}`, amount: order.amount - order.commission, status: "complete", date: now.slice(0, 10), orderId });
-          notificationStore.add({ userId: order.freelanceId, title: "Litige resolu en votre faveur", message: `Fonds de ${order.amount - order.commission} EUR liberes.`, type: "payment", read: false, link: "/dashboard/finances" });
-          notificationStore.add({ userId: order.clientId, title: "Litige resolu", message: `Verdict en faveur du freelance.`, type: "order", read: false, link: `/client/commandes/${orderId}` });
+          createNotification({ userId: order.freelanceId, title: "Litige resolu en votre faveur", message: `Fonds de ${order.amount - order.commission} EUR liberes.`, type: "payment", link: "/dashboard/finances" });
+          createNotification({ userId: order.clientId, title: "Litige resolu", message: `Verdict en faveur du freelance.`, type: "order", link: `/client/commandes/${orderId}` });
         } else if (verdict === "client") {
           newStatus = "annule";
           verdictDescription = `Verdict en faveur du client. ${resolution ?? "Remboursement effectue."}`;
           transactionStore.add({ userId: order.clientId, type: "remboursement", description: `Remboursement - ${order.serviceTitle}`, amount: order.amount, status: "complete", date: now.slice(0, 10), orderId });
-          notificationStore.add({ userId: order.clientId, title: "Litige resolu en votre faveur", message: `Remboursement de ${order.amount} EUR.`, type: "payment", read: false, link: `/client/commandes/${orderId}` });
-          notificationStore.add({ userId: order.freelanceId, title: "Litige resolu", message: `Verdict en faveur du client.`, type: "order", read: false, link: `/dashboard/commandes/${orderId}` });
+          createNotification({ userId: order.clientId, title: "Litige resolu en votre faveur", message: `Remboursement de ${order.amount} EUR.`, type: "payment", link: `/client/commandes/${orderId}` });
+          createNotification({ userId: order.freelanceId, title: "Litige resolu", message: `Verdict en faveur du client.`, type: "order", link: `/dashboard/commandes/${orderId}` });
         } else if (verdict === "partiel") {
           newStatus = "termine";
           const refundAmount = Math.round(order.amount * 0.5 * 100) / 100;
@@ -145,8 +146,8 @@ export async function POST(request: NextRequest) {
           verdictDescription = `Remboursement partiel. ${refundAmount} EUR rembourses, ${freelanceAmount} EUR liberes.`;
           transactionStore.add({ userId: order.clientId, type: "remboursement", description: `Remboursement partiel - ${order.serviceTitle}`, amount: refundAmount, status: "complete", date: now.slice(0, 10), orderId });
           transactionStore.add({ userId: order.freelanceId, type: "vente", description: `Paiement partiel - ${order.serviceTitle}`, amount: freelanceAmount, status: "complete", date: now.slice(0, 10), orderId });
-          notificationStore.add({ userId: order.clientId, title: "Remboursement partiel", message: `${refundAmount} EUR rembourses.`, type: "payment", read: false, link: `/client/commandes/${orderId}` });
-          notificationStore.add({ userId: order.freelanceId, title: "Paiement partiel", message: `${freelanceAmount} EUR liberes.`, type: "payment", read: false, link: "/dashboard/finances" });
+          createNotification({ userId: order.clientId, title: "Remboursement partiel", message: `${refundAmount} EUR rembourses.`, type: "payment", link: `/client/commandes/${orderId}` });
+          createNotification({ userId: order.freelanceId, title: "Paiement partiel", message: `${freelanceAmount} EUR liberes.`, type: "payment", link: "/dashboard/finances" });
         }
 
         orderStore.update(orderId, { status: newStatus, completedAt: newStatus === "termine" ? now : null, timeline: [...order.timeline, { id: `t${Date.now()}`, type: "completed", title: "Litige resolu", description: verdictDescription, timestamp: now }] });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { orderStore, notificationStore } from "@/lib/dev/data-store";
+import { orderStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 
 export async function GET(request: NextRequest) {
   // Verify cron secret (Vercel cron or manual trigger)
@@ -26,39 +27,35 @@ export async function GET(request: NextRequest) {
 
       // Deadline in less than 24h (but not overdue) — within 2h detection window
       if (timeLeft > 0 && timeLeft <= TWENTY_FOUR_HOURS && timeLeft > TWENTY_FOUR_HOURS - TWO_HOURS) {
-        // Notify freelance
-        notificationStore.add({
-          userId: order.freelanceId,
-          title: "Rappel : livraison dans moins de 24h",
-          message: `La commande "${order.serviceTitle}" doit etre livree avant le ${new Date(order.deadline).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`,
-          type: "order",
-          read: false,
-          link: `/dashboard/commandes/${order.id}/suivi`,
-        });
+        emitEvent("order.deadline_24h", {
+          orderId: order.id,
+          serviceTitle: order.serviceTitle,
+          amount: order.amount,
+          freelanceId: order.freelanceId,
+          freelanceName: "",
+          freelanceEmail: "",
+          clientId: order.clientId,
+          clientName: order.clientName,
+          clientEmail: "",
+          deadline: order.deadline,
+        }).catch((err) => console.error("[CRON] deadline_24h emitEvent error:", err));
         reminders24h++;
       }
 
       // Deadline overdue — within 2h detection window
       if (timeLeft <= 0 && timeLeft > -TWO_HOURS) {
-        // Notify freelance
-        notificationStore.add({
-          userId: order.freelanceId,
-          title: "Delai depasse",
-          message: `La commande "${order.serviceTitle}" a depasse son delai de livraison. Veuillez livrer au plus vite.`,
-          type: "order",
-          read: false,
-          link: `/dashboard/commandes/${order.id}/suivi`,
-        });
-
-        // Notify client
-        notificationStore.add({
-          userId: order.clientId,
-          title: "Delai de livraison depasse",
-          message: `La commande "${order.serviceTitle}" a depasse son delai de livraison. Le freelance a ete notifie.`,
-          type: "order",
-          read: false,
-          link: `/client/commandes/${order.id}`,
-        });
+        emitEvent("order.deadline_overdue", {
+          orderId: order.id,
+          serviceTitle: order.serviceTitle,
+          amount: order.amount,
+          freelanceId: order.freelanceId,
+          freelanceName: "",
+          freelanceEmail: "",
+          clientId: order.clientId,
+          clientName: order.clientName,
+          clientEmail: "",
+          deadline: order.deadline,
+        }).catch((err) => console.error("[CRON] deadline_overdue emitEvent error:", err));
         remindersOverdue++;
       }
     }

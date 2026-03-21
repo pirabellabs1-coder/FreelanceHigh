@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 
 interface Session {
   id: string;

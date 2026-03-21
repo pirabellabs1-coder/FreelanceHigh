@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { feedApi, type ApiService } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 

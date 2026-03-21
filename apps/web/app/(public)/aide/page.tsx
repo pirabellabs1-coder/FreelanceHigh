@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 
 // ============================================================
 // Chat message type

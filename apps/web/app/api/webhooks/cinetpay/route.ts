@@ -12,7 +12,8 @@ import {
   isPaymentFailed,
   isCinetPayConfigured,
 } from "@/lib/cinetpay";
-import { orderStore, notificationStore, transactionStore } from "@/lib/dev/data-store";
+import { orderStore, transactionStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 
 export async function POST(req: NextRequest) {
   try {
@@ -174,25 +175,16 @@ async function handlePaymentSuccess(
     method: `CinetPay (${formatPaymentMethod(paymentMethod)})`,
   });
 
-  // Notify the freelance about the new paid order
-  notificationStore.add({
+  // Emit payment.success event (notifications + emails)
+  emitEvent("payment.success", {
     userId: order.freelanceId,
-    title: "Nouvelle commande payee",
-    message: `${order.clientName} a paye la commande "${order.serviceTitle}" via Mobile Money. Vous pouvez commencer le travail.`,
-    type: "payment",
-    read: false,
-    link: `/dashboard/commandes/${orderId}`,
-  });
-
-  // Notify the client about the payment confirmation
-  notificationStore.add({
-    userId: order.clientId,
-    title: "Paiement confirme",
-    message: `Votre paiement de ${amount} pour "${order.serviceTitle}" a ete confirme. Le freelance peut maintenant commencer le travail.`,
-    type: "payment",
-    read: false,
-    link: `/dashboard/commandes/${orderId}`,
-  });
+    userName: "",
+    userEmail: "",
+    amount: order.amount,
+    serviceTitle: order.serviceTitle,
+    orderId,
+    method: `CinetPay (${formatPaymentMethod(paymentMethod)})`,
+  }).catch(() => {});
 }
 
 async function handlePaymentFailure(
@@ -236,15 +228,16 @@ async function handlePaymentFailure(
     method: `CinetPay`,
   });
 
-  // Notify the client about the payment failure
-  notificationStore.add({
+  // Emit payment.failed event
+  emitEvent("payment.failed", {
     userId: order.clientId,
-    title: "Echec du paiement",
-    message: `Votre paiement pour "${order.serviceTitle}" a echoue (${reason}). Veuillez reessayer avec un autre moyen de paiement.`,
-    type: "payment",
-    read: false,
-    link: `/dashboard/commandes/${orderId}`,
-  });
+    userName: order.clientName,
+    userEmail: "",
+    amount: order.amount,
+    serviceTitle: order.serviceTitle,
+    orderId,
+    reason,
+  }).catch(() => {});
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -19,10 +19,21 @@ const LINK_ICONS: Record<string, { icon: string; label: string }> = {
   behance: { icon: "palette", label: "Behance" },
 };
 
+// Profil par defaut securise pour eviter les crashes si le store n'est pas charge
+const SAFE_DEFAULTS = {
+  skills: [] as { name: string; level: string }[],
+  languages: [] as { name: string; level: string }[],
+  education: [] as { title: string; school: string; year: string; type: string }[],
+  links: { linkedin: "", github: "", portfolio: "", behance: "" },
+  firstName: "", lastName: "", username: "", email: "", phone: "",
+  photo: "", coverPhoto: "", title: "", bio: "", city: "", country: "",
+  hourlyRate: 0, completionPercent: 0,
+};
+
 export default function ProfilPage() {
   const { profile, updateProfile, apiSaveProfile } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
-  const [form, setForm] = useState(profile);
+  const [form, setForm] = useState({ ...SAFE_DEFAULTS, ...profile });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"edition" | "preview">("edition");
   const [newSkill, setNewSkill] = useState("");

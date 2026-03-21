@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useAgencyStore } from "@/store/agency";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { ordersApi } from "@/lib/api-client";
 import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
 

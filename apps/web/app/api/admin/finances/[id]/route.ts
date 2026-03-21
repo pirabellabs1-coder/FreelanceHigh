@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { transactionStore, notificationStore } from "@/lib/dev/data-store";
+import { transactionStore } from "@/lib/dev/data-store";
+import { createNotification } from "@/lib/notifications/service";
 import { createAuditLog } from "@/lib/admin/audit";
 
 // PATCH /api/admin/finances/[id] — Block/unblock/approve a transaction
@@ -50,14 +51,13 @@ export async function PATCH(
 
       const updated = transactionStore.update(id, { status: statusMap[action] as "complete" | "en_attente" | "echoue" | "bloque" });
 
-      notificationStore.add({
+      createNotification({
         userId: tx.userId,
         title: titleMap[action],
         message: `Votre transaction "${tx.description}" (${Math.abs(tx.amount)} EUR) a ete ${statusMap[action] === "complete" ? "approuvee" : statusMap[action] === "bloque" ? "bloquee" : "debloquee"}.`,
         type: "payment",
-        read: false,
         link: "/dashboard/finances",
-      });
+      }).catch(() => {});
 
       return NextResponse.json({
         success: true,

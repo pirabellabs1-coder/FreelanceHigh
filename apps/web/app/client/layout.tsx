@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { ToastContainer } from "@/components/ui/toast";
+import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useClientStore } from "@/store/client";
 import { signOut } from "next-auth/react";
 
@@ -81,6 +82,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </div>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <AccessDeniedToast />
           {children}
         </main>
       </div>

@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { orderStore, notificationStore, transactionStore, serviceStore, invoiceStore } from "@/lib/dev/data-store";
-import { sendPaymentReceivedEmail } from "@/lib/email";
+import { orderStore, transactionStore, serviceStore, invoiceStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 
 export async function GET(
   _request: NextRequest,
@@ -130,28 +130,22 @@ export async function PATCH(
       if (deliveryMessage !== undefined && deliveryFiles !== undefined) {
         updatedOrder = orderStore.deliver(id, deliveryMessage, deliveryFiles || []);
         if (updatedOrder) {
-          notificationStore.add({
-            userId: order.clientId,
-            title: "Livraison effectuee",
-            message: `La commande ${order.serviceTitle} a ete livree`,
-            type: "order",
-            read: false,
-            link: `/client/commandes/${id}`,
-          });
+          emitEvent("order.delivered", {
+            orderId: id, serviceTitle: order.serviceTitle, amount: order.amount,
+            freelanceId: order.freelanceId, freelanceName: "", freelanceEmail: "",
+            clientId: order.clientId, clientName: order.clientName, clientEmail: "",
+          }).catch(() => {});
         }
       }
       // Handle accepting an order (status changes to "en_cours")
       else if (status === "en_cours") {
         updatedOrder = orderStore.accept(id);
         if (updatedOrder) {
-          notificationStore.add({
-            userId: order.clientId,
-            title: "Commande acceptee",
-            message: `Votre commande ${order.serviceTitle} a ete acceptee`,
-            type: "order",
-            read: false,
-            link: `/client/commandes/${id}`,
-          });
+          emitEvent("order.accepted", {
+            orderId: id, serviceTitle: order.serviceTitle, amount: order.amount,
+            freelanceId: order.freelanceId, freelanceName: "", freelanceEmail: "",
+            clientId: order.clientId, clientName: order.clientName, clientEmail: "",
+          }).catch(() => {});
         }
       }
       // Handle other status changes
@@ -187,13 +181,26 @@ export async function PATCH(
               ? order.freelanceId
               : order.clientId;
 
-          if (statusLabels[status]) {
-            notificationStore.add({
+          // Emit appropriate event for status change
+          if (status === "revision") {
+            emitEvent("order.revision_requested", {
+              orderId: id, serviceTitle: order.serviceTitle, amount: order.amount,
+              freelanceId: order.freelanceId, freelanceName: "", freelanceEmail: "",
+              clientId: order.clientId, clientName: order.clientName, clientEmail: "",
+            }).catch(() => {});
+          } else if (status === "annule") {
+            emitEvent("order.cancelled", {
+              orderId: id, serviceTitle: order.serviceTitle, amount: order.amount,
+              freelanceId: order.freelanceId, freelanceName: "", freelanceEmail: "",
+              clientId: order.clientId, clientName: order.clientName, clientEmail: "",
+            }).catch(() => {});
+          } else if (statusLabels[status]) {
+            const { createNotification } = await import("@/lib/notifications/service");
+            await createNotification({
               userId: notifyUserId,
               title: statusLabels[status],
               message: `${statusLabels[status]} pour ${order.serviceTitle}`,
               type: "order",
-              read: false,
               link: `/dashboard/commandes/${id}`,
             });
           }
@@ -232,16 +239,6 @@ export async function PATCH(
               });
             }
 
-            // Notify freelance about payment
-            notificationStore.add({
-              userId: order.freelanceId,
-              title: "Paiement recu",
-              message: `€${netAmount} recu pour ${order.serviceTitle}`,
-              type: "payment",
-              read: false,
-              link: "/dashboard/finances",
-            });
-
             // Auto-generer la facture
             invoiceStore.createFromOrder({
               id: order.id,
@@ -254,12 +251,12 @@ export async function PATCH(
               freelanceName: order.freelanceName || "Freelance",
             });
 
-            // Send payment email to freelance (non-blocking)
-            sendPaymentReceivedEmail(
-              "",
-              "Freelance",
-              { amount: netAmount, serviceTitle: order.serviceTitle, orderId: order.id }
-            ).catch(() => { /* email best-effort */ });
+            // Emit order.completed event (notifications + email)
+            emitEvent("order.completed", {
+              orderId: id, serviceTitle: order.serviceTitle, amount: netAmount,
+              freelanceId: order.freelanceId, freelanceName: order.freelanceName || "Freelance", freelanceEmail: "",
+              clientId: order.clientId, clientName: order.clientName, clientEmail: "",
+            }).catch(() => {});
           }
         }
       }
@@ -471,26 +468,12 @@ export async function PATCH(
                 data: { status: "COMPLETE" },
               });
 
-              // Notify freelance about payment
-              await tx.notification.create({
-                data: {
-                  userId: order.freelanceId,
-                  title: "Paiement recu",
-                  message: `€${netAmount} recu pour ${order.service.title}`,
-                  type: "PAYMENT",
-                  read: false,
-                  link: "/dashboard/finances",
-                },
-              });
-
-              // Send payment email to freelance (non-blocking, outside transaction)
-              if (order.freelance.email) {
-                sendPaymentReceivedEmail(
-                  order.freelance.email,
-                  order.freelance.name,
-                  { amount: netAmount, serviceTitle: order.service.title, orderId: order.id }
-                ).catch(() => { /* email best-effort */ });
-              }
+              // Emit order.completed event (notification + email — outside tx)
+              emitEvent("order.completed", {
+                orderId: order.id, serviceTitle: order.service.title, amount: netAmount,
+                freelanceId: order.freelanceId, freelanceName: order.freelance.name, freelanceEmail: order.freelance.email,
+                clientId: order.clientId, clientName: order.client.name, clientEmail: order.client.email,
+              }).catch(() => {});
             }
           }
 

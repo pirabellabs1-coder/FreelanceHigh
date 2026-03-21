@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
 import { profileApi } from "@/lib/api-client";
 import { ImageUpload } from "@/components/ui/image-upload";

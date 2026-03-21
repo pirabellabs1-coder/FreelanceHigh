@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
 import type { ApiOrder } from "@/lib/api-client";
 

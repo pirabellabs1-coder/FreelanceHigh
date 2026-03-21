@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/api-rate-limit";
 import { storeOTP, verifyOTP } from "@/lib/auth/otp";
-import { sendVerificationEmail } from "@/lib/email";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
 
 const IS_DEV_MODE = process.env.DEV_MODE === "true";
@@ -51,7 +51,9 @@ export async function POST(request: Request) {
     }
 
     const code = await storeOTP(email);
-    await sendVerificationEmail(email, name || "Utilisateur", code);
+    await emitEvent("system.email_verification", {
+      userId: "", userName: name || "Utilisateur", userEmail: email, code,
+    });
 
     return NextResponse.json({
       success: true,

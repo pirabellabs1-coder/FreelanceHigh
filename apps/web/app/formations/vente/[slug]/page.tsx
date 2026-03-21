@@ -199,10 +199,10 @@ function BlockRenderer({ block, formation, onBuy }: { block: Block; formation: F
 export default function SalesFunnelPublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
-  // Track formation view
-  useEntityTracker("formation", data?.formation?.id ?? null);
-
   const [data, setData] = useState<FunnelData | null>(null);
+
+  // Track formation view — APRES la declaration de data
+  useEntityTracker("formation", data?.formation?.id ?? null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 

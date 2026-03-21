@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { conversationStore, notificationStore } from "@/lib/dev/data-store";
+import { conversationStore } from "@/lib/dev/data-store";
+import { emitEvent } from "@/lib/events/dispatcher";
 
 export async function GET(
   _request: NextRequest,
@@ -140,14 +141,15 @@ export async function POST(
         ? `${senderName} a partage un fichier : ${fileName || "fichier"}`
         : `${senderName} : ${content.trim().slice(0, 50)}${content.trim().length > 50 ? "..." : ""}`;
 
-      notificationStore.add({
-        userId: participantId,
-        title: notifTitle,
-        message: notifMessage,
-        type: "message",
-        read: false,
-        link: `/dashboard/messages`,
-      });
+      emitEvent("message.received", {
+        conversationId: id,
+        senderId: session.user!.id,
+        senderName,
+        recipientId: participantId,
+        recipientName: "",
+        recipientEmail: "",
+        messagePreview: notifMessage,
+      }).catch(() => {});
 
       // TODO: [Email notification after 5 min unread]
       // When this notification is created, schedule a delayed email notification job.

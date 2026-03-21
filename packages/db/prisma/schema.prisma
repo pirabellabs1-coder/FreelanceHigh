@@ -114,6 +114,13 @@ enum NotificationType {
   KYC
   SYSTEM
   PAYMENT
+  OFFER
+  REVIEW
+  AGENCY
+  COURSE
+  PRODUCT
+  SERVICE
+  BOOST
 }
 
 enum KycStatus {

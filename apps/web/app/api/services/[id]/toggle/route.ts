@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { serviceStore, notificationStore } from "@/lib/dev/data-store";
+import { serviceStore } from "@/lib/dev/data-store";
+import { createNotification } from "@/lib/notifications/service";
 
 // POST /api/services/[id]/toggle — Toggle service status between "actif" and "pause"
 export async function POST(
@@ -53,16 +54,15 @@ export async function POST(
 
     // Create a notification about the status change
     const isNowActive = updatedService.status === "actif";
-    notificationStore.add({
+    createNotification({
       userId: session.user.id,
       title: isNowActive ? "Service reactive" : "Service mis en pause",
       message: isNowActive
         ? `Votre service "${updatedService.title}" est de nouveau visible sur le marketplace.`
         : `Votre service "${updatedService.title}" a ete mis en pause. Il n'est plus visible sur le marketplace.`,
       type: "service",
-      read: false,
       link: "/dashboard/services",
-    });
+    }).catch(() => {});
 
     return NextResponse.json({
       service: updatedService,

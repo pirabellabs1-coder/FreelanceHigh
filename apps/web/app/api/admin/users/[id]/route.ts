@@ -4,9 +4,9 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
-import { serviceStore, orderStore, transactionStore, notificationStore } from "@/lib/dev/data-store";
+import { serviceStore, orderStore, transactionStore } from "@/lib/dev/data-store";
 import { createAuditLog } from "@/lib/admin/audit";
-import { sendAccountSuspendedEmail, sendAccountBannedEmail } from "@/lib/admin/admin-emails";
+import { emitEvent } from "@/lib/events/dispatcher";
 
 // GET /api/admin/users/[id] — Get user detail
 export async function GET(
@@ -114,8 +114,7 @@ export async function PATCH(
         if (status === "suspendu" || status === "SUSPENDU") {
           const userServices = serviceStore.getAll().filter((s) => s.userId === id && s.status === "actif");
           for (const svc of userServices) serviceStore.update(svc.id, { status: "pause" });
-          notificationStore.add({ userId: id, title: "Compte suspendu", message: "Votre compte a ete suspendu par l'administration.", type: "system", read: false, link: `${linkPrefix}/parametres` });
-          sendAccountSuspendedEmail(user.email, user.name, reason).catch(() => {});
+          emitEvent("system.account_suspended", { userId: id, userName: user.name, userEmail: user.email, reason }).catch(() => {});
           return NextResponse.json({ success: true, message: `Utilisateur ${user.name} suspendu, ${userServices.length} service(s) mis en pause` });
         }
 
@@ -126,17 +125,19 @@ export async function PATCH(
           for (const order of activeOrders) {
             orderStore.update(order.id, { status: "annule", timeline: [...order.timeline, { id: `t${Date.now()}`, type: "cancelled", title: "Annulation — compte banni", description: "La commande a ete annulee suite au bannissement d'un participant.", timestamp: new Date().toISOString() }] });
             const otherPartyId = order.freelanceId === id ? order.clientId : order.freelanceId;
-            notificationStore.add({ userId: otherPartyId, title: "Commande annulee", message: `La commande "${order.serviceTitle}" a ete annulee par l'administration.`, type: "order", read: false, link: `/dashboard/commandes/${order.id}` });
+            // Notification for other party handled inline (ban cascade)
+            const { createNotification } = await import("@/lib/notifications/service");
+            await createNotification({ userId: otherPartyId, title: "Commande annulee", message: `La commande "${order.serviceTitle}" a ete annulee par l'administration.`, type: "order", link: `/dashboard/commandes/${order.id}` });
           }
-          notificationStore.add({ userId: id, title: "Compte banni", message: "Votre compte a ete banni par l'administration.", type: "system", read: false, link: `${linkPrefix}/parametres` });
-          sendAccountBannedEmail(user.email, user.name, reason).catch(() => {});
+          emitEvent("system.account_banned", { userId: id, userName: user.name, userEmail: user.email, reason }).catch(() => {});
           return NextResponse.json({ success: true, message: `Utilisateur ${user.name} banni` });
         }
 
         if (status === "actif" || status === "ACTIF") {
           const pausedServices = serviceStore.getAll().filter((s) => s.userId === id && s.status === "pause");
           for (const svc of pausedServices) serviceStore.update(svc.id, { status: "actif" });
-          notificationStore.add({ userId: id, title: "Compte reactive", message: "Votre compte a ete reactive.", type: "system", read: false, link: `${linkPrefix}/parametres` });
+          const { createNotification: createNotif } = await import("@/lib/notifications/service");
+          await createNotif({ userId: id, title: "Compte reactive", message: "Votre compte a ete reactive.", type: "system", link: `${linkPrefix}/parametres` });
           return NextResponse.json({ success: true, message: `Utilisateur ${user.name} reactive` });
         }
 
@@ -176,12 +177,9 @@ export async function PATCH(
           where: { userId: id, status: "ACTIF" },
           data: { status: "PAUSE" },
         });
-        await prisma.notification.create({
-          data: { userId: id, title: "Compte suspendu", message: "Votre compte a ete suspendu par l'administration.", type: "ADMIN_ACTION" },
-        });
-        sendAccountSuspendedEmail(user.email, user.name, reason).catch((err) =>
-          console.error("[Admin] Failed to send suspension email to", user.email, err)
-        );
+        emitEvent("system.account_suspended", {
+          userId: id, userName: user.name, userEmail: user.email, reason,
+        }).catch((err) => console.error("[Admin] emitEvent suspended error:", err));
       }
 
       if (prismaStatus === "BANNI") {
@@ -193,12 +191,9 @@ export async function PATCH(
           where: { OR: [{ freelanceId: id }, { clientId: id }], status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION"] } },
           data: { status: "ANNULE" },
         });
-        await prisma.notification.create({
-          data: { userId: id, title: "Compte banni", message: "Votre compte a ete banni par l'administration.", type: "ADMIN_ACTION" },
-        });
-        sendAccountBannedEmail(user.email, user.name, reason).catch((err) =>
-          console.error("[Admin] Failed to send ban email to", user.email, err)
-        );
+        emitEvent("system.account_banned", {
+          userId: id, userName: user.name, userEmail: user.email, reason,
+        }).catch((err) => console.error("[Admin] emitEvent banned error:", err));
       }
 
       if (prismaStatus === "ACTIF") {
@@ -206,9 +201,8 @@ export async function PATCH(
           where: { userId: id, status: "PAUSE" },
           data: { status: "ACTIF" },
         });
-        await prisma.notification.create({
-          data: { userId: id, title: "Compte reactive", message: "Votre compte a ete reactive par l'administration.", type: "ADMIN_ACTION" },
-        });
+        const { createNotification: createNotifProd } = await import("@/lib/notifications/service");
+        await createNotifProd({ userId: id, title: "Compte reactive", message: "Votre compte a ete reactive par l'administration.", type: "system" });
       }
 
       await createAuditLog({

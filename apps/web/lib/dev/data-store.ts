@@ -189,7 +189,7 @@ export interface StoredNotification {
   userId: string;
   title: string;
   message: string;
-  type: "order" | "message" | "payment" | "system" | "service" | "boost";
+  type: "order" | "message" | "payment" | "system" | "service" | "boost" | "offer" | "review" | "agency" | "course" | "product";
   read: boolean;
   link?: string;
   createdAt: string;

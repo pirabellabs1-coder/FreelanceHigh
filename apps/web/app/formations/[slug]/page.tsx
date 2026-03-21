@@ -157,10 +157,10 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Track formation view
-  useEntityTracker("formation", formation?.id ?? null);
-
   const [formation, setFormation] = useState<Formation | null>(null);
+
+  // Track formation view — APRES la declaration de formation
+  useEntityTracker("formation", formation?.id ?? null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "curriculum" | "instructor" | "reviews" | "cohorts">("overview");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());

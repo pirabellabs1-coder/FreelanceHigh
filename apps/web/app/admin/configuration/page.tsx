@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { useAdminStore, type AdminConfig } from "@/store/admin";
 import { cn } from "@/lib/utils";
 

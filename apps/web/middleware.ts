@@ -51,6 +51,19 @@ const ROLE_ROUTES: Record<string, string[]> = {
   agence: ["/agence"],
 };
 
+// Map role → dashboard URL (source unique de verite pour les redirections)
+const ROLE_DASHBOARD: Record<string, string> = {
+  admin: "/admin",
+  freelance: "/dashboard",
+  client: "/client",
+  agence: "/agence",
+};
+
+function getDashboardForRole(role: string | undefined): string {
+  if (!role) return "/connexion";
+  return ROLE_DASHBOARD[role.toLowerCase()] || "/connexion";
+}
+
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => {
     if (route === "/") return pathname === "/";
@@ -160,13 +173,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith("/clients/")) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const role = token?.role as string | undefined;
-    const roleRedirectMap: Record<string, string> = {
-      admin: "/admin",
-      freelance: "/dashboard",
-      client: "/client",
-      agence: "/agence",
-    };
-    const redirectUrl = role ? (roleRedirectMap[role] || "/dashboard") : "/";
+    const redirectUrl = role ? getDashboardForRole(role) : "/";
     return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
   }
 
@@ -213,13 +220,7 @@ export async function middleware(req: NextRequest) {
       const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
       if (token) {
         const role = token.role as string | undefined;
-        const roleRedirectMap: Record<string, string> = {
-          admin: "/admin",
-          freelance: "/dashboard",
-          client: "/client",
-          agence: "/agence",
-        };
-        const redirectUrl = role ? (roleRedirectMap[role] || "/dashboard") : "/dashboard";
+        const redirectUrl = getDashboardForRole(role);
         return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
       }
     }
@@ -239,13 +240,7 @@ export async function middleware(req: NextRequest) {
   // Routes auth — rediriger vers le bon espace si deja connecte
   if (isAuthRoute(pathname)) {
     if (isAuthenticated && userRole) {
-      const redirectMap: Record<string, string> = {
-        admin: "/admin",
-        freelance: "/dashboard",
-        client: "/client",
-        agence: "/agence",
-      };
-      const redirectUrl = redirectMap[userRole] || "/dashboard";
+      const redirectUrl = getDashboardForRole(userRole);
       return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
     }
     return withLocaleCookie(NextResponse.next());
@@ -270,15 +265,12 @@ export async function middleware(req: NextRequest) {
     }
 
     // Verifier que le role correspond — rediriger vers l'espace du rôle
+    // avec parametre ?access_denied=1 pour afficher une notification
     if (userRole !== requiredRole) {
-      const roleRedirectMap: Record<string, string> = {
-        admin: "/admin",
-        freelance: "/dashboard",
-        client: "/client",
-        agence: "/agence",
-      };
-      const redirectUrl = userRole ? (roleRedirectMap[userRole] || "/dashboard") : "/dashboard";
-      return withLocaleCookie(NextResponse.redirect(new URL(redirectUrl, req.url)));
+      const redirectUrl = getDashboardForRole(userRole);
+      const url = new URL(redirectUrl, req.url);
+      url.searchParams.set("access_denied", "1");
+      return withLocaleCookie(NextResponse.redirect(url));
     }
   }
 

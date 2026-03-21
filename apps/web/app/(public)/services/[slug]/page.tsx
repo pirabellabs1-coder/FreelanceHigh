@@ -255,11 +255,11 @@ export default function ServiceDetailPage() {
   const t = useTranslations("service_detail");
   const locale = useLocale();
 
-  // Track service view (deduped per session)
-  useEntityTracker("service", service?.id ?? null);
-
   // API fetch state
   const [service, setService] = useState<ServiceData | null>(null);
+
+  // Track service view (deduped per session) — APRES la declaration de service
+  useEntityTracker("service", service?.id ?? null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 

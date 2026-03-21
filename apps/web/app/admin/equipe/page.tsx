@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAdminStore } from "@/store/admin";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { ADMIN_ROLE_LABELS, ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
 
 export default function AdminTeamPage() {

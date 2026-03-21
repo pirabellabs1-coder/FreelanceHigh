@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useClientStore } from "@/store/client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 

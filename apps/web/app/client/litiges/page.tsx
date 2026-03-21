@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useClientStore } from "@/store/client";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const STATUS_MAP: Record<string, { label: string; cls: string; icon: string }> = {

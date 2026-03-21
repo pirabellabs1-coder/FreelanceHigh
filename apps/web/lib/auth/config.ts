@@ -242,17 +242,27 @@ export const authOptions: NextAuthOptions = {
         const email = user.email;
         if (!email) return false;
 
-        // Read pending formations role from cookie (set before OAuth redirect)
+        // Read pending role + formations role from cookies (set before OAuth redirect)
+        let pendingRole: string | undefined;
         let pendingFormationsRole: string | undefined;
         try {
           const { cookies } = await import("next/headers");
           const cookieStore = await cookies();
+          pendingRole = cookieStore.get("pendingRole")?.value;
           pendingFormationsRole = cookieStore.get("pendingFormationsRole")?.value;
+          if (pendingRole) {
+            cookieStore.delete("pendingRole");
+          }
           if (pendingFormationsRole) {
             cookieStore.delete("pendingFormationsRole");
           }
         } catch {
           // cookies() may not be available in all contexts
+        }
+        // Validate pendingRole — only accept known values
+        const validRoles = ["freelance", "client", "agence"];
+        if (pendingRole && !validRoles.includes(pendingRole)) {
+          pendingRole = undefined;
         }
 
         if (IS_DEV_MODE) {
@@ -260,19 +270,20 @@ export const authOptions: NextAuthOptions = {
             const { devStore } = await import("./../../lib/dev/dev-store");
             const existing = devStore.findByEmail(email);
             if (!existing) {
-              // Create a new user for OAuth with formationsRole from cookie
+              // Create a new user for OAuth with role from cookie (default: client)
+              const oauthRole = pendingRole || "client";
               const newUser = devStore.create({
                 email,
                 passwordHash: "", // OAuth users don't have a password
                 name: user.name || email.split("@")[0],
-                role: "freelance",
+                role: oauthRole,
                 plan: "gratuit",
                 kyc: 1,
                 status: "ACTIF",
                 ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole } : {}),
               });
               user.id = newUser.id;
-              user.role = "freelance";
+              user.role = oauthRole;
               user.kyc = 1;
               user.plan = "gratuit";
               if (pendingFormationsRole) user.formationsRole = pendingFormationsRole;
@@ -305,12 +316,14 @@ export const authOptions: NextAuthOptions = {
             let dbUser = await prisma.user.findUnique({ where: { email } });
 
             if (!dbUser) {
-              // Create user with formationsRole from cookie
+              // Create user with role + formationsRole from cookies
+              const oauthRole = pendingRole || "client";
               dbUser = await prisma.user.create({
                 data: {
                   email,
                   name: user.name || email.split("@")[0],
                   passwordHash: "", // OAuth users don't have a password
+                  role: oauthRole.toUpperCase() as "FREELANCE" | "CLIENT" | "AGENCE",
                   image: user.image,
                   emailVerified: new Date(),
                   ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole } : {}),

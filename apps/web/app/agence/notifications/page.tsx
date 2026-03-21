@@ -5,7 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { notificationsApi, type ApiNotification } from "@/lib/api-client";
 import { useAgencyStore } from "@/store/agency";
-import { useToastStore } from "@/store/dashboard";
+import { useToastStore } from "@/store/toast";
 
 const TYPE_META: Record<string, { icon: string; color: string; bgColor: string; label: string }> = {
   commande: { icon: "shopping_cart", color: "text-green-400", bgColor: "bg-green-400/10", label: "Commande" },
@@ -13,6 +13,17 @@ const TYPE_META: Record<string, { icon: string; color: string; bgColor: string; 
   equipe:   { icon: "groups", color: "text-purple-400", bgColor: "bg-purple-400/10", label: "Equipe" },
   finance:  { icon: "payments", color: "text-emerald-400", bgColor: "bg-emerald-400/10", label: "Finance" },
   systeme:  { icon: "info", color: "text-slate-400", bgColor: "bg-slate-400/10", label: "Systeme" },
+  order:    { icon: "shopping_cart", color: "text-green-400", bgColor: "bg-green-400/10", label: "Commande" },
+  payment:  { icon: "payments", color: "text-emerald-400", bgColor: "bg-emerald-400/10", label: "Paiement" },
+  system:   { icon: "info", color: "text-slate-400", bgColor: "bg-slate-400/10", label: "Systeme" },
+  offer:    { icon: "local_offer", color: "text-orange-400", bgColor: "bg-orange-400/10", label: "Offre" },
+  review:   { icon: "star", color: "text-yellow-400", bgColor: "bg-yellow-400/10", label: "Avis" },
+  agency:   { icon: "business", color: "text-cyan-400", bgColor: "bg-cyan-400/10", label: "Agence" },
+  course:   { icon: "school", color: "text-indigo-400", bgColor: "bg-indigo-400/10", label: "Formation" },
+  product:  { icon: "inventory_2", color: "text-pink-400", bgColor: "bg-pink-400/10", label: "Produit" },
+  service:  { icon: "design_services", color: "text-violet-400", bgColor: "bg-violet-400/10", label: "Service" },
+  boost:    { icon: "rocket_launch", color: "text-rose-400", bgColor: "bg-rose-400/10", label: "Boost" },
+  kyc:      { icon: "verified", color: "text-purple-400", bgColor: "bg-purple-400/10", label: "KYC" },
 };
 
 type FilterType = "all" | "unread" | "commande" | "message" | "equipe" | "finance";

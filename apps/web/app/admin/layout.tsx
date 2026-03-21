@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ToastContainer } from "@/components/ui/toast";
+import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useAdminStore } from "@/store/admin";
 
 const ADMIN_CSS_VARS = {
@@ -64,6 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminHeader onMobileMenu={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <AccessDeniedToast />
           {children}
         </main>
       </div>

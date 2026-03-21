@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { orderStore, transactionStore, notificationStore } from "@/lib/dev/data-store";
+import { orderStore, transactionStore } from "@/lib/dev/data-store";
+import { createNotification } from "@/lib/notifications/service";
 
 // GET /api/admin/orders/[id] — Get full order details
 export async function GET(
@@ -77,21 +78,21 @@ export async function PATCH(
           ],
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.clientId,
           title: "Commande livree",
           message: `La commande "${order.serviceTitle}" a ete marquee comme livree par l'administration.`,
           type: "order",
-          read: false,
+          
           link: `/client/commandes/${id}`,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.freelanceId,
           title: "Livraison forcee",
           message: `Votre commande "${order.serviceTitle}" a ete marquee comme livree par l'administration.`,
           type: "order",
-          read: false,
+          
           link: `/dashboard/commandes/${id}`,
         });
 
@@ -118,21 +119,21 @@ export async function PATCH(
           ],
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.clientId,
           title: "Commande annulee",
           message: `La commande "${order.serviceTitle}" a ete annulee par l'administration.`,
           type: "order",
-          read: false,
+          
           link: `/client/commandes/${id}`,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.freelanceId,
           title: "Commande annulee",
           message: `La commande "${order.serviceTitle}" a ete annulee par l'administration.`,
           type: "order",
-          read: false,
+          
           link: `/dashboard/commandes/${id}`,
         });
 
@@ -181,21 +182,21 @@ export async function PATCH(
           orderId: id,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.freelanceId,
           title: "Fonds liberes",
           message: `Les fonds de la commande "${order.serviceTitle}" (${order.amount - order.commission} EUR) ont ete liberes.`,
           type: "payment",
-          read: false,
+          
           link: "/dashboard/finances",
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.clientId,
           title: "Commande terminee",
           message: `La commande "${order.serviceTitle}" est terminee. Les fonds ont ete liberes.`,
           type: "order",
-          read: false,
+          
           link: `/client/commandes/${id}`,
         });
 
@@ -232,21 +233,21 @@ export async function PATCH(
           orderId: id,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.clientId,
           title: "Remboursement effectue",
           message: `Vous avez ete rembourse de ${order.amount} EUR pour la commande "${order.serviceTitle}".`,
           type: "payment",
-          read: false,
+          
           link: `/client/commandes/${id}`,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.freelanceId,
           title: "Commande remboursee",
           message: `La commande "${order.serviceTitle}" a ete remboursee au client par l'administration.`,
           type: "order",
-          read: false,
+          
           link: `/dashboard/commandes/${id}`,
         });
 
@@ -291,21 +292,21 @@ export async function PATCH(
         });
 
         // Notify both parties
-        notificationStore.add({
+        createNotification({
           userId: order.clientId,
           title: "Statut de commande modifie",
           message: `Le statut de votre commande "${order.serviceTitle}" a ete modifie par l'administration: ${order.status} → ${newStatus}`,
           type: "order",
-          read: false,
+          
           link: `/client/commandes/${id}`,
         });
 
-        notificationStore.add({
+        createNotification({
           userId: order.freelanceId,
           title: "Statut de commande modifie",
           message: `Le statut de la commande "${order.serviceTitle}" a ete modifie par l'administration: ${order.status} → ${newStatus}`,
           type: "order",
-          read: false,
+          
           link: `/dashboard/commandes/${id}`,
         });
 

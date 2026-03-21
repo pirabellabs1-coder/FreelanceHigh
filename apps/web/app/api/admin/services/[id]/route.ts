@@ -3,9 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { serviceStore, notificationStore } from "@/lib/dev/data-store";
+import { serviceStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
-import { sendServiceApprovedEmail, sendServiceRejectedEmail } from "@/lib/email";
+import { emitEvent } from "@/lib/events/dispatcher";
 import { createAuditLog } from "@/lib/admin/audit";
 
 // PATCH /api/admin/services/[id] — Admin actions: approve, refuse, feature, unfeature, pause, delete
@@ -29,25 +29,25 @@ export async function PATCH(
         return NextResponse.json({ error: "Service introuvable" }, { status: 404 });
       }
 
+      const user = devStore.findById(service.userId);
+      const userEmail = user?.email || "";
+      const userName = user?.name || "Utilisateur";
+
       switch (action) {
         case "approve": {
           serviceStore.update(id, { status: "actif", refuseReason: undefined });
-          notificationStore.add({ userId: service.userId, title: "Service approuve", message: `Votre service "${service.title}" a ete approuve !`, type: "service", read: false, link: "/dashboard/services" });
-          const approveUser = devStore.findById(service.userId);
-          if (approveUser?.email) sendServiceApprovedEmail(approveUser.email, approveUser.name, service.title).catch(() => {});
+          emitEvent("service.approved", { serviceId: id, serviceTitle: service.title, userId: service.userId, userName, userEmail }).catch(() => {});
           return NextResponse.json({ success: true, message: `Service "${service.title}" approuve` });
         }
         case "refuse": {
           const refuseReason = reason || "Non conforme aux directives de la plateforme";
           serviceStore.update(id, { status: "refuse", refuseReason });
-          notificationStore.add({ userId: service.userId, title: "Service refuse", message: `Votre service "${service.title}" a ete refuse. Motif : ${refuseReason}`, type: "service", read: false, link: "/dashboard/services" });
-          const refuseUser = devStore.findById(service.userId);
-          if (refuseUser?.email) sendServiceRejectedEmail(refuseUser.email, refuseUser.name, service.title, refuseReason).catch(() => {});
+          emitEvent("service.rejected", { serviceId: id, serviceTitle: service.title, userId: service.userId, userName, userEmail, reason: refuseReason }).catch(() => {});
           return NextResponse.json({ success: true, message: `Service "${service.title}" refuse` });
         }
         case "feature": {
           serviceStore.update(id, { status: "actif", isBoosted: true });
-          notificationStore.add({ userId: service.userId, title: "Service mis en avant", message: `Votre service "${service.title}" a ete mis en avant !`, type: "service", read: false, link: "/dashboard/services" });
+          emitEvent("service.approved", { serviceId: id, serviceTitle: service.title, userId: service.userId, userName, userEmail }).catch(() => {});
           return NextResponse.json({ success: true, message: `Service "${service.title}" mis en vedette` });
         }
         case "unfeature": {
@@ -56,12 +56,10 @@ export async function PATCH(
         }
         case "pause": {
           serviceStore.update(id, { status: "pause" });
-          notificationStore.add({ userId: service.userId, title: "Service mis en pause", message: `Votre service "${service.title}" a ete mis en pause par l'administration.`, type: "service", read: false, link: "/dashboard/services" });
           return NextResponse.json({ success: true, message: `Service "${service.title}" mis en pause` });
         }
         case "delete": {
           serviceStore.delete(id);
-          notificationStore.add({ userId: service.userId, title: "Service supprime", message: `Votre service "${service.title}" a ete supprime par l'administration.`, type: "service", read: false, link: "/dashboard/services" });
           return NextResponse.json({ success: true, message: `Service "${service.title}" supprime` });
         }
         default:
@@ -92,9 +90,6 @@ export async function PATCH(
 
     if (action === "delete") {
       await prisma.service.delete({ where: { id } });
-      await prisma.notification.create({
-        data: { userId: service.userId, title: "Service supprime", message: `Votre service "${service.title}" a ete supprime par l'administration.`, type: "ADMIN_ACTION" },
-      });
       await createAuditLog({ actorId: session.user.id, action: "service.deleted", targetType: "service", targetId: id, targetUserId: service.userId, details: { title: service.title } });
       return NextResponse.json({ success: true, message: `Service "${service.title}" supprime` });
     }
@@ -123,22 +118,18 @@ export async function PATCH(
       pause: `Votre service "${service.title}" a ete mis en pause par l'administration.`,
     };
 
-    // Notification + email + audit (non-blocking — ne doit pas faire echouer l'action)
-    try {
-      await prisma.notification.create({
-        data: { userId: service.userId, title: notifTitles[action], message: notifMessages[action], type: "ADMIN_ACTION", link: "/dashboard/services" },
-      });
-    } catch (notifErr) { console.error("[Service] Notification error:", notifErr); }
-
-    if (action === "approve") {
-      sendServiceApprovedEmail(service.user.email, service.user.name, service.title).catch((err) =>
-        console.error("[Admin] Failed to send service approved email to", service.user.email, err)
-      );
-    }
-    if (action === "refuse") {
-      sendServiceRejectedEmail(service.user.email, service.user.name, service.title, reason || "Non conforme aux directives").catch((err) =>
-        console.error("[Admin] Failed to send service rejected email to", service.user.email, err)
-      );
+    // Emit event (notifications + emails — non-blocking)
+    if (action === "approve" || action === "feature") {
+      emitEvent("service.approved", {
+        serviceId: id, serviceTitle: service.title,
+        userId: service.userId, userName: service.user.name, userEmail: service.user.email,
+      }).catch((err) => console.error("[Service] emitEvent error:", err));
+    } else if (action === "refuse") {
+      emitEvent("service.rejected", {
+        serviceId: id, serviceTitle: service.title,
+        userId: service.userId, userName: service.user.name, userEmail: service.user.email,
+        reason: reason || "Non conforme aux directives",
+      }).catch((err) => console.error("[Service] emitEvent error:", err));
     }
 
     await createAuditLog({
