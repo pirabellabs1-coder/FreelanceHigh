@@ -363,8 +363,10 @@ export async function PATCH(request: NextRequest) {
     if (updates.excerpt !== undefined) data.excerpt = updates.excerpt;
     if (updates.category !== undefined) data.category = updates.category;
     if (updates.tags !== undefined) data.tags = updates.tags;
-    if (updates.featuredImage !== undefined) data.coverImage = updates.featuredImage;
-    if (updates.scheduledAt !== undefined) data.scheduledAt = updates.scheduledAt ? new Date(updates.scheduledAt) : null;
+    if (updates.coverImage !== undefined) data.coverImage = updates.coverImage;
+    const raw = updates as Record<string, unknown>;
+    if (raw.featuredImage !== undefined) data.coverImage = raw.featuredImage as string;
+    if (raw.scheduledAt !== undefined) data.scheduledAt = raw.scheduledAt ? new Date(raw.scheduledAt as string) : null;
 
     if (updates.status) {
       data.status = mapStatusToPrisma(updates.status);

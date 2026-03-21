@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma, IS_DEV } from "@/lib/prisma";
 
-// Semantic search API — In production: OpenAI embeddings + pgvector
-// For now: uses keyword matching against dev store data
+// Semantic search API — In production: Postgres text search
+// In dev: uses keyword matching against dev store data
 
 import { devStore } from "@/lib/dev/dev-store";
 import { serviceStore, reviewStore, profileStore } from "@/lib/dev/data-store";
@@ -141,6 +142,76 @@ export async function GET(req: NextRequest) {
       results: [],
       entities: { skills: [], budget: null, type: null },
     });
+  }
+
+  // ── Production: Prisma text search ──
+  if (!IS_DEV) {
+    try {
+      const queryWords = q.toLowerCase().split(/\s+/).filter(Boolean);
+      const searchTerm = queryWords.join(" & ");
+
+      // Search services by title and description
+      const services = await prisma.service.findMany({
+        where: {
+          status: "ACTIF",
+          OR: [
+            { title: { contains: q, mode: "insensitive" } },
+            { descriptionText: { contains: q, mode: "insensitive" } },
+            { tags: { hasSome: queryWords } },
+          ],
+        },
+        include: {
+          user: { select: { id: true, name: true, country: true, role: true } },
+          category: { select: { name: true } },
+        },
+        take: 20,
+        orderBy: { orderCount: "desc" },
+      });
+
+      // Search freelancers/agencies
+      const users = await prisma.user.findMany({
+        where: {
+          status: "ACTIF",
+          role: type === "agence" ? "AGENCE" : type === "freelance" ? "FREELANCE" : { in: ["FREELANCE", "AGENCE"] },
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { freelancerProfile: { title: { contains: q, mode: "insensitive" } } },
+            { freelancerProfile: { skills: { hasSome: queryWords } } },
+          ],
+        },
+        include: {
+          freelancerProfile: { select: { title: true, bio: true, skills: true, hourlyRate: true } },
+          agencyProfile: { select: { agencyName: true, description: true } },
+          _count: { select: { reviewsReceived: true, ordersAsFreelance: true } },
+        },
+        take: 20,
+      });
+
+      const results = users.map((u) => ({
+        id: u.id,
+        name: u.role === "AGENCE" ? u.agencyProfile?.agencyName || u.name : u.name,
+        avatar: u.avatar || "",
+        title: u.freelancerProfile?.title || u.agencyProfile?.description?.slice(0, 60) || "",
+        rating: 0,
+        reviews: u._count.reviewsReceived,
+        hourlyRate: u.freelancerProfile?.hourlyRate || 0,
+        location: u.country || "",
+        skills: u.freelancerProfile?.skills || [],
+        bio: u.freelancerProfile?.bio || u.agencyProfile?.description || "",
+        completionRate: 0,
+        responseTime: "< 2h",
+        matchScore: 50,
+        type: u.role === "AGENCE" ? "agence" as const : "freelance" as const,
+      }));
+
+      return NextResponse.json({
+        results,
+        entities: { skills: queryWords, budget: budget ? parseInt(budget) : null, type: type || null },
+      });
+    } catch (error) {
+      console.error("[API /search GET] Prisma error:", error);
+      return NextResponse.json({ results: [], entities: { skills: [], budget: null, type: null } });
+    }
   }
 
   const queryLower = q.toLowerCase();

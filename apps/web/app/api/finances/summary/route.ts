@@ -17,46 +17,44 @@ export async function GET() {
       return NextResponse.json(summary);
     } else {
       const userId = session.user.id;
+      const userRole = session.user.role;
 
-      // Available balance: completed payments where user is payee
-      const completedAgg = await prisma.payment.aggregate({
-        where: { payeeId: userId, status: "COMPLETE" },
-        _sum: { amount: true },
-      });
+      if (userRole === "CLIENT") {
+        // Client: show spending summary
+        const [totalSpent, pendingOrders] = await Promise.all([
+          prisma.order.aggregate({ where: { clientId: userId, status: "TERMINE" }, _sum: { amount: true } }),
+          prisma.order.aggregate({ where: { clientId: userId, status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION"] } }, _sum: { amount: true } }),
+        ]);
 
-      // Pending: payments still awaiting where user is payee
-      const pendingAgg = await prisma.payment.aggregate({
-        where: { payeeId: userId, status: "EN_ATTENTE" },
-        _sum: { amount: true },
-      });
+        return NextResponse.json({
+          available: 0,
+          pending: Math.round((pendingOrders._sum.amount ?? 0) * 100) / 100,
+          totalEarned: 0,
+          totalSpent: Math.round((totalSpent._sum.amount ?? 0) * 100) / 100,
+          commissionThisMonth: 0,
+        });
+      }
 
-      // Total earned: sum of all completed payments
-      const totalEarnedAgg = await prisma.payment.aggregate({
-        where: { payeeId: userId, status: "COMPLETE" },
-        _sum: { amount: true },
-      });
+      // Freelance / Agence: show earnings summary
+      const [completedAgg, pendingAgg, totalEarnedAgg] = await Promise.all([
+        prisma.payment.aggregate({ where: { payeeId: userId, status: "COMPLETE" }, _sum: { amount: true } }),
+        prisma.payment.aggregate({ where: { payeeId: userId, status: "EN_ATTENTE" }, _sum: { amount: true } }),
+        prisma.payment.aggregate({ where: { payeeId: userId, status: "COMPLETE" }, _sum: { amount: true } }),
+      ]);
 
-      // Commission this month
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const commissionAgg = await prisma.payment.aggregate({
-        where: {
-          payeeId: userId,
-          status: "COMPLETE",
-          type: "COMMISSION",
-          createdAt: { gte: monthStart },
-        },
+        where: { payeeId: userId, status: "COMPLETE", type: "commission", createdAt: { gte: monthStart } },
         _sum: { amount: true },
       });
 
-      const summary = {
-        available: completedAgg._sum.amount ?? 0,
-        pending: pendingAgg._sum.amount ?? 0,
-        totalEarned: totalEarnedAgg._sum.amount ?? 0,
-        commissionThisMonth: Math.abs(commissionAgg._sum.amount ?? 0),
-      };
-
-      return NextResponse.json(summary);
+      return NextResponse.json({
+        available: Math.round((completedAgg._sum.amount ?? 0) * 100) / 100,
+        pending: Math.round((pendingAgg._sum.amount ?? 0) * 100) / 100,
+        totalEarned: Math.round((totalEarnedAgg._sum.amount ?? 0) * 100) / 100,
+        commissionThisMonth: Math.round(Math.abs(commissionAgg._sum.amount ?? 0) * 100) / 100,
+      });
     }
   } catch (error) {
     console.error("[API /finances/summary GET]", error);
