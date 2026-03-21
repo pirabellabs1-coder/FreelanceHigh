@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { TiptapRenderer } from "@/components/formations/TiptapRenderer";
 
 interface BlogArticle {
   id: string;
@@ -81,16 +82,6 @@ export default function BlogArticlePage() {
     );
   }
 
-  // Simple Markdown-like rendering
-  function renderContent(content: string) {
-    return content.split("\n").map((line, i) => {
-      if (line.startsWith("## ")) return <h2 key={i} className="text-xl font-bold text-white mt-8 mb-3">{line.replace("## ", "")}</h2>;
-      if (line.startsWith("### ")) return <h3 key={i} className="text-lg font-bold text-white mt-6 mb-2">{line.replace("### ", "")}</h3>;
-      if (line.trim() === "") return <br key={i} />;
-      return <p key={i} className="text-slate-300 leading-relaxed mb-2">{line}</p>;
-    });
-  }
-
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
@@ -123,8 +114,8 @@ export default function BlogArticlePage() {
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-6 lg:px-0 pb-24">
-        <article className="prose prose-invert max-w-none">
-          {renderContent(article.content)}
+        <article>
+          <TiptapRenderer content={article.content} className="prose-lg prose-invert" />
         </article>
 
         {/* Tags */}

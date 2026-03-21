@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useToastStore } from "@/store/dashboard";
 import { useAdminStore, type AdminBlogArticle } from "@/store/admin";
 import { cn } from "@/lib/utils";
+import { FormationRichEditor } from "@/components/formations/FormationRichEditor";
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   publie: { label: "Publié", cls: "bg-emerald-500/20 text-emerald-400" },
@@ -90,6 +91,7 @@ export default function AdminBlog() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [tab, setTab] = useState("tous");
   const [saving, setSaving] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
     syncBlog();
@@ -110,6 +112,7 @@ export default function AdminBlog() {
   function openAdd() {
     setForm(emptyForm);
     setEditId(null);
+    setFullscreen(false);
     setModal("add");
   }
 
@@ -303,8 +306,13 @@ export default function AdminBlog() {
       {/* Modal Éditeur */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-2xl border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-lg text-white mb-6">{modal === "add" ? "Nouvel article" : "Modifier l'article"}</h3>
+          <div onClick={e => e.stopPropagation()} className={cn("bg-neutral-dark rounded-2xl p-6 w-full border border-border-dark shadow-2xl overflow-y-auto transition-all", fullscreen ? "max-w-none m-4 max-h-[calc(100vh-2rem)]" : "max-w-3xl max-h-[90vh]")}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-lg text-white">{modal === "add" ? "Nouvel article" : "Modifier l'article"}</h3>
+              <button onClick={() => setFullscreen(f => !f)} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-border-dark transition-colors" title={fullscreen ? "Réduire" : "Plein écran"}>
+                <span className="material-symbols-outlined text-lg">{fullscreen ? "fullscreen_exit" : "fullscreen"}</span>
+              </button>
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -331,8 +339,13 @@ export default function AdminBlog() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Contenu * (Markdown supporté)</label>
-                <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={10} className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white outline-none resize-y focus:ring-2 focus:ring-primary/30 font-mono" placeholder="Rédigez votre article ici... ## Titres supportés" />
+                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Contenu *</label>
+                <FormationRichEditor
+                  content={form.content}
+                  onChange={(html) => setForm(f => ({ ...f, content: html }))}
+                  placeholder="Rédigez votre article ici..."
+                  minHeight={fullscreen ? 400 : 250}
+                />
               </div>
 
               <div>
