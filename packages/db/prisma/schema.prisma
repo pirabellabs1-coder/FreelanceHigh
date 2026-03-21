@@ -840,6 +840,23 @@ model LoginAttempt {
   @@index([ipAddress, createdAt])
 }
 
+// ── Admin Team Invitations (magic link) ──
+
+model AdminInvitation {
+  id        String   @id @default(cuid())
+  email     String
+  name      String
+  adminRole String
+  token     String   @unique
+  status    String   @default("pending") // pending | accepted | expired
+  invitedBy String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
 // ── Platform Configuration (key-value store) ──
 
 model PlatformConfig {

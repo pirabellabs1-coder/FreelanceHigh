@@ -25,6 +25,9 @@ export function KycRequiredBanner() {
 
   const statusInfo = getKycStatusLabel(kycLevel);
 
+  // Adapter le lien KYC selon l'espace de l'utilisateur
+  const kycHref = role === "agence" ? "/agence/kyc" : "/dashboard/kyc";
+
   return (
     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
       <span className="material-symbols-outlined text-amber-400 text-xl flex-shrink-0 mt-0.5">
@@ -39,7 +42,7 @@ export function KycRequiredBanner() {
         </p>
         <div className="flex items-center gap-3 mt-3">
           <Link
-            href="/dashboard/kyc"
+            href={kycHref}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-black text-xs font-bold rounded-lg hover:bg-amber-400 transition-colors"
           >
             <span className="material-symbols-outlined text-sm">verified_user</span>

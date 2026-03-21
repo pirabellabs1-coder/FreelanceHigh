@@ -122,11 +122,13 @@ export async function PATCH(
       pause: `Votre service "${service.title}" a ete mis en pause par l'administration.`,
     };
 
-    await prisma.notification.create({
-      data: { userId: service.userId, title: notifTitles[action], message: notifMessages[action], type: "ADMIN_ACTION", link: "/dashboard/services" },
-    });
+    // Notification + email + audit (non-blocking — ne doit pas faire echouer l'action)
+    try {
+      await prisma.notification.create({
+        data: { userId: service.userId, title: notifTitles[action], message: notifMessages[action], type: "ADMIN_ACTION", link: "/dashboard/services" },
+      });
+    } catch (notifErr) { console.error("[Service] Notification error:", notifErr); }
 
-    // Send email for approve/refuse
     if (action === "approve") {
       sendServiceApprovedEmail(service.user.email, service.user.name, service.title).catch(() => {});
     }
@@ -134,7 +136,6 @@ export async function PATCH(
       sendServiceRejectedEmail(service.user.email, service.user.name, service.title, reason || "Non conforme aux directives").catch(() => {});
     }
 
-    // Audit log
     await createAuditLog({
       actorId: session.user.id,
       action: `service.${action}`,
@@ -142,7 +143,7 @@ export async function PATCH(
       targetId: id,
       targetUserId: service.userId,
       details: { title: service.title, reason },
-    });
+    }).catch((err) => console.error("[Service] Audit error:", err));
 
     return NextResponse.json({ success: true, message: `Service "${service.title}" ${action}` });
   } catch (error) {
