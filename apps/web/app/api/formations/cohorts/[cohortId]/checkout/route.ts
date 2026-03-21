@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
 import { PaymentService } from "@/lib/payments/service";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3450";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://freelancehigh.com";
 
 export async function POST(
   _req: NextRequest,
