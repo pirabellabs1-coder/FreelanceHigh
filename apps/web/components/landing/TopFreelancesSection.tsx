@@ -15,6 +15,8 @@ interface TopFreelance {
   rating: number;
   skills: string[];
   dailyRateEur: number;
+  completedOrders: number;
+  reviewCount: number;
   badge: string;
   badges?: string[];
   image: string;
@@ -108,8 +110,20 @@ export function TopFreelancesSection() {
                   )}
                 </div>
 
+                {/* Stats: ventes + avis */}
+                <div className="flex items-center gap-4 mb-6 text-sm text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-emerald-500">shopping_cart</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{f.completedOrders}</span> vente{f.completedOrders !== 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{f.reviewCount}</span> avis
+                  </div>
+                </div>
+
                 {f.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-8">
+                  <div className="flex flex-wrap gap-2 mb-6">
                     {f.skills.map((skill) => (
                       <span
                         key={skill}
@@ -121,19 +135,22 @@ export function TopFreelancesSection() {
                   </div>
                 )}
 
-                {f.dailyRateEur > 0 && (
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-700">
+                  {f.dailyRateEur > 0 ? (
                     <div className="flex flex-col">
                       <span className="text-slate-500 text-[10px] font-bold uppercase">{t("daily_rate")}</span>
                       <span className="text-xl font-extrabold text-slate-900 dark:text-white">
                         {format(f.dailyRateEur)} <span className="text-sm font-normal text-slate-500">{t("per_day")}</span>
                       </span>
                     </div>
-                    <span className="bg-primary/10 text-primary hover:bg-primary hover:text-white p-3 rounded-xl transition-all">
-                      <span className="material-symbols-outlined">visibility</span>
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div />
+                  )}
+                  <span className="bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-xl group-hover:bg-primary/90 transition-all flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">visibility</span>
+                    Voir le profil
+                  </span>
+                </div>
               </div>
             </Link>
           ))}

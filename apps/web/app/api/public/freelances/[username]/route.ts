@@ -6,13 +6,21 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ username: string }> }
 ) {
-  const { username } = await params;
+  try {
+    const { username } = await params;
 
-  if (IS_DEV) {
-    return handleDevMode(username);
+    if (IS_DEV) {
+      return handleDevMode(username);
+    }
+
+    return handleProductionMode(username);
+  } catch (error) {
+    console.error("[API /public/freelances/[username] GET]", error);
+    return NextResponse.json(
+      { error: "Erreur serveur lors du chargement du profil" },
+      { status: 500 }
+    );
   }
-
-  return handleProductionMode(username);
 }
 
 // ── Production: Prisma ─────────────────────────────────────────────────────
@@ -63,10 +71,10 @@ async function handleProductionMode(username: string) {
     };
   });
 
-  // Get reviews
+  // Get reviews (Review uses targetId, not freelanceId; author is the reviewer)
   const reviews = await prisma.review.findMany({
-    where: { freelanceId: user.id },
-    include: { client: { select: { name: true, image: true } } },
+    where: { targetId: user.id },
+    include: { author: { select: { name: true, image: true } } },
     orderBy: { createdAt: "desc" },
     take: 10,
   });
@@ -148,8 +156,9 @@ async function handleProductionMode(username: string) {
         id: r.id,
         rating: r.rating,
         comment: r.comment,
-        clientName: r.client?.name || "Client",
-        clientAvatar: r.client?.image || "",
+        clientName: r.author?.name || "Client",
+        clientAvatar: r.author?.image || "",
+        clientId: r.authorId,
         createdAt: r.createdAt,
       })),
       certificates,
