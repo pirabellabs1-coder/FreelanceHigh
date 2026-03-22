@@ -5,6 +5,26 @@ import { INSTRUCTOR_COMMISSION, PLATFORM_COMMISSION } from "@/lib/formations/con
 
 export { INSTRUCTOR_COMMISSION, PLATFORM_COMMISSION };
 
+/**
+ * Get or auto-create InstructeurProfile for a user.
+ * Prevents 403 errors when the profile hasn't been created yet.
+ */
+export async function getOrCreateInstructeurProfile(userId: string) {
+  let profile = await prisma.instructeurProfile.findUnique({
+    where: { userId },
+  });
+  if (!profile) {
+    // Auto-create with default values — user can complete later
+    profile = await prisma.instructeurProfile.create({
+      data: {
+        userId,
+        status: "ACTIF",
+      },
+    });
+  }
+  return profile;
+}
+
 // Include pour les cards de formation
 export const formationCardInclude = {
   category: {

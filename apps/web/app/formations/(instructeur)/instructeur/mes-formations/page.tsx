@@ -40,7 +40,7 @@ const STATUS_LABELS_FR: Record<string, string> = {
   BROUILLON: "Brouillon",
   EN_ATTENTE: "En attente",
   ACTIF: "Actif",
-  ARCHIVE: "Archivé",
+  ARCHIVE: "Archivée",
 };
 
 const STATUS_LABELS_EN: Record<string, string> = {

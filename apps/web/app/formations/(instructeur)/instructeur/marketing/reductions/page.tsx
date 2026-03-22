@@ -72,10 +72,10 @@ function generateCode(): string {
 
 function getStatus(d: DiscountCode): { label: string; color: string } {
   if (d.maxUses !== null && d.usedCount >= d.maxUses) {
-    return { label: "Epuise", color: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:bg-slate-700 dark:text-slate-300" };
+    return { label: "Épuisé", color: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:bg-slate-700 dark:text-slate-300" };
   }
   if (d.expiresAt && new Date(d.expiresAt) < new Date()) {
-    return { label: "Expire", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+    return { label: "Expiré", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
   }
   if (!d.isActive) {
     return { label: "Inactif", color: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:bg-slate-700 dark:text-slate-300" };
@@ -222,18 +222,18 @@ export default function ReductionsPage() {
     const errors: FormErrors = {};
 
     if (!form.code || form.code.length < 3) {
-      errors.code = "Le code doit contenir au moins 3 caracteres";
+      errors.code = "Le code doit contenir au moins 3 caractères";
     }
     if (form.code.length > 20) {
-      errors.code = "Le code ne peut pas depasser 20 caracteres";
+      errors.code = "Le code ne peut pas dépasser 20 caractères";
     }
 
     const val = parseFloat(form.discountValue);
     if (!form.discountValue || isNaN(val) || val <= 0) {
-      errors.discountValue = "Valeur de reduction invalide";
+      errors.discountValue = "Valeur de réduction invalide";
     }
     if (form.discountType === "PERCENTAGE" && val > 100) {
-      errors.discountValue = "Le pourcentage ne peut pas depasser 100";
+      errors.discountValue = "Le pourcentage ne peut pas dépasser 100";
     }
 
     setFormErrors(errors);
@@ -273,7 +273,7 @@ export default function ReductionsPage() {
         resetForm();
       } else {
         const data = await res.json();
-        setFormErrors({ general: data.error || "Erreur lors de la creation" });
+        setFormErrors({ general: data.error || "Erreur lors de la création" });
       }
     } catch {
       setFormErrors({ general: "Erreur de connexion" });
@@ -343,10 +343,10 @@ export default function ReductionsPage() {
             <span className="text-slate-300">/</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white dark:text-slate-100">
-            Codes de reduction
+            Codes de réduction
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Creez et gerez vos codes promo avec controle avance
+            Créez et gérez vos codes promo avec contrôle avancé
           </p>
         </div>
         <button
@@ -385,7 +385,7 @@ export default function ReductionsPage() {
           icon={TrendingUp}
           color="text-emerald-600"
           bg="bg-emerald-50 dark:bg-emerald-900/20"
-          label="Revenus generes"
+          label="Revenus générés"
           value={`${stats.totalRevenue.toFixed(0)}€`}
         />
       </div>
@@ -395,17 +395,17 @@ export default function ReductionsPage() {
         <div className="text-center py-20 bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
           <Tag className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-slate-600 dark:text-slate-400">
-            Aucun code de reduction
+            Aucun code de réduction
           </h2>
           <p className="text-sm text-slate-400 mt-2 max-w-sm mx-auto">
-            Creez votre premier code de reduction pour attirer plus d&apos;apprenants et booster vos ventes.
+            Créez votre premier code de réduction pour attirer plus d&apos;apprenants et booster vos ventes.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center gap-2 bg-primary text-white font-bold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors text-sm mt-6"
           >
             <Plus className="w-4 h-4" />
-            Creer un code
+            Créer un code
           </button>
         </div>
       ) : (
@@ -417,7 +417,7 @@ export default function ReductionsPage() {
             <span>Valeur</span>
             <span>Utilisations</span>
             <span>Expiration</span>
-            <span>Portee</span>
+            <span>Portée</span>
             <span>Statut</span>
             <span className="text-right">Actions</span>
           </div>
@@ -500,7 +500,7 @@ export default function ReductionsPage() {
                         })}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-400 italic">Illimite</span>
+                      <span className="text-xs text-slate-400 italic">Illimité</span>
                     )}
                   </div>
 
@@ -524,7 +524,7 @@ export default function ReductionsPage() {
                     <button
                       onClick={() => toggleActive(d.id)}
                       className="p-1.5 rounded-lg hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
-                      title={d.isActive ? "Desactiver" : "Activer"}
+                      title={d.isActive ? "Désactiver" : "Activer"}
                     >
                       {d.isActive ? (
                         <ToggleRight className="w-5 h-5 text-green-500" />
@@ -549,7 +549,7 @@ export default function ReductionsPage() {
           <div className="hidden lg:flex items-center justify-between px-5 py-3 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500">
             <span>{discounts.length} code(s) au total</span>
             <span className="font-bold text-green-600">
-              Revenus generes : {stats.totalRevenue.toFixed(0)}€
+              Revenus générés : {stats.totalRevenue.toFixed(0)}€
             </span>
           </div>
         </div>
@@ -567,7 +567,7 @@ export default function ReductionsPage() {
             <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100 flex items-center gap-2">
                 <Tag className="w-5 h-5 text-primary" />
-                Nouveau code de reduction
+                Nouveau code de réduction
               </h2>
               <button
                 onClick={() => { setShowCreateModal(false); resetForm(); }}
@@ -615,7 +615,7 @@ export default function ReductionsPage() {
                     type="button"
                     onClick={() => updateField("code", generateCode())}
                     className="flex items-center gap-1.5 px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
-                    title="Generer automatiquement"
+                    title="Générer automatiquement"
                   >
                     <Sparkles className="w-4 h-4 text-amber-500" />
                   </button>
@@ -631,7 +631,7 @@ export default function ReductionsPage() {
               {/* Type toggle */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Type de reduction *
+                  Type de réduction *
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -664,7 +664,7 @@ export default function ReductionsPage() {
               {/* Value input */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  {form.discountType === "PERCENTAGE" ? "Reduction (%) *" : "Montant (€) *"}
+                  {form.discountType === "PERCENTAGE" ? "Réduction (%) *" : "Montant (€) *"}
                 </label>
                 <div className="relative w-full max-w-[200px]">
                   {form.discountType === "PERCENTAGE" ? (
@@ -701,7 +701,7 @@ export default function ReductionsPage() {
               {/* Scope */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Portee
+                  Portée
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(
@@ -741,7 +741,7 @@ export default function ReductionsPage() {
                     min={1}
                     value={form.maxUses}
                     onChange={(e) => updateField("maxUses", e.target.value)}
-                    placeholder="Illimite"
+                    placeholder="Illimité"
                     className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
                   />
                 </div>
@@ -755,7 +755,7 @@ export default function ReductionsPage() {
                     min={1}
                     value={form.maxUsesPerUser}
                     onChange={(e) => updateField("maxUsesPerUser", e.target.value)}
-                    placeholder="Illimite"
+                    placeholder="Illimité"
                     className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-700"
                   />
                 </div>
@@ -796,7 +796,7 @@ export default function ReductionsPage() {
               {/* Preview */}
               {form.code && form.discountValue && (
                 <div className="bg-gradient-to-r from-primary/5 to-purple-50 dark:from-primary/10 dark:to-purple-900/20 rounded-xl border border-primary/20 p-4">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Apercu</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Aperçu</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <code className="font-mono text-base font-bold text-primary bg-white dark:bg-slate-900 dark:bg-slate-800 px-3 py-1 rounded-lg border border-primary/20">
                       {form.code}
@@ -832,12 +832,12 @@ export default function ReductionsPage() {
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creation...
+                    Création...
                   </>
                 ) : (
                   <>
                     <Tag className="w-4 h-4" />
-                    Creer le code
+                    Créer le code
                   </>
                 )}
               </button>
@@ -862,7 +862,7 @@ export default function ReductionsPage() {
                 Supprimer ce code ?
               </h3>
               <p className="text-sm text-slate-500 mb-6">
-                Cette action est irreversible. Le code ne pourra plus etre utilise.
+                Cette action est irréversible. Le code ne pourra plus être utilisé.
               </p>
               <div className="flex gap-3">
                 <button

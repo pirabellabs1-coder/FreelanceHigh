@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 async function getInstructeurAndPromo(userId: string, promoId: string) {
-  const instructeur = await prisma.instructeurProfile.findUnique({ where: { userId } });
-  if (!instructeur) return { instructeur: null, promo: null };
+  const instructeur = await getOrCreateInstructeurProfile(userId);
 
   const promo = await prisma.flashPromotion.findUnique({
     where: { id: promoId },
@@ -41,9 +41,6 @@ export async function PUT(
     }
 
     const { instructeur, promo } = await getInstructeurAndPromo(session.user.id, id);
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
     if (!promo) {
       return NextResponse.json({ error: "Promotion non trouvée" }, { status: 404 });
     }
@@ -81,9 +78,6 @@ export async function DELETE(
     }
 
     const { instructeur, promo } = await getInstructeurAndPromo(session.user.id, id);
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
     if (!promo) {
       return NextResponse.json({ error: "Promotion non trouvée" }, { status: 404 });
     }

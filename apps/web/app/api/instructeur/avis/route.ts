@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 export async function GET(_req: NextRequest) {
   try {
@@ -12,13 +13,7 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!instructeur) {
-      return NextResponse.json({ error: "Profil instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const avis = await prisma.formationReview.findMany({
       where: {

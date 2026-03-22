@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 const DEV_MODE = process.env.DEV_MODE === "true" || !process.env.DATABASE_URL;
 
@@ -80,12 +81,7 @@ export async function GET(req: NextRequest) {
 
     const prisma = (await import("@freelancehigh/db")).default;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouve" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const campaigns = await prisma.campaignTracker.findMany({
       where: { instructeurId: instructeur.id },
@@ -182,12 +178,7 @@ export async function POST(req: NextRequest) {
 
     const prisma = (await import("@freelancehigh/db")).default;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouve" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     // Check slug uniqueness
     const existing = await prisma.campaignTracker.findUnique({

@@ -184,7 +184,7 @@ export default function InstructeurDashboardPage() {
             {fr ? "Tableau de bord" : "Dashboard"}
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            {fr ? "Bienvenue," : "Welcome,"} {session?.user?.name}
+            {fr ? "Bienvenue," : "Welcome,"} {(session?.user?.name || "").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")}
           </p>
         </div>
         <Link

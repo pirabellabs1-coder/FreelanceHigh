@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 export async function PUT(
   req: NextRequest,
@@ -18,12 +19,7 @@ export async function PUT(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const existing = await prisma.marketingPixel.findFirst({
       where: { id, instructeurId: instructeur.id },
@@ -62,12 +58,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const existing = await prisma.marketingPixel.findFirst({
       where: { id, instructeurId: instructeur.id },

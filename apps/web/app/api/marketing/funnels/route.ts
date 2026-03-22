@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 const DEV_MODE = process.env.DEV_MODE === "true" || !process.env.DATABASE_URL;
 
@@ -122,12 +123,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const funnels = await db.salesFunnel.findMany({
       where: { instructeurId: instructeur.id },
@@ -237,12 +233,7 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = prisma as any;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const funnel = await db.salesFunnel.create({
       data: {
@@ -334,12 +325,7 @@ export async function PUT(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = prisma as any;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const existing = await db.salesFunnel.findFirst({
       where: { id, instructeurId: instructeur.id },
@@ -417,12 +403,7 @@ export async function DELETE(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = prisma as any;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const existing = await db.salesFunnel.findFirst({
       where: { id, instructeurId: instructeur.id },

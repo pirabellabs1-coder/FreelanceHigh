@@ -117,7 +117,7 @@ export default function AffiliateManagementPage() {
         onSuccess: (data) => {
           const d = data as { program?: AffiliateProgram };
           if (d.program) setProgram(d.program);
-          setSuccessMsg("Parametres sauvegardes avec succes");
+          setSuccessMsg("Paramètres sauvegardés avec succès");
           setTimeout(() => setSuccessMsg(""), 3000);
           setSaving(false);
         },
@@ -136,7 +136,7 @@ export default function AffiliateManagementPage() {
         onSuccess: (data) => {
           const d = data as { program?: AffiliateProgram };
           if (d.program) setProgram(d.program);
-          setSuccessMsg(newActive ? "Programme active" : "Programme desactive");
+          setSuccessMsg(newActive ? "Programme activé" : "Programme désactivé");
           setTimeout(() => setSuccessMsg(""), 3000);
           setSaving(false);
         },
@@ -153,12 +153,12 @@ export default function AffiliateManagementPage() {
           const d = data as { program?: AffiliateProgram };
           if (d.program) setProgram(d.program);
           const messages: Record<string, string> = {
-            approve: "Affilie approuve",
-            reject: "Affilie refuse",
-            suspend: "Affilie suspendu",
-            reactivate: "Affilie reactive",
+            approve: "Affilié approuvé",
+            reject: "Affilié refusé",
+            suspend: "Affilié suspendu",
+            reactivate: "Affilié réactivé",
           };
-          setSuccessMsg(messages[action] || "Action effectuee");
+          setSuccessMsg(messages[action] || "Action effectuée");
           setTimeout(() => setSuccessMsg(""), 3000);
         },
         onError: () => setError("Erreur lors de l'action"),
@@ -199,7 +199,7 @@ export default function AffiliateManagementPage() {
         <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
         <h2 className="text-xl font-bold text-slate-600 dark:text-slate-300">Programme d&apos;affiliation</h2>
         <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          Creez un programme d&apos;affiliation pour permettre a d&apos;autres utilisateurs de promouvoir vos formations et produits en echange d&apos;une commission.
+          Créez un programme d&apos;affiliation pour permettre à d&apos;autres utilisateurs de promouvoir vos formations et produits en échange d&apos;une commission.
         </p>
         <button
           onClick={() => {
@@ -208,7 +208,7 @@ export default function AffiliateManagementPage() {
           }}
           className="mt-6 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
         >
-          Creer le programme
+          Créer le programme
         </button>
       </div>
     );
@@ -225,7 +225,7 @@ export default function AffiliateManagementPage() {
         <div>
           <h1 className="text-2xl font-bold">Programme d&apos;affiliation</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Gerez vos affilies et suivez les performances
+            Gérez vos affiliés et suivez les performances
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -233,7 +233,7 @@ export default function AffiliateManagementPage() {
             href="/formations/instructeur/marketing/affilies/tableau-de-bord"
             className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-colors"
           >
-            Mon tableau affilie
+            Mon tableau affilié
           </Link>
           <button
             onClick={toggleActive}
@@ -245,7 +245,7 @@ export default function AffiliateManagementPage() {
             }`}
           >
             {isActive ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-            {isActive ? "Actif" : "Desactive"}
+            {isActive ? "Actif" : "Désactivé"}
           </button>
         </div>
       </div>
@@ -278,7 +278,7 @@ export default function AffiliateManagementPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           icon={<Users className="w-5 h-5" />}
-          label="Affilies"
+          label="Affiliés"
           value={program.totalAffiliates}
           color="text-violet-600 bg-violet-50 dark:bg-violet-900/20"
         />
@@ -296,7 +296,7 @@ export default function AffiliateManagementPage() {
         />
         <KpiCard
           icon={<DollarSign className="w-5 h-5" />}
-          label="Total verse"
+          label="Total versé"
           value={`${program.totalPaidOut.toFixed(0)}€`}
           color="text-amber-600 bg-amber-50 dark:bg-amber-900/20"
         />
@@ -310,9 +310,9 @@ export default function AffiliateManagementPage() {
               <Link2 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-bold">Lien d&apos;inscription affilie</p>
+              <p className="text-sm font-bold">Lien d&apos;inscription affilié</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Partagez ce lien pour recruter de nouveaux affilies
+                Partagez ce lien pour recruter de nouveaux affiliés
               </p>
             </div>
           </div>
@@ -340,7 +340,7 @@ export default function AffiliateManagementPage() {
           <div className="flex items-center gap-3">
             <Settings className="w-5 h-5 text-slate-400" />
             <div>
-              <p className="text-sm font-bold">Parametres du programme</p>
+              <p className="text-sm font-bold">Paramètres du programme</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Commission: {commissionPercent}% | Cookie: {cookieDays}j | {autoApprove ? "Auto-approbation" : "Approbation manuelle"}
               </p>
@@ -369,14 +369,14 @@ export default function AffiliateManagementPage() {
                 <span className="text-lg font-bold text-primary w-14 text-right">{commissionPercent}%</span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                L&apos;affilie recevra {commissionPercent}% du montant de chaque vente generee
+                L&apos;affilié recevra {commissionPercent}% du montant de chaque vente générée
               </p>
             </div>
 
             {/* Cookie duration */}
             <div>
               <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2">
-                Duree du cookie de suivi
+                Durée du cookie de suivi
               </label>
               <div className="flex flex-wrap gap-2">
                 {COOKIE_DAYS_OPTIONS.map((days) => (
@@ -395,7 +395,7 @@ export default function AffiliateManagementPage() {
               </div>
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Si un visiteur achete dans les {cookieDays} jours apres avoir clique, la commission est attribuee
+                Si un visiteur achète dans les {cookieDays} jours après avoir cliqué, la commission est attribuée
               </p>
             </div>
 
@@ -403,7 +403,7 @@ export default function AffiliateManagementPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Approbation automatique</p>
-                <p className="text-xs text-slate-400">Les nouveaux affilies sont automatiquement approuves</p>
+                <p className="text-xs text-slate-400">Les nouveaux affiliés sont automatiquement approuvés</p>
               </div>
               <button
                 onClick={() => setAutoApprove(!autoApprove)}
@@ -414,13 +414,13 @@ export default function AffiliateManagementPage() {
                 }`}
               >
                 {autoApprove ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                {autoApprove ? "Active" : "Desactive"}
+                {autoApprove ? "Activé" : "Désactivé"}
               </button>
             </div>
 
             {/* Scope */}
             <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Portee du programme</p>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Portée du programme</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setApplyToAll(true)}
@@ -442,7 +442,7 @@ export default function AffiliateManagementPage() {
                   }`}
                 >
                   <Settings className="w-5 h-5 mx-auto mb-1" />
-                  Selection specifique
+                  Sélection spécifique
                 </button>
               </div>
             </div>
@@ -512,23 +512,23 @@ export default function AffiliateManagementPage() {
       <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
         <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
-          Affilies actifs ({activeAffiliates.length})
+          Affiliés actifs ({activeAffiliates.length})
         </h3>
 
         {activeAffiliates.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">
-            Aucun affilie actif pour le moment. Partagez votre lien d&apos;inscription pour recruter.
+            Aucun affilié actif pour le moment. Partagez votre lien d&apos;inscription pour recruter.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Affilie</th>
+                  <th className="text-left py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Affilié</th>
                   <th className="text-left py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Code</th>
                   <th className="text-right py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Clics</th>
                   <th className="text-right py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Conv.</th>
-                  <th className="text-right py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Gagne</th>
+                  <th className="text-right py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Gagné</th>
                   <th className="text-right py-2 px-2 font-semibold text-slate-500 text-xs uppercase">En attente</th>
                   <th className="text-center py-2 px-2 font-semibold text-slate-500 text-xs uppercase">Actions</th>
                 </tr>
@@ -602,7 +602,7 @@ export default function AffiliateManagementPage() {
                   className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                 >
                   <Play className="w-3 h-3" />
-                  Reactiver
+                  Réactiver
                 </button>
               </div>
             ))}

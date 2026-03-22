@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 
 // ── DEV MOCK DATA ──────────────────────────────────────────────────────────
 
@@ -63,12 +64,7 @@ export async function GET(req: NextRequest) {
 
     const prisma = (await import("@freelancehigh/db")).default;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouve" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const discounts = await prisma.discountCode.findMany({
       where: { instructeurId: instructeur.id },
@@ -176,12 +172,7 @@ export async function POST(req: NextRequest) {
 
     const prisma = (await import("@freelancehigh/db")).default;
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouve" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     // Check for duplicate code
     const existing = await prisma.discountCode.findUnique({ where: { code: code.toUpperCase() } });

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { getOrCreateInstructeurProfile } from "@/lib/formations/prisma-helpers";
 import { z } from "zod";
 
 const PIXEL_REGEXES: Record<string, RegExp> = {
@@ -22,12 +23,7 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     const pixels = await prisma.marketingPixel.findMany({
       where: { instructeurId: instructeur.id },
@@ -59,12 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const instructeur = await prisma.instructeurProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (!instructeur) {
-      return NextResponse.json({ error: "Instructeur non trouvé" }, { status: 403 });
-    }
+    const instructeur = await getOrCreateInstructeurProfile(session.user.id);
 
     // Validate pixel ID format
     const regex = PIXEL_REGEXES[data.type];
