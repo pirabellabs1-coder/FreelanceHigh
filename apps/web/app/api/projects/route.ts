@@ -7,8 +7,8 @@ import { projectStore } from "@/lib/dev/data-store";
 import { z } from "zod";
 
 const createProjectSchema = z.object({
-  title: z.string().min(5, "Titre trop court").max(200),
-  description: z.string().min(20, "Description trop courte").max(5000),
+  title: z.string().min(3, "Titre trop court").max(200),
+  description: z.string().min(10, "Description trop courte").max(5000),
   category: z.string().optional(),
   budgetMin: z.number().min(0).max(1000000).optional(),
   budgetMax: z.number().min(0).max(1000000).optional(),
@@ -16,6 +16,10 @@ const createProjectSchema = z.object({
   urgency: z.string().optional(),
   contractType: z.string().optional(),
   skills: z.array(z.string()).max(20).optional(),
+  status: z.string().optional(),
+  visibility: z.string().optional(),
+  subcategories: z.array(z.string()).optional(),
+  budget: z.object({ type: z.string(), min: z.number(), max: z.number() }).optional(),
 }).refine(
   (data) => !data.budgetMin || !data.budgetMax || data.budgetMin <= data.budgetMax,
   { message: "Le budget min doit être inférieur au budget max", path: ["budgetMax"] }
@@ -57,7 +61,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const result = createProjectSchema.safeParse(body);
+
+    // Le formulaire client envoie budget: { type, min, max } — normaliser en budgetMin/budgetMax
+    const normalized = {
+      ...body,
+      budgetMin: body.budgetMin ?? body.budget?.min ?? 0,
+      budgetMax: body.budgetMax ?? body.budget?.max ?? 0,
+    };
+
+    const result = createProjectSchema.safeParse(normalized);
     if (!result.success) {
       return NextResponse.json(
         { error: "Données invalides", details: result.error.flatten() },

@@ -304,6 +304,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Create service first (without nested relations to avoid type mismatches)
     const service = await prisma.service.create({
       data: {
         title: body.title,
@@ -325,54 +326,52 @@ export async function POST(request: NextRequest) {
         tags: Array.isArray(body.tags) ? body.tags : [],
         images,
         packages: body.packages || {
-          basic: {
-            name: "Basique",
-            price: basePrice,
-            deliveryDays,
-            revisions: 1,
-            description: "",
-          },
-          standard: {
-            name: "Standard",
-            price: Math.round(basePrice * 1.8),
-            deliveryDays,
-            revisions: 3,
-            description: "",
-          },
-          premium: {
-            name: "Premium",
-            price: Math.round(basePrice * 3),
-            deliveryDays: Math.max(1, deliveryDays - 1),
-            revisions: 5,
-            description: "",
-          },
+          basic: { name: "Basique", price: basePrice, deliveryDays, revisions: 1, description: "" },
+          standard: { name: "Standard", price: Math.round(basePrice * 1.8), deliveryDays, revisions: 3, description: "" },
+          premium: { name: "Premium", price: Math.round(basePrice * 3), deliveryDays: Math.max(1, deliveryDays - 1), revisions: 5, description: "" },
         },
         faq: Array.isArray(body.faq) ? body.faq : undefined,
         extras: Array.isArray(body.extras) ? body.extras : undefined,
-        ...(mediaEntries.length > 0 ? {
-          media: {
-            create: mediaEntries,
-          },
-        } : {}),
-        ...(optionEntries.length > 0 ? {
-          options: {
-            create: optionEntries,
-          },
-        } : {}),
       },
-      include: { category: true, options: true, media: true },
+      include: { category: true },
     });
 
-    // Create notification for the user
-    await prisma.notification.create({
-      data: {
-        userId: session.user.id,
-        title: "Service soumis",
-        message: `Votre service "${body.title}" est en attente de validation`,
-        type: "SYSTEM",
-        link: `/dashboard/services`,
-      },
-    });
+    // Create media entries separately (avoid nested create type issues)
+    if (mediaEntries.length > 0) {
+      try {
+        await prisma.serviceMedia.createMany({
+          data: mediaEntries.map((m) => ({ ...m, serviceId: service.id })),
+        });
+      } catch (mediaErr) {
+        console.error("[Service create] Media creation failed:", mediaErr);
+      }
+    }
+
+    // Create option entries separately
+    if (optionEntries.length > 0) {
+      try {
+        await prisma.serviceOption.createMany({
+          data: optionEntries.map((o) => ({ ...o, serviceId: service.id })),
+        });
+      } catch (optErr) {
+        console.error("[Service create] Options creation failed:", optErr);
+      }
+    }
+
+    // Create notification (non-blocking)
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          title: "Service soumis",
+          message: `Votre service "${body.title}" est en attente de validation`,
+          type: "SYSTEM",
+          link: `/dashboard/services`,
+        },
+      });
+    } catch (notifErr) {
+      console.error("[Service create] Notification failed:", notifErr);
+    }
 
     return NextResponse.json(service);
   } catch (error) {
