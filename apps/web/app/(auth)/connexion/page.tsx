@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const ROLE_REDIRECTS: Record<string, string> = {
@@ -12,13 +12,31 @@ const ROLE_REDIRECTS: Record<string, string> = {
   agence: "/agence",
 };
 
+const AUTH_ERRORS: Record<string, string> = {
+  AccessDenied: "Acces refuse. Veuillez reessayer ou utiliser une autre methode de connexion.",
+  OAuthSignin: "Erreur lors de la connexion avec le fournisseur externe.",
+  OAuthCallback: "Erreur lors du retour du fournisseur externe.",
+  OAuthAccountNotLinked: "Cet email est deja associe a un autre compte. Connectez-vous avec votre methode habituelle.",
+  Callback: "Erreur de connexion. Veuillez reessayer.",
+  Default: "Une erreur est survenue lors de la connexion.",
+};
+
 export default function ConnexionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<"freelance" | "client" | "agence">("freelance");
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Afficher les erreurs OAuth provenant de l'URL (ex: ?error=AccessDenied)
+  useEffect(() => {
+    const urlError = searchParams.get("error");
+    if (urlError) {
+      setError(AUTH_ERRORS[urlError] || AUTH_ERRORS.Default);
+    }
+  }, [searchParams]);
 
   // 2FA challenge state
   const [show2FA, setShow2FA] = useState(false);

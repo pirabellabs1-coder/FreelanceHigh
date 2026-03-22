@@ -377,7 +377,8 @@ export const authOptions: NextAuthOptions = {
             user.plan = dbUser.plan.toLowerCase();
             user.formationsRole = dbUser.formationsRole?.toLowerCase();
           } catch (err) {
-            console.error("[AUTH OAuth]", err);
+            console.error("[AUTH OAuth] Erreur DB lors du signIn OAuth:", err instanceof Error ? err.message : err);
+            console.error("[AUTH OAuth] Stack:", err instanceof Error ? err.stack : "N/A");
             return false;
           }
         }
