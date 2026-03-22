@@ -1,11 +1,13 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore } from "@/store/currency";
+import { useToastStore } from "@/store/toast";
 import { analytics } from "@/lib/analytics";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 
@@ -244,6 +246,9 @@ export default function FreelanceProfilePage() {
   const t = useTranslations("freelance_profile");
   const locale = useLocale();
 
+  const { data: session } = useSession();
+  const router = useRouter();
+  const { addToast } = useToastStore();
   const [freelancer, setFreelancer] = useState<FreelancerData | null>(null);
 
   // Track profile view (deduped per session) — APRES la declaration de freelancer
@@ -252,6 +257,72 @@ export default function FreelanceProfilePage() {
   const [notFound, setNotFound] = useState(false);
 
   const [contactOpen, setContactOpen] = useState(false);
+  const [contactMessage, setContactMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  /** Redirige vers connexion si non authentifié, retourne true si authentifié */
+  function requireAuth(): boolean {
+    if (!session?.user) {
+      router.push(`/connexion?redirect=${encodeURIComponent(`/freelances/${username}`)}`);
+      return false;
+    }
+    return true;
+  }
+
+  async function handleSendMessage() {
+    if (!requireAuth()) return;
+    if (!contactMessage.trim()) {
+      addToast("warning", "Veuillez écrire un message");
+      return;
+    }
+    setSendingMessage(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantId: freelancer?.id,
+          message: contactMessage.trim(),
+        }),
+      });
+      if (res.ok) {
+        addToast("success", `Message envoyé à ${freelancer?.name}`);
+        setContactMessage("");
+        setContactOpen(false);
+      } else {
+        addToast("error", "Erreur lors de l'envoi du message");
+      }
+    } catch {
+      addToast("error", "Erreur lors de l'envoi du message");
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  async function handleToggleFavorite() {
+    if (!requireAuth()) return;
+    setFavoriteLoading(true);
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetId: freelancer?.id,
+          targetType: "freelance",
+        }),
+      });
+      if (res.ok) {
+        addToast("success", `${freelancer?.name} ajouté aux favoris`);
+      } else {
+        addToast("info", "Déjà dans vos favoris");
+      }
+    } catch {
+      addToast("error", "Erreur lors de l'ajout aux favoris");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }
   const [activeTab, setActiveTab] = useState<"about" | "portfolio" | "reviews" | "certifications">("about");
   const [reviewPage, setReviewPage] = useState(0);
 
@@ -443,20 +514,40 @@ export default function FreelanceProfilePage() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pb-2 self-start md:self-end">
               <button
-                onClick={() => setContactOpen(!contactOpen)}
+                onClick={() => {
+                  if (!requireAuth()) return;
+                  setContactOpen(!contactOpen);
+                }}
                 className="h-11 px-5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary/20 transition-all text-sm flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">mail</span>
                 {t("send_message")}
               </button>
-              <Link
-                href="/inscription"
-                className="h-11 px-5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2 text-sm justify-center"
+              {services.length > 0 ? (
+                <Link
+                  href={`/services/${services[0].slug || services[0].id}`}
+                  className="h-11 px-5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2 text-sm justify-center"
+                >
+                  <span className="material-symbols-outlined text-sm">storefront</span>
+                  {t("order_service")}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (!requireAuth()) return;
+                    setContactOpen(true);
+                  }}
+                  className="h-11 px-5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2 text-sm justify-center"
+                >
+                  <span className="material-symbols-outlined text-sm">storefront</span>
+                  {t("order_service")}
+                </button>
+              )}
+              <button
+                onClick={handleToggleFavorite}
+                disabled={favoriteLoading}
+                className="h-11 px-5 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 font-bold hover:border-primary/30 hover:text-primary transition-all text-sm flex items-center gap-2 justify-center disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-sm">storefront</span>
-                {t("order_service")}
-              </Link>
-              <button className="h-11 px-5 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 font-bold hover:border-primary/30 hover:text-primary transition-all text-sm flex items-center gap-2 justify-center">
                 <span className="material-symbols-outlined text-sm">favorite_border</span>
                 {t("favorites")}
               </button>
@@ -475,10 +566,34 @@ export default function FreelanceProfilePage() {
               className="w-full p-3 rounded-lg border border-primary/20 bg-white dark:bg-neutral-dark text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
               rows={3}
               placeholder={t("describe_project")}
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
             />
-            <button className="mt-3 px-6 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:opacity-90 transition-all">
-              {t("send")}
-            </button>
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                onClick={handleSendMessage}
+                disabled={sendingMessage || !contactMessage.trim()}
+                className="px-6 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {sendingMessage ? (
+                  <>
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                    Envoi...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">send</span>
+                    {t("send")}
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => { setContactOpen(false); setContactMessage(""); }}
+                className="px-4 py-2.5 text-slate-500 font-semibold text-sm hover:text-slate-700 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
           </div>
         )}
 
@@ -903,7 +1018,11 @@ export default function FreelanceProfilePage() {
                 {t("contact_for_quote", { name: freelancer.name })}
               </p>
               <button
-                onClick={() => setContactOpen(true)}
+                onClick={() => {
+                  if (!requireAuth()) return;
+                  setContactOpen(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors text-sm"
               >
                 {t("request_quote")}
