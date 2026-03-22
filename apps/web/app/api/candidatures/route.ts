@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { candidatureStore, projectStore } from "@/lib/dev/data-store";
 import { canApply, normalizePlanName, getPlanLimits, formatLimit } from "@/lib/plans";
 
@@ -13,19 +13,32 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const candidatures = candidatureStore.getByFreelance(session.user.id);
-
       return NextResponse.json({ candidatures });
     }
 
-    // Production: Prisma
-    const candidatures = await prisma.bid.findMany({
-      where: { userId: session.user.id },
+    // Prisma — use ProjectBid which has relation to Project
+    const candidatures = await prisma.projectBid.findMany({
+      where: { freelanceId: session.user.id },
+      include: { project: { select: { title: true, clientId: true, category: true, budgetMin: true, budgetMax: true } } },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ candidatures });
+    return NextResponse.json({
+      candidatures: candidatures.map((c) => ({
+        id: c.id,
+        projectId: c.projectId,
+        projectTitle: c.project?.title || "",
+        clientName: "",
+        freelanceId: c.freelanceId,
+        motivation: c.coverLetter || "",
+        proposedPrice: c.amount,
+        deliveryDays: c.deliveryDays,
+        status: c.status,
+        submittedAt: c.createdAt.toISOString(),
+      })),
+    });
   } catch (error) {
     console.error("[API /candidatures GET]", error);
     return NextResponse.json(
@@ -58,7 +71,7 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const allCandidatures = candidatureStore.getByFreelance(session.user.id);
       const monthlyCount = allCandidatures.filter(
         (c) => new Date(c.submittedAt) >= monthStart
@@ -66,7 +79,7 @@ export async function POST(request: NextRequest) {
       if (!canApply(userPlan, monthlyCount)) {
         return NextResponse.json(
           {
-            error: `Limite de candidatures atteinte pour ce mois (${formatLimit(planLimits.applicationLimit)}/mois pour le plan ${planLimits.name}). Passez a un plan superieur pour envoyer plus de candidatures.`,
+            error: `Limite de candidatures atteinte pour ce mois (${formatLimit(planLimits.applicationLimit)}/mois pour le plan ${planLimits.name}). Passez à un plan supérieur pour envoyer plus de candidatures.`,
             code: "APPLICATION_LIMIT_REACHED",
             limit: planLimits.applicationLimit,
             used: monthlyCount,
@@ -74,33 +87,10 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
-    } else {
-      const monthlyCount = await prisma.bid.count({
-        where: {
-          userId: session.user.id,
-          createdAt: { gte: monthStart },
-        },
-      });
-      if (!canApply(userPlan, monthlyCount)) {
-        return NextResponse.json(
-          {
-            error: `Limite de candidatures atteinte pour ce mois (${formatLimit(planLimits.applicationLimit)}/mois pour le plan ${planLimits.name}). Passez a un plan superieur pour envoyer plus de candidatures.`,
-            code: "APPLICATION_LIMIT_REACHED",
-            limit: planLimits.applicationLimit,
-            used: monthlyCount,
-          },
-          { status: 403 }
-        );
-      }
-    }
 
-    if (IS_DEV) {
       const project = projectStore.getById(projectId);
       if (!project) {
-        return NextResponse.json(
-          { error: "Projet introuvable" },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
       }
 
       const candidature = candidatureStore.create({
@@ -113,21 +103,43 @@ export async function POST(request: NextRequest) {
         deliveryDays: Number(deliveryDays),
       });
 
-      // Increment proposal count on the project
       projectStore.incrementProposals(projectId);
-
       return NextResponse.json({ candidature }, { status: 201 });
     }
 
-    // Production: Prisma
-    const candidature = await prisma.bid.create({
+    // Prisma — use ProjectBid
+    const monthlyCount = await prisma.projectBid.count({
+      where: {
+        freelanceId: session.user.id,
+        createdAt: { gte: monthStart },
+      },
+    });
+    if (!canApply(userPlan, monthlyCount)) {
+      return NextResponse.json(
+        {
+          error: `Limite de candidatures atteinte pour ce mois (${formatLimit(planLimits.applicationLimit)}/mois pour le plan ${planLimits.name}). Passez à un plan supérieur.`,
+          code: "APPLICATION_LIMIT_REACHED",
+          limit: planLimits.applicationLimit,
+          used: monthlyCount,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verify project exists
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
+    }
+
+    const candidature = await prisma.projectBid.create({
       data: {
-        userId: session.user.id,
         projectId,
-        proposal: motivation,
+        freelanceId: session.user.id,
         amount: Number(proposedPrice),
         deliveryDays: Number(deliveryDays),
-        status: "EN_ATTENTE",
+        coverLetter: motivation,
+        status: "en_attente",
       },
     });
 

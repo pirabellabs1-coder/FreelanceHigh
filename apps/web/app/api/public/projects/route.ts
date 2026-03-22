@@ -97,6 +97,7 @@ export async function GET(req: NextRequest) {
         contractType: p.contractType,
         skills: p.skills,
         status: p.status,
+        proposals: p._count.bids,
         candidatureCount: p._count.bids,
         postedAt: p.createdAt.toISOString(),
       })),

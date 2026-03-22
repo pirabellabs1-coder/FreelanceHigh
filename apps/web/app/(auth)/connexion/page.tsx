@@ -79,11 +79,12 @@ export default function ConnexionPage() {
         return;
       }
 
-      // Succes — rediriger vers le bon espace
+      // Succes — rediriger vers le bon espace (ou vers l'URL custom si ?redirect= est present)
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
       const userRole = session?.user?.role || role;
-      const redirectUrl = ROLE_REDIRECTS[userRole] || ROLE_REDIRECTS[role] || "/connexion";
+      const customRedirect = searchParams.get("redirect");
+      const redirectUrl = customRedirect || ROLE_REDIRECTS[userRole] || ROLE_REDIRECTS[role] || "/connexion";
       router.push(redirectUrl);
       router.refresh();
     } catch {

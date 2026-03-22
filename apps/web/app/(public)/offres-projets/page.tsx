@@ -972,7 +972,7 @@ function ProjectDetailPanel({
           {/* CTA */}
           <div className="pt-4 border-t border-slate-200 dark:border-border-dark space-y-3">
             <a
-              href="/dashboard/propositions"
+              href={`/connexion?redirect=${encodeURIComponent(`/offres-projets?apply=${project.id}`)}`}
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-3.5 rounded-xl",
                 "bg-primary hover:bg-primary/90 text-white text-sm font-bold",
