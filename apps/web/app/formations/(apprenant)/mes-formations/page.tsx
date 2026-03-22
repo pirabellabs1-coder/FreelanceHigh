@@ -338,7 +338,7 @@ export default function MesFormationsPage() {
             </ResponsiveContainer>
           ) : (
             <div className="h-[220px] flex items-center justify-center text-slate-400 text-sm">
-              {fr ? "Aucune donnee cette semaine" : "No data this week"}
+              {fr ? "Aucune donnée cette semaine" : "No data this week"}
             </div>
           )}
         </div>
@@ -347,7 +347,7 @@ export default function MesFormationsPage() {
         <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
           <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <DynamicIcon name="explore" className="w-5 h-5 text-primary" />
-            {fr ? "Competences par categorie" : "Skills by category"}
+            {fr ? "Compétences par catégorie" : "Skills by category"}
           </h3>
           {stats.skillRadar.length >= 3 ? (
             <ResponsiveContainer width="100%" height={220}>
@@ -375,7 +375,7 @@ export default function MesFormationsPage() {
           ) : (
             <div className="h-[220px] flex items-center justify-center text-slate-400 text-sm">
               {fr
-                ? "Inscrivez-vous a 3+ formations pour voir votre radar"
+                ? "Inscrivez-vous à 3+ formations pour voir votre radar"
                 : "Enroll in 3+ courses to see your radar"}
             </div>
           )}
@@ -398,8 +398,8 @@ export default function MesFormationsPage() {
             <p className="text-sm text-slate-500">
               {fr
                 ? stats.streak === 1
-                  ? "jour consecutif"
-                  : "jours consecutifs"
+                  ? "jour consécutif"
+                  : "jours consécutifs"
                 : stats.streak === 1
                 ? "day streak"
                 : "day streak"}

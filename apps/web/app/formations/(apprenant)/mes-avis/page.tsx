@@ -144,9 +144,9 @@ export default function MesAvisPage() {
 
   const statusLabel = (s: ReviewStatus) =>
     ({
-      published: fr ? "Publie" : "Published",
+      published: fr ? "Publié" : "Published",
       pending: fr ? "En attente" : "Pending",
-      rejected: fr ? "Refuse" : "Rejected",
+      rejected: fr ? "Refusé" : "Rejected",
     }[s]);
 
   const statusColor = (s: ReviewStatus) =>
@@ -226,7 +226,7 @@ export default function MesAvisPage() {
             className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/20"
           >
             <span className="material-symbols-outlined text-lg">refresh</span>
-            {fr ? "Reessayer" : "Retry"}
+            {fr ? "Réessayer" : "Retry"}
           </button>
         </div>
       </div>
@@ -294,7 +294,7 @@ export default function MesAvisPage() {
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           {fr
-            ? "Retrouvez et gerez tous vos avis"
+            ? "Retrouvez et gérez tous vos avis"
             : "View and manage all your reviews"}
         </p>
       </div>

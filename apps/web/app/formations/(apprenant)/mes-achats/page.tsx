@@ -490,7 +490,7 @@ export default function MesAchatsPage() {
             title={fr ? "Aucun remboursement" : "No refunds"}
             description={
               fr
-                ? "Vous n'avez pas encore effectue de demande de remboursement."
+                ? "Vous n'avez pas encore effectué de demande de remboursement."
                 : "You haven't submitted any refund requests yet."
             }
           />
@@ -559,7 +559,7 @@ export default function MesAchatsPage() {
           title={fr ? "Aucun achat" : "No purchases"}
           description={
             fr
-              ? "Vous n'avez pas encore effectue d'achat. Explorez nos formations et produits !"
+              ? "Vous n'avez pas encore effectué d'achat. Explorez nos formations et produits !"
               : "You haven't made any purchases yet. Explore our courses and products!"
           }
           ctaLabel={fr ? "Explorer les formations" : "Explore courses"}

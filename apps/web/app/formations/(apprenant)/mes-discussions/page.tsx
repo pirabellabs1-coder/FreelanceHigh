@@ -142,7 +142,7 @@ export default function MesDiscussionsPage() {
             className="inline-flex items-center gap-2 bg-primary text-white font-bold px-6 py-2.5 rounded-xl hover:bg-primary/90 transition-colors text-sm shadow-lg shadow-primary/20"
           >
             <span className="material-symbols-outlined text-lg">refresh</span>
-            {fr ? "Reessayer" : "Retry"}
+            {fr ? "Réessayer" : "Retry"}
           </button>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function MesDiscussionsPage() {
           }
           description={
             fr
-              ? "Vous n'avez pas encore participe a des discussions. Posez des questions dans vos formations !"
+              ? "Vous n'avez pas encore participé à des discussions. Posez des questions dans vos formations !"
               : "You haven't participated in any discussions yet. Ask questions in your courses!"
           }
           ctaLabel={fr ? "Explorer les formations" : "Explore courses"}
@@ -250,8 +250,8 @@ export default function MesDiscussionsPage() {
                       {discussion.repliesCount}{" "}
                       {fr
                         ? discussion.repliesCount === 1
-                          ? "reponse"
-                          : "reponses"
+                          ? "réponse"
+                          : "réponses"
                         : discussion.repliesCount === 1
                         ? "reply"
                         : "replies"}

@@ -156,7 +156,7 @@ export default function FavorisPage() {
             </p>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
               {fr
-                ? "Cliquez sur le coeur sur les pages de formations pour les ajouter ici."
+                ? "Cliquez sur le c\u0153ur sur les pages de formations pour les ajouter ici."
                 : "Click the heart on course pages to save them here."}
             </p>
           </div>
