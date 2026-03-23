@@ -17,6 +17,7 @@ const PUBLIC_ROUTES = [
   "/freelances",
   "/agences",
   "/offres-projets",
+  "/projets",
   "/blog",
   "/tarifs",
   "/comment-ca-marche",
