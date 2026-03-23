@@ -15,6 +15,7 @@ import { StepPublish } from "./steps/StepPublish";
 
 interface ServiceWizardProps {
   role: "freelance" | "agency";
+  editServiceId?: string;
 }
 
 const TOTAL_STEPS = 8;
@@ -42,7 +43,7 @@ const STEP_TITLES = [
   "Publication",
 ];
 
-export function ServiceWizard({ role }: ServiceWizardProps) {
+export function ServiceWizard({ role, editServiceId }: ServiceWizardProps) {
   const {
     currentStep,
     setStep,
@@ -52,9 +53,52 @@ export function ServiceWizard({ role }: ServiceWizardProps) {
     isDirty,
     markSaving,
     markSaved,
+    serviceId,
   } = useServiceWizardStore();
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editLoadedRef = useRef(false);
+
+  // Load existing service data for editing
+  useEffect(() => {
+    if (!editServiceId || editLoadedRef.current) return;
+    editLoadedRef.current = true;
+
+    async function loadServiceForEdit() {
+      try {
+        const res = await fetch(`/api/services/${editServiceId}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const svc = json.service || json;
+        const store = useServiceWizardStore.getState();
+        const imgs = Array.isArray(svc.images) ? svc.images : [];
+
+        store.loadDraft({
+          serviceId: editServiceId,
+          language: svc.language || "fr",
+          title: svc.title || "",
+          categoryId: svc.categoryId || "",
+          subCategoryId: svc.subCategoryId || "",
+          tags: svc.tags || [],
+          basePrice: svc.basePrice || 0,
+          baseDeliveryDays: svc.deliveryDays || svc.baseDeliveryDays || 7,
+          description: svc.description || null,
+          packages: svc.packages || undefined,
+          instructionsRequired: svc.instructionsRequired || false,
+          instructionsContent: svc.instructionsContent || null,
+          mainImage: (svc.mainImage || imgs[0]) ? { id: "main", url: svc.mainImage || imgs[0] } : null,
+          additionalImages: imgs.slice(1).map((url: string, i: number) => ({ id: `img_${i}`, url })),
+          videoUrl: svc.videoUrl || "",
+          completedSteps: [1, 2, 3, 4, 5, 6, 7],
+          currentStep: 1,
+        });
+      } catch (err) {
+        console.error("[ServiceWizard] Failed to load service for edit:", err);
+      }
+    }
+
+    loadServiceForEdit();
+  }, [editServiceId]);
 
   // Auto-save every 30 seconds
   const autoSave = useCallback(async () => {
@@ -125,7 +169,7 @@ export function ServiceWizard({ role }: ServiceWizardProps) {
       <div className="mb-6 flex items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
           <span className="material-symbols-outlined text-amber-400 text-sm">edit_note</span>
-          <span className="text-xs font-semibold text-amber-400">Service (brouillon)</span>
+          <span className="text-xs font-semibold text-amber-400">{editServiceId ? "Modifier le service" : "Service (brouillon)"}</span>
         </div>
         <div className="flex-1" />
         <span className="text-xs text-slate-500">

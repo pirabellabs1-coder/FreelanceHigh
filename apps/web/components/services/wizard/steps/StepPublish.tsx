@@ -55,42 +55,61 @@ export function StepPublish({ role }: { role: string }) {
   const requiredDone = checklist.filter((c) => c.required).every((c) => c.done);
   const totalDone = checklist.filter((c) => c.done).length;
 
+  const isEditMode = !!store.serviceId;
+
   async function handlePublish() {
     if (!requiredDone) return;
 
     setPublishing(true);
     setPublishError("");
 
+    const payload = {
+      language: store.language,
+      title: store.title,
+      categoryId: store.categoryId,
+      subCategoryId: store.subCategoryId,
+      tags: store.tags,
+      basePrice: store.basePrice,
+      baseDeliveryDays: store.baseDeliveryDays,
+      description: store.description,
+      descriptionText,
+      options: store.options,
+      baseExpressEnabled: store.expressDelivery.baseExpressEnabled,
+      baseExpressPrice: store.expressDelivery.baseExpressPrice,
+      baseExpressDaysReduction: store.expressDelivery.baseExpressDaysReduction,
+      instructionsRequired: store.instructionsRequired,
+      instructionsContent: store.instructionsContent,
+      mainImage: store.mainImage ? { url: store.mainImage.url } : null,
+      additionalImages: store.additionalImages.map((img: { url: string }) => ({ url: img.url })),
+      videoUrl: store.videoUrl,
+      packages: store.packages,
+    };
+
     try {
-      const serviceId = await apiCreateService({
-        language: store.language,
-        title: store.title,
-        categoryId: store.categoryId,
-        subCategoryId: store.subCategoryId,
-        tags: store.tags,
-        basePrice: store.basePrice,
-        baseDeliveryDays: store.baseDeliveryDays,
-        description: store.description,
-        descriptionText,
-        options: store.options,
-        baseExpressEnabled: store.expressDelivery.baseExpressEnabled,
-        baseExpressPrice: store.expressDelivery.baseExpressPrice,
-        baseExpressDaysReduction: store.expressDelivery.baseExpressDaysReduction,
-        instructionsRequired: store.instructionsRequired,
-        instructionsContent: store.instructionsContent,
-        mainImage: store.mainImage ? { url: store.mainImage.url } : null,
-        additionalImages: store.additionalImages.map((img: { url: string }) => ({ url: img.url })),
-        videoUrl: store.videoUrl,
-        packages: store.packages,
-      });
-
-      if (!serviceId) {
-        setPublishError("Erreur lors de la publication. Veuillez réessayer.");
-        return;
+      if (isEditMode) {
+        // Update existing service via PATCH
+        const res = await fetch(`/api/services/${store.serviceId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          setPublishError(err.error || "Erreur lors de la modification.");
+          return;
+        }
+        setPublished(true);
+        store.reset();
+      } else {
+        // Create new service
+        const serviceId = await apiCreateService(payload);
+        if (!serviceId) {
+          setPublishError("Erreur lors de la publication. Veuillez réessayer.");
+          return;
+        }
+        setPublished(true);
+        store.reset();
       }
-
-      setPublished(true);
-      store.reset();
     } catch {
       setPublishError("Erreur réseau. Veuillez réessayer.");
     } finally {

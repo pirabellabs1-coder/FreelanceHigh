@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 import { cn } from "@/lib/utils";
+import { optimizedUrl } from "@/lib/cloudinary";
 
 // ============================================================
 // Types — aligned with API response
@@ -522,7 +523,7 @@ export default function ServiceDetailPage() {
               <div className="flex items-center gap-4 mb-6 bg-neutral-dark border border-border-dark rounded-xl p-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0 relative">
                   {vendor.avatar ? (
-                    <img src={vendor.avatar} alt={vendor.name} className="w-full h-full object-cover" />
+                    <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                       {vendor.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
@@ -561,7 +562,7 @@ export default function ServiceDetailPage() {
               <div className="mb-8">
                 <div className="relative rounded-xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video">
                   <img
-                    src={galleryImages[currentImage]}
+                    src={optimizedUrl(galleryImages[currentImage], 1200)}
                     alt={`${service.title} - Image ${currentImage + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -596,7 +597,7 @@ export default function ServiceDetailPage() {
                           idx === currentImage ? "border-primary" : "border-border-dark hover:border-slate-500 opacity-60 hover:opacity-100"
                         )}
                       >
-                        <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={optimizedUrl(img, 200)} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -767,7 +768,7 @@ export default function ServiceDetailPage() {
                     <div className="relative shrink-0">
                       <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary/30">
                         {vendor.avatar ? (
-                          <img src={vendor.avatar} alt={vendor.name} className="w-full h-full object-cover" />
+                          <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
                             {vendor.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}

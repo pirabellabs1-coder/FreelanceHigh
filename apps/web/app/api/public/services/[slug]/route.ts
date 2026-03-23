@@ -63,11 +63,13 @@ async function handleProductionMode(slug: string) {
     take: 4,
   });
 
-  // Build main image from media
-  const primaryMedia = service.media?.find((m) => m.isPrimary);
-  const mainImage = primaryMedia?.url || (service.images as string[])?.[0] || "";
+  // Build main image from media (prioritize ServiceMedia, fallback to images column)
   const imageMedia = service.media?.filter((m) => m.type === "IMAGE") || [];
   const videoMedia = service.media?.find((m) => m.type === "VIDEO");
+  const primaryMedia = service.media?.find((m) => m.isPrimary);
+  const legacyImages = Array.isArray(service.images) ? service.images as string[] : [];
+  const mainImage = primaryMedia?.url || imageMedia[0]?.url || legacyImages[0] || "";
+  const allImages = imageMedia.length > 0 ? imageMedia.map((m) => m.url) : legacyImages;
 
   return NextResponse.json({
     service: {
@@ -88,7 +90,7 @@ async function handleProductionMode(slug: string) {
       faq: service.faq,
       extras: service.extras,
       mainImage,
-      images: imageMedia.map((m) => m.url),
+      images: allImages,
       videoUrl: videoMedia?.url || "",
       rating: service.rating,
       ratingCount: service.ratingCount,
