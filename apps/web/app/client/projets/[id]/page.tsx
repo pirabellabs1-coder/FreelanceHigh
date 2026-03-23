@@ -393,7 +393,7 @@ export default function ProjectDetailPage() {
                             payments
                           </span>
                           <span className="font-bold text-white">
-                            {c.proposedPrice.toLocaleString("fr-FR")} EUR
+                            {(c.proposedPrice ?? 0).toLocaleString("fr-FR")} EUR
                           </span>
                         </span>
                         <span className="flex items-center gap-1">

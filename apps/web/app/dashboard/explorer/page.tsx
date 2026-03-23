@@ -314,8 +314,8 @@ function OfferCard({
               {urgency.label}
             </span>
             <span className="text-primary font-black text-sm whitespace-nowrap">
-              {offer.budgetMin.toLocaleString("fr-FR")}&euro; &ndash;{" "}
-              {offer.budgetMax.toLocaleString("fr-FR")}&euro;
+              {(offer.budgetMin ?? 0).toLocaleString("fr-FR")}&euro; &ndash;{" "}
+              {(offer.budgetMax ?? 0).toLocaleString("fr-FR")}&euro;
             </span>
           </div>
         </div>
@@ -630,8 +630,8 @@ function ApplyModal({
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span>Budget client</span>
             <span className="font-bold text-primary">
-              {offer.budgetMin.toLocaleString("fr-FR")}&euro; &ndash;{" "}
-              {offer.budgetMax.toLocaleString("fr-FR")}&euro;
+              {(offer.budgetMin ?? 0).toLocaleString("fr-FR")}&euro; &ndash;{" "}
+              {(offer.budgetMax ?? 0).toLocaleString("fr-FR")}&euro;
             </span>
           </div>
           <div className="flex items-center justify-between text-xs text-slate-400 mt-1.5">

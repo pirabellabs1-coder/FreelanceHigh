@@ -687,31 +687,37 @@ export const conversationsApi = {
 import type { Service, Order, Transaction, Conversation, ChatMessage } from "@/lib/demo-data";
 
 export function mapApiServiceToLocal(s: ApiService): Service {
+  const pkgs = s.packages || {} as ApiService["packages"];
+  const basic = pkgs.basic || { name: "Basique", price: s.basePrice || 0, deliveryDays: s.deliveryDays || 7, revisions: 1, description: "" };
+  const standard = pkgs.standard || { name: "Standard", price: Math.round((s.basePrice || 0) * 1.8), deliveryDays: s.deliveryDays || 7, revisions: 3, description: "" };
+  const premium = pkgs.premium || { name: "Premium", price: Math.round((s.basePrice || 0) * 3), deliveryDays: s.deliveryDays || 7, revisions: 5, description: "" };
+  const images = s.images || [];
+
   return {
     id: s.id,
     title: s.title,
-    category: s.categoryName,
-    subcategory: s.subCategoryName,
+    category: s.categoryName || "",
+    subcategory: s.subCategoryName || "",
     description: s.descriptionText || "",
-    tags: s.tags,
-    price: s.basePrice,
-    deliveryDays: s.deliveryDays,
-    revisions: s.revisions,
+    tags: s.tags || [],
+    price: s.basePrice || 0,
+    deliveryDays: s.deliveryDays || 7,
+    revisions: s.revisions || 1,
     status: s.status as Service["status"],
-    views: s.views,
-    clicks: s.clicks,
-    orders: s.orderCount,
-    revenue: s.revenue,
-    conversionRate: s.clicks > 0 ? Math.round((s.orderCount / s.clicks) * 100 * 10) / 10 : 0,
-    image: s.mainImage || s.images[0] || "",
-    createdAt: s.createdAt.slice(0, 10),
+    views: s.views || 0,
+    clicks: s.clicks || 0,
+    orders: s.orderCount || 0,
+    revenue: s.revenue || 0,
+    conversionRate: (s.clicks || 0) > 0 ? Math.round(((s.orderCount || 0) / s.clicks) * 100 * 10) / 10 : 0,
+    image: s.mainImage || images[0] || "",
+    createdAt: (s.createdAt || new Date().toISOString()).slice(0, 10),
     packages: {
-      basic: { name: s.packages.basic.name, price: s.packages.basic.price, delivery: s.packages.basic.deliveryDays, revisions: s.packages.basic.revisions, description: s.packages.basic.description },
-      standard: { name: s.packages.standard.name, price: s.packages.standard.price, delivery: s.packages.standard.deliveryDays, revisions: s.packages.standard.revisions, description: s.packages.standard.description },
-      premium: { name: s.packages.premium.name, price: s.packages.premium.price, delivery: s.packages.premium.deliveryDays, revisions: s.packages.premium.revisions, description: s.packages.premium.description },
+      basic: { name: basic.name, price: basic.price, delivery: basic.deliveryDays, revisions: basic.revisions, description: basic.description || "" },
+      standard: { name: standard.name, price: standard.price, delivery: standard.deliveryDays, revisions: standard.revisions, description: standard.description || "" },
+      premium: { name: premium.name, price: premium.price, delivery: premium.deliveryDays, revisions: premium.revisions, description: premium.description || "" },
     },
-    faq: s.faq,
-    extras: s.extras,
+    faq: s.faq || [],
+    extras: s.extras || [],
   };
 }
 

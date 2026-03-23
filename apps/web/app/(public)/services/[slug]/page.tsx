@@ -635,7 +635,7 @@ export default function ServiceDetailPage() {
                         })}
                       </div>
                       <Link
-                        href="/connexion?redirect=/services&message=Connectez-vous+pour+commander+ce+service"
+                        href={`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}&message=Connectez-vous+pour+commander+ce+service`}
                         className={cn(
                           "mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all",
                           isSelected
@@ -1031,7 +1031,7 @@ export default function ServiceDetailPage() {
                   {/* CTA Buttons */}
                   <div className="space-y-3 pt-2">
                     <Link
-                      href="/connexion?redirect=/services&message=Connectez-vous+pour+commander+ce+service"
+                      href={`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}&message=Connectez-vous+pour+commander+ce+service`}
                       className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
                     >
                       <span className="material-symbols-outlined text-base">shopping_cart</span>

@@ -283,13 +283,19 @@ export default function FreelanceProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           participantId: freelancer?.id,
+          contactName: freelancer?.name || "Freelance",
           message: contactMessage.trim(),
         }),
       });
       if (res.ok) {
+        const data = await res.json();
         addToast("success", `Message envoyé à ${freelancer?.name}`);
         setContactMessage("");
         setContactOpen(false);
+        // Redirect to messages with the conversation open
+        const role = (session?.user as Record<string, unknown>)?.role;
+        const basePath = role === "client" ? "/client" : role === "agence" ? "/agence" : "/dashboard";
+        router.push(`${basePath}/messages?conversation=${data.conversation?.id || ""}`);
       } else {
         addToast("error", "Erreur lors de l'envoi du message");
       }

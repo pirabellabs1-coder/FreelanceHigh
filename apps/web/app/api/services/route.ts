@@ -391,7 +391,41 @@ export async function POST(request: NextRequest) {
       userName: session.user.name || "Freelance",
     }).catch(() => {});
 
-    return NextResponse.json(service);
+    // Normalize response to match ApiService shape expected by frontend
+    const cat = service.category as { id: string; name: string; slug: string } | null;
+    const pkgs = (service.packages as Record<string, unknown>) || {};
+    const defaultPkg = { name: "Basique", price: basePrice, deliveryDays, revisions: 1, description: "" };
+
+    const normalizedService = {
+      ...service,
+      categoryName: cat?.name || body.categoryId,
+      subCategoryName: body.subCategoryId || "",
+      mainImage: images[0] || "",
+      images,
+      clicks: 0,
+      orderCount: 0,
+      revenue: 0,
+      ratingCount: 0,
+      seoScore: 0,
+      boostTier: null,
+      metaTitle: body.title,
+      metaDescription: `${body.title} - Service professionnel sur FreelanceHigh`,
+      vendorName: session.user.name || "Freelance",
+      vendorAvatar: "",
+      vendorUsername: session.user.id,
+      vendorCountry: "",
+      vendorBadges: [],
+      vendorPlan: (session.user as Record<string, unknown>).plan || "gratuit",
+      faq: service.faq || [],
+      extras: service.extras || [],
+      packages: {
+        basic: (pkgs as Record<string, unknown>).basic || defaultPkg,
+        standard: (pkgs as Record<string, unknown>).standard || { ...defaultPkg, name: "Standard", price: Math.round(basePrice * 1.8), revisions: 3 },
+        premium: (pkgs as Record<string, unknown>).premium || { ...defaultPkg, name: "Premium", price: Math.round(basePrice * 3), revisions: 5 },
+      },
+    };
+
+    return NextResponse.json(normalizedService);
   } catch (error) {
     console.error("[API /services POST]", error);
     const message = error instanceof Error ? error.message : "Erreur inconnue";

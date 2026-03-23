@@ -297,7 +297,7 @@ export default function CandidaturesPage() {
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 flex-wrap">
                           <span>{c.clientName}</span>
                           <span>·</span>
-                          <span>€{c.proposedPrice.toLocaleString("fr-FR")}</span>
+                          <span>€{(c.proposedPrice ?? 0).toLocaleString("fr-FR")}</span>
                           <span>·</span>
                           <span>{c.deliveryDays} jours</span>
                           <span>·</span>
@@ -370,7 +370,7 @@ export default function CandidaturesPage() {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-primary font-black text-lg">€{p.budgetMin.toLocaleString("fr-FR")} – €{p.budgetMax.toLocaleString("fr-FR")}</p>
+                        <p className="text-primary font-black text-lg">€{(p.budgetMin ?? 0).toLocaleString("fr-FR")} – €{(p.budgetMax ?? 0).toLocaleString("fr-FR")}</p>
                         <p className="text-xs text-slate-500">{p.contractType === "ponctuel" ? "Ponctuel" : p.contractType === "long_terme" ? "Long terme" : "Récurrent"}</p>
                       </div>
                     </div>
@@ -453,7 +453,7 @@ export default function CandidaturesPage() {
             {/* Stats cards */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Budget", value: `€${detailProject.budgetMin.toLocaleString("fr-FR")} – €${detailProject.budgetMax.toLocaleString("fr-FR")}`, icon: "payments", color: "text-primary" },
+                { label: "Budget", value: `€${(detailProject.budgetMin ?? 0).toLocaleString("fr-FR")} – €${(detailProject.budgetMax ?? 0).toLocaleString("fr-FR")}`, icon: "payments", color: "text-primary" },
                 { label: "Deadline", value: new Date(detailProject.deadline).toLocaleDateString("fr-FR"), icon: "calendar_today", color: "text-amber-400" },
                 { label: "Contrat", value: detailProject.contractType === "ponctuel" ? "Ponctuel" : detailProject.contractType === "long_terme" ? "Long terme" : "Récurrent", icon: "description", color: "text-blue-400" },
               ].map((s) => (

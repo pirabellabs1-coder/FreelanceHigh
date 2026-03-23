@@ -80,12 +80,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { participantId, contactName, contactAvatar, contactRole, orderId } = body as {
+    const { participantId, contactName, contactAvatar, contactRole, orderId, message } = body as {
       participantId: string;
       contactName: string;
       contactAvatar?: string;
       contactRole?: string;
       orderId?: string;
+      message?: string;
     };
 
     if (!participantId) {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (IS_DEV) {
-      const avatar = contactAvatar || contactName
+      const avatar = contactAvatar || (contactName || "")
         .split(" ")
         .map((w: string) => w[0])
         .join("")
@@ -107,6 +108,11 @@ export async function POST(request: NextRequest) {
         contactRole: (contactRole as "client" | "agence" | "support") || "client",
         orderId,
       });
+
+      // Save initial message if provided
+      if (message?.trim()) {
+        conversationStore.sendMessage(conversation.id, session.user.id, message.trim());
+      }
 
       return NextResponse.json({ conversation }, { status: 201 });
     } else {
@@ -130,8 +136,19 @@ export async function POST(request: NextRequest) {
       });
 
       if (existing) {
+        // Save initial message if provided
+        if (message?.trim()) {
+          await prisma.message.create({
+            data: {
+              conversationId: existing.id,
+              senderId: session.user.id,
+              content: message.trim(),
+            },
+          });
+          await prisma.conversation.update({ where: { id: existing.id }, data: { updatedAt: new Date() } });
+        }
+
         const otherUser = existing.users.find((u) => u.userId !== session.user!.id)?.user;
-        const lastMsg = existing.messages[0];
 
         const conversation = {
           id: existing.id,
@@ -139,8 +156,8 @@ export async function POST(request: NextRequest) {
           contactName: otherUser?.name || contactName || "Utilisateur",
           contactAvatar: otherUser?.image || contactAvatar || "",
           contactRole: contactRole || "client",
-          lastMessage: lastMsg?.content || "",
-          lastMessageTime: lastMsg?.createdAt?.toISOString() || existing.updatedAt.toISOString(),
+          lastMessage: message?.trim() || existing.messages[0]?.content || "",
+          lastMessageTime: new Date().toISOString(),
           unread: 0,
           online: false,
           orderId: existing.orderId || undefined,
@@ -165,8 +182,19 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Save initial message if provided
+      if (message?.trim()) {
+        await prisma.message.create({
+          data: {
+            conversationId: created.id,
+            senderId: session.user.id,
+            content: message.trim(),
+          },
+        });
+      }
+
       const otherUser = created.users.find((u) => u.userId !== session.user!.id)?.user;
-      const avatar = contactAvatar || contactName
+      const avatar = contactAvatar || (contactName || "")
         ?.split(" ")
         .map((w: string) => w[0])
         .join("")
@@ -179,7 +207,7 @@ export async function POST(request: NextRequest) {
         contactName: otherUser?.name || contactName || "Utilisateur",
         contactAvatar: otherUser?.image || avatar,
         contactRole: contactRole || "client",
-        lastMessage: "",
+        lastMessage: message?.trim() || "",
         lastMessageTime: created.updatedAt.toISOString(),
         unread: 0,
         online: false,

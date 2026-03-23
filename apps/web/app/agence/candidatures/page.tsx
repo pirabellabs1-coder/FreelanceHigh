@@ -179,7 +179,7 @@ export default function AgenceCandidatures() {
                   <tr key={a.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
                     <td className="px-5 py-3 text-sm font-semibold text-white truncate max-w-[220px]">{a.offerTitle}</td>
                     <td className="px-5 py-3 text-sm text-slate-300">{a.client}</td>
-                    <td className="px-5 py-3 text-sm font-bold text-white">&euro;{a.proposedPrice.toLocaleString("fr-FR")}</td>
+                    <td className="px-5 py-3 text-sm font-bold text-white">&euro;{(a.proposedPrice ?? 0).toLocaleString("fr-FR")}</td>
                     <td className="px-5 py-3">
                       <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", STATUS_MAP[a.status]?.cls)}>
                         {STATUS_MAP[a.status]?.label}

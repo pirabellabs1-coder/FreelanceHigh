@@ -179,7 +179,7 @@ function ProposalCard({
           <span>
             Votre tarif :{" "}
             <span className="font-black text-primary">
-              \u20ac{proposal.proposedPrice.toLocaleString("fr-FR")}
+              \u20ac{(proposal.proposedPrice ?? 0).toLocaleString("fr-FR")}
             </span>
           </span>
           <span className="flex items-center gap-1">
