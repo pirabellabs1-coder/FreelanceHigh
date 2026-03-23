@@ -1116,9 +1116,9 @@ export default function FreelanceProfilePage() {
                     <p className="text-xs text-slate-500 line-clamp-2 mb-3">{project.description}</p>
 
                     {/* Skills tags */}
-                    {project.skills.length > 0 && (
+                    {(project.skills ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
-                        {project.skills.slice(0, 4).map((skill) => (
+                        {(project.skills ?? []).slice(0, 4).map((skill) => (
                           <span
                             key={skill}
                             className="px-2 py-0.5 bg-primary/5 text-primary text-[10px] font-semibold rounded-md"

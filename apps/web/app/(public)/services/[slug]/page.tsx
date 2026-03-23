@@ -511,7 +511,7 @@ export default function ServiceDetailPage() {
                   <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary">
                     {service.categoryName}
                   </span>
-                  {service.tags.length > 0 && (
+                  {(service.tags ?? []).length > 0 && (
                     <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-300">
                       {service.tags[0]}
                     </span>
@@ -678,11 +678,11 @@ export default function ServiceDetailPage() {
               </div>
 
               {/* Tags */}
-              {service.tags.length > 0 && (
+              {(service.tags ?? []).length > 0 && (
                 <div>
                   <h3 className="text-sm font-bold text-white mb-3">{t("tags")}</h3>
                   <div className="flex flex-wrap gap-2">
-                    {service.tags.map((tag) => (
+                    {(service.tags ?? []).map((tag) => (
                       <span key={tag} className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-xs font-bold">{tag}</span>
                     ))}
                   </div>
@@ -760,11 +760,11 @@ export default function ServiceDetailPage() {
             {/* ============================================ */}
             {/* Extras (options supplementaires)             */}
             {/* ============================================ */}
-            {service.extras.length > 0 && (
+            {(service.extras ?? []).length > 0 && (
               <div className="mt-8 pt-8 border-t border-border-dark">
                 <h2 className="text-lg font-bold text-white mb-4">{t("available_extras")}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {service.extras.map((extra, idx) => (
+                  {(service.extras ?? []).map((extra, idx) => (
                     <div key={idx} className="flex items-center justify-between bg-neutral-dark border border-border-dark rounded-xl px-5 py-4">
                       <span className="text-sm text-slate-300">{extra.label}</span>
                       <span className="text-sm font-bold text-primary">+{format(extra.price)}</span>
@@ -795,11 +795,11 @@ export default function ServiceDetailPage() {
               </div>
 
               {/* FAQ */}
-              {service.faq.length > 0 && (
+              {(service.faq ?? []).length > 0 && (
                 <div>
                   <h2 className="text-lg font-bold text-white mb-4">{t("seller_faq")}</h2>
                   <div className="space-y-2">
-                    {service.faq.map((item, idx) => (
+                    {(service.faq ?? []).map((item, idx) => (
                       <div key={idx} className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
                         <button
                           onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
@@ -844,7 +844,7 @@ export default function ServiceDetailPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h3 className="text-white font-bold text-lg">{vendor.name}</h3>
-                        {vendor.badges.map((b) => {
+                        {(vendor.badges ?? []).map((b) => {
                           const cfg = BADGE_CONFIG[b];
                           if (!cfg) return null;
                           return (
@@ -1119,11 +1119,11 @@ export default function ServiceDetailPage() {
                   </div>
 
                   {/* Extras */}
-                  {service.extras.length > 0 && (
+                  {(service.extras ?? []).length > 0 && (
                     <div>
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t("available_extras")}</h4>
                       <div className="space-y-2">
-                        {service.extras.map((extra, idx) => (
+                        {(service.extras ?? []).map((extra, idx) => (
                           <div key={idx} className="flex items-center justify-between bg-background-dark rounded-lg px-4 py-2.5 border border-border-dark">
                             <span className="text-sm text-slate-300">{extra.label}</span>
                             <span className="text-sm font-bold text-primary">+{format(extra.price)}</span>

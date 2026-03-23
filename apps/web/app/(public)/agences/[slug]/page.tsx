@@ -847,9 +847,9 @@ export default function AgencyProfilePage() {
                   )}
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white">{member.name}</h4>
                   <p className="text-xs text-primary font-semibold mb-3">{member.role}</p>
-                  {member.skills.length > 0 && (
+                  {(member.skills ?? []).length > 0 && (
                     <div className="flex flex-wrap justify-center gap-1.5">
-                      {member.skills.slice(0, 3).map((skill) => (
+                      {(member.skills ?? []).slice(0, 3).map((skill) => (
                         <span key={skill} className="px-2 py-0.5 bg-primary/5 text-primary text-[10px] font-semibold rounded-md">
                           {skill}
                         </span>

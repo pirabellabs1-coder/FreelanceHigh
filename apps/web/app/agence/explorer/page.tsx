@@ -447,9 +447,9 @@ export default function AgenceExplorer() {
                       {tag}
                     </span>
                   ))}
-                  {freelancer.tags.length > 4 && (
+                  {(freelancer.tags ?? []).length > 4 && (
                     <span className="text-[10px] bg-slate-500/10 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
-                      +{freelancer.tags.length - 4}
+                      +{(freelancer.tags ?? []).length - 4}
                     </span>
                   )}
                 </div>

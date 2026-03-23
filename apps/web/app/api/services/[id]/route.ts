@@ -60,7 +60,14 @@ export async function GET(
     });
 
     return NextResponse.json({
-      service: { ...service, views: service.views + 1 },
+      service: {
+        ...service,
+        views: service.views + 1,
+        tags: service.tags ?? [],
+        faq: service.faq ?? [],
+        extras: service.extras ?? [],
+        images: service.images ?? [],
+      },
     });
   } catch (error) {
     console.error("[API /services/[id] GET]", error);

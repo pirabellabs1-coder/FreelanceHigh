@@ -93,7 +93,7 @@ export default function BlogArticlePage() {
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{article.category}</span>
-            {article.tags.map(tag => (
+            {(article.tags ?? []).map(tag => (
               <span key={tag} className="text-xs text-slate-500">#{tag}</span>
             ))}
           </div>
@@ -119,10 +119,10 @@ export default function BlogArticlePage() {
         </article>
 
         {/* Tags */}
-        {article.tags.length > 0 && (
+        {(article.tags ?? []).length > 0 && (
           <div className="mt-12 pt-8 border-t border-white/10">
             <div className="flex flex-wrap gap-2">
-              {article.tags.map(tag => (
+              {(article.tags ?? []).map(tag => (
                 <span key={tag} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-full font-medium">#{tag}</span>
               ))}
             </div>

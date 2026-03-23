@@ -288,9 +288,10 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
   const instrBio = locale === "fr" ? formation.instructeur.bioFr : (formation.instructeur.bioEn || formation.instructeur.bioFr);
   const instrAvatar = formation.instructeur.user.avatar || formation.instructeur.user.image;
 
-  const totalLessons = formation.sections.reduce((s, sec) => s + sec.lessons.length, 0);
-  const freeLessons = formation.sections.reduce((s, sec) => s + sec.lessons.filter((l) => l.isFree).length, 0);
-  const totalResources = formation.sections.reduce((s, sec) => s + sec.lessons.reduce((ls, l) => ls + l.resources.length, 0), 0);
+  const sections = formation.sections ?? [];
+  const totalLessons = sections.reduce((s, sec) => s + sec.lessons.length, 0);
+  const freeLessons = sections.reduce((s, sec) => s + sec.lessons.filter((l) => l.isFree).length, 0);
+  const totalResources = sections.reduce((s, sec) => s + sec.lessons.reduce((ls, l) => ls + l.resources.length, 0), 0);
 
   // Flash promo price
   const flashDiscountedPrice = formation.flashPromo
@@ -367,8 +368,8 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                   {t("last_updated")} {new Date(formation.updatedAt).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")}
                 </span>
               )}
-              {formation.language.length > 0 && (
-                <span>{formation.language.map((l) => l === "fr" ? "🇫🇷 Français" : "🇬🇧 English").join(", ")}</span>
+              {(formation.language ?? []).length > 0 && (
+                <span>{(formation.language ?? []).map((l) => l === "fr" ? "🇫🇷 Français" : "🇬🇧 English").join(", ")}</span>
               )}
             </div>
           </div>
@@ -469,29 +470,29 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {formation.sections.length} {t("sections")} · {totalLessons} {t("lessons")} · {formatDuration(formation.duration)}
+                    {(formation.sections ?? []).length} {t("sections")} · {totalLessons} {t("lessons")} · {formatDuration(formation.duration)}
                     {freeLessons > 0 && (
                       <span className="ml-2 text-primary">({freeLessons} {locale === "fr" ? "gratuites" : "free"})</span>
                     )}
                   </p>
                   <button
                     onClick={() => {
-                      if (expandedSections.size === formation.sections.length) {
+                      if (expandedSections.size === (formation.sections ?? []).length) {
                         setExpandedSections(new Set());
                       } else {
-                        setExpandedSections(new Set(formation.sections.map((s) => s.id)));
+                        setExpandedSections(new Set((formation.sections ?? []).map((s) => s.id)));
                       }
                     }}
                     className="text-xs text-primary hover:underline"
                   >
-                    {expandedSections.size === formation.sections.length
+                    {expandedSections.size === (formation.sections ?? []).length
                       ? (locale === "fr" ? "Tout réduire" : "Collapse all")
                       : (locale === "fr" ? "Tout développer" : "Expand all")}
                   </button>
                 </div>
 
                 <div className="space-y-2">
-                  {formation.sections.sort((a, b) => a.order - b.order).map((section) => {
+                  {(formation.sections ?? []).sort((a, b) => a.order - b.order).map((section) => {
                     const sectionTitle = section.title;
                     const sectionDuration = section.lessons.reduce((s, l) => s + (l.duration ?? 0), 0);
                     const isExpanded = expandedSections.has(section.id);
@@ -604,8 +605,8 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                   {/* Bars */}
                   <div className="flex-1 space-y-1.5">
                     {[5, 4, 3, 2, 1].map((star) => {
-                      const count = formation.reviews.filter((r) => r.rating === star).length;
-                      const pct = formation.reviews.length ? (count / formation.reviews.length) * 100 : 0;
+                      const count = (formation.reviews ?? []).filter((r) => r.rating === star).length;
+                      const pct = (formation.reviews ?? []).length ? (count / (formation.reviews ?? []).length) * 100 : 0;
                       return (
                         <div key={star} className="flex items-center gap-2 text-xs text-slate-500">
                           <span className="w-3 text-right">{star}</span>
@@ -654,18 +655,18 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                     </div>
                   ))}
 
-                  {formation.reviews.length > 4 && (
+                  {(formation.reviews ?? []).length > 4 && (
                     <button
                       onClick={() => setShowAllReviews(!showAllReviews)}
                       className="text-primary text-sm hover:underline"
                     >
                       {showAllReviews
                         ? (locale === "fr" ? "Voir moins" : "Show less")
-                        : (locale === "fr" ? `Voir tous les ${formation.reviews.length} avis` : `See all ${formation.reviews.length} reviews`)}
+                        : (locale === "fr" ? `Voir tous les ${(formation.reviews ?? []).length} avis` : `See all ${(formation.reviews ?? []).length} reviews`)}
                     </button>
                   )}
 
-                  {formation.reviews.length === 0 && (
+                  {(formation.reviews ?? []).length === 0 && (
                     <p className="text-slate-500 text-sm">{locale === "fr" ? "Aucun avis pour l'instant." : "No reviews yet."}</p>
                   )}
                 </div>

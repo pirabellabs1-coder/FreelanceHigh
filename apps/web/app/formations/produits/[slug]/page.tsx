@@ -249,9 +249,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Tags */}
-          {product.tags.length > 0 && (
+          {(product.tags ?? []).length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {product.tags.map((tag) => (
+              {(product.tags ?? []).map((tag) => (
                 <span key={tag} className="bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-medium">
                   #{tag}
                 </span>
@@ -264,9 +264,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <h2 className="text-lg font-bold mb-4">
               Avis ({product.reviewsCount})
             </h2>
-            {product.reviews.length > 0 ? (
+            {(product.reviews ?? []).length > 0 ? (
               <div className="space-y-4">
-                {(showAllReviews ? product.reviews : product.reviews.slice(0, 3)).map((review) => (
+                {(showAllReviews ? (product.reviews ?? []) : (product.reviews ?? []).slice(0, 3)).map((review) => (
                   <div key={review.id} className="border-b border-slate-100 dark:border-slate-700 pb-4 last:border-0">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -297,7 +297,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     )}
                   </div>
                 ))}
-                {product.reviews.length > 3 && (
+                {(product.reviews ?? []).length > 3 && (
                   <button
                     onClick={() => setShowAllReviews(!showAllReviews)}
                     className="text-sm font-medium text-primary hover:underline flex items-center gap-1"

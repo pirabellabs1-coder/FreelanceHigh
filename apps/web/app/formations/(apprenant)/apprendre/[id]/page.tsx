@@ -321,12 +321,12 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
 
   const formationTitle = formation.title;
   const lessonTitle = currentLesson.title;
-  const totalLessons = formation.sections.reduce((s, sec) => s + sec.lessons.length, 0);
+  const totalLessons = (formation.sections ?? []).reduce((s, sec) => s + sec.lessons.length, 0);
   const completedLessons = lessonProgress.filter((p) => p.completed).length;
   const isCurrentComplete = lessonProgress.find((p) => p.lessonId === currentLesson.id)?.completed ?? false;
 
   // ── Flat lesson list & navigation helpers ──
-  const allLessons = formation.sections
+  const allLessons = (formation.sections ?? [])
     .slice()
     .sort((a, b) => a.order - b.order)
     .flatMap((s) => s.lessons.slice().sort((a, b) => a.order - b.order));

@@ -115,8 +115,8 @@ export default function AgenceFreelanceDetailPage() {
     }
   }, [params.id]);
 
-  const avgRating = freelancer && freelancer.reviews.length > 0
-    ? (freelancer.reviews.reduce((a, r) => a + r.rating, 0) / freelancer.reviews.length).toFixed(1)
+  const avgRating = freelancer && (freelancer.reviews ?? []).length > 0
+    ? ((freelancer.reviews ?? []).reduce((a, r) => a + r.rating, 0) / (freelancer.reviews ?? []).length).toFixed(1)
     : "0.0";
 
   const handleInvite = () => {
@@ -237,7 +237,7 @@ export default function AgenceFreelanceDetailPage() {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-2xl font-black text-white">{freelancer.name}</h1>
               <span className="text-lg">{freelancer.countryFlag}</span>
-              {freelancer.badges.map(b => {
+              {(freelancer.badges ?? []).map(b => {
                 const cfg = BADGE_CONFIG[b];
                 return cfg ? (
                   <span key={b} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border", cfg.color)}>
@@ -273,7 +273,7 @@ export default function AgenceFreelanceDetailPage() {
               )}
               <div className="flex items-center gap-1">
                 <StarRating rating={freelancer.stats.rating} />
-                <span className="text-xs text-slate-400">{freelancer.stats.rating} ({freelancer.reviews.length} avis)</span>
+                <span className="text-xs text-slate-400">{freelancer.stats.rating} ({(freelancer.reviews ?? []).length} avis)</span>
               </div>
             </div>
           </div>
@@ -329,9 +329,9 @@ export default function AgenceFreelanceDetailPage() {
             className={cn("flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all", activeTab === tab ? "bg-primary text-white" : "text-slate-400 hover:text-white hover:bg-border-dark")}
           >
             {tab === "overview" && "Vue d'ensemble"}
-            {tab === "services" && `Services (${freelancer.services.length})`}
-            {tab === "portfolio" && `Portfolio (${freelancer.portfolio.length})`}
-            {tab === "reviews" && `Avis (${freelancer.reviews.length})`}
+            {tab === "services" && `Services (${(freelancer.services ?? []).length})`}
+            {tab === "portfolio" && `Portfolio (${(freelancer.portfolio ?? []).length})`}
+            {tab === "reviews" && `Avis (${(freelancer.reviews ?? []).length})`}
             {tab === "availability" && "Disponibilité"}
           </button>
         ))}
@@ -355,7 +355,7 @@ export default function AgenceFreelanceDetailPage() {
                 <span className="material-symbols-outlined text-primary text-lg">psychology</span> Compétences
               </h3>
               <div className="space-y-4">
-                {freelancer.skills.map(s => (
+                {(freelancer.skills ?? []).map(s => (
                   <div key={s.name}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-slate-300 font-medium">{s.name}</span>
@@ -367,9 +367,9 @@ export default function AgenceFreelanceDetailPage() {
                   </div>
                 ))}
               </div>
-              {freelancer.tags.length > 0 && (
+              {(freelancer.tags ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-border-dark">
-                  {freelancer.tags.map(t => (
+                  {(freelancer.tags ?? []).map(t => (
                     <span key={t} className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-lg">{t}</span>
                   ))}
                 </div>
@@ -377,13 +377,13 @@ export default function AgenceFreelanceDetailPage() {
             </div>
 
             {/* Recent Reviews */}
-            {freelancer.reviews.length > 0 && (
+            {(freelancer.reviews ?? []).length > 0 && (
               <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
                 <h3 className="font-bold text-white mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary text-lg">reviews</span> Derniers avis
                 </h3>
                 <div className="space-y-3">
-                  {freelancer.reviews.slice(0, 3).map(r => (
+                  {(freelancer.reviews ?? []).slice(0, 3).map(r => (
                     <div key={r.id} className="bg-background-dark rounded-lg p-4 border border-border-dark">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export default function AgenceFreelanceDetailPage() {
 
       {activeTab === "services" && (
         <div>
-          {freelancer.services.length === 0 ? (
+          {(freelancer.services ?? []).length === 0 ? (
             <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 text-center">
               <span className="material-symbols-outlined text-4xl text-slate-600 mb-3">inventory_2</span>
               <p className="text-white font-bold mb-1">Aucun service</p>
@@ -469,7 +469,7 @@ export default function AgenceFreelanceDetailPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {freelancer.services.map(s => (
+              {(freelancer.services ?? []).map(s => (
                 <div key={s.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/30 transition-colors">
                   <h4 className="font-bold text-white mb-2">{s.title}</h4>
                   <div className="flex items-center gap-2 mb-3">
@@ -494,7 +494,7 @@ export default function AgenceFreelanceDetailPage() {
 
       {activeTab === "portfolio" && (
         <div>
-          {freelancer.portfolio.length === 0 ? (
+          {(freelancer.portfolio ?? []).length === 0 ? (
             <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 text-center">
               <span className="material-symbols-outlined text-4xl text-slate-600 mb-3">photo_library</span>
               <p className="text-white font-bold mb-1">Aucun projet</p>
@@ -502,14 +502,14 @@ export default function AgenceFreelanceDetailPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {freelancer.portfolio.map(p => (
+              {(freelancer.portfolio ?? []).map(p => (
                 <div key={p.id} className="group relative aspect-video rounded-xl overflow-hidden cursor-pointer">
                   <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/20 transition-colors z-10" />
                   <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={p.image} alt={p.title} />
                   <div className="absolute bottom-0 left-0 right-0 p-4 z-20 bg-gradient-to-t from-black/70 to-transparent">
                     <p className="text-white font-bold text-sm">{p.title}</p>
                     <div className="flex gap-1 mt-1">
-                      {p.tags.map(t => <span key={t} className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded">{t}</span>)}
+                      {(p.tags ?? []).map(t => <span key={t} className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] font-bold rounded">{t}</span>)}
                     </div>
                   </div>
                 </div>
@@ -521,7 +521,7 @@ export default function AgenceFreelanceDetailPage() {
 
       {activeTab === "reviews" && (
         <div className="space-y-4">
-          {freelancer.reviews.length === 0 ? (
+          {(freelancer.reviews ?? []).length === 0 ? (
             <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 text-center">
               <span className="material-symbols-outlined text-4xl text-slate-600 mb-3">rate_review</span>
               <p className="text-white font-bold mb-1">Aucun avis</p>
@@ -533,12 +533,12 @@ export default function AgenceFreelanceDetailPage() {
                 <div className="text-center">
                   <p className="text-3xl font-black text-primary">{avgRating}</p>
                   <StarRating rating={parseFloat(avgRating)} />
-                  <p className="text-xs text-slate-500 mt-1">{freelancer.reviews.length} avis</p>
+                  <p className="text-xs text-slate-500 mt-1">{(freelancer.reviews ?? []).length} avis</p>
                 </div>
                 <div className="flex-1 space-y-1">
                   {[5, 4, 3, 2, 1].map(star => {
-                    const count = freelancer.reviews.filter(r => Math.floor(r.rating) === star).length;
-                    const pct = freelancer.reviews.length > 0 ? (count / freelancer.reviews.length) * 100 : 0;
+                    const count = (freelancer.reviews ?? []).filter(r => Math.floor(r.rating) === star).length;
+                    const pct = (freelancer.reviews ?? []).length > 0 ? (count / (freelancer.reviews ?? []).length) * 100 : 0;
                     return (
                       <div key={star} className="flex items-center gap-2 text-xs">
                         <span className="w-3 text-slate-500">{star}</span>
@@ -552,7 +552,7 @@ export default function AgenceFreelanceDetailPage() {
                   })}
                 </div>
               </div>
-              {freelancer.reviews.map(r => (
+              {(freelancer.reviews ?? []).map(r => (
                 <div key={r.id} className="bg-neutral-dark rounded-xl border border-border-dark p-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">

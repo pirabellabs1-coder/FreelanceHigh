@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
   useEffect(() => {
     if (order?.status === "termine") {
       reviewsApi.getByOrder(orderId).then((data) => {
-        if (data.reviews.length > 0) {
+        if ((data.reviews ?? []).length > 0) {
           setHasExistingReview(true);
         }
       }).catch(() => {});
