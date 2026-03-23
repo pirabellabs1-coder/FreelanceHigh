@@ -1,18 +1,23 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { SocketProvider } from "@/lib/socket-provider";
 import { MessagingLayout } from "@/components/messaging/MessagingLayout";
 
 export default function ClientMessagesPage() {
   const { data: session } = useSession();
-  const userId = session?.user?.id ?? session?.user?.email ?? "u6";
+  const userId = session?.user?.id ?? "";
+
+  if (!userId) return null;
 
   return (
     <div className="-m-4 sm:-m-6 lg:-m-8">
-      <MessagingLayout
-        userId={userId}
-        userRole="client"
-      />
+      <SocketProvider token={undefined}>
+        <MessagingLayout
+          userId={userId}
+          userRole="client"
+        />
+      </SocketProvider>
     </div>
   );
 }

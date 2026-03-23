@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { conversationStore } from "@/lib/dev/data-store";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
 
 export async function GET() {
   try {
@@ -12,57 +10,84 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (IS_DEV) {
-      // Admin sees all conversations
-      const isAdmin = (session.user as Record<string, unknown>).role === "admin";
-      const conversations = isAdmin
-        ? conversationStore.getAll()
-        : conversationStore.getByUser(session.user.id);
+    const userId = session.user.id;
+    const isAdmin = (session.user as Record<string, unknown>).role === "admin";
 
-      return NextResponse.json({ conversations });
-    } else {
-      const isAdmin = (session.user as Record<string, unknown>).role === "admin";
+    const where = isAdmin
+      ? {}
+      : { users: { some: { userId } } };
 
-      const where = isAdmin
-        ? {}
-        : { users: { some: { userId: session.user.id } } };
-
-      const dbConversations = await prisma.conversation.findMany({
-        where,
-        include: {
-          messages: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
-          users: {
-            include: { user: true },
+    const dbConversations = await prisma.conversation.findMany({
+      where,
+      include: {
+        messages: {
+          orderBy: { createdAt: "desc" as const },
+          take: 1,
+          include: { sender: { select: { id: true, name: true, image: true } } },
+        },
+        users: {
+          include: {
+            user: {
+              select: { id: true, name: true, image: true, role: true },
+            },
           },
         },
-        orderBy: { updatedAt: "desc" },
-      });
+        order: { select: { id: true } },
+      },
+      orderBy: { updatedAt: "desc" as const },
+    });
 
-      // Map to same shape as dev-store
-      const conversations = dbConversations.map((c) => {
-        const otherUser = c.users.find((u) => u.userId !== session.user!.id)?.user;
+    const conversations = await Promise.all(
+      dbConversations.map(async (c) => {
+        // Calculate unread count based on lastReadAt
+        const myMembership = c.users.find((u) => u.userId === userId);
+        const lastReadAt = myMembership?.lastReadAt;
+
+        let unreadCount = 0;
+        if (!isAdmin) {
+          const unreadWhere: Record<string, unknown> = {
+            conversationId: c.id,
+            senderId: { not: userId },
+          };
+          if (lastReadAt) {
+            unreadWhere.createdAt = { gt: lastReadAt };
+          } else {
+            unreadWhere.read = false;
+          }
+          unreadCount = await prisma.message.count({ where: unreadWhere });
+        }
+
         const lastMsg = c.messages[0];
+
+        // Build participant list with proper names
+        const participants = c.users.map((u) => ({
+          id: u.user.id,
+          name: u.user.name || "Utilisateur",
+          avatar: u.user.image || (u.user.name || "U").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
+          role: (u.user as Record<string, unknown>).role || "client",
+          online: false,
+        }));
+
+        // Generate a readable order reference
+        const orderRef = c.orderId ? c.orderId.slice(-6).toUpperCase() : undefined;
 
         return {
           id: c.id,
-          participants: c.users.map((u) => u.userId),
-          contactName: otherUser?.name || "Utilisateur",
-          contactAvatar: otherUser?.image || "",
-          contactRole: (otherUser as Record<string, unknown>)?.role || "client",
+          type: c.type?.toLowerCase() || "direct",
+          participants,
+          title: c.title || (c.orderId ? `Commande #${orderRef}` : undefined),
+          orderId: c.orderId || undefined,
+          orderNumber: orderRef,
           lastMessage: lastMsg?.content || "",
           lastMessageTime: lastMsg?.createdAt?.toISOString() || c.updatedAt.toISOString(),
-          unread: c.messages.filter((m) => !m.read && m.senderId !== session.user!.id).length,
-          online: false,
-          orderId: c.orderId || undefined,
+          lastMessageSenderName: lastMsg?.sender?.name || undefined,
+          unreadCount,
           messages: [],
         };
-      });
+      })
+    );
 
-      return NextResponse.json({ conversations });
-    }
+    return NextResponse.json({ conversations });
   } catch (error) {
     console.error("[API /conversations GET]", error);
     return NextResponse.json(
@@ -82,7 +107,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, contactName, contactAvatar, contactRole, orderId, message } = body as {
       participantId: string;
-      contactName: string;
+      contactName?: string;
       contactAvatar?: string;
       contactRole?: string;
       orderId?: string;
@@ -93,130 +118,123 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "participantId requis" }, { status: 400 });
     }
 
-    if (IS_DEV) {
-      const avatar = contactAvatar || (contactName || "")
-        .split(" ")
-        .map((w: string) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
+    const userId = session.user.id;
 
-      const conversation = conversationStore.create({
-        participants: [session.user.id, participantId],
-        contactName: contactName || "Utilisateur",
-        contactAvatar: avatar,
-        contactRole: (contactRole as "client" | "agence" | "support") || "client",
-        orderId,
-      });
+    // Check if conversation already exists between these users
+    const existingWhere: Record<string, unknown> = {
+      AND: [
+        { users: { some: { userId } } },
+        { users: { some: { userId: participantId } } },
+      ],
+    };
+    if (orderId) {
+      (existingWhere.AND as Array<Record<string, unknown>>).push({ orderId });
+    }
 
-      // Save initial message if provided
-      if (message?.trim()) {
-        conversationStore.sendMessage(conversation.id, session.user.id, message.trim());
-      }
-
-      return NextResponse.json({ conversation }, { status: 201 });
-    } else {
-      // Check if conversation already exists between these users (and optional orderId)
-      const existingWhere: Record<string, unknown> = {
-        AND: [
-          { users: { some: { userId: session.user.id } } },
-          { users: { some: { userId: participantId } } },
-        ],
-      };
-      if (orderId) {
-        (existingWhere.AND as Array<Record<string, unknown>>).push({ orderId });
-      }
-
-      const existing = await prisma.conversation.findFirst({
-        where: existingWhere,
-        include: {
-          messages: { orderBy: { createdAt: "desc" }, take: 1 },
-          users: { include: { user: true } },
-        },
-      });
-
-      if (existing) {
-        // Save initial message if provided
-        if (message?.trim()) {
-          await prisma.message.create({
-            data: {
-              conversationId: existing.id,
-              senderId: session.user.id,
-              content: message.trim(),
-            },
-          });
-          await prisma.conversation.update({ where: { id: existing.id }, data: { updatedAt: new Date() } });
-        }
-
-        const otherUser = existing.users.find((u) => u.userId !== session.user!.id)?.user;
-
-        const conversation = {
-          id: existing.id,
-          participants: existing.users.map((u) => u.userId),
-          contactName: otherUser?.name || contactName || "Utilisateur",
-          contactAvatar: otherUser?.image || contactAvatar || "",
-          contactRole: contactRole || "client",
-          lastMessage: message?.trim() || existing.messages[0]?.content || "",
-          lastMessageTime: new Date().toISOString(),
-          unread: 0,
-          online: false,
-          orderId: existing.orderId || undefined,
-          messages: [],
-        };
-
-        return NextResponse.json({ conversation }, { status: 201 });
-      }
-
-      const created = await prisma.conversation.create({
-        data: {
-          orderId: orderId || null,
-          users: {
-            create: [
-              { userId: session.user.id },
-              { userId: participantId },
-            ],
+    const existing = await prisma.conversation.findFirst({
+      where: existingWhere,
+      include: {
+        messages: { orderBy: { createdAt: "desc" as const }, take: 1 },
+        users: {
+          include: {
+            user: { select: { id: true, name: true, image: true, role: true } },
           },
         },
-        include: {
-          users: { include: { user: true } },
-        },
-      });
+      },
+    });
 
-      // Save initial message if provided
+    if (existing) {
       if (message?.trim()) {
         await prisma.message.create({
           data: {
-            conversationId: created.id,
-            senderId: session.user.id,
+            conversationId: existing.id,
+            senderId: userId,
             content: message.trim(),
           },
         });
+        await prisma.conversation.update({ where: { id: existing.id }, data: { updatedAt: new Date() } });
       }
 
-      const otherUser = created.users.find((u) => u.userId !== session.user!.id)?.user;
-      const avatar = contactAvatar || (contactName || "")
-        ?.split(" ")
-        .map((w: string) => w[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "";
+      const participants = existing.users.map((u) => ({
+        id: u.user.id,
+        name: u.user.name || contactName || "Utilisateur",
+        avatar: u.user.image || contactAvatar || "",
+        role: (u.user as Record<string, unknown>).role || contactRole || "client",
+        online: false,
+      }));
+
+      const orderRef = existing.orderId ? existing.orderId.slice(-6).toUpperCase() : undefined;
 
       const conversation = {
-        id: created.id,
-        participants: created.users.map((u) => u.userId),
-        contactName: otherUser?.name || contactName || "Utilisateur",
-        contactAvatar: otherUser?.image || avatar,
-        contactRole: contactRole || "client",
-        lastMessage: message?.trim() || "",
-        lastMessageTime: created.updatedAt.toISOString(),
-        unread: 0,
-        online: false,
-        orderId: created.orderId || undefined,
+        id: existing.id,
+        type: existing.type?.toLowerCase() || "direct",
+        participants,
+        title: existing.title || (existing.orderId ? `Commande #${orderRef}` : undefined),
+        orderId: existing.orderId || undefined,
+        orderNumber: orderRef,
+        lastMessage: message?.trim() || existing.messages[0]?.content || "",
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
         messages: [],
       };
 
       return NextResponse.json({ conversation }, { status: 201 });
     }
+
+    // Create new conversation
+    const created = await prisma.conversation.create({
+      data: {
+        orderId: orderId || null,
+        users: {
+          create: [
+            { userId },
+            { userId: participantId },
+          ],
+        },
+      },
+      include: {
+        users: {
+          include: {
+            user: { select: { id: true, name: true, image: true, role: true } },
+          },
+        },
+      },
+    });
+
+    if (message?.trim()) {
+      await prisma.message.create({
+        data: {
+          conversationId: created.id,
+          senderId: userId,
+          content: message.trim(),
+        },
+      });
+    }
+
+    const participants = created.users.map((u) => ({
+      id: u.user.id,
+      name: u.user.name || contactName || "Utilisateur",
+      avatar: u.user.image || contactAvatar || "",
+      role: (u.user as Record<string, unknown>).role || contactRole || "client",
+      online: false,
+    }));
+
+    const orderRef = created.orderId ? created.orderId.slice(-6).toUpperCase() : undefined;
+
+    const conversation = {
+      id: created.id,
+      type: "direct",
+      participants,
+      title: created.orderId ? `Commande #${orderRef}` : undefined,
+      orderId: created.orderId || undefined,
+      orderNumber: orderRef,
+      lastMessage: message?.trim() || "",
+      lastMessageTime: created.updatedAt.toISOString(),
+      unreadCount: 0,
+      messages: [],
+    };
+
+    return NextResponse.json({ conversation }, { status: 201 });
   } catch (error) {
     console.error("[API /conversations POST]", error);
     return NextResponse.json(

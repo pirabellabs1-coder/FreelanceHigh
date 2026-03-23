@@ -28,6 +28,7 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
   showTypeFilter?: boolean;
   showAllTypes?: boolean;
+  isLoading?: boolean;
 }
 
 export function ConversationList({
@@ -37,6 +38,7 @@ export function ConversationList({
   onSelect,
   showTypeFilter = false,
   showAllTypes = false,
+  isLoading = false,
 }: ConversationListProps) {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("tous");
@@ -132,7 +134,19 @@ export function ConversationList({
 
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-0">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-border-dark/50 animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-slate-700/50 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-slate-700/50 rounded w-2/3" />
+                  <div className="h-2.5 bg-slate-700/30 rounded w-4/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 px-6">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <span className="material-symbols-outlined text-3xl text-primary/40">forum</span>
@@ -200,7 +214,7 @@ export function ConversationList({
                     )}
                   </div>
                   {conv.orderId && (
-                    <p className="text-[10px] text-primary mt-0.5">{conv.orderId}</p>
+                    <p className="text-[10px] text-primary mt-0.5">Commande #{conv.orderNumber || conv.orderId.slice(-6)}</p>
                   )}
                 </div>
               </button>

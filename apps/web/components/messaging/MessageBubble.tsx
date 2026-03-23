@@ -43,6 +43,7 @@ interface MessageBubbleProps {
   showSenderInfo?: boolean;
   onEdit?: (messageId: string, newContent: string) => void;
   onDelete?: (messageId: string) => void;
+  onRetry?: (messageId: string) => void;
   onImageClick?: (imageUrl: string) => void;
 }
 
@@ -52,6 +53,7 @@ export function MessageBubble({
   showSenderInfo = true,
   onEdit,
   onDelete,
+  onRetry,
   onImageClick,
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -355,7 +357,22 @@ export function MessageBubble({
                   <span className="text-[10px] text-slate-500 italic">modifie</span>
                 )}
                 <span className="text-[10px] text-slate-500">{formatTime(message.createdAt)}</span>
-                {isOwn && !isDeleted && (
+                {isOwn && !isDeleted && message.status === "failed" && (
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-red-400" title="Echec d'envoi">error</span>
+                    {onRetry && (
+                      <button
+                        onClick={() => onRetry(message.id)}
+                        className="text-[10px] text-red-400 hover:text-red-300 font-medium flex items-center gap-0.5"
+                        title="Reessayer"
+                      >
+                        <span className="material-symbols-outlined text-xs">refresh</span>
+                        Reessayer
+                      </button>
+                    )}
+                  </div>
+                )}
+                {isOwn && !isDeleted && message.status !== "failed" && (
                   <span
                     className={cn(
                       "material-symbols-outlined text-xs",

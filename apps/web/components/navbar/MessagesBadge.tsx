@@ -11,7 +11,6 @@ interface MessagesBadgeProps {
 export function MessagesBadge({ role }: MessagesBadgeProps) {
   const conversations = useMessagingStore((s) => s.conversations);
   const currentUserId = useMessagingStore((s) => s.currentUserId);
-  const syncFromApi = useMessagingStore((s) => s.syncFromApi);
   const prevUnreadRef = useRef(0);
 
   // Count total unread across conversations where user is a participant
@@ -28,14 +27,6 @@ export function MessagesBadge({ role }: MessagesBadgeProps) {
     }
     prevUnreadRef.current = unreadCount;
   }, [unreadCount]);
-
-  // Periodically sync conversations to catch new messages (every 30s)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      syncFromApi();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [syncFromApi]);
 
   const msgHref =
     role === "admin"

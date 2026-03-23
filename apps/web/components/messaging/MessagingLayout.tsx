@@ -5,6 +5,7 @@ import { useMessagingStore } from "@/store/messaging";
 import { useCallStore } from "@/store/call";
 import type { UserRole } from "@/store/messaging";
 import type { CallType, CallUser } from "@/lib/webrtc/types";
+import { useSocket } from "@/lib/socket-provider";
 import { ConversationList } from "./ConversationList";
 import { ChatPanel } from "./ChatPanel";
 import { AudioCallModal } from "./calls/AudioCallModal";
@@ -19,7 +20,6 @@ interface MessagingLayoutProps {
   showAllConversations?: boolean;
 }
 
-// Map store participants to CallUser
 function toCallUser(participant: { id: string; name: string; avatar: string; role: string }): CallUser {
   return {
     id: participant.id,
@@ -37,20 +37,25 @@ export function MessagingLayout({
   const {
     conversations,
     setCurrentUser,
+    setSelectedConversation,
     sendMessage,
     markConversationRead,
+    loadMessages,
     getMyConversations,
     getAllConversations,
     addSystemMessage,
     syncFromApi,
-    apiSendMessage,
+    isLoading,
     isSynced,
     editMessage,
     deleteMessage,
-    apiEditMessage,
-    apiDeleteMessage,
+    retryMessage,
+    setupSocketListeners,
+    startPolling,
+    stopPolling,
   } = useMessagingStore();
 
+  const { socket, isConnected, isPollingMode } = useSocket();
   const callStore = useCallStore();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -64,7 +69,7 @@ export function MessagingLayout({
     role: userRole,
   }), [userId, userRole]);
 
-  // Call ended callback — insert message in conversation
+  // Call ended callback
   const handleCallEnded = useCallback((callType: CallType, duration: number) => {
     const convId = callStore.conversationId;
     if (!convId) return;
@@ -72,7 +77,6 @@ export function MessagingLayout({
     sendMessage(convId, callType === "video" ? "Appel video" : "Appel audio", msgType);
   }, [callStore.conversationId, sendMessage]);
 
-  // Call missed callback
   const handleCallMissed = useCallback((fromUser: CallUser) => {
     const convId = callStore.conversationId || selectedId;
     if (!convId) return;
@@ -98,11 +102,29 @@ export function MessagingLayout({
     onCallMissed: handleCallMissed,
   });
 
-  // Set current user on mount + sync from API
+  // Set current user on mount + initial sync
   useEffect(() => {
     setCurrentUser(userId, userRole);
     syncFromApi();
   }, [userId, userRole, setCurrentUser, syncFromApi]);
+
+  // Setup Socket.io listeners OR polling fallback
+  useEffect(() => {
+    if (socket && isConnected) {
+      const cleanup = setupSocketListeners(socket);
+      stopPolling();
+      return cleanup;
+    } else {
+      // No socket or disconnected — use polling
+      startPolling();
+      return () => stopPolling();
+    }
+  }, [socket, isConnected, setupSocketListeners, startPolling, stopPolling]);
+
+  // Track selected conversation in store
+  useEffect(() => {
+    setSelectedConversation(selectedId);
+  }, [selectedId, setSelectedConversation]);
 
   const myConversations = useMemo(() => {
     return showAllConversations ? getAllConversations() : getMyConversations();
@@ -120,6 +142,13 @@ export function MessagingLayout({
     [myConversations, selectedId]
   );
 
+  // Load messages when selecting a conversation
+  useEffect(() => {
+    if (selectedId && isSynced) {
+      loadMessages(selectedId);
+    }
+  }, [selectedId, isSynced, loadMessages]);
+
   // Start audio call
   const handleStartAudioCall = useCallback(() => {
     if (!selectedConv) return;
@@ -136,30 +165,25 @@ export function MessagingLayout({
     initiateCall(toCallUser(otherParticipant), "video", selectedConv.id);
   }, [selectedConv, userId, initiateCall]);
 
-  // Switch audio call to video
   const handleSwitchToVideo = useCallback(() => {
     useCallStore.getState().setCallType("video");
   }, []);
 
-  // Screen share toggle — delegate to real WebRTC implementation
   const handleToggleScreenShare = useCallback(async () => {
     toggleScreenShareReal();
   }, [toggleScreenShareReal]);
 
-  // Handle selecting a conversation — on mobile, switch to chat view
   const handleSelectConversation = useCallback((convId: string) => {
     setSelectedId(convId);
     setMobileShowChat(true);
   }, []);
 
-  // Handle back to conversation list on mobile
   const handleMobileBack = useCallback(() => {
     setMobileShowChat(false);
   }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)]">
-      {/* New conversation dialog for admin */}
       {showAllConversations && (
         <NewConversationDialog
           open={showNewConvDialog}
@@ -169,7 +193,7 @@ export function MessagingLayout({
       )}
 
       <div className="flex flex-1 min-h-0 bg-background-dark/50 overflow-hidden">
-        {/* Conversations sidebar — hidden on mobile when chat is open */}
+        {/* Conversations sidebar */}
         <div className={`w-full md:w-80 border-r border-border-dark flex-shrink-0 flex flex-col ${mobileShowChat ? "hidden md:flex" : "flex"}`}>
           {showAllConversations && (
             <div className="p-3 border-b border-border-dark">
@@ -189,40 +213,28 @@ export function MessagingLayout({
             onSelect={handleSelectConversation}
             showTypeFilter={userRole === "agence"}
             showAllTypes={showAllConversations}
+            isLoading={isLoading}
           />
         </div>
 
-        {/* Chat area — hidden on mobile when conversation list is showing */}
+        {/* Chat area */}
         <div className={`flex-1 min-w-0 ${mobileShowChat ? "flex" : "hidden md:flex"} flex-col`}>
           <ChatPanel
             conversation={selectedConv}
             currentUserId={userId}
             onSendMessage={(content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType) => {
               if (selectedId) {
-                if (isSynced) {
-                  apiSendMessage(selectedId, content, type, fileName, fileSize, fileUrl, fileType);
-                } else {
-                  sendMessage(selectedId, content, type, fileName, fileSize, audioUrl, audioDuration);
-                }
+                sendMessage(selectedId, content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType);
               }
             }}
             onEditMessage={(messageId, newContent) => {
-              if (selectedId) {
-                if (isSynced) {
-                  apiEditMessage(selectedId, messageId, newContent);
-                } else {
-                  editMessage(selectedId, messageId, newContent);
-                }
-              }
+              if (selectedId) editMessage(selectedId, messageId, newContent);
             }}
             onDeleteMessage={(messageId) => {
-              if (selectedId) {
-                if (isSynced) {
-                  apiDeleteMessage(selectedId, messageId);
-                } else {
-                  deleteMessage(selectedId, messageId);
-                }
-              }
+              if (selectedId) deleteMessage(selectedId, messageId);
+            }}
+            onRetryMessage={(messageId) => {
+              if (selectedId) retryMessage(selectedId, messageId);
             }}
             onMarkRead={() => {
               if (selectedId) markConversationRead(selectedId);
@@ -230,9 +242,7 @@ export function MessagingLayout({
             showAdminActions={showAllConversations}
             onSendSystemMessage={
               showAllConversations
-                ? (content) => {
-                    if (selectedId) addSystemMessage(selectedId, content);
-                  }
+                ? (content) => { if (selectedId) addSystemMessage(selectedId, content); }
                 : undefined
             }
             onStartAudioCall={handleStartAudioCall}
@@ -251,9 +261,7 @@ export function MessagingLayout({
           onAcceptAudioOnly={callType === "video" ? () => answerCall("audio") : undefined}
           onReject={() => rejectCall()}
           onMissed={() => {
-            if (selectedId) {
-              sendMessage(selectedId, "Appel manque", "call_missed");
-            }
+            if (selectedId) sendMessage(selectedId, "Appel manque", "call_missed");
           }}
         />
       )}

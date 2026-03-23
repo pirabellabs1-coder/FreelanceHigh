@@ -22,6 +22,7 @@ interface ChatPanelProps {
   onMarkRead: () => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   onDeleteMessage?: (messageId: string) => void;
+  onRetryMessage?: (messageId: string) => void;
   showAdminActions?: boolean;
   onSendSystemMessage?: (content: string) => void;
   onStartAudioCall?: () => void;
@@ -88,6 +89,7 @@ export function ChatPanel({
   onMarkRead,
   onEditMessage,
   onDeleteMessage,
+  onRetryMessage,
   showAdminActions = false,
   onSendSystemMessage,
   onStartAudioCall,
@@ -328,7 +330,8 @@ export function ChatPanel({
             <p className="font-bold text-sm text-white truncate">{displayName}</p>
             <p className="text-xs text-slate-500 truncate">
               {isOnline ? "En ligne" : "Hors ligne"}
-              {conversation.orderId && ` · ${conversation.orderId}`}
+              {otherParticipants[0]?.role && ` · ${String(otherParticipants[0].role).charAt(0).toUpperCase() + String(otherParticipants[0].role).slice(1)}`}
+              {conversation.orderId && ` · Commande #${conversation.orderNumber || conversation.orderId.slice(-6)}`}
               {otherParticipants.length > 1 && ` · ${otherParticipants.length} participants`}
             </p>
           </div>
@@ -420,6 +423,7 @@ export function ChatPanel({
               showSenderInfo={showSenderInfo}
               onEdit={onEditMessage}
               onDelete={onDeleteMessage}
+              onRetry={onRetryMessage}
               onImageClick={(url) => setLightboxImage(url)}
             />
           );
@@ -497,7 +501,7 @@ export function ChatPanel({
                     handleSend();
                   }
                 }}
-                placeholder="Tapez votre message..."
+                placeholder="Ecrire un message..."
                 className="flex-1 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
               />
               <VoiceRecorder onSend={handleVoiceSend} />
