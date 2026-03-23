@@ -37,7 +37,7 @@ export async function POST(
 
     await prisma.offer.update({
       where: { id: offreId },
-      data: { status: "REFUSE" },
+      data: { status: "REFUSEE" },
     });
 
     return NextResponse.json({ ok: true });

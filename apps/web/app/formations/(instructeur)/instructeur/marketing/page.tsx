@@ -254,7 +254,7 @@ export default function MarketingHubPage() {
       {revenueByDay && revenueByDay.length > 0 && (
         <ChartContainer
           title={fr ? "Revenus par source" : "Revenue by source"}
-          exportData={revenueByDay}
+          exportData={revenueByDay as any}
           exportFilename="revenus-marketing"
         >
           <ResponsiveContainer width="100%" height={280}>

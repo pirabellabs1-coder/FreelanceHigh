@@ -171,7 +171,7 @@ export default function AgenceOffres() {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-lg font-black text-white">&euro;{o.amount.toLocaleString("fr-FR")}</p>
+                  <p className="text-lg font-black text-white">&euro;{(o.amount ?? 0).toLocaleString("fr-FR")}</p>
                   <p className="text-[10px] text-slate-500 uppercase font-semibold">Montant</p>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function AgenceOffres() {
               <p className="text-sm text-slate-300 leading-relaxed">{detailOffer.description}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-background-dark rounded-lg p-3 border border-border-dark">
-                  <p className="text-lg font-black text-white">&euro;{detailOffer.amount.toLocaleString("fr-FR")}</p>
+                  <p className="text-lg font-black text-white">&euro;{(detailOffer.amount ?? 0).toLocaleString("fr-FR")}</p>
                   <p className="text-[10px] text-slate-500 uppercase font-semibold">Montant</p>
                 </div>
                 <div className="bg-background-dark rounded-lg p-3 border border-border-dark">

@@ -399,7 +399,7 @@ export default function ClientDashboard() {
                       <p className="text-sm font-semibold text-white truncate group-hover:text-primary transition-colors">{o.serviceTitle}</p>
                       <p className="text-xs text-slate-500">#{o.id.slice(-4)} · {o.status}</p>
                     </div>
-                    <span className="text-sm font-bold text-white flex-shrink-0">{o.amount.toLocaleString("fr-FR")} €</span>
+                    <span className="text-sm font-bold text-white flex-shrink-0">{(o.amount ?? 0).toLocaleString("fr-FR")} €</span>
                   </Link>
                 ))
               ) : (

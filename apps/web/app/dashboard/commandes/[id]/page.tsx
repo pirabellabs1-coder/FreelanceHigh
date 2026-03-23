@@ -213,7 +213,7 @@ export default function OrderDetailPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
           <p className="text-xs text-slate-500 font-semibold">Montant</p>
-          <p className="text-lg font-bold mt-1">€{order.amount.toLocaleString("fr-FR")}</p>
+          <p className="text-lg font-bold mt-1">€{(order.amount ?? 0).toLocaleString("fr-FR")}</p>
         </div>
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
           <p className="text-xs text-slate-500 font-semibold">Forfait</p>

@@ -101,11 +101,11 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
         paymentStatus: "PAID",
         stripePaymentIntentId: paymentIntent.id,
         paidAt: new Date(),
-      },
+      } as any,
     });
 
     // Update wallet transaction: mark escrow as released
-    await prisma.walletTransaction.updateMany({
+    await (prisma as any).walletTransaction.updateMany({
       where: {
         orderId,
         escrowStatus: "held",
@@ -155,13 +155,13 @@ async function handleAccountUpdated(account: Stripe.Account) {
   try {
     // Update the freelance profile with Stripe account status
     await prisma.user.updateMany({
-      where: { stripeAccountId: accountId },
+      where: { stripeAccountId: accountId } as any,
       data: {
         stripeAccountStatus: verificationStatus,
         stripeChargesEnabled: chargesEnabled,
         stripePayoutsEnabled: payoutsEnabled,
         stripeDetailsSubmitted: detailsSubmitted ?? false,
-      },
+      } as any,
     });
 
     console.log(
@@ -217,7 +217,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         subscriptionTier: planId.toUpperCase(),
         stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
         subscriptionUpdatedAt: new Date(),
-      },
+      } as any,
     });
 
     console.log(
@@ -398,11 +398,15 @@ async function handleFormationCheckout(session: Stripe.Checkout.Session) {
   // Fire marketing hooks for each formation purchase (fire-and-forget)
   for (const formation of formations) {
     const paidAmount = formation.price * (1 - discountPct / 100);
-    onFormationPurchase(userId, formation.id, paidAmount, {
-      sessionId: session.id,
-      source: promoId ? "promo" : "direct",
-      formationTitle: formation.title,
-    }).catch((err) => console.error("[Marketing Hooks] Formation purchase hook error:", err));
+    try {
+      onFormationPurchase(userId, formation.id, paidAmount, {
+        sessionId: session.id,
+        source: promoId ? "promo" : "direct",
+        formationTitle: formation.title,
+      });
+    } catch (err) {
+      console.error("[Marketing Hooks] Formation purchase hook error:", err);
+    }
   }
 
   console.log(
@@ -543,13 +547,17 @@ async function handleCohortCheckout(session: Stripe.Checkout.Session) {
   }
 
   // Fire marketing hook for cohort purchase (fire-and-forget)
-  onFormationPurchase(userId, formationId, paidAmount, {
-    sessionId: session.id,
-    cohortId,
-    source: "cohort",
-    formationTitle: cohort.formation.title,
-    cohortTitle: cohort.title,
-  }).catch((err) => console.error("[Marketing Hooks] Cohort purchase hook error:", err));
+  try {
+    onFormationPurchase(userId, formationId, paidAmount, {
+      sessionId: session.id,
+      cohortId,
+      source: "cohort",
+      formationTitle: cohort.formation.title,
+      cohortTitle: cohort.title,
+    });
+  } catch (err) {
+    console.error("[Marketing Hooks] Cohort purchase hook error:", err);
+  }
 
   console.log(
     `[Stripe Webhook] Cohort enrollment créé: userId=${userId}, cohortId=${cohortId}, session=${session.id}`
@@ -713,12 +721,16 @@ async function handleDigitalProductCheckout(session: Stripe.Checkout.Session) {
   }
 
   // Fire marketing hook for product purchase (fire-and-forget)
-  onProductPurchase(userId, productId, paidAmount, {
-    sessionId: session.id,
-    source: flashPromoId ? "flash_promo" : "direct",
-    productTitle: product.title,
-    productType: product.productType,
-  }).catch((err) => console.error("[Marketing Hooks] Product purchase hook error:", err));
+  try {
+    onProductPurchase(userId, productId, paidAmount, {
+      sessionId: session.id,
+      source: flashPromoId ? "flash_promo" : "direct",
+      productTitle: product.title,
+      productType: product.productType,
+    });
+  } catch (err) {
+    console.error("[Marketing Hooks] Product purchase hook error:", err);
+  }
 
   console.log(
     `[Stripe Webhook] Achat produit ${productId} par userId=${userId}, session=${session.id}`
@@ -741,7 +753,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
         data: {
           paymentStatus: "FAILED",
           paymentFailureReason: failureMessage,
-        },
+        } as any,
       });
 
       console.log(

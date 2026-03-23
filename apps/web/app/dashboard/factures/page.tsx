@@ -238,7 +238,7 @@ export default function FacturesPage() {
                       {invoice.description}
                     </td>
                     <td className="px-6 py-4 text-sm font-bold">
-                      €{invoice.amount.toLocaleString("fr-FR")}
+                      €{(invoice.amount ?? 0).toLocaleString("fr-FR")}
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold", s?.color)}>
@@ -320,7 +320,7 @@ export default function FacturesPage() {
               </div>
               <div className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-border-dark">
                 <span className="text-sm text-slate-500">Montant TTC</span>
-                <span className="text-lg font-extrabold text-primary">€{detailInvoice.amount.toLocaleString("fr-FR")}</span>
+                <span className="text-lg font-extrabold text-primary">€{(detailInvoice.amount ?? 0).toLocaleString("fr-FR")}</span>
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-sm text-slate-500">Statut</span>

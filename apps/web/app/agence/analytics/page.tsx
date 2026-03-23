@@ -268,7 +268,7 @@ export default function AgenceAnalytics() {
                   <td className="px-5 py-3 text-sm font-semibold text-white truncate max-w-[220px]">{s.title}</td>
                   <td className="px-5 py-3 text-sm text-slate-300">{s.views}</td>
                   <td className="px-5 py-3 text-sm text-slate-300">{s.orderCount}</td>
-                  <td className="px-5 py-3 text-sm text-primary font-semibold">{s.revenue.toLocaleString("fr-FR")} &euro;</td>
+                  <td className="px-5 py-3 text-sm text-primary font-semibold">{(s.revenue ?? 0).toLocaleString("fr-FR")} &euro;</td>
                   <td className="px-5 py-3"><span className="text-sm font-semibold text-yellow-400 flex items-center gap-0.5"><span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>{s.rating.toFixed(1)}</span></td>
                 </tr>
               ))}

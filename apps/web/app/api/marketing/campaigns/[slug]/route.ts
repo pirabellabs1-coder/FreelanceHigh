@@ -26,9 +26,9 @@ const MOCK_CAMPAIGNS: MockCampaign[] = [];
 function buildDestinationUrl(
   origin: string,
   destinationUrl: string,
-  utmSource: string,
-  utmMedium: string,
-  utmCampaign: string,
+  utmSource: string | null,
+  utmMedium: string | null,
+  utmCampaign: string | null,
   utmContent: string | null,
 ): string {
   // Build full URL with UTM parameters
@@ -36,9 +36,9 @@ function buildDestinationUrl(
   const baseUrl = isAbsolute ? destinationUrl : `${origin}${destinationUrl}`;
 
   const url = new URL(baseUrl);
-  url.searchParams.set("utm_source", utmSource);
-  url.searchParams.set("utm_medium", utmMedium);
-  url.searchParams.set("utm_campaign", utmCampaign);
+  if (utmSource) url.searchParams.set("utm_source", utmSource);
+  if (utmMedium) url.searchParams.set("utm_medium", utmMedium);
+  if (utmCampaign) url.searchParams.set("utm_campaign", utmCampaign);
   if (utmContent) {
     url.searchParams.set("utm_content", utmContent);
   }
@@ -158,21 +158,22 @@ export async function GET(
       return NextResponse.redirect(new URL(destUrl));
     }
 
-    // Record click
-    await prisma.campaignClick.create({
+    // Record click as event
+    await prisma.campaignEvent.create({
       data: {
         campaignId: campaign.id,
         visitorId,
+        eventType: "click",
         ip,
         userAgent,
         referer,
       },
     });
 
-    // Update last click timestamp
+    // Increment total clicks
     await prisma.campaignTracker.update({
       where: { id: campaign.id },
-      data: { lastClickAt: new Date() },
+      data: { totalClicks: { increment: 1 } },
     });
 
     // Build destination URL with UTM params

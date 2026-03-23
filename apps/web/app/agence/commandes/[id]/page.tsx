@@ -112,7 +112,7 @@ export default function AgenceCommandeDetail() {
           <div className="flex items-center gap-3 mt-1 text-sm text-slate-400">
             <span className="font-mono text-primary">{order.id}</span><span>·</span>
             <span>Client : {order.clientName}</span><span>·</span>
-            <span className="font-bold text-white">{"\u20AC"}{order.amount.toLocaleString("fr-FR")}</span>
+            <span className="font-bold text-white">{"\u20AC"}{(order.amount ?? 0).toLocaleString("fr-FR")}</span>
           </div>
         </div>
         {sc && (

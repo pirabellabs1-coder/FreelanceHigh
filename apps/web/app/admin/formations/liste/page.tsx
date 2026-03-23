@@ -9,7 +9,6 @@ interface AdminFormation {
   id: string;
   slug: string;
   title: string;
-  title: string;
   status: string;
   price: number;
   isFree: boolean;

@@ -254,7 +254,7 @@ export default function AdminServices() {
                       <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
                         <span>par <b className="text-slate-300">{s.freelanceName}</b></span>
                         <span className="font-bold text-primary">&euro;{s.price}</span>
-                        {s.views > 0 && <span>{s.views.toLocaleString()} vues</span>}
+                        {s.views > 0 && <span>{(s.views ?? 0).toLocaleString()} vues</span>}
                         {s.orders > 0 && <span>{s.orders} commandes</span>}
                         {s.rating > 0 && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-amber-400 text-sm">star</span>{s.rating}</span>}
                         <span>Créé le {new Date(s.createdAt).toLocaleDateString("fr-FR")}</span>

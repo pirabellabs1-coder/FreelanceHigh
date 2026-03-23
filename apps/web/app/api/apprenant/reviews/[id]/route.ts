@@ -9,7 +9,7 @@ const EDIT_WINDOW_DAYS = 7;
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +18,8 @@ export async function PUT(
     }
 
     const userId = session.user.id;
-    const reviewId = params.id;
+    const { id } = await params;
+    const reviewId = id;
 
     // Find the review
     const review = await prisma.formationReview.findUnique({
@@ -98,7 +99,7 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -107,7 +108,8 @@ export async function DELETE(
     }
 
     const userId = session.user.id;
-    const reviewId = params.id;
+    const { id } = await params;
+    const reviewId = id;
 
     // Find the review
     const review = await prisma.formationReview.findUnique({

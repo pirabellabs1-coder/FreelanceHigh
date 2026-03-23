@@ -8,7 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 import { cn } from "@/lib/utils";
-import { optimizedUrl } from "@/lib/cloudinary";
+import { optimizedUrl } from "@/lib/cloudinary-utils";
 
 // ============================================================
 // Types — aligned with API response
@@ -275,8 +275,45 @@ export default function ServiceDetailPage() {
   const [contactOpen, setContactOpen] = useState(false);
   const [contactMessage, setContactMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [orderRequirements, setOrderRequirements] = useState("");
+  const [ordering, setOrdering] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
+
+  async function handleOrder() {
+    if (!session?.user) {
+      router.push(`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}`);
+      return;
+    }
+    if (!orderModalOpen) { setOrderModalOpen(true); return; }
+    if (!service) return;
+    setOrdering(true);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: service.id,
+          packageType: selectedPackage,
+          requirements: orderRequirements.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const orderId = data.order?.id || data.id;
+        setOrderModalOpen(false);
+        router.push(orderId ? `/client/commandes/${orderId}` : "/client/commandes");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erreur lors de la commande");
+      }
+    } catch {
+      alert("Erreur réseau");
+    } finally {
+      setOrdering(false);
+    }
+  }
 
   async function handleContactSeller() {
     if (!session?.user) {
@@ -514,7 +551,7 @@ export default function ServiceDetailPage() {
               <span className="text-slate-600">|</span>
               <span className="text-sm text-slate-400 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm text-primary">visibility</span>
-                {service.views.toLocaleString(locale === "en" ? "en-US" : "fr-FR")} {t("views")}
+                {(service.views ?? 0).toLocaleString(locale === "en" ? "en-US" : "fr-FR")} {t("views")}
               </span>
             </div>
 
@@ -605,6 +642,34 @@ export default function ServiceDetailPage() {
               </div>
             )}
 
+            {/* Video */}
+            {service?.videoUrl && (
+              <div className="mb-8">
+                <h2 className="text-lg font-bold text-white mb-4">Vidéo de présentation</h2>
+                <div className="relative rounded-xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video">
+                  {service.videoUrl.includes("youtube.com") || service.videoUrl.includes("youtu.be") ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${service.videoUrl.includes("youtu.be") ? service.videoUrl.split("/").pop()?.split("?")[0] : new URLSearchParams(service.videoUrl.split("?")[1] || "").get("v")}`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Video de présentation"
+                    />
+                  ) : service.videoUrl.includes("vimeo.com") ? (
+                    <iframe
+                      src={`https://player.vimeo.com/video/${service.videoUrl.split("/").pop()?.split("?")[0]}`}
+                      className="w-full h-full"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title="Video de présentation"
+                    />
+                  ) : (
+                    <video src={service.videoUrl} controls className="w-full h-full" />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Description */}
             <div className="space-y-8">
               <div>
@@ -674,8 +739,8 @@ export default function ServiceDetailPage() {
                           );
                         })}
                       </div>
-                      <Link
-                        href={`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}&message=Connectez-vous+pour+commander+ce+service`}
+                      <button
+                        onClick={handleOrder}
                         className={cn(
                           "mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all",
                           isSelected
@@ -685,7 +750,7 @@ export default function ServiceDetailPage() {
                       >
                         <span className="material-symbols-outlined text-sm">shopping_cart</span>
                         {t("order_button")}
-                      </Link>
+                      </button>
                     </button>
                   );
                 })}
@@ -719,7 +784,7 @@ export default function ServiceDetailPage() {
                   { icon: "timer", label: t("delivery_time"), value: t("delivery_days", { count: service.deliveryDays }) },
                   { icon: "refresh", label: t("revisions_included"), value: `${service.revisions}` },
                   { icon: "shopping_cart", label: t("orders"), value: `${service.orderCount}` },
-                  { icon: "visibility", label: t("views"), value: service.views.toLocaleString(locale === "en" ? "en-US" : "fr-FR") },
+                  { icon: "visibility", label: t("views"), value: (service.views ?? 0).toLocaleString(locale === "en" ? "en-US" : "fr-FR") },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-neutral-dark border border-border-dark rounded-xl p-4 text-center">
                     <span className="material-symbols-outlined text-primary text-xl mb-2 block">{stat.icon}</span>
@@ -1070,13 +1135,13 @@ export default function ServiceDetailPage() {
 
                   {/* CTA Buttons */}
                   <div className="space-y-3 pt-2">
-                    <Link
-                      href={`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}&message=Connectez-vous+pour+commander+ce+service`}
+                    <button
+                      onClick={handleOrder}
                       className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
                     >
                       <span className="material-symbols-outlined text-base">shopping_cart</span>
                       {t("order_this_package")}
-                    </Link>
+                    </button>
                     <button onClick={() => { if (!session?.user) { router.push(`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}`); return; } setContactOpen(!contactOpen); }} className="w-full flex items-center justify-center gap-2 bg-transparent border border-border-dark hover:border-primary/50 text-slate-300 hover:text-primary rounded-xl px-6 py-3.5 text-sm font-bold transition-all">
                       <span className="material-symbols-outlined text-base">mail</span>
                       {t("contact_seller")}
@@ -1122,6 +1187,44 @@ export default function ServiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Order Modal */}
+      {orderModalOpen && service && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOrderModalOpen(false)} />
+          <div className="relative bg-neutral-dark border border-border-dark rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-4">Confirmer la commande</h3>
+            <div className="bg-white/5 rounded-xl p-4 mb-4 space-y-2">
+              <p className="text-sm text-white font-semibold">{service.title}</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Forfait</span>
+                <span className="text-white font-bold capitalize">{selectedPackage}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Prix</span>
+                <span className="text-primary font-bold">
+                  {((service.packages as Record<string, {price?: number}>)?.[selectedPackage]?.price ?? service.basePrice ?? 0).toLocaleString("fr-FR")} EUR
+                </span>
+              </div>
+            </div>
+            <textarea
+              value={orderRequirements}
+              onChange={(e) => setOrderRequirements(e.target.value)}
+              placeholder="Instructions pour le freelance (optionnel)..."
+              className="w-full bg-white/5 border border-border-dark rounded-xl p-3 text-sm text-white placeholder:text-slate-500 resize-none focus:border-primary/50 focus:outline-none mb-4"
+              rows={3}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setOrderModalOpen(false)} className="flex-1 py-2.5 border border-border-dark text-slate-300 rounded-xl text-sm font-bold hover:bg-white/5 transition-all">
+                Annuler
+              </button>
+              <button onClick={handleOrder} disabled={ordering} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50">
+                {ordering ? "Commande en cours..." : "Confirmer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

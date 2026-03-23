@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { ImageUpload } from "@/components/ui/image-upload";
+import type { FreelancerProfile } from "@/lib/demo-data";
 
 const SKILL_LEVELS = ["debutant", "intermediaire", "expert"] as const;
 const LANGUAGE_LEVELS = ["Natif", "Courant", "Avancé", "Intermédiaire", "Débutant"] as const;
@@ -36,9 +37,9 @@ export default function ProfilPage() {
   const [form, setForm] = useState(() => ({
     ...SAFE_DEFAULTS,
     ...profile,
-    skills: Array.isArray(profile?.skills) ? profile.skills : SAFE_DEFAULTS.skills,
-    languages: Array.isArray(profile?.languages) ? profile.languages : SAFE_DEFAULTS.languages,
-    education: Array.isArray(profile?.education) ? profile.education : SAFE_DEFAULTS.education,
+    skills: Array.isArray(profile?.skills) ? profile.skills as typeof SAFE_DEFAULTS.skills : SAFE_DEFAULTS.skills,
+    languages: Array.isArray(profile?.languages) ? profile.languages as typeof SAFE_DEFAULTS.languages : SAFE_DEFAULTS.languages,
+    education: Array.isArray(profile?.education) ? profile.education as typeof SAFE_DEFAULTS.education : SAFE_DEFAULTS.education,
     links: profile?.links && typeof profile.links === "object" ? { ...SAFE_DEFAULTS.links, ...profile.links } : SAFE_DEFAULTS.links,
   }));
   const [saving, setSaving] = useState(false);
@@ -60,9 +61,9 @@ export default function ProfilPage() {
         ...SAFE_DEFAULTS,
         ...profile,
         // Ensure arrays are never undefined (prevents .map() crashes)
-        skills: Array.isArray(profile.skills) ? profile.skills : SAFE_DEFAULTS.skills,
-        languages: Array.isArray(profile.languages) ? profile.languages : SAFE_DEFAULTS.languages,
-        education: Array.isArray(profile.education) ? profile.education : SAFE_DEFAULTS.education,
+        skills: Array.isArray(profile.skills) ? profile.skills as typeof SAFE_DEFAULTS.skills : SAFE_DEFAULTS.skills,
+        languages: Array.isArray(profile.languages) ? profile.languages as typeof SAFE_DEFAULTS.languages : SAFE_DEFAULTS.languages,
+        education: Array.isArray(profile.education) ? profile.education as typeof SAFE_DEFAULTS.education : SAFE_DEFAULTS.education,
         links: profile.links && typeof profile.links === "object" ? { ...SAFE_DEFAULTS.links, ...profile.links } : SAFE_DEFAULTS.links,
       });
     }
@@ -83,16 +84,17 @@ export default function ProfilPage() {
   async function handleSave() {
     setSaving(true);
     try {
-      const success = await apiSaveProfile(form);
+      const typedForm = { ...form, skills: form.skills as FreelancerProfile["skills"], education: form.education as FreelancerProfile["education"] };
+      const success = await apiSaveProfile(typedForm);
       if (success) {
         addToast("success", "Profil mis à jour avec succès !");
       } else {
         // Fallback to local update
-        updateProfile(form);
+        updateProfile(typedForm);
         addToast("success", "Profil mis à jour localement");
       }
     } catch {
-      updateProfile(form);
+      updateProfile({ ...form, skills: form.skills as FreelancerProfile["skills"], education: form.education as FreelancerProfile["education"] });
       addToast("success", "Profil mis à jour localement");
     } finally {
       setSaving(false);

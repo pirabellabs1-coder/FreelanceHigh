@@ -113,7 +113,7 @@ export default function ServicesPage() {
   // Plan limits calculation
   const planName = normalizePlanName(useDashboardStore.getState().currentPlan) as PlanName;
   const planRules = PLAN_RULES[planName] || PLAN_RULES.GRATUIT;
-  const activeServiceCount = services.filter((s) => s.status === "actif" || s.status === "en_attente").length;
+  const activeServiceCount = services.filter((s) => s.status === "actif" || (s.status as string) === "en_attente").length;
 
   return (
     <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
@@ -442,7 +442,7 @@ export default function ServicesPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         {s.status === "actif" && (
                           <Link
-                            href={`/services/${s.slug || s.id}`}
+                            href={`/services/${(s as any).slug || s.id}`}
                             target="_blank"
                             className="p-2 rounded-lg hover:bg-primary/20 text-primary transition-colors"
                             title="Voir en ligne"

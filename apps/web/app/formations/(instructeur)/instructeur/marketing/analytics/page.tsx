@@ -230,7 +230,7 @@ export default function MarketingAnalyticsPage() {
         {/* Revenue by month — formations vs products */}
         <ChartContainer
           title={fr ? "Revenus par mois" : "Revenue by month"}
-          exportData={revenueByMonth}
+          exportData={revenueByMonth as any}
           exportFilename="revenus-mois"
         >
           <ResponsiveContainer width="100%" height={260}>
@@ -311,7 +311,7 @@ export default function MarketingAnalyticsPage() {
         {/* Traffic sources */}
         <ChartContainer
           title={fr ? "Sources de trafic" : "Traffic sources"}
-          exportData={trafficSources}
+          exportData={trafficSources as any}
           exportFilename="trafic-sources"
         >
           {trafficSources.length > 0 ? (
@@ -364,7 +364,7 @@ export default function MarketingAnalyticsPage() {
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <span className="text-slate-500 flex items-center gap-1">
-                    <Eye className="w-3 h-3" /> {p.views.toLocaleString("fr-FR")}
+                    <Eye className="w-3 h-3" /> {(p.views ?? 0).toLocaleString("fr-FR")}
                   </span>
                   <span className="text-green-600 font-medium">{p.conversions} conv.</span>
                 </div>

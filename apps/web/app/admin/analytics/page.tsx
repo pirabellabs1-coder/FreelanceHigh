@@ -279,7 +279,7 @@ export default function AdminAnalytics() {
               <div key={f.step}>
                 <div className="flex items-center justify-between text-sm mb-1">
                   <span className="text-slate-300">{f.step}</span>
-                  <span className="font-bold text-white">{f.count.toLocaleString()} <span className="text-slate-500 font-normal">({f.rate}%)</span></span>
+                  <span className="font-bold text-white">{(f.count ?? 0).toLocaleString()} <span className="text-slate-500 font-normal">({f.rate}%)</span></span>
                 </div>
                 <div className="h-3 bg-border-dark rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(f.rate, 2)}%`, backgroundColor: COLORS[idx % COLORS.length] }} />
@@ -312,7 +312,7 @@ export default function AdminAnalytics() {
           <h2 className="font-bold text-white mb-4">Distribution des avis</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center">
-              <p className="text-xl font-bold text-white">{analytics.reviewStats.avgQualité.toFixed(1)}</p>
+              <p className="text-xl font-bold text-white">{analytics.reviewStats.avgQualite.toFixed(1)}</p>
               <p className="text-[10px] text-slate-500 uppercase">Qualité</p>
             </div>
             <div className="text-center">
@@ -320,7 +320,7 @@ export default function AdminAnalytics() {
               <p className="text-[10px] text-slate-500 uppercase">Communication</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-white">{analytics.reviewStats.avgDélai.toFixed(1)}</p>
+              <p className="text-xl font-bold text-white">{analytics.reviewStats.avgDelai.toFixed(1)}</p>
               <p className="text-[10px] text-slate-500 uppercase">Délai</p>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function AdminAnalytics() {
                     <td className="px-4 py-2 text-sm text-slate-300 font-medium">{c.country}</td>
                     <td className="px-4 py-2 text-center text-sm font-bold text-white">{c.users}</td>
                     <td className="px-4 py-2 text-center text-sm text-slate-400">{c.orders}</td>
-                    <td className="px-4 py-2 text-right text-sm font-bold text-primary">{c.revenue.toLocaleString()} €</td>
+                    <td className="px-4 py-2 text-right text-sm font-bold text-primary">{(c.revenue ?? 0).toLocaleString()} €</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-24 h-2 bg-border-dark rounded-full overflow-hidden">
@@ -412,7 +412,7 @@ export default function AdminAnalytics() {
                   <span className={cn("material-symbols-outlined text-lg", s.color)}>{s.icon}</span>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
                 </div>
-                <p className="text-xl font-black text-white">{s.value.toLocaleString()}</p>
+                <p className="text-xl font-black text-white">{(s.value ?? 0).toLocaleString()}</p>
               </div>
             ))}
           </div>

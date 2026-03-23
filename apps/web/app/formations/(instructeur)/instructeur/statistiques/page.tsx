@@ -362,7 +362,7 @@ export default function InstructeurStatistiquesPage() {
                         <span className="text-xs text-slate-500">{(f.completionRate ?? 0).toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="p-4 text-sm font-bold text-slate-900 dark:text-white text-right">{f.revenue.toLocaleString("fr-FR")}€</td>
+                    <td className="p-4 text-sm font-bold text-slate-900 dark:text-white text-right">{(f.revenue ?? 0).toLocaleString("fr-FR")}€</td>
                     <td className="p-4 text-right">
                       <span className="text-sm text-amber-500 font-medium">★ {f.rating.toFixed(1)}</span>
                     </td>

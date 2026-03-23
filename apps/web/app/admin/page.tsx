@@ -80,7 +80,7 @@ export default function AdminDashboard() {
 
   const STATS = [
     { label: "Utilisateurs", value: users.totalUsers.toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
-    { label: "GMV", value: `€${orders.gmv.toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
+    { label: "GMV", value: `€${(orders.gmv ?? 0).toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
     { label: "Commandes actives", value: orders.active.toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
     { label: "Commissions", value: `€${finances.platformRevenue.toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
     { label: "Litiges", value: disputes.total.toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },

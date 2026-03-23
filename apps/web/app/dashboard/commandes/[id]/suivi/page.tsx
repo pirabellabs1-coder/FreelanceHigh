@@ -726,7 +726,7 @@ export default function OrderTrackingPage() {
               <div>
                 <p className="text-xs text-slate-500 font-semibold mb-1">Montant</p>
                 <p className="text-sm font-bold text-primary">
-                  {"\u20AC"}{order.amount.toLocaleString("fr-FR")}
+                  {"\u20AC"}{(order.amount ?? 0).toLocaleString("fr-FR")}
                 </p>
               </div>
 

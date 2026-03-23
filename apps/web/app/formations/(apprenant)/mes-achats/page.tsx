@@ -541,7 +541,7 @@ export default function MesAchatsPage() {
                       {refundStatusLabel(refund.status)}
                     </span>
                     <p className="font-bold text-sm tabular-nums text-slate-900 dark:text-white dark:text-slate-100">
-                      {refund.amount.toLocaleString("fr-FR", {
+                      {(refund.amount ?? 0).toLocaleString("fr-FR", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -649,7 +649,7 @@ export default function MesAchatsPage() {
                         : "text-slate-900 dark:text-white dark:text-slate-100"
                     }`}
                   >
-                    {purchase.amount.toLocaleString("fr-FR", {
+                    {(purchase.amount ?? 0).toLocaleString("fr-FR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

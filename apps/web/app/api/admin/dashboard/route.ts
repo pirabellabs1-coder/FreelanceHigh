@@ -88,10 +88,10 @@ export async function GET() {
         recentOrdersSet.map((o) => o.clientId)
       );
       const freelanceServices = services.filter(
-        (s) => !(s as Record<string, unknown>).agencyId
+        (s) => !(s as unknown as Record<string, unknown>).agencyId
       ).length;
       const agencyServices = services.filter(
-        (s) => !!(s as Record<string, unknown>).agencyId
+        (s) => !!(s as unknown as Record<string, unknown>).agencyId
       ).length;
 
       // ── Monthly Revenue (this year, grouped by month) ──

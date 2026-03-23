@@ -35,7 +35,7 @@ export async function GET(
             instructeur: {
               select: {
                 user: { select: { name: true, image: true } },
-                bio: true,
+                bioFr: true,
               },
             },
           },

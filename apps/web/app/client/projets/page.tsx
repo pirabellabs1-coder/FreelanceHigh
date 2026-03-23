@@ -225,7 +225,7 @@ export default function ClientProjects() {
                   <div className="flex items-center gap-6 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">payments</span>
-                      {p.budget.min.toLocaleString("fr-FR")} - {p.budget.max.toLocaleString("fr-FR")}
+                      {(p.budget?.min ?? 0).toLocaleString("fr-FR")} - {(p.budget?.max ?? 0).toLocaleString("fr-FR")}
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">calendar_today</span>

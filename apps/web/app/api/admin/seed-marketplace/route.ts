@@ -697,10 +697,10 @@ export async function POST(req: NextRequest) {
     let offersCreated = 0;
     const offerData = [
       { freelanceIdx: 0, clientIdx: 0, title: "Développement dashboard analytics sur mesure", amount: 1200, status: "EN_ATTENTE" as const },
-      { freelanceIdx: 1, clientIdx: 1, title: "Refonte UI complète de votre application", amount: 800, status: "ACCEPTE" as const },
-      { freelanceIdx: 2, clientIdx: 0, title: "API REST microservices + documentation", amount: 950, status: "REFUSE" as const },
+      { freelanceIdx: 1, clientIdx: 1, title: "Refonte UI complète de votre application", amount: 800, status: "ACCEPTEE" as const },
+      { freelanceIdx: 2, clientIdx: 0, title: "API REST microservices + documentation", amount: 950, status: "REFUSEE" as const },
       { freelanceIdx: 3, clientIdx: 2, title: "Rédaction de 20 articles SEO pour votre blog", amount: 400, status: "EN_ATTENTE" as const },
-      { freelanceIdx: 4, clientIdx: 1, title: "Audit SEO complet + plan d'action 3 mois", amount: 600, status: "EXPIRE" as const },
+      { freelanceIdx: 4, clientIdx: 1, title: "Audit SEO complet + plan d'action 3 mois", amount: 600, status: "EXPIREE" as const },
     ];
 
     for (const of_ of offerData) {
@@ -728,7 +728,7 @@ export async function POST(req: NextRequest) {
           revisions: 3,
           validityDays: 14,
           status: of_.status,
-          expiresAt: of_.status === "EXPIRE"
+          expiresAt: of_.status === "EXPIREE"
             ? new Date(Date.now() - 86400000)
             : new Date(Date.now() + 14 * 86400000),
         },

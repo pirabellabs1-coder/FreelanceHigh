@@ -575,7 +575,7 @@ export default function AdminFormationsDashboardPage() {
                   {/* Count + Percentage */}
                   <div className="text-right w-24 shrink-0">
                     <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {geo.count.toLocaleString(fr ? "fr-FR" : "en-US")}
+                      {(geo.count ?? 0).toLocaleString(fr ? "fr-FR" : "en-US")}
                     </span>
                     <span className="text-xs text-slate-400 ml-1">({geo.percentage}%)</span>
                   </div>
@@ -698,7 +698,7 @@ export default function AdminFormationsDashboardPage() {
 
                     {/* Revenue */}
                     <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white">
-                      {inst.revenue.toLocaleString(fr ? "fr-FR" : "en-US", {
+                      {(inst.revenue ?? 0).toLocaleString(fr ? "fr-FR" : "en-US", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}{" "}

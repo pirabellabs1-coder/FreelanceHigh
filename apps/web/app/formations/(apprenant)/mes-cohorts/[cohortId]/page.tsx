@@ -190,7 +190,7 @@ export default function ApprenantCohortDetailPage({ params }: { params: Promise<
           <div className="mt-3 flex items-center gap-2">
             <Award className="w-4 h-4 text-green-600" />
             <Link
-              href={`/formations/certificats/${data.enrollment.certificate.id}`}
+              href={`/formations/certificats/${(data.enrollment.certificate as any).id}`}
               className="text-sm text-green-600 hover:underline font-medium"
             >
               {fr ? "Voir mon certificat" : "View my certificate"}

@@ -363,10 +363,10 @@ export async function GET(req: NextRequest) {
       // Product purchases for revenue
       prisma.digitalProductPurchase.findMany({
         where: {
-          digitalProduct: { instructeurId: instructeur.id },
+          product: { instructeurId: instructeur.id },
           createdAt: { gte: startDate, lte: now },
         },
-        include: { digitalProduct: { select: { price: true } } },
+        include: { product: { select: { price: true } } },
       }),
     ]);
 
@@ -376,38 +376,38 @@ export async function GET(req: NextRequest) {
       0,
     );
     const productRevenue = purchases.reduce(
-      (sum, p) => sum + (p.digitalProduct?.price || 0),
+      (sum: number, p: { product?: { price: number } | null }) => sum + (p.product?.price || 0),
       0,
     );
     const totalRevenue = formationRevenue + productRevenue;
     const totalSales = enrollments.length + purchases.length;
 
     // Affiliate stats
-    const activeAffiliateCount = affiliatePrograms.reduce(
-      (sum, p) => sum + p.affiliates.length,
+    const activeAffiliateCount = (affiliatePrograms as unknown as { affiliates: unknown[]; totalPaidOut: number }[]).reduce(
+      (sum: number, p: { affiliates: unknown[] }) => sum + p.affiliates.length,
       0,
     );
-    const totalAffiliateRevenue = affiliatePrograms.reduce(
-      (sum, p) => sum + p.totalPaidOut,
+    const totalAffiliateRevenue = (affiliatePrograms as unknown as { totalPaidOut: number }[]).reduce(
+      (sum: number, p: { totalPaidOut: number }) => sum + p.totalPaidOut,
       0,
     );
 
     // Discount stats
-    const activeDiscountCount = discounts.filter(
-      (d) =>
+    const activeDiscountCount = (discounts as { isActive: boolean; maxUses: number | null; usedCount: number; expiresAt: Date | null }[]).filter(
+      (d: { isActive: boolean; maxUses: number | null; usedCount: number; expiresAt: Date | null }) =>
         d.isActive &&
         !(d.maxUses !== null && d.usedCount >= d.maxUses) &&
         !(d.expiresAt && new Date(d.expiresAt) < now),
     ).length;
 
     // Flash offer stats
-    const activeFlashCount = flashOffers.filter(
-      (o) => o.isActive && o.startsAt <= now && o.endsAt > now,
+    const activeFlashCount = (flashOffers as { isActive: boolean; startsAt: Date; endsAt: Date }[]).filter(
+      (o: { isActive: boolean; startsAt: Date; endsAt: Date }) => o.isActive && o.startsAt <= now && o.endsAt > now,
     ).length;
 
     // Sequence stats
-    const activeSequenceCount = sequences.filter((s) => s.isActive).length;
-    const totalEnrolled = sequences.reduce((s, seq) => s + seq.totalEnrolled, 0);
+    const activeSequenceCount = (sequences as { isActive: boolean; totalEnrolled: number }[]).filter((s: { isActive: boolean }) => s.isActive).length;
+    const totalEnrolled = (sequences as { totalEnrolled: number }[]).reduce((s: number, seq: { totalEnrolled: number }) => s + seq.totalEnrolled, 0);
 
     // Funnel stats
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -416,12 +416,12 @@ export async function GET(req: NextRequest) {
     const totalFunnelRevenue = funnels.reduce((s: number, f: any) => s + (f.totalRevenue || 0), 0);
 
     // Popup stats
-    const activePopupCount = popups.filter((p) => p.isActive).length;
-    const totalImpressions = popups.reduce((s, p) => s + p.impressions, 0);
-    const totalPopupConversions = popups.reduce((s, p) => s + p.conversions, 0);
+    const activePopupCount = (popups as { isActive: boolean; impressions: number; conversions: number }[]).filter((p: { isActive: boolean }) => p.isActive).length;
+    const totalImpressions = (popups as { impressions: number }[]).reduce((s: number, p: { impressions: number }) => s + p.impressions, 0);
+    const totalPopupConversions = (popups as { conversions: number }[]).reduce((s: number, p: { conversions: number }) => s + p.conversions, 0);
 
     // Campaign stats
-    const activeCampaignCount = campaigns.filter((c) => c.isActive).length;
+    const activeCampaignCount = (campaigns as { isActive: boolean }[]).filter((c: { isActive: boolean }) => c.isActive).length;
 
     // Get funnel events for conversion rate
     const funnelEvents = await prisma.funnelEvent.findMany({
@@ -452,7 +452,7 @@ export async function GET(req: NextRequest) {
       activeAffiliates: activeAffiliateCount,
       totalAffiliateRevenue,
       activeDiscounts: activeDiscountCount,
-      totalDiscountUses: discounts.reduce((s, d) => s + d.usedCount, 0),
+      totalDiscountUses: (discounts as { usedCount: number }[]).reduce((s: number, d: { usedCount: number }) => s + d.usedCount, 0),
       activeFlashOffers: activeFlashCount,
       totalFlashRevenue: 0,
       activeSequences: activeSequenceCount,

@@ -59,26 +59,27 @@ export default function InstructeurDashboardPage() {
   const error = queryError ? (queryError as Error).message : null;
 
   // Map API fields to expected shape
+  const rawAny = rawData as any;
   const stats: DashboardStats | null = rawData ? {
-    ...(rawData as DashboardStats),
-    averageRating: (rawData as DashboardStats & { avgRating?: number }).averageRating ?? (rawData as DashboardStats & { avgRating?: number }).avgRating ?? 0,
-    revenueTrend: (rawData as DashboardStats).revenueTrend ?? 0,
-    studentsTrend: (rawData as DashboardStats).studentsTrend ?? 0,
-    revenueByMonth: ((rawData as DashboardStats).revenueByMonth ?? []).map(
+    ...(rawData as unknown as DashboardStats),
+    averageRating: rawAny.averageRating ?? rawAny.avgRating ?? 0,
+    revenueTrend: rawAny.revenueTrend ?? 0,
+    studentsTrend: rawAny.studentsTrend ?? 0,
+    revenueByMonth: (rawAny.revenueByMonth ?? []).map(
       (m: { month: string; amount?: number; revenue?: number }) => ({
         month: m.month,
-        revenue: (m as { revenue?: number }).revenue ?? (m as { amount?: number }).amount ?? 0,
+        revenue: m.revenue ?? m.amount ?? 0,
       })
     ),
-    enrollmentsByMonth: (rawData as DashboardStats).enrollmentsByMonth ?? [],
-    formationDistribution: (rawData as DashboardStats).formationDistribution ??
-      ((rawData as DashboardStats).topFormations ?? []).map((f) => ({
+    enrollmentsByMonth: rawAny.enrollmentsByMonth ?? [],
+    formationDistribution: rawAny.formationDistribution ??
+      (rawAny.topFormations ?? []).map((f: any) => ({
         name: f.title?.substring(0, 20) || "Formation",
         value: f.students,
       })),
-    recentEnrollments: (rawData as DashboardStats).recentEnrollments ?? [],
-    recentReviews: (rawData as DashboardStats).recentReviews ?? [],
-    topFormations: (rawData as DashboardStats).topFormations ?? [],
+    recentEnrollments: rawAny.recentEnrollments ?? [],
+    recentReviews: rawAny.recentReviews ?? [],
+    topFormations: rawAny.topFormations ?? [],
   } : null;
 
   useEffect(() => {
@@ -242,7 +243,7 @@ export default function InstructeurDashboardPage() {
         {/* Revenue BarChart */}
         <ChartContainer
           title={fr ? "Revenus mensuels" : "Monthly revenue"}
-          exportData={stats?.revenueByMonth}
+          exportData={stats?.revenueByMonth as any}
           exportFilename="revenus"
           actions={
             <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
@@ -293,7 +294,7 @@ export default function InstructeurDashboardPage() {
         {/* Enrollments AreaChart */}
         <ChartContainer
           title={fr ? "Inscriptions" : "Enrollments"}
-          exportData={stats?.enrollmentsByMonth}
+          exportData={stats?.enrollmentsByMonth as any}
           exportFilename="inscriptions"
         >
           {stats?.enrollmentsByMonth && stats.enrollmentsByMonth.length > 0 ? (
@@ -453,7 +454,7 @@ export default function InstructeurDashboardPage() {
                     {f.rating.toFixed(1)}
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">
-                    {f.revenue.toLocaleString("fr-FR")}€
+                    {(f.revenue ?? 0).toLocaleString("fr-FR")}€
                   </span>
                   <Link
                     href={`/formations/instructeur/${f.id}/statistiques`}

@@ -221,7 +221,7 @@ export default function ProductDashboardPage() {
                     <Star className="w-3 h-3 fill-amber-400" /> {p.rating.toFixed(1)}
                   </div>
                 )}
-                <span className="text-sm font-bold text-slate-900 dark:text-white">{p.revenue.toLocaleString("fr-FR")}€</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{(p.revenue ?? 0).toLocaleString("fr-FR")}€</span>
               </div>
             ))}
             {(!stats.topProducts || stats.topProducts.length === 0) && (

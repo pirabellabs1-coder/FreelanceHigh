@@ -270,7 +270,7 @@ export default function AgenceContratsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-300">{contract.client}</td>
-                      <td className="px-6 py-4 text-sm font-bold">{contract.amount > 0 ? `\u20ac${contract.amount.toLocaleString("fr-FR")}` : "\u2014"}</td>
+                      <td className="px-6 py-4 text-sm font-bold">{contract.amount > 0 ? `\u20ac${(contract.amount ?? 0).toLocaleString("fr-FR")}` : "\u2014"}</td>
                       <td className="px-6 py-4">
                         <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border", sc?.color)}>
                           <span className="material-symbols-outlined text-xs">{sc?.icon}</span>
@@ -333,7 +333,7 @@ export default function AgenceContratsPage() {
               {detailContract.amount > 0 && (
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-slate-500">Montant</span>
-                  <span className="text-lg font-extrabold text-primary">{`\u20ac${detailContract.amount.toLocaleString("fr-FR")}`}</span>
+                  <span className="text-lg font-extrabold text-primary">{`\u20ac${(detailContract.amount ?? 0).toLocaleString("fr-FR")}`}</span>
                 </div>
               )}
             </div>

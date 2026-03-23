@@ -329,7 +329,7 @@ export default function AgenceSousTraitance() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <span>A partir de {f.basePrice.toLocaleString("fr-FR")} €</span>
+                      <span>A partir de {(f.basePrice ?? 0).toLocaleString("fr-FR")} €</span>
                       {f.rating > 0 && (
                         <span className="flex items-center gap-0.5">
                           <span
@@ -423,10 +423,10 @@ export default function AgenceSousTraitance() {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-sm font-bold text-white">
-                          {m.amount.toLocaleString("fr-FR")} €
+                          {(m.amount ?? 0).toLocaleString("fr-FR")} €
                         </td>
                         <td className="px-5 py-3 text-sm font-semibold text-primary">
-                          {m.commission.toLocaleString("fr-FR")} €
+                          {(m.commission ?? 0).toLocaleString("fr-FR")} €
                         </td>
                         <td className="px-5 py-3">
                           <span

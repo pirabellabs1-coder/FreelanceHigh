@@ -101,7 +101,7 @@ export default function CommandesPage() {
         </div>
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4 lg:p-5">
           <p className="text-xs font-bold text-primary uppercase">Revenus</p>
-          <p className="text-xl sm:text-2xl font-extrabold mt-1">€{stats.revenue.toLocaleString("fr-FR")}</p>
+          <p className="text-xl sm:text-2xl font-extrabold mt-1">€{(stats.revenue ?? 0).toLocaleString("fr-FR")}</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export default function CommandesPage() {
                   )}
 
                   {/* Amount */}
-                  <p className="text-sm font-bold">€{order.amount.toLocaleString("fr-FR")}</p>
+                  <p className="text-sm font-bold">€{(order.amount ?? 0).toLocaleString("fr-FR")}</p>
 
                   {/* Status */}
                   <span className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border", sc?.color)}>

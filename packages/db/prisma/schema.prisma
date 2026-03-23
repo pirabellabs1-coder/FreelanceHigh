@@ -564,7 +564,7 @@ model ProjectBid {
 
 model Order {
   id            String       @id @default(cuid())
-  serviceId     String
+  serviceId     String?
   clientId      String
   freelanceId   String
   status        OrderStatus  @default(EN_ATTENTE)
@@ -581,7 +581,7 @@ model Order {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  service       Service      @relation(fields: [serviceId], references: [id])
+  service       Service?     @relation(fields: [serviceId], references: [id])
   client        User         @relation("OrderClient", fields: [clientId], references: [id])
   freelance     User         @relation("OrderFreelance", fields: [freelanceId], references: [id])
   payments      Payment[]
@@ -1079,6 +1079,7 @@ model InstructeurProfile {
   smartPopups        SmartPopup[]         @relation("InstructeurSmartPopups")
   campaignTrackers   CampaignTracker[]    @relation("InstructeurCampaignTrackers")
   automationWorkflows AutomationWorkflow[] @relation("InstructeurAutomationWorkflows")
+  marketingPopups    MarketingPopup[]     @relation("InstructeurPopups")
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -2321,6 +2322,47 @@ model CampaignEvent {
   @@index([userId])
   @@index([eventType])
   @@index([createdAt])
+}
+
+// ── Marketing Popups ──────────────────────────────────────────
+
+model MarketingPopup {
+  id                    String             @id @default(cuid())
+  instructeurId         String
+  name                  String
+  type                  String             // DISCOUNT, EMAIL_CAPTURE, ANNOUNCEMENT, UPSELL, COUNTDOWN
+  trigger               String             // EXIT_INTENT, TIME_DELAY, SCROLL_PERCENT, PAGE_VIEW_COUNT, MANUAL
+  triggerValue          Int?
+  headlineFr            String
+  headlineEn            String             @default("")
+  bodyFr                String             @default("") @db.Text
+  bodyEn                String             @default("") @db.Text
+  ctaTextFr             String             @default("")
+  ctaTextEn             String             @default("")
+  imageBannerUrl        String?
+  discountCode          String?
+  emailCaptureTag       String?
+  countdownEndsAt       DateTime?
+  upsellProductId       String?
+  upsellOriginalPrice   Float?
+  upsellDiscountedPrice Float?
+  ctaUrl                String?
+  showOnPages           String[]           @default([])
+  excludePages          String[]           @default([])
+  newVisitorsOnly       Boolean            @default(false)
+  maxShowsPerUser       Int                @default(3)
+  impressions           Int                @default(0)
+  clicks                Int                @default(0)
+  conversions           Int                @default(0)
+  isActive              Boolean            @default(true)
+
+  instructeur           InstructeurProfile @relation("InstructeurPopups", fields: [instructeurId], references: [id], onDelete: Cascade)
+
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([instructeurId])
+  @@index([isActive])
 }
 
 // ── Automation Engine ─────────────────────────────────────────

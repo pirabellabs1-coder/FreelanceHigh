@@ -409,7 +409,7 @@ function DisputeDetail({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[10px] font-bold text-slate-600 uppercase">Montant en jeu</p>
-                <p className="text-lg font-black text-slate-100">{dispute.amount.toLocaleString("fr-FR")} EUR</p>
+                <p className="text-lg font-black text-slate-100">{(dispute.amount ?? 0).toLocaleString("fr-FR")} EUR</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-600 uppercase">Commande</p>
@@ -568,7 +568,7 @@ function NewReportModal({
               <option value="">Selectionnez une commande</option>
               {eligibleOrders.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.id} — {o.serviceTitle} ({o.amount.toLocaleString("fr-FR")} EUR)
+                  {o.id} — {o.serviceTitle} ({(o.amount ?? 0).toLocaleString("fr-FR")} EUR)
                 </option>
               ))}
             </select>
@@ -913,7 +913,7 @@ export default function LitigesPage() {
 
                 <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
                   {/* Amount */}
-                  <p className="text-sm font-bold">{dispute.amount.toLocaleString("fr-FR")} EUR</p>
+                  <p className="text-sm font-bold">{(dispute.amount ?? 0).toLocaleString("fr-FR")} EUR</p>
 
                   {/* Verdict badge (if resolved) */}
                   {vc && (

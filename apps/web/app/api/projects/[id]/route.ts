@@ -11,7 +11,7 @@ const projectUpdateSchema = z.object({
   description: z.string().max(5000).optional(),
   budget: z.number().positive().optional(),
   deadline: z.string().optional(),
-  status: z.enum(["ouvert", "en_cours", "ferme", "annule"]).optional(),
+  status: z.enum(["ouvert", "pourvu", "ferme", "annule", "brouillon"]).optional(),
   skills: z.array(z.string()).optional(),
 }).strict();
 
@@ -70,7 +70,7 @@ export async function PATCH(
     }
 
     if (IS_DEV) {
-      const project = projectStore.update(id, parsed.data);
+      const project = projectStore.update(id, parsed.data as any);
       if (!project) {
         return NextResponse.json({ error: "Projet non trouve" }, { status: 404 });
       }
@@ -81,7 +81,7 @@ export async function PATCH(
     // Production: Prisma
     const project = await prisma.project.update({
       where: { id },
-      data: parsed.data,
+      data: parsed.data as any,
     });
 
     return NextResponse.json({ project });

@@ -507,7 +507,7 @@ export default function UserDetailPage() {
                       <span className="font-semibold text-primary">{entry.action.replace(/_/g, " ")}</span>
                     </p>
                     {entry.details && (
-                      <p className="text-xs text-slate-500 mt-0.5">{entry.details}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details)}</p>
                     )}
                   </div>
                   <span className="text-xs text-slate-500">

@@ -282,7 +282,7 @@ export default function DashboardPage() {
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                   <span className="text-slate-400">{item.name}</span>
                 </div>
-                <span className="font-bold">{item.value.toLocaleString("fr-FR")}</span>
+                <span className="font-bold">{(item.value ?? 0).toLocaleString("fr-FR")}</span>
               </div>
             ))}
           </div>
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">{new Date(order.deadline).toLocaleDateString("fr-FR")}</td>
-                    <td className="px-6 py-4 text-sm font-bold">€{order.amount.toLocaleString("fr-FR")}</td>
+                    <td className="px-6 py-4 text-sm font-bold">€{(order.amount ?? 0).toLocaleString("fr-FR")}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s?.color ?? ""}`}>
                         {s?.label ?? order.status}

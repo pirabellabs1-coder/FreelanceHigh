@@ -194,7 +194,7 @@ export default function AdminCommandes() {
                     <td className="px-4 py-3 text-sm text-slate-400">{o.freelanceName}</td>
                     <td className="px-4 py-3 text-sm text-slate-400">{o.clientName}</td>
                     <td className="px-4 py-3 text-sm text-center">
-                      <span className="font-bold text-white">&euro;{o.amount.toLocaleString()}</span>
+                      <span className="font-bold text-white">&euro;{(o.amount ?? 0).toLocaleString()}</span>
                       <span className="block text-[10px] text-slate-500">comm. &euro;{o.commission}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -265,7 +265,7 @@ export default function AdminCommandes() {
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Montant</p>
-                  <p className="text-sm font-bold text-primary">&euro;{detail.amount.toLocaleString()}</p>
+                  <p className="text-sm font-bold text-primary">&euro;{(detail.amount ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-slate-500">Commission : &euro;{detail.commission}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">

@@ -218,11 +218,11 @@ export async function GET(req: NextRequest) {
     ).map((f) => f.id);
 
     const productIds = (
-      await prisma.digitalProduct.findMany({
+      await (prisma as any).product.findMany({
         where: { instructeurId: instructeur.id },
         select: { id: true },
       })
-    ).map((p) => p.id);
+    ).map((p: any) => p.id);
 
     // Get enrollments (sales) for current period
     const currentEnrollments = await prisma.enrollment.findMany({
@@ -236,13 +236,13 @@ export async function GET(req: NextRequest) {
     });
 
     // Get purchases for digital products
-    const currentPurchases = await prisma.digitalProductPurchase.findMany({
+    const currentPurchases = await (prisma as any).productPurchase.findMany({
       where: {
-        digitalProductId: { in: productIds },
+        productId: { in: productIds },
         createdAt: { gte: startDate, lte: now },
       },
       include: {
-        digitalProduct: { select: { title: true, price: true } },
+        product: { select: { title: true, price: true } },
       },
     });
 
@@ -254,16 +254,16 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const prevPurchaseCount = await prisma.digitalProductPurchase.count({
+    const prevPurchaseCount = await (prisma as any).productPurchase.count({
       where: {
-        digitalProductId: { in: productIds },
+        productId: { in: productIds },
         createdAt: { gte: prevStartDate, lt: startDate },
       },
     });
 
     // Calculate overview metrics
-    const formationRevenue = currentEnrollments.reduce((sum, e) => sum + (e.formation?.price || 0), 0);
-    const productRevenue = currentPurchases.reduce((sum, p) => sum + (p.digitalProduct?.price || 0), 0);
+    const formationRevenue = currentEnrollments.reduce((sum: number, e: any) => sum + (e.formation?.price || 0), 0);
+    const productRevenue = currentPurchases.reduce((sum: number, p: any) => sum + (p.product?.price || 0), 0);
     const totalRevenue = formationRevenue + productRevenue;
     const totalSales = currentEnrollments.length + currentPurchases.length;
     const prevTotalSales = prevEnrollmentCount + prevPurchaseCount;
@@ -296,13 +296,13 @@ export async function GET(req: NextRequest) {
       }
     }
     for (const p of currentPurchases) {
-      const name = p.digitalProduct?.title || "Produit";
+      const name = p.product?.title || "Produit";
       const existing = salesMap.get(name);
       if (existing) {
         existing.sales += 1;
-        existing.revenue += p.digitalProduct?.price || 0;
+        existing.revenue += p.product?.price || 0;
       } else {
-        salesMap.set(name, { name, type: "product", sales: 1, revenue: p.digitalProduct?.price || 0 });
+        salesMap.set(name, { name, type: "product", sales: 1, revenue: p.product?.price || 0 });
       }
     }
 

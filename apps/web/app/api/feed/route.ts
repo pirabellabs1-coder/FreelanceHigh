@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
               avatar: true,
               country: true,
               plan: true,
-              isVerified: true,
+              kyc: true,
             },
           },
           media: { orderBy: { sortOrder: "asc" }, take: 5 },

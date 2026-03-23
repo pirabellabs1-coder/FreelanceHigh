@@ -197,7 +197,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role.toLowerCase(),
             kyc: user.kyc,
             plan: user.plan.toLowerCase(),
-            formationsRole: user.formationsRole?.toLowerCase(),
+            formationsRole: user.formationsRole?.toLowerCase() as any,
           };
         } catch (err) {
           if (err instanceof Error && err.message.includes("tentatives")) throw err;
@@ -280,7 +280,7 @@ export const authOptions: NextAuthOptions = {
                 plan: "gratuit",
                 kyc: 1,
                 status: "ACTIF",
-                ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole } : {}),
+                ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole as "instructeur" | "apprenant" } : {}),
               });
               user.id = newUser.id;
               user.role = oauthRole;
@@ -327,7 +327,7 @@ export const authOptions: NextAuthOptions = {
                   role: upperRole,
                   image: user.image,
                   emailVerified: new Date(),
-                  ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole } : {}),
+                  ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole as string } : {}),
                 },
               });
 
@@ -389,7 +389,7 @@ export const authOptions: NextAuthOptions = {
             user.role = dbUser.role.toLowerCase();
             user.kyc = dbUser.kyc;
             user.plan = dbUser.plan.toLowerCase();
-            user.formationsRole = dbUser.formationsRole?.toLowerCase();
+            user.formationsRole = dbUser.formationsRole?.toLowerCase() as any;
           } catch (err) {
             console.error("[AUTH OAuth] Erreur DB lors du signIn OAuth:", err instanceof Error ? err.message : err);
             console.error("[AUTH OAuth] Stack:", err instanceof Error ? err.stack : "N/A");

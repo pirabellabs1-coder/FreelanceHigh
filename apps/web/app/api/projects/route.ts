@@ -90,8 +90,8 @@ export async function POST(req: NextRequest) {
         budgetMin: budgetMin || 0,
         budgetMax: budgetMax || 0,
         deadline: deadline || new Date(Date.now() + 30 * 86400000).toISOString(),
-        urgency: urgency || "normale",
-        contractType: contractType || "ponctuel",
+        urgency: (urgency || "normale") as "normale" | "urgente" | "tres_urgente",
+        contractType: (contractType || "ponctuel") as "ponctuel" | "long_terme" | "recurrent",
         skills: skills || [],
       });
       return NextResponse.json({ project }, { status: 201 });
@@ -107,10 +107,10 @@ export async function POST(req: NextRequest) {
         budgetMin: budgetMin || 0,
         budgetMax: budgetMax || 0,
         deadline: deadline ? new Date(deadline) : new Date(Date.now() + 30 * 86400000),
-        urgency: urgency || "normale",
-        contractType: contractType || "ponctuel",
+        urgency: (urgency || "normale") as string,
+        contractType: (contractType || "ponctuel") as string,
         skills: skills || [],
-        status: "ouvert",
+        status: "ouvert" as string,
       },
     });
 

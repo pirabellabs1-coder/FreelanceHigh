@@ -272,7 +272,7 @@ export default function ClientProposals() {
                     <div className="flex items-center gap-6 text-xs text-slate-500 flex-wrap">
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">payments</span>
-                        {p.amount.toLocaleString("fr-FR")} EUR
+                        {(p.amount ?? 0).toLocaleString("fr-FR")} EUR
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">schedule</span>
@@ -401,7 +401,7 @@ export default function ClientProposals() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-background-dark rounded-xl border border-border-dark">
                   <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Montant propose</p>
-                  <p className="text-xl font-black text-primary">{detailProposal.amount.toLocaleString("fr-FR")} EUR</p>
+                  <p className="text-xl font-black text-primary">{(detailProposal.amount ?? 0).toLocaleString("fr-FR")} EUR</p>
                 </div>
                 <div className="p-4 bg-background-dark rounded-xl border border-border-dark">
                   <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Delai</p>

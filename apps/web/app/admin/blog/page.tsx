@@ -268,7 +268,7 @@ export default function AdminBlog() {
                   <td className="px-5 py-3 text-center">
                     <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[a.status]?.cls)}>{STATUS_MAP[a.status]?.label}</span>
                   </td>
-                  <td className="px-5 py-3 text-sm text-center font-bold text-white">{a.views > 0 ? a.views.toLocaleString() : "—"}</td>
+                  <td className="px-5 py-3 text-sm text-center font-bold text-white">{a.views > 0 ? (a.views ?? 0).toLocaleString() : "—"}</td>
                   <td className="px-5 py-3 text-sm text-slate-400">{new Date(a.createdAt).toLocaleDateString("fr-FR")}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-center gap-1">

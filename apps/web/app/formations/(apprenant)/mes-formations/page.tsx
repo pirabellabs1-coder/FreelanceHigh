@@ -116,14 +116,14 @@ export default function MesFormationsPage() {
         // Skill radar data (from API or generated from categories)
         const skillRadar: { category: string; value: number }[] = data.skillRadar ??
           (enrolls.length > 0
-            ? Array.from(
+            ? (Array.from(
                 enrolls.reduce((acc: Map<string, number[]>, e: Enrollment) => {
                   const cat = e.formation.level || "General";
                   if (!acc.has(cat)) acc.set(cat, []);
                   acc.get(cat)!.push(e.progress);
                   return acc;
                 }, new Map<string, number[]>())
-              )
+              ) as [string, number[]][])
                 .slice(0, 6)
                 .map(([category, progs]) => ({
                   category,

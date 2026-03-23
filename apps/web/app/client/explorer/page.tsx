@@ -410,7 +410,7 @@ export default function ClientExplorer() {
                       <div className="flex items-center justify-between pt-3 border-t border-border-dark">
                         <div>
                           <p className="text-[10px] text-slate-500">À partir de</p>
-                          <p className="text-lg font-black text-primary">{s.basePrice.toLocaleString("fr-FR")}&nbsp;EUR</p>
+                          <p className="text-lg font-black text-primary">{(s.basePrice ?? 0).toLocaleString("fr-FR")}&nbsp;EUR</p>
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                           <span className="material-symbols-outlined text-xs">schedule</span>
@@ -467,7 +467,7 @@ export default function ClientExplorer() {
                             <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
                           ))}
                         </div>
-                        <p className="text-base font-black text-primary">{s.basePrice.toLocaleString("fr-FR")}&nbsp;EUR</p>
+                        <p className="text-base font-black text-primary">{(s.basePrice ?? 0).toLocaleString("fr-FR")}&nbsp;EUR</p>
                       </div>
                     </div>
                   </div>

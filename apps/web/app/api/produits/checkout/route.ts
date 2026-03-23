@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         onProductPurchase(session.user.id, product.id, 0, {
           source: "free_product",
           productTitle: product.title,
-        }).catch(() => {});
+        });
       } catch { /* ignore */ }
 
       return NextResponse.json({
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
         onProductPurchase(session.user.id, product.id, finalPrice, {
           source: "mock_checkout",
           productTitle: product.title,
-        }).catch(() => {});
+        });
       } catch { /* ignore */ }
 
       return NextResponse.json({

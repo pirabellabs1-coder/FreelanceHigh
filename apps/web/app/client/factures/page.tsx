@@ -283,7 +283,7 @@ export default function ClientInvoices() {
                       <p className="text-xs text-slate-500">Commande #{inv.orderId.slice(-6)}</p>
                     </td>
                     <td className="px-5 py-3.5 text-sm font-bold text-white text-right">
-                      {inv.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;
+                      {(inv.amount ?? 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <span className={cn("text-[10px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1", statusInfo.cls)}>

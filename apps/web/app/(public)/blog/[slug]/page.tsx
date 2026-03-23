@@ -105,7 +105,7 @@ export default function BlogArticlePage() {
               <p className="text-sm font-semibold text-white">{article.author}</p>
               <p className="text-xs text-slate-500">
                 {article.publishedAt && new Date(article.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                {" · "}{t("views", { count: article.views.toLocaleString() })}
+                {" · "}{t("views", { count: (article.views ?? 0).toLocaleString() })}
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function BlogArticlePage() {
                 <Link key={r.id} href={`/blog/${r.slug}`} className="group bg-white/5 rounded-xl border border-white/10 p-5 hover:border-primary/30 transition-all">
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{r.category}</span>
                   <h3 className="text-sm font-bold text-white mt-2 group-hover:text-primary transition-colors line-clamp-2">{r.title}</h3>
-                  <p className="text-xs text-slate-500 mt-2">{r.author} · {t("views", { count: r.views.toLocaleString() })}</p>
+                  <p className="text-xs text-slate-500 mt-2">{r.author} · {t("views", { count: (r.views ?? 0).toLocaleString() })}</p>
                 </Link>
               ))}
             </div>

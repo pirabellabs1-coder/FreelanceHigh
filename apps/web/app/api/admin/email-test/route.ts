@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Domain noreply@freelancehigh.com is verified
     const from = process.env.EMAIL_FROM || "FreelanceHigh <noreply@freelancehigh.com>";
+    const domainVerified = from.includes("freelancehigh.com");
 
     const result = await resend.emails.send({
       from,

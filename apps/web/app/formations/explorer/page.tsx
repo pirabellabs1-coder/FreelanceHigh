@@ -157,7 +157,7 @@ function FormationCard({ formation, locale, t }: { formation: Formation; locale:
         <div className="flex items-center gap-1.5 mb-3">
           <span className="text-sm font-bold text-amber-400">{formation.rating.toFixed(1)}</span>
           <StarRating rating={formation.rating} />
-          <span className="text-xs text-slate-500">({formation.reviewsCount.toLocaleString()})</span>
+          <span className="text-xs text-slate-500">({(formation.reviewsCount ?? 0).toLocaleString()})</span>
         </div>
 
         {/* Meta */}

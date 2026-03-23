@@ -101,7 +101,7 @@ export default function BlogPage() {
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{featured.category}</span>
                       <span className="text-xs text-slate-500">{featured.publishedAt && new Date(featured.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
-                      <span className="text-xs text-slate-500">{t("views", { count: featured.views.toLocaleString() })}</span>
+                      <span className="text-xs text-slate-500">{t("views", { count: (featured.views ?? 0).toLocaleString() })}</span>
                     </div>
                     <h2 className="text-2xl lg:text-3xl font-black text-white group-hover:text-primary transition-colors mb-3">{featured.title}</h2>
                     <p className="text-slate-400 leading-relaxed">{featured.excerpt}</p>
@@ -125,7 +125,7 @@ export default function BlogPage() {
                     <div className="p-5 flex-1 flex flex-col">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{article.category}</span>
-                        <span className="text-xs text-slate-600">{article.views > 0 && t("views", { count: article.views.toLocaleString() })}</span>
+                        <span className="text-xs text-slate-600">{article.views > 0 && t("views", { count: (article.views ?? 0).toLocaleString() })}</span>
                       </div>
                       <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors mb-2 line-clamp-2">{article.title}</h3>
                       <p className="text-sm text-slate-500 line-clamp-2 flex-1">{article.excerpt}</p>

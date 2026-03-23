@@ -339,7 +339,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
               <span className="flex items-center gap-1.5">
                 <span className="font-bold text-amber-400">{formation.rating.toFixed(1)}</span>
                 <StarRating rating={formation.rating} />
-                <span className="text-slate-400">({formation.reviewsCount.toLocaleString()} {t("reviews")})</span>
+                <span className="text-slate-400">({(formation.reviewsCount ?? 0).toLocaleString()} {t("reviews")})</span>
               </span>
               <span className="text-slate-500">•</span>
               <span className="flex items-center gap-1.5 text-slate-300">
@@ -599,7 +599,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                   <div className="text-center">
                     <p className="text-5xl font-bold text-slate-900 dark:text-white">{formation.rating.toFixed(1)}</p>
                     <StarRating rating={formation.rating} size="lg" />
-                    <p className="text-xs text-slate-500 mt-1">{t("tab_reviews")} ({formation.reviewsCount.toLocaleString()})</p>
+                    <p className="text-xs text-slate-500 mt-1">{t("tab_reviews")} ({(formation.reviewsCount ?? 0).toLocaleString()})</p>
                   </div>
                   {/* Bars */}
                   <div className="flex-1 space-y-1.5">

@@ -90,7 +90,7 @@ export async function POST(
       // Update offer status
       await tx.offer.update({
         where: { id: offreId },
-        data: { status: "ACCEPTE" },
+        data: { status: "ACCEPTEE" },
       });
 
       // Create order

@@ -249,9 +249,13 @@ function ServiceCard({
       >
         {/* Image */}
         <div className="relative w-full sm:w-56 h-40 sm:h-36 rounded-lg overflow-hidden flex-shrink-0">
-          <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center", gradient)}>
-            <span className="material-symbols-outlined text-white/80 text-5xl">{catIcon}</span>
-          </div>
+          {service.image ? (
+            <img src={service.image} alt={service.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center", gradient)}>
+              <span className="material-symbols-outlined text-white/80 text-5xl">{catIcon}</span>
+            </div>
+          )}
           {service.isBoosted && (
             <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/90 text-white backdrop-blur-sm">
               <span className="material-symbols-outlined text-xs">bolt</span>
@@ -318,9 +322,13 @@ function ServiceCard({
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
-        <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center group-hover:scale-105 transition-transform duration-300", gradient)}>
-          <span className="material-symbols-outlined text-white/80 text-6xl">{catIcon}</span>
-        </div>
+        {service.image ? (
+          <img src={service.image} alt={service.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+        ) : (
+          <div className={cn("absolute inset-0 bg-gradient-to-br flex items-center justify-center group-hover:scale-105 transition-transform duration-300", gradient)}>
+            <span className="material-symbols-outlined text-white/80 text-6xl">{catIcon}</span>
+          </div>
+        )}
         {service.isBoosted && (
           <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/90 text-white backdrop-blur-sm">
             <span className="material-symbols-outlined text-xs">bolt</span>

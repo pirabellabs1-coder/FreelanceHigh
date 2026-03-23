@@ -341,7 +341,7 @@ export default function AgenceExplorer() {
                       <span className="text-xs text-slate-500">({service.ratingCount})</span>
                     </div>
                     <p className="text-sm font-black text-white">
-                      {service.basePrice.toLocaleString("fr-FR")}&nbsp;&euro;
+                      {(service.basePrice ?? 0).toLocaleString("fr-FR")}&nbsp;&euro;
                     </p>
                   </div>
 

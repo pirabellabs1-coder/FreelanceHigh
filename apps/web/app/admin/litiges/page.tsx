@@ -207,7 +207,7 @@ export default function AdminDisputes() {
                 )}
 
                 <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
-                  <span className="font-bold text-primary">{d.amount.toLocaleString()} €</span>
+                  <span className="font-bold text-primary">{(d.amount ?? 0).toLocaleString()} €</span>
                   <span>Ouvert le {new Date(d.createdAt).toLocaleDateString("fr-FR")}</span>
                   {d.updatedAt !== d.createdAt && <span className="text-slate-500">Mis à jour le {new Date(d.updatedAt).toLocaleDateString("fr-FR")}</span>}
                 </div>
@@ -259,7 +259,7 @@ export default function AdminDisputes() {
             {/* Resume */}
             <div className="bg-background-dark rounded-xl p-4 mb-4 border border-border-dark/50 space-y-2">
               <p className="text-sm text-slate-300"><b className="text-white">Service :</b> {dispute.serviceTitle}</p>
-              <p className="text-sm text-slate-300"><b className="text-white">Montant :</b> <span className="text-primary font-bold">{dispute.amount.toLocaleString()} €</span></p>
+              <p className="text-sm text-slate-300"><b className="text-white">Montant :</b> <span className="text-primary font-bold">{(dispute.amount ?? 0).toLocaleString()} €</span></p>
               <p className="text-sm text-slate-300"><b className="text-white">Client :</b> {dispute.clientName}</p>
               <p className="text-sm text-slate-300"><b className="text-white">Freelance :</b> {dispute.freelanceName}</p>
             </div>

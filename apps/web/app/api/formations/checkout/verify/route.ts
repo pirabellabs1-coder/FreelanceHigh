@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
             source: "checkout_verify",
             formationTitle: enrollment.formation.title,
           }
-        ).catch(() => {});
+        );
       }
     } catch {
       // Marketing hooks module not available — ignore

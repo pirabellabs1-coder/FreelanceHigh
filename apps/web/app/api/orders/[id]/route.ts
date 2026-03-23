@@ -341,7 +341,7 @@ export async function PATCH(
             data: {
               userId: order.clientId,
               title: "Livraison effectuee",
-              message: `La commande ${order.service.title} a ete livree`,
+              message: `La commande ${order.service!.title} a ete livree`,
               type: "ORDER",
               read: false,
               link: `/client/commandes/${id}`,
@@ -368,7 +368,7 @@ export async function PATCH(
             data: {
               userId: order.clientId,
               title: "Commande acceptee",
-              message: `Votre commande ${order.service.title} a ete acceptee`,
+              message: `Votre commande ${order.service!.title} a ete acceptee`,
               type: "ORDER",
               read: false,
               link: `/client/commandes/${id}`,
@@ -444,7 +444,7 @@ export async function PATCH(
                 data: {
                   userId: notifyUserId,
                   title: statusLabels[prismaStatus],
-                  message: `${statusLabels[prismaStatus]} pour ${order.service.title}`,
+                  message: `${statusLabels[prismaStatus]} pour ${order.service!.title}`,
                   type: "ORDER",
                   read: false,
                   link: `/dashboard/commandes/${id}`,
@@ -470,9 +470,9 @@ export async function PATCH(
 
               // Emit order.completed event (notification + email — outside tx)
               emitEvent("order.completed", {
-                orderId: order.id, serviceTitle: order.service.title, amount: netAmount,
-                freelanceId: order.freelanceId, freelanceName: order.freelance.name, freelanceEmail: order.freelance.email,
-                clientId: order.clientId, clientName: order.client.name, clientEmail: order.client.email,
+                orderId: order.id, serviceTitle: order.service!.title, amount: netAmount,
+                freelanceId: order.freelanceId, freelanceName: order.freelance!.name, freelanceEmail: order.freelance!.email,
+                clientId: order.clientId, clientName: order.client!.name, clientEmail: order.client!.email,
               }).catch(() => {});
             }
           }

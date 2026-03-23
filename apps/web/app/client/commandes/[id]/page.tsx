@@ -227,7 +227,7 @@ export default function ClientOrderDetailPage() {
           </div>
           <div className="text-right flex-shrink-0">
             <p className="text-2xl font-black text-primary">
-              {order.amount.toLocaleString("fr-FR")} EUR
+              {(order.amount ?? 0).toLocaleString("fr-FR")} EUR
             </p>
             <p className="text-xs text-slate-500 mt-1">
               Deadline: {new Date(order.deadline).toLocaleDateString("fr-FR")}

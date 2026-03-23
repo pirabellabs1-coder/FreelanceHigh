@@ -293,7 +293,7 @@ export default function AgenceServicesPage() {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] mt-auto mb-3">
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <span className="material-symbols-outlined text-[14px]">visibility</span>
-                    <span>{s.views.toLocaleString("fr-FR")} vues</span>
+                    <span>{(s.views ?? 0).toLocaleString("fr-FR")} vues</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <span className="material-symbols-outlined text-[14px]">shopping_cart</span>

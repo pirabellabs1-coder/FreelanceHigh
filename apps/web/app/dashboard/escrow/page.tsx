@@ -458,7 +458,7 @@ export default function EscrowPage() {
 
                   {/* Amount */}
                   <p className="text-sm font-bold w-20 text-right flex-shrink-0">
-                    &euro;{order.amount.toLocaleString("fr-FR")}
+                    &euro;{(order.amount ?? 0).toLocaleString("fr-FR")}
                   </p>
 
                   <span className="material-symbols-outlined text-slate-600 text-lg flex-shrink-0">

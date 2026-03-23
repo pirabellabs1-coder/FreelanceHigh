@@ -12,7 +12,7 @@ export async function GET(
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const project = projectStore.getById(id);
-      if (!project || project.status === "brouillon") {
+      if (!project || (project.status as string) === "brouillon") {
         return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
       }
       return NextResponse.json({ project });

@@ -366,7 +366,7 @@ export default function OffresPage() {
                       <p className="text-xs text-slate-500 line-clamp-2 mb-3">{o.description}</p>
 
                       <div className="flex items-center gap-4 text-xs text-slate-500">
-                        <span>Montant : <span className="font-black text-slate-100">€{o.amount.toLocaleString("fr-FR")}</span></span>
+                        <span>Montant : <span className="font-black text-slate-100">€{(o.amount ?? 0).toLocaleString("fr-FR")}</span></span>
                         <span>·</span>
                         <span>Délai : <span className="font-semibold text-slate-300">{o.delay}</span></span>
                         <span>·</span>

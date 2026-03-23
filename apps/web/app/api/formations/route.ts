@@ -90,8 +90,8 @@ export async function GET(req: NextRequest) {
 
     // If using relevance ordering, sort results to match the FTS-ranked ID order
     let sortedFormations = formations;
-    if (useRelevanceOrder && where.id && "in" in where.id) {
-      const idOrder = where.id.in as string[];
+    if (useRelevanceOrder && where.id && typeof where.id === "object" && "in" in (where.id as Record<string, unknown>)) {
+      const idOrder = (where.id as { in: string[] }).in;
       sortedFormations = [...formations].sort(
         (a, b) => idOrder.indexOf(a.id) - idOrder.indexOf(b.id)
       );

@@ -188,7 +188,7 @@ export default function ClientOrders() {
                     <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", statusInfo.cls)}>
                       {statusInfo.label}
                     </span>
-                    <span className="text-lg font-bold text-white">{o.amount.toLocaleString("fr-FR")} EUR</span>
+                    <span className="text-lg font-bold text-white">{(o.amount ?? 0).toLocaleString("fr-FR")} EUR</span>
                     <span className="material-symbols-outlined text-slate-500">chevron_right</span>
                   </div>
                 </div>

@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     const campaigns = await prisma.campaignTracker.findMany({
       where: { instructeurId: instructeur.id },
       include: {
-        _count: { select: { clicks: true } },
+        _count: { select: { events: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     const origin = new URL(req.url).origin;
     const enriched = campaigns.map((c) => ({
       ...c,
-      clicks: c._count.clicks,
+      clicks: c._count.events,
       trackingUrl: buildTrackingUrl(origin, c.slug),
     }));
 

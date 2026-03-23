@@ -125,10 +125,11 @@ export interface StoredOrder {
   clientAvatar: string;
   clientCountry: string;
   freelanceId: string;
+  freelanceName?: string;
   status: "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule" | "litige";
   amount: number;
   commission: number;
-  packageType: "basic" | "standard" | "premium";
+  packageType: "basic" | "standard" | "premium" | "custom";
   requirements?: string;
   deadline: string;
   deliveredAt: string | null;

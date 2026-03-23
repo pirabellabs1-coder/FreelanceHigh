@@ -1,8 +1,10 @@
 // Sentry edge config — @sentry/nextjs will be installed in V2
 // For now, this file is a no-op placeholder
 
-const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+{
+  const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-if (SENTRY_DSN) {
-  console.info("[Sentry] Edge DSN configured but @sentry/nextjs not installed yet");
+  if (sentryDsn) {
+    console.info("[Sentry] Edge DSN configured but @sentry/nextjs not installed yet");
+  }
 }

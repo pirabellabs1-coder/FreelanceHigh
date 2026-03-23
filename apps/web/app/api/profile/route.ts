@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/config";
 import { profileStore, orderStore, reviewStore } from "@/lib/dev/data-store";
 import { computeBadges } from "@/lib/badges";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { z } from "zod";
 
@@ -155,7 +156,7 @@ export async function PATCH(request: NextRequest) {
     delete (updates as Record<string, unknown>).badges;
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
-      const profile = profileStore.update(session.user.id, updates);
+      const profile = profileStore.update(session.user.id, updates as Partial<import("@/lib/dev/data-store").StoredProfile>);
 
       // Also sync country/city to the User record (devStore) so admin panel sees them
       const { country: profileCountry, city: profileCity } = updates as Record<string, unknown>;
@@ -189,20 +190,22 @@ export async function PATCH(request: NextRequest) {
       }
 
       // Upsert freelancer profile fields
+      // For Json? fields, Prisma requires Prisma.JsonNull instead of plain null
+      const jsonOrNull = (val: unknown) => val === null ? Prisma.JsonNull : val;
       const profileData = {
-        ...(phone !== undefined ? { phone } : {}),
-        ...(coverPhoto !== undefined ? { coverPhoto } : {}),
+        ...(phone !== undefined ? { phone: typeof phone === 'string' ? phone : null } : {}),
+        ...(coverPhoto !== undefined ? { coverPhoto: typeof coverPhoto === 'string' ? coverPhoto : null } : {}),
         ...(title !== undefined ? { title } : {}),
         ...(bio !== undefined ? { bio } : {}),
         ...(city !== undefined ? { city } : {}),
         ...(country !== undefined ? { country } : {}),
         ...(hourlyRate !== undefined ? { hourlyRate } : {}),
         ...(skills !== undefined ? { skills } : {}),
-        ...(languages !== undefined ? { languages } : {}),
-        ...(education !== undefined ? { education } : {}),
-        ...(links !== undefined ? { links } : {}),
-        ...(availability !== undefined ? { availability } : {}),
-        ...(vacationMode !== undefined ? { vacationMode } : {}),
+        ...(languages !== undefined ? { languages: jsonOrNull(languages) } : {}),
+        ...(education !== undefined ? { education: jsonOrNull(education) } : {}),
+        ...(links !== undefined ? { links: jsonOrNull(links) } : {}),
+        ...(availability !== undefined ? { availability: jsonOrNull(availability) } : {}),
+        ...(vacationMode !== undefined ? { vacationMode: Boolean(vacationMode) } : {}),
       };
 
       if (Object.keys(profileData).length > 0) {

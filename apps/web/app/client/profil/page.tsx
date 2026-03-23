@@ -52,7 +52,7 @@ export default function ClientProfile() {
         // Calculate completion dynamically
         const items = [
           { label: "Email vérifié", done: true }, // Always true since user is logged in
-          { label: "Nom renseigné", done: !!(profile.firstName || profile.name) },
+          { label: "Nom renseigné", done: !!(profile.firstName || (profile as any).name) },
           { label: "Photo de profil ajoutée", done: !!profile.photo },
           { label: "Bio renseignée", done: !!profile.bio },
           { label: "Pays renseigné", done: !!profile.country },

@@ -229,6 +229,51 @@ export async function PATCH(
       include: { category: true, options: true, media: true },
     });
 
+    // Update ServiceMedia if images changed
+    if (body.mainImage?.url || body.additionalImages) {
+      try {
+        await prisma.serviceMedia.deleteMany({ where: { serviceId: id } });
+        const mediaEntries: { serviceId: string; url: string; type: "IMAGE" | "VIDEO"; isPrimary: boolean; sortOrder: number }[] = [];
+        if (body.mainImage?.url) {
+          mediaEntries.push({ serviceId: id, url: body.mainImage.url, type: "IMAGE", isPrimary: true, sortOrder: 0 });
+        }
+        if (Array.isArray(body.additionalImages)) {
+          body.additionalImages.forEach((img: { url?: string }, idx: number) => {
+            if (img?.url) mediaEntries.push({ serviceId: id, url: img.url, type: "IMAGE", isPrimary: false, sortOrder: idx + 1 });
+          });
+        }
+        if (body.videoUrl) {
+          mediaEntries.push({ serviceId: id, url: body.videoUrl, type: "VIDEO", isPrimary: false, sortOrder: mediaEntries.length });
+        }
+        if (mediaEntries.length > 0) {
+          await prisma.serviceMedia.createMany({ data: mediaEntries });
+        }
+      } catch (mediaErr) {
+        console.error("[Service PATCH] Media update failed:", mediaErr);
+      }
+    }
+
+    // Update ServiceOption if options changed
+    if (Array.isArray(body.options)) {
+      try {
+        await prisma.serviceOption.deleteMany({ where: { serviceId: id } });
+        const optEntries = body.options
+          .filter((o: Record<string, unknown>) => (o?.name || o?.title) && o?.price != null)
+          .map((o: Record<string, unknown>, i: number) => ({
+            serviceId: id,
+            title: String(o.name || o.title),
+            extraPrice: Number(o.price || o.extraPrice || 0),
+            description: String(o.description || ""),
+            sortOrder: i,
+          }));
+        if (optEntries.length > 0) {
+          await prisma.serviceOption.createMany({ data: optEntries });
+        }
+      } catch (optErr) {
+        console.error("[Service PATCH] Options update failed:", optErr);
+      }
+    }
+
     return NextResponse.json({ service: updatedService });
   } catch (error) {
     console.error("[API /services/[id] PATCH]", error);
