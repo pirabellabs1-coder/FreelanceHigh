@@ -218,7 +218,7 @@ export function MessagingLayout({
         </div>
 
         {/* Chat area */}
-        <div className={`flex-1 min-w-0 ${mobileShowChat ? "flex" : "hidden md:flex"} flex-col`}>
+        <div className={`flex-1 min-w-0 min-h-0 ${mobileShowChat ? "flex" : "hidden md:flex"} flex-col overflow-hidden`}>
           <ChatPanel
             conversation={selectedConv}
             currentUserId={userId}
@@ -245,8 +245,6 @@ export function MessagingLayout({
                 ? (content) => { if (selectedId) addSystemMessage(selectedId, content); }
                 : undefined
             }
-            onStartAudioCall={handleStartAudioCall}
-            onStartVideoCall={handleStartVideoCall}
             onMobileBack={handleMobileBack}
           />
         </div>

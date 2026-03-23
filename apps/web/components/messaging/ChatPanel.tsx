@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback, DragEvent } from "react";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./MessageBubble";
-import { VoiceRecorder } from "./voice/VoiceRecorder";
 import { ImageLightbox } from "./ImageLightbox";
 import type { UnifiedConversation, MessageContentType } from "@/store/messaging";
 
@@ -25,8 +24,6 @@ interface ChatPanelProps {
   onRetryMessage?: (messageId: string) => void;
   showAdminActions?: boolean;
   onSendSystemMessage?: (content: string) => void;
-  onStartAudioCall?: () => void;
-  onStartVideoCall?: () => void;
   onMobileBack?: () => void;
 }
 
@@ -43,7 +40,6 @@ function uploadFileToServer(
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload/file");
 
-    // Support cancellation via AbortSignal
     if (abortSignal) {
       abortSignal.addEventListener("abort", () => {
         xhr.abort();
@@ -92,25 +88,54 @@ export function ChatPanel({
   onRetryMessage,
   showAdminActions = false,
   onSendSystemMessage,
-  onStartAudioCall,
-  onStartVideoCall,
   onMobileBack,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [messageFilter, setMessageFilter] = useState<"all" | "voice" | "calls" | "files">("all");
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ fileName: string; progress: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
+  const isUserScrolledUpRef = useRef(false);
 
+  // Smart auto-scroll: only scroll to bottom if user is near the bottom
+  const scrollToBottom = useCallback((force = false) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Check if user is near the bottom (within 150px)
+    const threshold = 150;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+
+    if (force || isNearBottom || !isUserScrolledUpRef.current) {
+      requestAnimationFrame(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      });
+    }
+  }, []);
+
+  // Track user scroll position
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const threshold = 150;
+    isUserScrolledUpRef.current = container.scrollHeight - container.scrollTop - container.clientHeight > threshold;
+  }, []);
+
+  // Auto-scroll on new messages (smart)
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation?.messages]);
+    scrollToBottom();
+  }, [conversation?.messages?.length, scrollToBottom]);
+
+  // Force scroll to bottom when switching conversations
+  useEffect(() => {
+    isUserScrolledUpRef.current = false;
+    scrollToBottom(true);
+  }, [conversation?.id, scrollToBottom]);
 
   useEffect(() => {
     if (conversation) onMarkRead();
@@ -128,6 +153,9 @@ export function ChatPanel({
     if (!input.trim()) return;
     onSendMessage(input.trim());
     setInput("");
+    // Force scroll to bottom after sending
+    isUserScrolledUpRef.current = false;
+    setTimeout(() => scrollToBottom(true), 50);
   }
 
   function validateFile(file: File): string | null {
@@ -155,11 +183,9 @@ export function ChatPanel({
 
     if (validFiles.length === 0) return;
 
-    // Upload files in parallel
     const abortController = new AbortController();
     uploadAbortRef.current = abortController;
 
-    // Track progress per file
     let completedCount = 0;
     const totalCount = validFiles.length;
 
@@ -183,7 +209,6 @@ export function ChatPanel({
 
         if (result) {
           const isImage = file.type.startsWith("image/");
-          const isVideo = file.type.startsWith("video/");
           const msgType: MessageContentType = isImage ? "image" : "file";
           const sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
           onSendMessage(file.name, msgType, file.name, sizeStr, undefined, undefined, result.url, file.type);
@@ -206,20 +231,6 @@ export function ChatPanel({
     setUploadProgress(null);
     uploadAbortRef.current = null;
   }
-
-  const handleVoiceSend = useCallback(async (blob: Blob, duration: number) => {
-    setIsRecording(false);
-    try {
-      const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
-      const result = await uploadFileToServer(file);
-      const audioUrl = result?.url || URL.createObjectURL(blob);
-      onSendMessage("Message vocal", "voice", undefined, undefined, audioUrl, duration);
-    } catch {
-      // Fallback to local URL in case of upload failure
-      const audioUrl = URL.createObjectURL(blob);
-      onSendMessage("Message vocal", "voice", undefined, undefined, audioUrl, duration);
-    }
-  }, [onSendMessage]);
 
   // Drag and drop handlers
   function handleDragEnter(e: DragEvent) {
@@ -251,9 +262,10 @@ export function ChatPanel({
     }
   }
 
+  // ── Empty state ──
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 p-4">
+      <div className="flex-1 flex items-center justify-center text-slate-500 p-4 min-h-0">
         <div className="text-center">
           {onMobileBack && (
             <button
@@ -267,8 +279,8 @@ export function ChatPanel({
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-3xl md:text-4xl text-primary/40">forum</span>
           </div>
-          <p className="font-medium text-slate-400 text-sm md:text-base">Aucun message pour le moment</p>
-          <p className="text-xs mt-2 text-slate-600">Vos conversations avec vos clients apparaitront ici</p>
+          <p className="font-medium text-slate-400 text-sm md:text-base">Selectionnez une conversation</p>
+          <p className="text-xs mt-2 text-slate-600">Vos messages apparaitront ici</p>
         </div>
       </div>
     );
@@ -278,18 +290,11 @@ export function ChatPanel({
   const displayName = conversation.title || otherParticipants.map((p) => p.name).join(", ") || "Conversation";
   const isOnline = otherParticipants.some((p) => p.online);
 
-  // Filter messages
-  const filteredMessages = conversation.messages.filter((msg) => {
-    if (messageFilter === "all") return true;
-    if (messageFilter === "voice") return msg.type === "voice";
-    if (messageFilter === "calls") return msg.type === "call_audio" || msg.type === "call_video" || msg.type === "call_missed";
-    if (messageFilter === "files") return msg.type === "file" || msg.type === "image";
-    return true;
-  });
+  const filteredMessages = conversation.messages;
 
   return (
     <div
-      className="flex-1 flex flex-col min-w-0 relative"
+      className="flex-1 flex flex-col min-h-0 min-w-0 relative"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -305,10 +310,9 @@ export function ChatPanel({
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-border-dark flex-shrink-0">
+      {/* ── Header (fixed top) ── */}
+      <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-border-dark flex-shrink-0 bg-background-dark/80 backdrop-blur-sm z-10">
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
-          {/* Mobile back button */}
           {onMobileBack && (
             <button
               onClick={onMobileBack}
@@ -347,21 +351,6 @@ export function ChatPanel({
             </a>
           )}
 
-          <button
-            onClick={onStartAudioCall}
-            className="p-2 text-slate-400 hover:text-emerald-400 rounded-lg hover:bg-emerald-500/10 transition-colors"
-            title="Appel audio"
-          >
-            <span className="material-symbols-outlined text-lg">call</span>
-          </button>
-          <button
-            onClick={onStartVideoCall}
-            className="p-2 text-slate-400 hover:text-blue-400 rounded-lg hover:bg-blue-500/10 transition-colors"
-            title="Appel video"
-          >
-            <span className="material-symbols-outlined text-lg">videocam</span>
-          </button>
-
           {showAdminActions && onSendSystemMessage && (
             <button
               onClick={() => {
@@ -380,60 +369,47 @@ export function ChatPanel({
         </div>
       </div>
 
-      {/* Message filter bar */}
-      <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-4 py-1.5 md:py-2 border-b border-border-dark/50 overflow-x-auto">
-        {(["all", "voice", "calls", "files"] as const).map((filter) => {
-          const labels = {
-            all: { label: "Tous", icon: "forum" },
-            voice: { label: "Vocaux", icon: "mic" },
-            calls: { label: "Appels", icon: "call" },
-            files: { label: "Fichiers", icon: "attach_file" },
-          };
-          const { label, icon } = labels[filter];
-          return (
-            <button
-              key={filter}
-              onClick={() => setMessageFilter(filter)}
-              className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                messageFilter === filter
-                  ? "bg-primary/10 text-primary"
-                  : "text-slate-500 hover:text-slate-300 hover:bg-border-dark/50"
-              )}
-            >
-              <span className="material-symbols-outlined text-sm">{icon}</span>
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {/* ── Messages (scrollable area — the ONLY scrollable element) ── */}
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto overscroll-contain p-2 md:p-4 space-y-2 md:space-y-3"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        {filteredMessages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-slate-500">
+            <div className="text-center">
+              <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">chat</span>
+              <p className="text-sm text-slate-500">Aucun message</p>
+              <p className="text-xs text-slate-600 mt-1">Envoyez le premier message !</p>
+            </div>
+          </div>
+        ) : (
+          filteredMessages.map((msg, i) => {
+            const isOwn = msg.senderId === currentUserId;
+            const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
+            const showSenderInfo = !isOwn && (!prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.type === "system");
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3">
-        {filteredMessages.map((msg, i) => {
-          const isOwn = msg.senderId === currentUserId;
-          const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
-          const showSenderInfo = !isOwn && (!prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.type === "system");
-
-          return (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isOwn={isOwn}
-              showSenderInfo={showSenderInfo}
-              onEdit={onEditMessage}
-              onDelete={onDeleteMessage}
-              onRetry={onRetryMessage}
-              onImageClick={(url) => setLightboxImage(url)}
-            />
-          );
-        })}
+            return (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isOwn={isOwn}
+                showSenderInfo={showSenderInfo}
+                onEdit={onEditMessage}
+                onDelete={onDeleteMessage}
+                onRetry={onRetryMessage}
+                onImageClick={(url) => setLightboxImage(url)}
+              />
+            );
+          })
+        )}
         <div ref={chatEndRef} />
       </div>
 
       {/* Upload progress / error */}
       {(uploadProgress || uploadError) && (
-        <div className="px-4 py-2 border-t border-border-dark/50">
+        <div className="px-4 py-2 border-t border-border-dark/50 flex-shrink-0">
           {uploadProgress && (
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-sm text-primary animate-spin">progress_activity</span>
@@ -468,8 +444,8 @@ export function ChatPanel({
         </div>
       )}
 
-      {/* Input */}
-      <div className="border-t border-border-dark p-2 md:p-4 flex-shrink-0">
+      {/* ── Input (fixed bottom, always visible) ── */}
+      <div className="border-t border-border-dark p-2 md:p-4 flex-shrink-0 bg-background-dark/80 backdrop-blur-sm">
         <div className="flex gap-1.5 md:gap-3 items-end">
           <button
             onClick={() => fileRef.current?.click()}
@@ -487,38 +463,31 @@ export function ChatPanel({
             onChange={(e) => handleFileUpload(e.target.files)}
           />
 
-          {isRecording ? (
-            <VoiceRecorder onSend={handleVoiceSend} />
-          ) : (
-            <>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ecrire un message..."
-                className="flex-1 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
-              />
-              <VoiceRecorder onSend={handleVoiceSend} />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className={cn(
-                  "px-4 py-2.5 rounded-lg font-semibold text-sm transition-all",
-                  input.trim()
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-border-dark text-slate-500"
-                )}
-              >
-                <span className="material-symbols-outlined">send</span>
-              </button>
-            </>
-          )}
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Ecrire un message..."
+            className="flex-1 min-w-0 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim()}
+            className={cn(
+              "p-2.5 rounded-lg font-semibold text-sm transition-all flex-shrink-0",
+              input.trim()
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "bg-border-dark text-slate-500"
+            )}
+          >
+            <span className="material-symbols-outlined">send</span>
+          </button>
         </div>
       </div>
 

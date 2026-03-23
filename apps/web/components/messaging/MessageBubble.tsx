@@ -144,7 +144,7 @@ export function MessageBubble({
         </div>
       )}
 
-      <div className={cn("max-w-[85%] md:max-w-[65%]", !isOwn && !showSenderInfo && "ml-11")}>
+      <div className={cn("max-w-[75%] md:max-w-[70%]", !isOwn && !showSenderInfo && "ml-11")}>
         {/* Sender info */}
         {!isOwn && showSenderInfo && (
           <p className="text-xs mb-1">
@@ -321,7 +321,7 @@ export function MessageBubble({
                   </div>
                 ) : (
                   /* Text message */
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden">{message.content}</p>
                 )}
 
                 {/* Link previews (up to 3) */}
