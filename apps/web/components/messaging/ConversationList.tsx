@@ -4,17 +4,38 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { UnifiedConversation, ConversationType } from "@/store/messaging";
 
-// Detect technical IDs (CUIDs, UUIDs, long alphanumeric tokens)
-function looksLikeTechnicalId(str: string): boolean {
-  if (!str || str.length < 20) return false;
-  if (/^c[a-z0-9]{20,}$/i.test(str)) return true;
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(str)) return true;
-  if (/^[a-z0-9_-]{24,}$/i.test(str.trim())) return true;
+// Detect garbage display text: technical IDs, URLs, long filenames
+function isGarbageDisplay(str: string): boolean {
+  if (!str) return false;
+  const s = str.trim();
+  if (s.length < 3) return false;
+  // URLs (http/https/cloudinary/data:)
+  if (/^(https?:\/\/|data:|blob:)/i.test(s)) return true;
+  // CUIDs: starts with c + 20+ alphanumeric
+  if (/^c[a-z0-9]{20,}$/i.test(s)) return true;
+  // UUIDs
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return true;
+  // Long alphanumeric tokens (24+ chars without spaces)
+  if (s.length >= 24 && /^[a-z0-9_./-]+$/i.test(s) && !s.includes(" ")) return true;
   return false;
 }
 
-function sanitizeText(text: string, fallback: string): string {
-  if (!text || looksLikeTechnicalId(text.trim())) return fallback;
+// Make lastMessage human-readable
+function humanizeLastMessage(text: string): string {
+  if (!text) return "";
+  const s = text.trim();
+  // URL → "Lien"
+  if (/^https?:\/\//i.test(s)) return "Lien";
+  // File extensions → "Photo" or "Fichier"
+  if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(s)) return "Photo";
+  if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar|7z|mp4|webm|mov)$/i.test(s)) return "Fichier";
+  // Technical IDs
+  if (isGarbageDisplay(s)) return "...";
+  return s;
+}
+
+function sanitizeName(text: string, fallback: string): string {
+  if (!text || isGarbageDisplay(text.trim())) return fallback;
   return text;
 }
 
@@ -81,20 +102,20 @@ export function ConversationList({
   }, [conversations, filterType, search, currentUserId]);
 
   function getConversationName(conv: UnifiedConversation): string {
-    if (conv.title && !looksLikeTechnicalId(conv.title)) return conv.title;
+    if (conv.title && !isGarbageDisplay(conv.title)) return conv.title;
     const others = conv.participants.filter((p) => p.id !== currentUserId);
     if (others.length === 0) return "Conversation";
-    if (others.length === 1) return sanitizeText(others[0].name, "Utilisateur");
-    return others.map((p) => sanitizeText(p.name, "Utilisateur").split(" ")[0]).join(", ");
+    if (others.length === 1) return sanitizeName(others[0].name, "Utilisateur");
+    return others.map((p) => sanitizeName(p.name, "Utilisateur").split(" ")[0]).join(", ");
   }
 
   function getConversationAvatar(conv: UnifiedConversation): { text: string; online: boolean } {
     const others = conv.participants.filter((p) => p.id !== currentUserId);
     if (others.length === 0) return { text: "?", online: false };
-    const avatar = others[0].avatar;
-    // Sanitize avatar — if it looks like a CUID, use initials from name
-    const safeAvatar = looksLikeTechnicalId(avatar)
-      ? sanitizeText(others[0].name, "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+    const avatar = others[0].avatar || "";
+    // If avatar is a URL or ID, generate initials from name
+    const safeAvatar = isGarbageDisplay(avatar) || avatar.length > 3
+      ? sanitizeName(others[0].name, "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
       : avatar;
     return { text: safeAvatar || "?", online: others[0].online };
   }
@@ -224,7 +245,7 @@ export function ConversationList({
                       {conv.lastMessage === "Appel manque" && (
                         <span className="material-symbols-outlined text-xs text-red-400">phone_missed</span>
                       )}
-                      {sanitizeText(conv.lastMessage, "...")}
+                      {humanizeLastMessage(conv.lastMessage)}
                     </p>
                     {conv.unreadCount > 0 && (
                       <span className="w-5 h-5 bg-primary rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 ml-2">

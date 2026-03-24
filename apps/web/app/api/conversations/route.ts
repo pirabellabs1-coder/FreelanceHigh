@@ -60,16 +60,42 @@ export async function GET() {
         const lastMsg = c.messages[0];
 
         // Build participant list with proper names
-        const participants = c.users.map((u) => ({
-          id: u.user.id,
-          name: u.user.name || "Utilisateur",
-          avatar: u.user.image || (u.user.name || "U").split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
-          role: (u.user as Record<string, unknown>).role || "client",
-          online: false,
-        }));
+        const participants = c.users.map((u) => {
+          const userName = u.user.name || "Utilisateur";
+          // Avatar = 2-letter initials (NEVER a URL or ID)
+          const initials = userName
+            .split(" ")
+            .map((w: string) => w[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2) || "U";
+          return {
+            id: u.user.id,
+            name: userName,
+            avatar: initials,
+            avatarUrl: u.user.image || null, // URL kept separate for <img> usage
+            role: (u.user as Record<string, unknown>).role || "client",
+            online: false,
+          };
+        });
 
         // Generate a readable order reference
         const orderRef = c.orderId ? c.orderId.slice(-6).toUpperCase() : undefined;
+
+        // Human-readable last message preview
+        let lastMessagePreview = lastMsg?.content || "";
+        if (lastMsg) {
+          const msgType = (lastMsg.type || "TEXT").toUpperCase();
+          if (msgType === "IMAGE") lastMessagePreview = "Photo";
+          else if (msgType === "FILE") lastMessagePreview = "Fichier";
+          else if (msgType === "VOICE") lastMessagePreview = "Message vocal";
+          else if (msgType === "CALL_AUDIO") lastMessagePreview = "Appel audio";
+          else if (msgType === "CALL_VIDEO") lastMessagePreview = "Appel video";
+          else if (msgType === "CALL_MISSED") lastMessagePreview = "Appel manque";
+          else if (msgType === "SYSTEM") lastMessagePreview = lastMsg.content;
+          // For TEXT, keep the actual content but truncate
+          else lastMessagePreview = lastMsg.content.length > 80 ? lastMsg.content.slice(0, 80) + "..." : lastMsg.content;
+        }
 
         return {
           id: c.id,
@@ -78,7 +104,7 @@ export async function GET() {
           title: c.title || (c.orderId ? `Commande #${orderRef}` : undefined),
           orderId: c.orderId || undefined,
           orderNumber: orderRef,
-          lastMessage: lastMsg?.content || "",
+          lastMessage: lastMessagePreview,
           lastMessageTime: lastMsg?.createdAt?.toISOString() || c.updatedAt.toISOString(),
           lastMessageSenderName: lastMsg?.sender?.name || undefined,
           unreadCount,
@@ -155,13 +181,18 @@ export async function POST(request: NextRequest) {
         await prisma.conversation.update({ where: { id: existing.id }, data: { updatedAt: new Date() } });
       }
 
-      const participants = existing.users.map((u) => ({
-        id: u.user.id,
-        name: u.user.name || contactName || "Utilisateur",
-        avatar: u.user.image || contactAvatar || "",
-        role: (u.user as Record<string, unknown>).role || contactRole || "client",
-        online: false,
-      }));
+      const participants = existing.users.map((u) => {
+        const userName = u.user.name || contactName || "Utilisateur";
+        const initials = userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U";
+        return {
+          id: u.user.id,
+          name: userName,
+          avatar: initials,
+          avatarUrl: u.user.image || null,
+          role: (u.user as Record<string, unknown>).role || contactRole || "client",
+          online: false,
+        };
+      });
 
       const orderRef = existing.orderId ? existing.orderId.slice(-6).toUpperCase() : undefined;
 
@@ -211,13 +242,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const participants = created.users.map((u) => ({
-      id: u.user.id,
-      name: u.user.name || contactName || "Utilisateur",
-      avatar: u.user.image || contactAvatar || "",
-      role: (u.user as Record<string, unknown>).role || contactRole || "client",
-      online: false,
-    }));
+    const participants = created.users.map((u) => {
+      const userName = u.user.name || contactName || "Utilisateur";
+      const initials = userName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U";
+      return {
+        id: u.user.id,
+        name: userName,
+        avatar: initials,
+        avatarUrl: u.user.image || null,
+        role: (u.user as Record<string, unknown>).role || contactRole || "client",
+        online: false,
+      };
+    });
 
     const orderRef = created.orderId ? created.orderId.slice(-6).toUpperCase() : undefined;
 

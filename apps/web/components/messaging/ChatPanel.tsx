@@ -15,21 +15,20 @@ const ALLOWED_EXTENSIONS = [
   "zip", "rar", "7z",
 ];
 
-// Detect if a string looks like a technical ID (CUID, UUID, etc.)
-function looksLikeTechnicalId(str: string): boolean {
-  if (!str || str.length < 20) return false;
-  // CUIDs: c + 24 alphanumeric chars
-  if (/^c[a-z0-9]{20,}$/i.test(str)) return true;
-  // UUIDs
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) return true;
-  // Generic long alphanumeric strings
-  if (/^[a-z0-9_-]{24,}$/i.test(str)) return true;
+// Detect garbage: technical IDs, URLs, long filenames
+function isGarbageDisplay(str: string): boolean {
+  if (!str) return false;
+  const s = str.trim();
+  if (s.length < 3) return false;
+  if (/^(https?:\/\/|data:|blob:)/i.test(s)) return true;
+  if (/^c[a-z0-9]{20,}$/i.test(s)) return true;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return true;
+  if (s.length >= 24 && /^[a-z0-9_./-]+$/i.test(s) && !s.includes(" ")) return true;
   return false;
 }
 
-// Sanitize display text: if it looks like a technical ID, return fallback
 function sanitizeDisplay(text: string, fallback: string): string {
-  if (!text || looksLikeTechnicalId(text.trim())) return fallback;
+  if (!text || isGarbageDisplay(text.trim())) return fallback;
   return text;
 }
 
@@ -308,7 +307,14 @@ export function ChatPanel({
           )}
           <div className="relative flex-shrink-0">
             <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-              {sanitizeDisplay(otherParticipants[0]?.avatar ?? "", "?").slice(0, 2)}
+              {(() => {
+                const av = otherParticipants[0]?.avatar ?? "";
+                if (!av || isGarbageDisplay(av) || av.length > 3) {
+                  const name = otherParticipants[0]?.name ?? "U";
+                  return sanitizeDisplay(name, "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+                }
+                return av.slice(0, 2);
+              })()}
             </div>
             {isOnline && (
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-background-dark rounded-full" />
