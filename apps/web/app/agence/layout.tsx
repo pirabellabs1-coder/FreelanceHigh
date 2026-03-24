@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AgenceSidebar } from "@/components/agence/AgenceSidebar";
+import { MobileSidebarOverlay } from "@/components/ui/MobileSidebarOverlay";
 import { AgenceHeader } from "@/components/agence/AgenceHeader";
 import { ToastContainer } from "@/components/ui/toast";
 import { KycRequiredBanner } from "@/components/kyc/KycRequiredBanner";
@@ -56,14 +57,9 @@ export default function AgenceLayout({ children }: { children: React.ReactNode }
         <AgenceSidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
       </div>
 
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 animate-slide-in max-w-[min(85vw,288px)]">
-            <AgenceSidebar onClose={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      <MobileSidebarOverlay open={mobileOpen} onClose={() => setMobileOpen(false)}>
+        <AgenceSidebar onClose={() => setMobileOpen(false)} />
+      </MobileSidebarOverlay>
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <AgenceHeader onMenuClick={() => setMobileOpen(true)} />

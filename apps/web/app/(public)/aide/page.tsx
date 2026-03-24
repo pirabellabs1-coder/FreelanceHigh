@@ -577,7 +577,7 @@ export default function AidePage() {
 
       {/* Chat panel */}
       {chatOpen && (
-        <div className="fixed bottom-24 right-6 z-[80] w-[360px] max-w-[calc(100vw-2rem)] bg-background-dark border border-border-dark rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-in"
+        <div className="fixed bottom-24 right-6 z-[80] w-full sm:w-96 max-w-[calc(100vw-2rem)] bg-background-dark border border-border-dark rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-in"
           style={{ height: "480px" }}
         >
           {/* Header */}

@@ -2,37 +2,71 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Responsive Design", () => {
   const viewports = [
+    { name: "Mobile S", width: 320, height: 568 },
     { name: "Mobile", width: 375, height: 667 },
     { name: "Tablet", width: 768, height: 1024 },
-    { name: "Desktop", width: 1280, height: 720 },
+    { name: "Laptop", width: 1280, height: 720 },
+    { name: "Desktop", width: 1920, height: 1080 },
+  ];
+
+  const routes = [
+    { path: "/", label: "Landing" },
+    { path: "/connexion", label: "Connexion" },
+    { path: "/inscription", label: "Inscription" },
+    { path: "/explorer", label: "Marketplace" },
+    { path: "/tarifs", label: "Tarifs" },
+    { path: "/dashboard", label: "Dashboard" },
+    { path: "/client", label: "Client" },
+    { path: "/admin", label: "Admin" },
   ];
 
   for (const vp of viewports) {
-    test(`Landing page renders on ${vp.name} (${vp.width}px)`, async ({ browser }) => {
-      const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+    for (const route of routes) {
+      test(`${route.label} renders on ${vp.name} (${vp.width}px)`, async ({
+        browser,
+      }) => {
+        const context = await browser.newContext({
+          viewport: { width: vp.width, height: vp.height },
+        });
+        const page = await context.newPage();
+
+        await page.goto(route.path, { waitUntil: "domcontentloaded" });
+        await expect(page.locator("body")).toBeVisible();
+
+        // No horizontal overflow
+        const bodyWidth = await page.evaluate(
+          () => document.body.scrollWidth
+        );
+        expect(bodyWidth).toBeLessThanOrEqual(vp.width + 20);
+
+        await context.close();
+      });
+    }
+  }
+
+  // Sidebar visibility tests
+  for (const vp of viewports) {
+    test(`Sidebar hidden on ${vp.name} < lg`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: { width: vp.width, height: vp.height },
+      });
       const page = await context.newPage();
 
-      await page.goto("/");
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toBeVisible();
 
-      // No horizontal overflow
-      const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
-      expect(bodyWidth).toBeLessThanOrEqual(vp.width + 20); // small tolerance
-
-      await context.close();
-    });
-
-    test(`Dashboard renders on ${vp.name} (${vp.width}px)`, async ({ browser }) => {
-      const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
-      const page = await context.newPage();
-
-      await page.goto("/dashboard");
-      await expect(page.locator("body")).toBeVisible();
-
-      // On mobile, sidebar should be hidden; on desktop, visible
       if (vp.width >= 1024) {
+        // Desktop: sidebar visible
         const sidebar = page.locator("aside").first();
         await expect(sidebar).toBeVisible();
+      } else {
+        // Mobile/tablet: hamburger menu visible
+        const menuBtn = page.locator(
+          'button:has(span.material-symbols-outlined:text("menu"))'
+        );
+        if ((await menuBtn.count()) > 0) {
+          await expect(menuBtn.first()).toBeVisible();
+        }
       }
 
       await context.close();

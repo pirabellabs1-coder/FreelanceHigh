@@ -71,7 +71,7 @@ export default function DeveloperPage() {
   ];
 
   return (
-    <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row min-h-screen">
+    <div className="max-w-7xl mx-auto flex flex-col lg:flex-row min-h-screen">
       {/* Sidebar */}
       <aside className="w-full lg:w-72 p-6 border-r border-border-dark shrink-0">
         <div className="sticky top-24">

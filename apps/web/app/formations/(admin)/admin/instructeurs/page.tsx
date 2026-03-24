@@ -70,7 +70,7 @@ export default function AdminInstructeursPage() {
       <h1 className="text-xl font-bold">{t("admin_instructors_title")}</h1>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {["", "EN_ATTENTE", "APPROUVE", "SUSPENDU"].map((s) => (
           <button
             key={s}
@@ -96,8 +96,8 @@ export default function AdminInstructeursPage() {
           filtered.map((instr) => {
             const avatar = instr.user.avatar || instr.user.image;
             return (
-              <div key={instr.id} className="bg-white dark:bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
-                <div className="flex items-start gap-4">
+              <div key={instr.id} className="bg-white dark:bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex-shrink-0 overflow-hidden">
                     {avatar ? (
                       <img src={avatar} alt={instr.user.name} className="w-full h-full object-cover" />
@@ -129,7 +129,7 @@ export default function AdminInstructeursPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                     {instr.status === "EN_ATTENTE" && (
                       <>
                         <button onClick={() => approve(instr.id)} disabled={actionLoading === instr.id} className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors disabled:opacity-50">

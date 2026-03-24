@@ -227,7 +227,7 @@ function LoadingSkeleton() {
               <div className="h-4 w-4/6 bg-slate-700 rounded animate-pulse" />
             </div>
           </div>
-          <div className="w-full lg:w-[380px] flex-shrink-0">
+          <div className="w-full lg:w-96 flex-shrink-0">
             <div className="bg-neutral-dark border border-border-dark rounded-xl p-6 space-y-4">
               <div className="h-6 w-1/2 bg-slate-700 rounded animate-pulse" />
               <div className="h-10 w-1/3 bg-slate-700 rounded animate-pulse" />
@@ -1059,7 +1059,7 @@ export default function ServiceDetailPage() {
           {/* ============================================ */}
           {/* RIGHT COLUMN — Sticky Sidebar */}
           {/* ============================================ */}
-          <div className="w-full lg:w-[380px] flex-shrink-0">
+          <div className="w-full lg:w-96 flex-shrink-0">
             <div className="lg:sticky lg:top-24">
               <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
                 {/* Package tabs */}

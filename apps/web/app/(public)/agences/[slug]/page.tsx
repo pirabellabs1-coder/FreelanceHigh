@@ -151,7 +151,7 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "ba
 function AgencySkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center animate-pulse">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-xl min-h-[260px]" />
         <div className="flex flex-col md:flex-row gap-6 px-6 -mt-16 relative z-10">
           <div className="w-36 h-36 rounded-2xl bg-slate-300 dark:bg-slate-600 border-4 border-white dark:border-slate-800" />
@@ -278,7 +278,7 @@ export default function AgencyProfilePage() {
 
   return (
     <div className="flex-1 flex flex-col items-center">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         {/* ============================================================ */}
         {/* Cover + Logo + Info Section                                   */}
         {/* ============================================================ */}
@@ -814,7 +814,7 @@ export default function AgencyProfilePage() {
       {/* ============================================================ */}
       {/* Notre Equipe                                                   */}
       {/* Show team cards if members exist, otherwise show summary count  */}
-      <div className="w-full max-w-[1100px] px-4 md:px-10 pb-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 pb-8">
         <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3 mb-6">
           <span className="material-symbols-outlined text-primary text-3xl">groups</span>
           {t("our_team")}
@@ -880,7 +880,7 @@ export default function AgencyProfilePage() {
 
       {/* Nos Realisations                                               */}
       {agency.caseStudies && agency.caseStudies.length > 0 && (
-        <div className="w-full max-w-[1100px] px-4 md:px-10 pb-8">
+        <div className="w-full max-w-5xl px-4 md:px-10 pb-8">
           <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3 mb-6">
             <span className="material-symbols-outlined text-primary text-3xl">palette</span>
             {t("our_portfolio")}
@@ -922,7 +922,7 @@ export default function AgencyProfilePage() {
       {/* Nos services -- visible section for all visitors              */}
       {/* ============================================================ */}
       {services.length > 0 && (
-        <div id="agency-services" className="w-full max-w-[1100px] px-4 md:px-10 pb-12">
+        <div id="agency-services" className="w-full max-w-5xl px-4 md:px-10 pb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-3xl">storefront</span>

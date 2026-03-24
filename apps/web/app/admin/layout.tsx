@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { MobileSidebarOverlay } from "@/components/ui/MobileSidebarOverlay";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ToastContainer } from "@/components/ui/toast";
 import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
@@ -45,23 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <AdminSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((v) => !v)} />
       </div>
       {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 w-72 max-w-[min(85vw,288px)] flex flex-col h-full">
-            {/* Mobile close button */}
-            <div className="absolute top-3 right-3 z-10">
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="p-1.5 rounded-lg bg-neutral-dark/80 text-slate-400 hover:text-white hover:bg-border-dark transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-            <AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      <MobileSidebarOverlay open={mobileOpen} onClose={() => setMobileOpen(false)}>
+        <AdminSidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
+      </MobileSidebarOverlay>
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminHeader onMobileMenu={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

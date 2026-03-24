@@ -221,7 +221,7 @@ export default function VerifierEmailPage() {
         </div>
 
         {/* OTP Inputs */}
-        <div className="flex gap-3 justify-center mb-6" onPaste={handlePaste}>
+        <div className="flex gap-2 sm:gap-3 justify-center mb-6" onPaste={handlePaste}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <input
               key={i}
@@ -235,7 +235,7 @@ export default function VerifierEmailPage() {
               onChange={(e) => handleDigitChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               disabled={loading || success}
-              className="w-12 h-14 text-center text-2xl font-bold border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           ))}
         </div>

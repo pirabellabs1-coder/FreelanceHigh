@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { MobileSidebarOverlay } from "@/components/ui/MobileSidebarOverlay";
 import { ToastContainer } from "@/components/ui/toast";
 import { DashboardNotificationBell } from "@/components/dashboard/DashboardNotificationBell";
 import { KycRequiredBanner } from "@/components/kyc/KycRequiredBanner";
@@ -53,21 +54,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 max-w-[min(85vw,288px)]">
-            <Sidebar />
-            {/* Close button on mobile overlay */}
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-5 right-3 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-slate-400 hover:text-primary transition-colors"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
-          </div>
-        </div>
-      )}
+      <MobileSidebarOverlay open={mobileOpen} onClose={() => setMobileOpen(false)}>
+        <Sidebar />
+      </MobileSidebarOverlay>
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-background-dark p-4 sm:p-6 lg:p-8">

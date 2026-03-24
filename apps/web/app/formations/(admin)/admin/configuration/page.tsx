@@ -116,7 +116,7 @@ export default function AdminConfigurationPage() {
 
       {/* Section: Finances */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-sm">
-        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
               <span className="material-symbols-outlined text-emerald-600">
@@ -133,7 +133,7 @@ export default function AdminConfigurationPage() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-5">
+        <div className="p-4 sm:p-5 space-y-5">
           {/* Commission rate */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
@@ -198,7 +198,7 @@ export default function AdminConfigurationPage() {
 
       {/* Section: Limits */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-sm">
-        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
               <span className="material-symbols-outlined text-blue-600">
@@ -215,7 +215,7 @@ export default function AdminConfigurationPage() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-5">
+        <div className="p-4 sm:p-5 space-y-5">
           {/* Max upload size */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
@@ -284,7 +284,7 @@ export default function AdminConfigurationPage() {
 
       {/* Section: Features */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 dark:border-slate-800 shadow-sm">
-        <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
               <span className="material-symbols-outlined text-purple-600">
@@ -301,7 +301,7 @@ export default function AdminConfigurationPage() {
             </div>
           </div>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-4">
           {/* Cohorts toggle */}
           <div className="flex items-center justify-between py-2">
             <div>

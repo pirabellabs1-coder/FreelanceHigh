@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
+import { MobileSidebarOverlay } from "@/components/ui/MobileSidebarOverlay";
 import { ClientHeader } from "@/components/client/ClientHeader";
 import { ToastContainer } from "@/components/ui/toast";
 import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
@@ -57,14 +58,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* Mobile sidebar overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 animate-slide-in max-w-[min(90vw,272px)]">
-            <ClientSidebar onClose={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      <MobileSidebarOverlay open={mobileOpen} onClose={() => setMobileOpen(false)}>
+        <ClientSidebar onClose={() => setMobileOpen(false)} />
+      </MobileSidebarOverlay>
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">

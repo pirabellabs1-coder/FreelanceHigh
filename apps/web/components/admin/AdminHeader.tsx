@@ -13,7 +13,7 @@ export function AdminHeader({ onMobileMenu }: { onMobileMenu: () => void }) {
         </button>
         <div className="relative hidden sm:block">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
-          <input placeholder="Rechercher utilisateur, commande, service..." className="w-80 pl-10 pr-4 py-2 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50" />
+          <input placeholder="Rechercher utilisateur, commande, service..." className="w-full max-w-xs lg:w-80 pl-10 pr-4 py-2 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50" />
         </div>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2">

@@ -376,7 +376,7 @@ function ReinitialiserMotDePasseContent() {
           )}
 
           {/* Footer links */}
-          <div className="mt-12 flex items-center justify-center gap-6 opacity-60">
+          <div className="mt-12 flex items-center justify-center gap-4 sm:gap-6 flex-wrap opacity-60">
             <Link href="/cgu" className="text-xs hover:text-primary transition-colors">Conditions d&apos;utilisation</Link>
             <Link href="/confidentialite" className="text-xs hover:text-primary transition-colors">Politique de confidentialité</Link>
             <Link href="/contact" className="text-xs hover:text-primary transition-colors">Aide</Link>

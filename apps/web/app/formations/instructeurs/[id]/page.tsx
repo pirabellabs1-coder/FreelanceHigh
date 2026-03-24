@@ -91,7 +91,7 @@ const LEVEL_COLORS: Record<string, string> = {
 function ProfileSkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center animate-pulse">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         {/* Cover */}
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-xl min-h-[260px]" />
         {/* Avatar + info */}
@@ -187,7 +187,7 @@ export default function InstructeurPublicPage({ params }: { params: Promise<{ id
 
   return (
     <div className="flex-1 flex flex-col items-center">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         {/* ============================================================ */}
         {/* Hero / Header (same pattern as freelancer profile)            */}
         {/* ============================================================ */}

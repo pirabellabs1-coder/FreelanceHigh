@@ -110,7 +110,7 @@ export default function ApprenantPublicPage({ params }: { params: Promise<{ id: 
       {/* ============================================================ */}
       {/* Profile Header                                                */}
       {/* ============================================================ */}
-      <div className="w-full max-w-[1100px] px-4 md:px-10 -mt-16 relative z-10">
+      <div className="w-full max-w-5xl px-4 md:px-10 -mt-16 relative z-10">
         <div className="bg-white dark:bg-slate-900 dark:bg-neutral-dark rounded-2xl border border-slate-200 dark:border-slate-700 dark:border-border-dark shadow-xl p-6 md:p-8">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Avatar */}

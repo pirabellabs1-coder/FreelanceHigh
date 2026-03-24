@@ -146,7 +146,7 @@ export default function AdminAuditLogPage() {
       </h1>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap px-0">
         {FILTER_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -198,8 +198,8 @@ export default function AdminAuditLogPage() {
                   </div>
 
                   {/* Entry card */}
-                  <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:border-slate-800 rounded-xl shadow-sm p-4 -mt-1">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:border-slate-800 rounded-xl shadow-sm p-3 sm:p-4 -mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Admin avatar */}
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 overflow-hidden flex items-center justify-center">

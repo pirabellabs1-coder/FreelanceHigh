@@ -49,7 +49,7 @@ function OnboardingContent() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-20">
+      <main className="flex flex-col items-center flex-1 w-full max-w-7xl mx-auto px-4 lg:px-20">
         {/* Hero Section */}
         <section className="w-full py-12 lg:py-20 flex flex-col lg:flex-row items-center gap-12">
           <div className="flex flex-col gap-8 flex-1 text-center lg:text-left">
@@ -84,7 +84,7 @@ function OnboardingContent() {
           </div>
 
           {/* Image */}
-          <div className="flex-1 w-full max-w-[500px] lg:max-w-none">
+          <div className="flex-1 w-full max-w-lg lg:max-w-none">
             <div className="relative group">
               <div className="absolute -inset-4 bg-gradient-to-tr from-primary to-accent opacity-20 blur-3xl rounded-full"></div>
               <div className="relative rounded-2xl overflow-hidden border-4 border-white dark:border-neutral-dark shadow-2xl aspect-video bg-neutral-dark">
@@ -203,7 +203,7 @@ function OnboardingContent() {
 
       {/* Footer */}
       <footer className="w-full bg-white dark:bg-neutral-dark/80 py-12 px-6 lg:px-20 border-t border-border-dark">
-        <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
             <div className="size-8 bg-primary/20 flex items-center justify-center rounded-lg text-primary">
               <span className="material-symbols-outlined">language</span>

@@ -52,6 +52,17 @@
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  /* Responsive typography utilities */
+  .text-page-title {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold;
+  }
+  .text-section-title {
+    @apply text-lg sm:text-xl font-semibold;
+  }
+  .text-card-title {
+    @apply text-base sm:text-lg font-semibold;
+  }
 }
 
 

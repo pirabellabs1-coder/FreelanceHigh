@@ -179,7 +179,7 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "ba
 function ProfileSkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center animate-pulse">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         {/* Cover */}
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-xl min-h-[260px]" />
         {/* Avatar + info */}
@@ -397,7 +397,7 @@ export default function FreelanceProfilePage() {
 
   return (
     <div className="flex-1 flex flex-col items-center">
-      <div className="w-full max-w-[1100px] px-4 md:px-10 py-8">
+      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
         {/* ============================================================ */}
         {/* Hero / Header                                                 */}
         {/* ============================================================ */}
@@ -1065,7 +1065,7 @@ export default function FreelanceProfilePage() {
       {/* Portfolio                                                      */}
       {/* ============================================================ */}
       {freelancer.portfolio && freelancer.portfolio.length > 0 && (
-        <div className="w-full max-w-[1100px] px-4 md:px-10 pb-8">
+        <div className="w-full max-w-5xl px-4 md:px-10 pb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-3xl">palette</span>
@@ -1152,7 +1152,7 @@ export default function FreelanceProfilePage() {
       {/* Mes services -- visible section for ALL visitors              */}
       {/* ============================================================ */}
       {services.length > 0 && (
-        <div className="w-full max-w-[1100px] px-4 md:px-10 pb-12">
+        <div className="w-full max-w-5xl px-4 md:px-10 pb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-3xl">storefront</span>
