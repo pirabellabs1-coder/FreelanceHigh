@@ -56,6 +56,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   const iceSentCountRef = useRef(0);
   const iceReceivedCountRef = useRef(0);
   const callStartTimeRef = useRef<number | null>(null);
+  const answerProcessedRef = useRef(false);
 
   const {
     callState,
@@ -95,6 +96,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       pcRef.current.onicecandidate = null;
       pcRef.current.ontrack = null;
       pcRef.current.onconnectionstatechange = null;
+      pcRef.current.oniceconnectionstatechange = null;
       pcRef.current.close();
       pcRef.current = null;
     }
@@ -108,11 +110,14 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     setRemoteStream(null);
     pendingOfferRef.current = null;
     pendingCandidatesRef.current = [];
+    answerProcessedRef.current = false;
   }, []);
 
   // Create RTCPeerConnection with handlers
   const createPeerConnection = useCallback((callIdForIce: string, remoteUserId: string, iceServers?: RTCIceServer[]) => {
-    const pc = new RTCPeerConnection({ iceServers: iceServers || staticIceServers });
+    const servers = iceServers || staticIceServers;
+    console.log(`[WebRTC] Creating PC with ${servers.length} ICE servers`);
+    const pc = new RTCPeerConnection({ iceServers: servers });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -131,44 +136,39 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     remoteStreamRef.current = remoteMs;
 
     pc.ontrack = (event) => {
-      // Some browsers may not associate a stream with the track — use track directly as fallback
-      const tracks = event.streams[0]?.getTracks() ?? [event.track];
-      for (const track of tracks) {
-        // Avoid duplicate tracks
-        if (!remoteMs.getTracks().find((t) => t.id === track.id)) {
-          remoteMs.addTrack(track);
-        }
+      // Use track directly (more reliable than event.streams)
+      const track = event.track;
+      if (!remoteMs.getTracks().find((t) => t.id === track.id)) {
+        remoteMs.addTrack(track);
       }
-      console.log(`[WebRTC] ontrack: kind=${event.track.kind}, total tracks=${remoteMs.getTracks().length}`);
-      // Force re-render with a new MediaStream object so React detects the change
+      console.log(`[WebRTC] ontrack: kind=${track.kind}, total=${remoteMs.getTracks().length}`);
+      // Force React re-render with new MediaStream reference
       setRemoteStream(new MediaStream(remoteMs.getTracks()));
     };
 
     pc.onconnectionstatechange = () => {
-      const connState = pc.connectionState;
-      console.log("[WebRTC] Connection state:", connState);
+      const state = pc.connectionState;
+      console.log(`[WebRTC] connectionState: ${state}`);
 
-      if (connState === "connected") {
+      if (state === "connected") {
         const elapsed = callStartTimeRef.current ? Date.now() - callStartTimeRef.current : 0;
-        console.log(`[WebRTC] Connection established in ${elapsed}ms (ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current})`);
+        console.log(`[WebRTC] CONNECTED in ${elapsed}ms (ICE: ${iceSentCountRef.current} sent, ${iceReceivedCountRef.current} recv)`);
         stopAllSounds();
         playConnectedSound();
         setCallState("connected");
         setConnectionQuality("good");
         startDurationTimer();
-      } else if (connState === "connecting") {
+      } else if (state === "connecting") {
         setCallState("connecting");
-      } else if (connState === "disconnected") {
+      } else if (state === "disconnected") {
         setCallState("reconnecting");
         setConnectionQuality("poor");
-      } else if (connState === "failed") {
-        // Retry: restart ICE
-        console.warn(`[WebRTC] Connection FAILED — ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current}, iceState: ${pc.iceConnectionState}`);
+      } else if (state === "failed") {
+        console.warn(`[WebRTC] FAILED (ICE: ${iceSentCountRef.current} sent, ${iceReceivedCountRef.current} recv, iceState: ${pc.iceConnectionState})`);
         pc.restartIce();
-        // If still failed after 15s, hangup
         setTimeout(() => {
           if (pc.connectionState === "failed") {
-            console.error(`[WebRTC] Connection FAILED after 15s — state: ${pc.connectionState}, iceState: ${pc.iceConnectionState}`);
+            console.error("[WebRTC] Still failed after 15s — hanging up");
             handleHangup();
           }
         }, 15000);
@@ -176,7 +176,11 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log("[WebRTC] ICE state:", pc.iceConnectionState);
+      console.log(`[WebRTC] iceConnectionState: ${pc.iceConnectionState}`);
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log(`[WebRTC] iceGatheringState: ${pc.iceGatheringState}`);
     };
 
     pcRef.current = pc;
@@ -186,18 +190,19 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   // Flush ICE candidates that arrived before setRemoteDescription
   const flushPendingCandidates = useCallback(async () => {
     const pc = pcRef.current;
-    if (!pc) return;
+    if (!pc || pendingCandidatesRef.current.length === 0) return;
+    console.log(`[WebRTC] Flushing ${pendingCandidatesRef.current.length} buffered ICE candidates`);
     for (const candidate of pendingCandidatesRef.current) {
       try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.warn("[WebRTC] Error adding buffered ICE candidate:", e);
+        await pc.addIceCandidate(candidate);
+      } catch {
+        // Ignore — late/duplicate candidates
       }
     }
     pendingCandidatesRef.current = [];
   }, []);
 
-  // Initiate a call
+  // ── Initiate a call ──
   const initiateCall = useCallback(async (
     targetUser: CallUser,
     type: CallType,
@@ -207,6 +212,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     iceSentCountRef.current = 0;
     iceReceivedCountRef.current = 0;
     callStartTimeRef.current = Date.now();
+    answerProcessedRef.current = false;
 
     startCall({
       callId: newCallId,
@@ -217,30 +223,28 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
 
     setSignalingCallActive(true);
     startDialTone();
-    console.log(`[WebRTC] Call initiated: ${newCallId}, type: ${type}`);
+    console.log(`[WebRTC] Initiating ${type} call: ${newCallId} → ${targetUser.id}`);
 
     try {
-      // Fetch fresh TURN credentials + get local media in parallel
+      // Fetch TURN credentials + get media in parallel
       const [freshIceServers, stream] = await Promise.all([
         getFreshIceServers(),
         type === "video" ? getAudioVideoStream() : getAudioStream(),
       ]);
 
-      console.log(`[WebRTC] ICE servers: ${freshIceServers.length} (TURN: ${freshIceServers.filter(s => String(s.urls).includes("turn:")).length})`);
+      console.log(`[WebRTC] Got ${freshIceServers.length} ICE servers, ${stream.getTracks().length} local tracks`);
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      // Create peer connection with fresh credentials
       const pc = createPeerConnection(newCallId, targetUser.id, freshIceServers);
 
-      // Add local tracks to peer connection
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
 
-      // Create and send offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      console.log("[WebRTC] Offer created and set as local description");
 
       sendOffer({
         callId: newCallId,
@@ -265,12 +269,18 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     }
   }, [currentUser, startCall, createPeerConnection, cleanupMedia, resetCall, onCallMissed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Answer an incoming call
+  // ── Answer an incoming call ──
   const answerCall = useCallback(async (answerAsType?: CallType) => {
     const state = useCallStore.getState();
-    if (!state.callId || !state.remoteUser) return;
+    if (!state.callId || !state.remoteUser) {
+      console.error("[WebRTC] answerCall: no callId or remoteUser");
+      return;
+    }
     const offer = pendingOfferRef.current;
-    if (!offer) return;
+    if (!offer) {
+      console.error("[WebRTC] answerCall: no pending offer");
+      return;
+    }
 
     const type = answerAsType ?? state.callType;
     iceSentCountRef.current = 0;
@@ -279,35 +289,39 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     setCallState("connecting");
     if (answerAsType) setCallType(answerAsType);
     stopRingtone();
+    if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
+
+    console.log(`[WebRTC] Answering call ${state.callId} as ${type}`);
 
     try {
-      // Fetch fresh TURN credentials + get local media in parallel
       const [freshIceServers, stream] = await Promise.all([
         getFreshIceServers(),
         type === "video" ? getAudioVideoStream() : getAudioStream(),
       ]);
 
-      console.log(`[WebRTC] Answer ICE servers: ${freshIceServers.length} (TURN: ${freshIceServers.filter(s => String(s.urls).includes("turn:")).length})`);
+      console.log(`[WebRTC] Answer: ${freshIceServers.length} ICE servers, ${stream.getTracks().length} local tracks`);
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      // Create peer connection with fresh credentials
       const pc = createPeerConnection(state.callId, state.remoteUser.id, freshIceServers);
 
-      // Add local tracks
+      // Add local tracks BEFORE setting remote description
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
+      console.log("[WebRTC] Local tracks added to PC");
 
-      // Set remote description from the stored offer
-      await pc.setRemoteDescription(new RTCSessionDescription(offer.sdp));
+      // Set remote description (the caller's offer) — use init object directly (modern API)
+      await pc.setRemoteDescription(offer.sdp);
+      console.log("[WebRTC] Remote description (offer) set OK");
 
-      // Flush buffered ICE candidates
+      // Flush any ICE candidates that arrived before we set remote description
       await flushPendingCandidates();
 
       // Create and send answer
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      console.log("[WebRTC] Answer created and set as local description");
 
       sendAnswer({
         callId: state.callId,
@@ -315,6 +329,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
         to: state.remoteUser.id,
         sdp: answer,
       });
+      console.log("[WebRTC] Answer sent via signaling");
     } catch (err) {
       console.error("[WebRTC] Error answering call:", err);
       stopAllSounds();
@@ -329,6 +344,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     if (!state.callId || !state.remoteUser) return;
 
     stopRingtone();
+    if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
     setSignalingCallActive(false);
     sendReject({
       callId: state.callId,
@@ -344,7 +360,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   // Hangup
   const handleHangup = useCallback(() => {
     const state = useCallStore.getState();
-    console.log(`[WebRTC] Call ended: duration ${state.callDuration}s (ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current})`);
+    console.log(`[WebRTC] Hangup: duration=${state.callDuration}s, ICE sent=${iceSentCountRef.current}, recv=${iceReceivedCountRef.current}`);
     if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
     stopDurationTimer();
     stopAllSounds();
@@ -357,7 +373,6 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
         to: state.remoteUser.id,
         duration: state.callDuration,
       });
-
       onCallEnded?.(state.callType, state.callDuration);
     }
 
@@ -367,13 +382,13 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     setTimeout(() => resetCall(), 500);
   }, [currentUser.id, stopDurationTimer, cleanupMedia, endCall, resetCall, onCallEnded]);
 
-  // Toggle mute (real track control)
+  // Toggle mute
   const toggleMuteReal = useCallback(() => {
     toggleTrack(localStreamRef.current, "audio");
     useCallStore.getState().toggleMute();
   }, []);
 
-  // Toggle camera (real track control)
+  // Toggle camera
   const toggleCameraReal = useCallback(() => {
     toggleTrack(localStreamRef.current, "video");
     useCallStore.getState().toggleCamera();
@@ -383,61 +398,34 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   const toggleScreenShareReal = useCallback(async () => {
     const pc = pcRef.current;
     if (!pc) return;
-
     const store = useCallStore.getState();
 
     if (!store.isScreenSharing) {
-      // Start screen sharing
       try {
         const screenStream = await getScreenShareStream();
         screenStreamRef.current = screenStream;
-
-        // Save original camera track
         const currentVideoTrack = localStreamRef.current?.getVideoTracks()[0] ?? null;
         originalVideoTrackRef.current = currentVideoTrack;
-
-        // Replace video track on peer connection
         await replaceVideoTrack(pc, screenStream);
-
-        // Update local stream for preview
-        if (localStreamRef.current && currentVideoTrack) {
-          localStreamRef.current.removeTrack(currentVideoTrack);
-        }
+        if (localStreamRef.current && currentVideoTrack) localStreamRef.current.removeTrack(currentVideoTrack);
         const screenTrack = screenStream.getVideoTracks()[0];
-        if (localStreamRef.current && screenTrack) {
-          localStreamRef.current.addTrack(screenTrack);
-        }
+        if (localStreamRef.current && screenTrack) localStreamRef.current.addTrack(screenTrack);
         setLocalStream(localStreamRef.current ? new MediaStream(localStreamRef.current.getTracks()) : null);
-
-        // Listen for browser "Stop sharing" button
-        screenTrack?.addEventListener("ended", () => {
-          toggleScreenShareReal();
-        });
-
+        screenTrack?.addEventListener("ended", () => toggleScreenShareReal());
         store.toggleScreenShare();
       } catch (err) {
-        console.log("[WebRTC] Screen share cancelled or failed:", err);
+        console.log("[WebRTC] Screen share cancelled:", err);
       }
     } else {
-      // Stop screen sharing — restore camera
       stopStream(screenStreamRef.current);
       screenStreamRef.current = null;
-
       if (originalVideoTrackRef.current && localStreamRef.current) {
-        // Remove screen track
         const screenTrack = localStreamRef.current.getVideoTracks()[0];
         if (screenTrack) localStreamRef.current.removeTrack(screenTrack);
-
-        // Re-add camera track
         localStreamRef.current.addTrack(originalVideoTrackRef.current);
-
-        // Replace on peer connection
         const senders = pc.getSenders();
         const videoSender = senders.find((s) => s.track?.kind === "video" || !s.track);
-        if (videoSender) {
-          await videoSender.replaceTrack(originalVideoTrackRef.current);
-        }
-
+        if (videoSender) await videoSender.replaceTrack(originalVideoTrackRef.current);
         setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
       }
       originalVideoTrackRef.current = null;
@@ -445,25 +433,20 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     }
   }, []);
 
-  // Register signaling handlers
+  // ── Register signaling handlers ──
   useEffect(() => {
     registerSignalingHandlers({
       onOffer: (offer) => {
         const state = useCallStore.getState();
-        // If already in a call, send busy
         if (state.callState !== "idle") {
-          sendReject({
-            callId: offer.callId,
-            from: currentUser.id,
-            to: offer.from.id,
-            reason: "busy",
-          });
+          sendReject({ callId: offer.callId, from: currentUser.id, to: offer.from.id, reason: "busy" });
           return;
         }
 
-        // Store the SDP offer for when user answers
+        console.log(`[WebRTC] Offer received: ${offer.callId} from ${offer.from.name}`);
         pendingOfferRef.current = offer;
-        setSignalingCallActive(true); // Speed up polling for ICE candidates
+        answerProcessedRef.current = false;
+        setSignalingCallActive(true);
 
         receiveCall({
           callId: offer.callId,
@@ -471,10 +454,8 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
           remoteUser: offer.from,
           conversationId: "",
         });
-
         startRingtone();
 
-        // Auto-miss after 30 seconds
         ringtimeoutRef.current = setTimeout(() => {
           if (useCallStore.getState().callState === "ringing") {
             stopRingtone();
@@ -486,53 +467,46 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       },
 
       onAnswer: async (answer) => {
+        // Strict dedup: only process once
+        if (answerProcessedRef.current) return;
         const pc = pcRef.current;
         const state = useCallStore.getState();
-        // Only process if we're in "calling" state — prevents duplicate processing
-        // (BroadcastChannel + server poll can both deliver the same answer)
-        if (!pc || state.callState !== "calling") return;
+        if (!pc || state.callState !== "calling") {
+          console.log(`[WebRTC] onAnswer ignored: pc=${!!pc}, callState=${state.callState}`);
+          return;
+        }
+
+        answerProcessedRef.current = true;
+        console.log("[WebRTC] Answer received from signaling");
 
         try {
-          // Transition to "connecting" FIRST to prevent duplicate processing
           setCallState("connecting");
           stopDialTone();
 
-          console.log("[WebRTC] Answer received, setting remote description...");
-          await pc.setRemoteDescription(new RTCSessionDescription(answer.sdp));
-          console.log("[WebRTC] Remote description set OK, flushing ICE candidates...");
+          // Modern API: pass init object directly (no RTCSessionDescription constructor)
+          await pc.setRemoteDescription(answer.sdp);
+          console.log("[WebRTC] Remote description (answer) set OK");
+
           await flushPendingCandidates();
-          // Immediately poll for any buffered ICE candidates
           pollServerNow();
-          console.log("[WebRTC] Waiting for ICE connection...");
+          console.log("[WebRTC] ICE exchange in progress...");
         } catch (e) {
-          console.error("[WebRTC] Error setting remote description:", e);
+          console.error("[WebRTC] Error processing answer:", e);
         }
       },
 
       onIceCandidate: async (ice) => {
         const pc = pcRef.current;
         if (!pc) return;
-
-        // Deduplicate ICE candidates (BroadcastChannel + server poll can deliver same candidate)
-        const candidateStr = JSON.stringify(ice.candidate);
-        const isDuplicate = pendingCandidatesRef.current.some(
-          (c) => JSON.stringify(c) === candidateStr
-        );
-        if (isDuplicate) return;
-
         iceReceivedCountRef.current++;
 
         if (pc.remoteDescription) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(ice.candidate));
-          } catch (e) {
-            // Ignore late/duplicate candidate errors
-            if (!(e instanceof DOMException && e.name === "InvalidStateError")) {
-              console.warn("[WebRTC] Error adding ICE candidate:", e);
-            }
+            await pc.addIceCandidate(ice.candidate);
+          } catch {
+            // Ignore late/duplicate
           }
         } else {
-          // Buffer until remote description is set
           pendingCandidatesRef.current.push(ice.candidate);
         }
       },
@@ -545,11 +519,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
         if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
         stopAllSounds();
         setSignalingCallActive(false);
-
-        if (reject.reason === "busy") {
-          console.log("[WebRTC] Remote user is busy");
-        }
-
+        if (reject.reason === "busy") console.log("[WebRTC] Remote user is busy");
         cleanupMedia();
         resetCall();
       },
