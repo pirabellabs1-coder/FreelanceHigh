@@ -199,7 +199,7 @@ export default function AidePage() {
       {/* ================================================================ */}
       {/* Hero + Search */}
       {/* ================================================================ */}
-      <section className="relative overflow-hidden px-6 lg:px-20 pt-16 pb-20">
+      <section className="relative overflow-hidden px-6 lg:px-8 pt-16 pb-20">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent pointer-events-none" />
         <div className="relative max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 text-primary text-xs font-bold uppercase tracking-wider border border-primary/25">
@@ -243,8 +243,8 @@ export default function AidePage() {
       {/* ================================================================ */}
       {/* Categories Grid */}
       {/* ================================================================ */}
-      <section className="px-6 lg:px-20 pb-20">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 lg:px-8 pb-20">
+        <div className="max-w-[1440px] mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
             {t("explore_by_category")}
           </h2>
@@ -297,8 +297,8 @@ export default function AidePage() {
       {/* ================================================================ */}
       {/* Popular Articles */}
       {/* ================================================================ */}
-      <section className="px-6 lg:px-20 pb-20">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 lg:px-8 pb-20">
+        <div className="max-w-[1440px] mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
             {t("popular_articles")}
           </h2>
@@ -328,7 +328,7 @@ export default function AidePage() {
       {/* ================================================================ */}
       {/* FAQ Accordion */}
       {/* ================================================================ */}
-      <section className="px-6 lg:px-20 pb-20">
+      <section className="px-6 lg:px-8 pb-20">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-10 text-center">
             {t("faq_title")}
@@ -399,7 +399,7 @@ export default function AidePage() {
       {/* ================================================================ */}
       {/* Support Tickets Section */}
       {/* ================================================================ */}
-      <section className="px-6 lg:px-20 pb-20">
+      <section className="px-6 lg:px-8 pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="bg-neutral-dark border border-border-dark rounded-xl p-8 sm:p-12 text-center">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-6">

@@ -17,8 +17,8 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-slate-950 border-t border-white/5 px-6 lg:px-20 py-24">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
+    <footer className="bg-slate-950 border-t border-white/5 px-4 sm:px-6 lg:px-8 py-20">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
         {/* Branding */}
         <div className="space-y-8">
           <Link href="/" className="flex items-center gap-2 text-primary">
@@ -100,7 +100,7 @@ export function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div className="max-w-[1440px] mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
         <p className="text-slate-600 text-xs">{t("copyright")}</p>
         <div className="flex flex-wrap justify-center gap-6 text-xs text-slate-600 font-bold">
           <Link href="/cgu" className="hover:text-white transition-colors">{t("links.terms")}</Link>

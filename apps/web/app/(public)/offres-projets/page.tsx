@@ -1275,8 +1275,8 @@ export default function OffresProjectsPage() {
 
   return (
     <>
-      <section className="px-6 lg:px-20 pt-10 pb-20">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <section className="px-6 lg:px-8 pt-10 pb-20">
+        <div className="max-w-[1440px] mx-auto space-y-8">
           {/* ---------------------------------------------------------------- */}
           {/* Header                                                           */}
           {/* ---------------------------------------------------------------- */}

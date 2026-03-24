@@ -41,7 +41,7 @@ const VALUES = [
 export default function AProposPage() {
   return (
     <div className="min-h-screen bg-background-dark">
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      <div className="max-w-[1440px] mx-auto px-6 py-20">
         {/* Hero */}
         <div className="text-center mb-20">
           <span className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-semibold px-4 py-2 rounded-full mb-6">

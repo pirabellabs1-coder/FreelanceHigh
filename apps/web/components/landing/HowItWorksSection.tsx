@@ -13,8 +13,8 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section className="py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-20">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center">
+    <section className="py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center">
         {/* Visual */}
         <div className="relative order-2 lg:order-1 overflow-hidden">
           <div className="bg-accent/10 rounded-[3rem] w-full aspect-square absolute -rotate-6 z-0 border border-accent/20"></div>

@@ -7,8 +7,8 @@ export function CtaSection() {
   const t = useTranslations("landing.cta_section");
 
   return (
-    <section className="px-4 sm:px-6 lg:px-20 pb-12 sm:pb-20 lg:pb-32">
-      <div className="max-w-7xl mx-auto bg-slate-900 border border-primary/30 rounded-2xl sm:rounded-[3rem] p-6 sm:p-12 lg:p-24 text-center space-y-6 sm:space-y-10 relative overflow-hidden shadow-2xl shadow-primary/10">
+    <section className="px-4 sm:px-6 lg:px-8 pb-12 sm:pb-20 lg:pb-32">
+      <div className="max-w-[1440px] mx-auto bg-slate-900 border border-primary/30 rounded-2xl sm:rounded-[3rem] p-6 sm:p-12 lg:p-24 text-center space-y-6 sm:space-y-10 relative overflow-hidden shadow-2xl shadow-primary/10">
         {/* Decorative blurs */}
         <div className="absolute -top-24 -right-24 size-96 bg-primary/20 blur-[150px] rounded-full"></div>
         <div className="absolute -bottom-24 -left-24 size-96 bg-accent/10 blur-[150px] rounded-full"></div>

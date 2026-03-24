@@ -124,8 +124,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  HERO                                                        */}
       {/* ============================================================ */}
-      <section className="relative px-6 lg:px-20 pt-16 pb-24">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative px-6 lg:px-8 pt-16 pb-24">
+        <div className="max-w-[1440px] mx-auto">
           <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 lg:px-16 py-20 lg:py-28 text-center">
             {/* Decorative blurs */}
             <div className="absolute -top-32 -right-32 size-[500px] bg-primary/20 blur-[180px] rounded-full" />
@@ -169,8 +169,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  HOW IT WORKS                                                */}
       {/* ============================================================ */}
-      <section id="comment-ca-marche" className="py-24 px-6 lg:px-20">
-        <div className="max-w-7xl mx-auto">
+      <section id="comment-ca-marche" className="py-24 px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               {t("how_title_prefix")} <span className="text-primary">{t("how_title_highlight")}</span> ?
@@ -210,8 +210,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  TIERS                                                       */}
       {/* ============================================================ */}
-      <section className="py-24 px-6 lg:px-20 bg-primary/5 dark:bg-primary/5">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-6 lg:px-8 bg-primary/5 dark:bg-primary/5">
+        <div className="max-w-[1440px] mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               {t("tiers_title_prefix")} <span className="text-accent">{t("tiers_title_highlight")}</span>
@@ -290,8 +290,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  EARNINGS CALCULATOR                                         */}
       {/* ============================================================ */}
-      <section className="py-24 px-6 lg:px-20">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               {t("calc_title_prefix")} <span className="text-primary">{t("calc_title_highlight")}</span>
@@ -403,8 +403,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  TESTIMONIALS                                                */}
       {/* ============================================================ */}
-      <section className="py-24 px-6 lg:px-20 bg-primary/5 dark:bg-primary/5">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 px-6 lg:px-8 bg-primary/5 dark:bg-primary/5">
+        <div className="max-w-[1440px] mx-auto">
           <div className="text-center space-y-6 mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
               {t("testimonials_title_prefix")} <span className="text-primary">{t("testimonials_title_highlight")}</span>
@@ -451,7 +451,7 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  FAQ                                                         */}
       {/* ============================================================ */}
-      <section className="py-24 px-6 lg:px-20">
+      <section className="py-24 px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
@@ -501,8 +501,8 @@ export default function AffiliationPage() {
       {/* ============================================================ */}
       {/*  CTA BOTTOM                                                  */}
       {/* ============================================================ */}
-      <section className="px-6 lg:px-20 pb-32">
-        <div className="max-w-7xl mx-auto bg-slate-900 border border-primary/30 rounded-[3rem] p-12 lg:p-24 text-center space-y-10 relative overflow-hidden shadow-2xl shadow-primary/10">
+      <section className="px-6 lg:px-8 pb-32">
+        <div className="max-w-[1440px] mx-auto bg-slate-900 border border-primary/30 rounded-[3rem] p-12 lg:p-24 text-center space-y-10 relative overflow-hidden shadow-2xl shadow-primary/10">
           {/* Decorative blurs */}
           <div className="absolute -top-24 -right-24 size-96 bg-primary/20 blur-[150px] rounded-full" />
           <div className="absolute -bottom-24 -left-24 size-96 bg-accent/10 blur-[150px] rounded-full" />

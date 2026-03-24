@@ -36,8 +36,8 @@ export function StatsBar() {
   const newThisMonth = stats?.newUsersThisMonth ?? 0;
 
   return (
-    <section className="px-4 sm:px-6 lg:px-20 -mt-10 sm:-mt-20 relative z-20">
-      <div className="max-w-7xl mx-auto grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
+    <section className="px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-20 relative z-20">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-3 gap-2 sm:gap-4 md:gap-6">
         {/* Freelances actifs */}
         <div className="bg-white dark:bg-slate-800 p-3 sm:p-5 md:p-8 rounded-xl sm:rounded-2xl border border-primary/10 shadow-2xl flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 md:gap-6 text-center sm:text-left">
           <div className="size-10 sm:size-12 md:size-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">

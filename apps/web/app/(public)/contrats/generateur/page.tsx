@@ -601,7 +601,7 @@ export default function ContractGeneratorPage() {
     <div className="min-h-screen">
       {/* Page header */}
       <div className="border-b border-border-dark bg-neutral-dark/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
             <Link href="/" className="hover:text-primary transition-colors">
               {t("contracts_breadcrumb_home")}
@@ -624,7 +624,7 @@ export default function ContractGeneratorPage() {
       </div>
 
       {/* Main 2-column layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* ========================= LEFT COLUMN — FORM ========================= */}
           <div className="space-y-6">

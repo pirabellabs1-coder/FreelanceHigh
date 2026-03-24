@@ -18,8 +18,8 @@ export function CategoriesSection() {
   const t = useTranslations("landing.categories");
 
   return (
-    <section className="px-4 sm:px-6 lg:px-20 py-12 sm:py-20 lg:py-32">
-      <div className="max-w-7xl mx-auto">
+    <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32">
+      <div className="max-w-[1440px] mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 lg:mb-16 gap-3 sm:gap-4">
           <div className="space-y-2 sm:space-y-4">

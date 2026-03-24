@@ -861,7 +861,7 @@ export default function ExplorerPage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
       {/* ---- Header with search ---- */}
       <div className="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-neutral-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-3 sm:mb-4">
             {t("title")}
           </h1>
@@ -888,7 +888,7 @@ export default function ExplorerPage() {
 
       {/* ---- Categories: horizontal scrollable pills ---- */}
       <div className="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-neutral-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-2 overflow-x-auto py-4 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             {/* "All" pill */}
             <button
@@ -923,7 +923,7 @@ export default function ExplorerPage() {
       </div>
 
       {/* ---- Main content ---- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* ---- Filters row (desktop) + mobile filter button ---- */}
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-2 w-full sm:w-auto">

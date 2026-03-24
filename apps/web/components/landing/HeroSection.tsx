@@ -44,8 +44,8 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative px-4 sm:px-6 lg:px-20 pt-6 sm:pt-12 pb-10 sm:pb-20">
-      <div className="max-w-7xl mx-auto">
+    <section className="relative px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12 pb-10 sm:pb-20">
+      <div className="max-w-[1440px] mx-auto">
         <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] flex flex-col justify-center px-5 sm:px-8 lg:px-16 py-8 sm:py-12">
           {/* Background image */}
           <div className="absolute inset-0 z-0 opacity-50">

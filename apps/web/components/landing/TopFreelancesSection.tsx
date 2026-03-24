@@ -40,8 +40,8 @@ export function TopFreelancesSection() {
   if (freelances.length === 0) return null;
 
   return (
-    <section className="bg-primary/5 dark:bg-primary/5 py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-20">
-      <div className="max-w-7xl mx-auto">
+    <section className="bg-primary/5 dark:bg-primary/5 py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto">
         {/* Header centre */}
         <div className="text-center space-y-3 sm:space-y-6 mb-10 sm:mb-16 lg:mb-20">
           <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight">

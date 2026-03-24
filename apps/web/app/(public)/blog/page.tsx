@@ -63,7 +63,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-20 pt-32 pb-16">
+      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-8 pt-32 pb-16">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl lg:text-5xl font-black text-white mb-4">{t("title")}</h1>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">{t("subtitle")}</p>

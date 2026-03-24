@@ -75,7 +75,7 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
           <Link href="/" className="hover:text-primary">{t("breadcrumb_home")}</Link>

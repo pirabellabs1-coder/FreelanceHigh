@@ -146,13 +146,64 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "ba
 }
 
 // ============================================================
+// Circular Progress Ring
+// ============================================================
+
+function CircularProgress({
+  value,
+  max,
+  size = 72,
+  strokeWidth = 5,
+  color,
+  bgColor = "text-slate-700/40",
+}: {
+  value: number;
+  max: number;
+  size?: number;
+  strokeWidth?: number;
+  color: string;
+  bgColor?: string;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.min(value / max, 1);
+  const offset = circumference * (1 - progress);
+
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className={bgColor}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-all duration-1000 ease-out"
+      />
+    </svg>
+  );
+}
+
+// ============================================================
 // Loading Skeleton
 // ============================================================
 
 function AgencySkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center animate-pulse">
-      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
+      <div className="w-full max-w-[1200px] px-4 md:px-6 py-8">
         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-xl min-h-[260px]" />
         <div className="flex flex-col md:flex-row gap-6 px-6 -mt-16 relative z-10">
           <div className="w-36 h-36 rounded-2xl bg-slate-300 dark:bg-slate-600 border-4 border-white dark:border-slate-800" />
@@ -279,14 +330,14 @@ export default function AgencyProfilePage() {
 
   return (
     <div className="flex-1 flex flex-col items-center">
-      <div className="w-full max-w-5xl px-4 md:px-10 py-8">
+      <div className="w-full max-w-[1200px] px-4 md:px-6 py-8">
         {/* ============================================================ */}
         {/* Cover + Logo + Info Section                                   */}
         {/* ============================================================ */}
         <div className="relative w-full">
           {/* Cover Image */}
           <div
-            className="w-full bg-center bg-no-repeat bg-cover rounded-xl min-h-[260px] relative overflow-hidden shadow-xl"
+            className="w-full bg-center bg-no-repeat bg-cover rounded-2xl min-h-[280px] relative overflow-hidden shadow-2xl"
             style={{
               backgroundImage: profile?.coverPhoto
                 ? `url("${profile.coverPhoto}")`
@@ -412,18 +463,49 @@ export default function AgencyProfilePage() {
         {/* Stats Row                                                     */}
         {/* ============================================================ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          {[
-            { icon: "task_alt", label: t("completed_projects"), value: stats.completedOrders.toString(), color: "text-primary" },
-            { icon: "star", label: t("average_rating"), value: avgRating, color: "text-blue-500" },
-            { icon: "rate_review", label: t("client_reviews"), value: stats.totalReviews.toString(), color: "text-emerald-500" },
-            { icon: "storefront", label: t("active_services"), value: stats.activeServices.toString(), color: "text-amber-500" },
-          ].map((s) => (
-            <div key={s.label} className="bg-primary/5 dark:bg-white/5 rounded-xl border border-primary/10 p-4 text-center">
-              <span className={cn("material-symbols-outlined text-2xl mb-1", s.color)}>{s.icon}</span>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+          {/* Projets complétés */}
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/[0.06] dark:to-white/[0.02] rounded-2xl border border-primary/10 p-5 flex flex-col items-center">
+            <div className="relative">
+              <CircularProgress value={stats.completedOrders} max={Math.max(stats.completedOrders, 50)} color="#6C2BD9" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.completedOrders}</span>
+              </div>
             </div>
-          ))}
+            <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("completed_projects")}</p>
+          </div>
+
+          {/* Note moyenne */}
+          <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 dark:from-amber-500/10 dark:to-amber-500/[0.02] rounded-2xl border border-amber-500/10 p-5 flex flex-col items-center">
+            <div className="relative">
+              <CircularProgress value={parseFloat(avgRating)} max={5} color="#f59e0b" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-slate-900 dark:text-white">{avgRating}</span>
+              </div>
+            </div>
+            <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("average_rating")}</p>
+          </div>
+
+          {/* Avis clients */}
+          <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 dark:from-emerald-500/10 dark:to-emerald-500/[0.02] rounded-2xl border border-emerald-500/10 p-5 flex flex-col items-center">
+            <div className="relative">
+              <CircularProgress value={stats.totalReviews} max={Math.max(stats.totalReviews, 30)} color="#10b981" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.totalReviews}</span>
+              </div>
+            </div>
+            <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("client_reviews")}</p>
+          </div>
+
+          {/* Services actifs */}
+          <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 dark:from-blue-500/10 dark:to-blue-500/[0.02] rounded-2xl border border-blue-500/10 p-5 flex flex-col items-center">
+            <div className="relative">
+              <CircularProgress value={stats.activeServices} max={Math.max(stats.activeServices, 15)} color="#3b82f6" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.activeServices}</span>
+              </div>
+            </div>
+            <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("active_services")}</p>
+          </div>
         </div>
 
         {/* ============================================================ */}
@@ -434,7 +516,7 @@ export default function AgencyProfilePage() {
           <div className="lg:col-span-2 space-y-10">
             {/* Tabs: About / Reviews */}
             <section>
-              <div className="flex border-b border-slate-200 dark:border-border-dark mb-6">
+              <div className="flex gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl mb-6">
                 {(["about", "reviews"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -443,10 +525,10 @@ export default function AgencyProfilePage() {
                       if (tab === "reviews") setReviewPage(0);
                     }}
                     className={cn(
-                      "px-5 py-3 text-sm font-semibold transition-all border-b-2 -mb-px",
+                      "flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all",
                       activeTab === tab
-                        ? "text-primary border-primary"
-                        : "text-slate-500 border-transparent hover:text-slate-700"
+                        ? "bg-white dark:bg-neutral-dark text-primary shadow-sm"
+                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     )}
                   >
                     {tab === "about" && t("tab_about")}
@@ -460,7 +542,7 @@ export default function AgencyProfilePage() {
                 <div className="space-y-6">
                   {/* Description */}
                   {bioLines.length > 0 && (
-                    <div className="bg-primary/5 dark:bg-white/5 p-6 rounded-xl border border-primary/10">
+                    <div className="bg-gradient-to-br from-primary/5 to-transparent dark:from-white/[0.04] dark:to-transparent p-6 rounded-2xl border border-primary/10">
                       {bioLines.map((p, i) => (
                         <p
                           key={i}
@@ -815,7 +897,7 @@ export default function AgencyProfilePage() {
       {/* ============================================================ */}
       {/* Notre Equipe                                                   */}
       {/* Show team cards if members exist, otherwise show summary count  */}
-      <div className="w-full max-w-5xl px-4 md:px-10 pb-8">
+      <div className="w-full max-w-[1200px] px-4 md:px-6 pb-8">
         <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3 mb-6">
           <span className="material-symbols-outlined text-primary text-3xl">groups</span>
           {t("our_team")}
@@ -881,7 +963,7 @@ export default function AgencyProfilePage() {
 
       {/* Nos Realisations                                               */}
       {agency.caseStudies && agency.caseStudies.length > 0 && (
-        <div className="w-full max-w-5xl px-4 md:px-10 pb-8">
+        <div className="w-full max-w-[1200px] px-4 md:px-6 pb-8">
           <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3 mb-6">
             <span className="material-symbols-outlined text-primary text-3xl">palette</span>
             {t("our_portfolio")}
@@ -923,7 +1005,7 @@ export default function AgencyProfilePage() {
       {/* Nos services -- visible section for all visitors              */}
       {/* ============================================================ */}
       {services.length > 0 && (
-        <div id="agency-services" className="w-full max-w-5xl px-4 md:px-10 pb-12">
+        <div id="agency-services" className="w-full max-w-[1200px] px-4 md:px-6 pb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-3xl">storefront</span>

@@ -85,7 +85,7 @@ export default function BlogArticlePage() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-20 pt-32 pb-12">
+      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-8 pt-32 pb-12">
         <div className="max-w-3xl mx-auto">
           <Link href="/blog" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary transition-colors mb-6">
             <span className="material-symbols-outlined text-sm">arrow_back</span>

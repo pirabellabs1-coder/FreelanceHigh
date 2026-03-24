@@ -212,11 +212,11 @@ function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="border-b border-border-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="h-4 w-64 bg-slate-700 rounded animate-pulse" />
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 min-w-0 space-y-6">
             <div className="h-8 w-3/4 bg-slate-700 rounded animate-pulse" />
@@ -485,7 +485,7 @@ export default function ServiceDetailPage() {
     <div className="min-h-screen bg-background-dark">
       {/* Breadcrumbs */}
       <div className="border-b border-border-dark">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm text-slate-400">
             <Link href="/" className="hover:text-primary transition-colors">{t("breadcrumb_home")}</Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
@@ -499,7 +499,7 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* ============================================ */}
           {/* LEFT COLUMN — Main Content */}
@@ -518,7 +518,7 @@ export default function ServiceDetailPage() {
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">
                   {formatServiceTitle(service.title)}
                 </h1>
               </div>
@@ -551,14 +551,14 @@ export default function ServiceDetailPage() {
               </span>
               <span className="text-slate-600">|</span>
               <span className="text-sm text-slate-400 flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm text-primary">visibility</span>
-                {(service.views ?? 0).toLocaleString(locale === "en" ? "en-US" : "fr-FR")} {t("views")}
+                <span className="material-symbols-outlined text-sm text-primary">schedule</span>
+                {t("delivery_days", { count: service.deliveryDays })}
               </span>
             </div>
 
             {/* Freelancer mini card */}
             {vendor && (
-              <div className="flex items-center gap-4 mb-6 bg-neutral-dark border border-border-dark rounded-xl p-4">
+              <div className="flex items-center gap-4 mb-6 bg-gradient-to-r from-primary/5 to-transparent border border-primary/10 rounded-2xl p-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0 relative">
                   {vendor.avatar ? (
                     <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
@@ -595,59 +595,10 @@ export default function ServiceDetailPage() {
               </div>
             )}
 
-            {/* Image Gallery */}
-            {galleryImages.length > 0 && (
-              <div className="mb-8">
-                <div className="relative rounded-xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video">
-                  <img
-                    src={optimizedUrl(galleryImages[currentImage], 1200)}
-                    alt={`${service.title} - Image ${currentImage + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {galleryImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={() => setCurrentImage((prev) => prev === 0 ? galleryImages.length - 1 : prev - 1)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition-all"
-                      >
-                        <span className="material-symbols-outlined text-xl">chevron_left</span>
-                      </button>
-                      <button
-                        onClick={() => setCurrentImage((prev) => prev === galleryImages.length - 1 ? 0 : prev + 1)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition-all"
-                      >
-                        <span className="material-symbols-outlined text-xl">chevron_right</span>
-                      </button>
-                      <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
-                        {currentImage + 1} / {galleryImages.length}
-                      </div>
-                    </>
-                  )}
-                </div>
-                {galleryImages.length > 1 && (
-                  <div className="flex gap-2 mt-3">
-                    {galleryImages.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentImage(idx)}
-                        className={cn(
-                          "w-20 h-14 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0",
-                          idx === currentImage ? "border-primary" : "border-border-dark hover:border-slate-500 opacity-60 hover:opacity-100"
-                        )}
-                      >
-                        <img src={optimizedUrl(img, 200)} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Video */}
+            {/* Video — affiché en premier si disponible */}
             {service?.videoUrl && (
-              <div className="mb-8">
-                <h2 className="text-lg font-bold text-white mb-4">Vidéo de présentation</h2>
-                <div className="relative rounded-xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video">
+              <div className="mb-6">
+                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video shadow-2xl ring-1 ring-white/5">
                   {service.videoUrl.includes("youtube.com") || service.videoUrl.includes("youtu.be") ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${service.videoUrl.includes("youtu.be") ? service.videoUrl.split("/").pop()?.split("?")[0] : new URLSearchParams(service.videoUrl.split("?")[1] || "").get("v")}`}
@@ -668,6 +619,54 @@ export default function ServiceDetailPage() {
                     <video src={service.videoUrl} controls className="w-full h-full" />
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Image Gallery */}
+            {galleryImages.length > 0 && (
+              <div className="mb-6">
+                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video shadow-xl ring-1 ring-white/5">
+                  <img
+                    src={optimizedUrl(galleryImages[currentImage], 1200)}
+                    alt={`${service.title} - Image ${currentImage + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {galleryImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentImage((prev) => prev === 0 ? galleryImages.length - 1 : prev - 1)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center backdrop-blur-sm transition-all"
+                      >
+                        <span className="material-symbols-outlined text-xl">chevron_left</span>
+                      </button>
+                      <button
+                        onClick={() => setCurrentImage((prev) => prev === galleryImages.length - 1 ? 0 : prev + 1)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center backdrop-blur-sm transition-all"
+                      >
+                        <span className="material-symbols-outlined text-xl">chevron_right</span>
+                      </button>
+                      <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                        {currentImage + 1} / {galleryImages.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {galleryImages.length > 1 && (
+                  <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                    {galleryImages.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImage(idx)}
+                        className={cn(
+                          "w-20 h-14 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0",
+                          idx === currentImage ? "border-primary shadow-lg shadow-primary/20" : "border-border-dark hover:border-slate-500 opacity-60 hover:opacity-100"
+                        )}
+                      >
+                        <img src={optimizedUrl(img, 200)} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -705,8 +704,8 @@ export default function ServiceDetailPage() {
                       key={tier}
                       onClick={() => setSelectedPackage(tier)}
                       className={cn(
-                        "bg-neutral-dark border rounded-xl p-6 text-left transition-all relative",
-                        isSelected ? "border-primary ring-1 ring-primary/30" : "border-border-dark hover:border-slate-500"
+                        "bg-neutral-dark border rounded-2xl p-6 text-left transition-all relative group",
+                        isSelected ? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10" : "border-border-dark hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
                       )}
                     >
                       {tier === "standard" && (
@@ -780,17 +779,17 @@ export default function ServiceDetailPage() {
             {/* ============================================ */}
             <div className="mt-8 pt-8 border-t border-border-dark space-y-8">
               {/* Key Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { icon: "timer", label: t("delivery_time"), value: t("delivery_days", { count: service.deliveryDays }) },
-                  { icon: "refresh", label: t("revisions_included"), value: `${service.revisions}` },
-                  { icon: "shopping_cart", label: t("orders"), value: `${service.orderCount}` },
-                  { icon: "visibility", label: t("views"), value: (service.views ?? 0).toLocaleString(locale === "en" ? "en-US" : "fr-FR") },
+                  { icon: "timer", label: t("delivery_time"), value: t("delivery_days", { count: service.deliveryDays }), gradient: "from-blue-500/20 to-blue-600/5" },
+                  { icon: "refresh", label: t("revisions_included"), value: `${service.revisions}`, gradient: "from-emerald-500/20 to-emerald-600/5" },
+                  { icon: "shopping_cart", label: t("orders"), value: `${service.orderCount}`, gradient: "from-primary/20 to-primary/5" },
+                  { icon: "verified", label: t("completion_rate"), value: "98%", gradient: "from-amber-500/20 to-amber-600/5" },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-neutral-dark border border-border-dark rounded-xl p-4 text-center">
-                    <span className="material-symbols-outlined text-primary text-xl mb-2 block">{stat.icon}</span>
-                    <p className="text-white font-bold text-lg">{stat.value}</p>
-                    <p className="text-slate-400 text-xs mt-1">{stat.label}</p>
+                  <div key={stat.label} className={cn("bg-gradient-to-br rounded-xl p-4 text-center border border-white/5", stat.gradient)}>
+                    <span className="material-symbols-outlined text-primary text-xl mb-1.5 block" style={{ fontVariationSettings: "'FILL' 1" }}>{stat.icon}</span>
+                    <p className="text-white font-extrabold text-lg">{stat.value}</p>
+                    <p className="text-slate-400 text-[11px] mt-0.5">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -829,10 +828,10 @@ export default function ServiceDetailPage() {
             {vendor && (
               <div className="mt-12 pt-8 border-t border-border-dark">
                 <h2 className="text-lg font-bold text-white mb-6">{t("about_seller")}</h2>
-                <div className="bg-neutral-dark border border-border-dark rounded-xl p-6">
+                <div className="bg-gradient-to-br from-neutral-dark to-background-dark border border-border-dark rounded-2xl p-6 shadow-xl">
                   <div className="flex items-start gap-5">
                     <div className="relative shrink-0">
-                      <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary/30">
+                      <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-lg shadow-primary/10">
                         {vendor.avatar ? (
                           <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
                         ) : (
@@ -920,7 +919,7 @@ export default function ServiceDetailPage() {
               ) : (
                 <>
                   {/* Rating summary */}
-                  <div className="bg-neutral-dark border border-border-dark rounded-xl p-6 mb-6">
+                  <div className="bg-gradient-to-br from-neutral-dark to-background-dark border border-border-dark rounded-2xl p-6 mb-6">
                     <div className="flex items-center gap-6 flex-wrap">
                       <div className="text-center">
                         <p className="text-4xl font-extrabold text-white">{avgRating}</p>
@@ -1062,9 +1061,9 @@ export default function ServiceDetailPage() {
           {/* ============================================ */}
           <div className="w-full lg:w-96 flex-shrink-0">
             <div className="lg:sticky lg:top-24">
-              <div className="bg-neutral-dark border border-border-dark rounded-xl overflow-hidden">
+              <div className="bg-neutral-dark border border-border-dark rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
                 {/* Package tabs */}
-                <div className="flex border-b border-border-dark">
+                <div className="flex border-b border-border-dark bg-background-dark/50">
                   {(["basic", "standard", "premium"] as const).map((tier) => (
                     <button
                       key={tier}
@@ -1138,7 +1137,7 @@ export default function ServiceDetailPage() {
                   <div className="space-y-3 pt-2">
                     <button
                       onClick={handleOrder}
-                      className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-xl shadow-primary/30 transition-all hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99]"
                     >
                       <span className="material-symbols-outlined text-base">shopping_cart</span>
                       {t("order_this_package")}
