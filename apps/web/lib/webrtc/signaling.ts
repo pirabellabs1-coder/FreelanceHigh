@@ -1,7 +1,7 @@
 // ============================================================
-// FreelanceHigh — WebRTC Signaling via Server API + BroadcastChannel fallback
-// Le serveur API permet le signaling entre utilisateurs différents.
-// BroadcastChannel est utilisé en fallback pour le dev local (même navigateur).
+// FreelanceHigh — WebRTC Signaling via Server API + BroadcastChannel
+// Server API: cross-browser/cross-device signaling
+// BroadcastChannel: same-browser dev fallback
 // ============================================================
 
 import type {
@@ -27,17 +27,32 @@ interface SignalingMessage {
 }
 
 const CHANNEL_NAME = "freelancehigh-signaling";
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_IDLE = 3000;   // 3s quand pas d'appel
+const POLL_INTERVAL_ACTIVE = 500;  // 500ms pendant un appel (ICE candidates rapides)
 
 let channel: BroadcastChannel | null = null;
 let handlers: SignalingEventHandler | null = null;
 let currentUserId: string | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let isInCall = false;
 let _callIdCounter = 0;
 
 export function generateCallId(): string {
   _callIdCounter++;
   return `call-${_callIdCounter}-${Date.now()}`;
+}
+
+// Mark as in-call to speed up polling
+export function setSignalingCallActive(active: boolean) {
+  if (isInCall === active) return;
+  isInCall = active;
+
+  // Restart polling with appropriate interval
+  if (pollTimer) clearInterval(pollTimer);
+  if (currentUserId) {
+    const interval = active ? POLL_INTERVAL_ACTIVE : POLL_INTERVAL_IDLE;
+    pollTimer = setInterval(pollServer, interval);
+  }
 }
 
 function dispatchSignal(type: string, payload: unknown) {
@@ -62,7 +77,7 @@ function dispatchSignal(type: string, payload: unknown) {
   }
 }
 
-// BroadcastChannel handler (fallback for same-browser dev)
+// BroadcastChannel handler
 function handleBroadcastMessage(event: MessageEvent<SignalingMessage>) {
   const msg = event.data;
   if (!handlers || !currentUserId) return;
@@ -106,14 +121,15 @@ export function registerSignalingHandlers(h: SignalingEventHandler, userId: stri
 
   // Start server polling
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(pollServer, POLL_INTERVAL_MS);
-  // Immediate first poll
-  pollServer();
+  const interval = isInCall ? POLL_INTERVAL_ACTIVE : POLL_INTERVAL_IDLE;
+  pollTimer = setInterval(pollServer, interval);
+  pollServer(); // Immediate first poll
 }
 
 export function unregisterSignalingHandlers() {
   handlers = null;
   currentUserId = null;
+  isInCall = false;
 
   if (channel) {
     channel.removeEventListener("message", handleBroadcastMessage);
@@ -147,35 +163,30 @@ async function post(msg: SignalingMessage) {
       }),
     });
   } catch {
-    console.warn("[Signaling] Failed to send via server, BroadcastChannel only");
+    console.warn("[Signaling] Failed to send via server");
   }
 }
 
-// Send offer to remote peer
 export function sendOffer(offer: CallOffer) {
-  console.log("[Signaling] Sending offer to", offer.to);
+  setSignalingCallActive(true);
   post({ type: "offer", to: offer.to, payload: offer });
 }
 
-// Send answer to caller
 export function sendAnswer(answer: CallAnswer) {
-  console.log("[Signaling] Sending answer to", answer.to);
+  setSignalingCallActive(true);
   post({ type: "answer", to: answer.to, payload: answer });
 }
 
-// Send ICE candidate
 export function sendIceCandidate(candidate: IceCandidate) {
   post({ type: "ice-candidate", to: candidate.to, payload: candidate });
 }
 
-// Send hangup signal
 export function sendHangup(hangup: CallHangup) {
-  console.log("[Signaling] Sending hangup to", hangup.to);
   post({ type: "hangup", to: hangup.to, payload: hangup });
+  setSignalingCallActive(false);
 }
 
-// Send reject signal
 export function sendReject(reject: CallReject) {
-  console.log("[Signaling] Sending reject to", reject.to);
   post({ type: "reject", to: reject.to, payload: reject });
+  setSignalingCallActive(false);
 }

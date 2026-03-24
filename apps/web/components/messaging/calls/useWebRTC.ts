@@ -13,6 +13,7 @@ import {
   sendReject,
   registerSignalingHandlers,
   unregisterSignalingHandlers,
+  setSignalingCallActive,
 } from "@/lib/webrtc/signaling";
 import {
   getAudioStream,
@@ -134,20 +135,30 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     };
 
     pc.onconnectionstatechange = () => {
-      const state = pc.connectionState;
-      console.log("[WebRTC] Connection state:", state);
+      const connState = pc.connectionState;
+      console.log("[WebRTC] Connection state:", connState);
 
-      if (state === "connected") {
+      if (connState === "connected") {
         stopAllSounds();
         playConnectedSound();
         setCallState("connected");
         setConnectionQuality("good");
         startDurationTimer();
-      } else if (state === "disconnected") {
+      } else if (connState === "connecting") {
+        setCallState("connecting");
+      } else if (connState === "disconnected") {
         setCallState("reconnecting");
         setConnectionQuality("poor");
-      } else if (state === "failed") {
-        handleHangup();
+      } else if (connState === "failed") {
+        // Retry: restart ICE
+        console.warn("[WebRTC] Connection failed, attempting ICE restart...");
+        pc.restartIce();
+        // If still failed after 5s, hangup
+        setTimeout(() => {
+          if (pc.connectionState === "failed") {
+            handleHangup();
+          }
+        }, 5000);
       }
     };
 
@@ -184,6 +195,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       conversationId: convId,
     });
 
+    setSignalingCallActive(true);
     startDialTone();
 
     try {
@@ -287,6 +299,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     if (!state.callId || !state.remoteUser) return;
 
     stopRingtone();
+    setSignalingCallActive(false);
     sendReject({
       callId: state.callId,
       from: currentUser.id,
@@ -317,6 +330,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       onCallEnded?.(state.callType, state.callDuration);
     }
 
+    setSignalingCallActive(false);
     cleanupMedia();
     endCall();
     setTimeout(() => resetCall(), 500);
@@ -418,6 +432,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
 
         // Store the SDP offer for when user answers
         pendingOfferRef.current = offer;
+        setSignalingCallActive(true); // Speed up polling for ICE candidates
 
         receiveCall({
           callId: offer.callId,
@@ -442,11 +457,17 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       onAnswer: async (answer) => {
         const pc = pcRef.current;
         const state = useCallStore.getState();
-        if (!pc || state.callState !== "calling") return;
+        // Accept answer if we're calling OR connecting (don't be too strict)
+        if (!pc || (state.callState !== "calling" && state.callState !== "connecting")) return;
 
         try {
+          // Transition caller to "connecting" state
+          setCallState("connecting");
+          stopDialTone();
+
           await pc.setRemoteDescription(new RTCSessionDescription(answer.sdp));
           await flushPendingCandidates();
+          console.log("[WebRTC] Remote description set, waiting for ICE connection...");
         } catch (e) {
           console.error("[WebRTC] Error setting remote description:", e);
         }
@@ -475,6 +496,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       onReject: (reject) => {
         if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
         stopAllSounds();
+        setSignalingCallActive(false);
 
         if (reject.reason === "busy") {
           console.log("[WebRTC] Remote user is busy");

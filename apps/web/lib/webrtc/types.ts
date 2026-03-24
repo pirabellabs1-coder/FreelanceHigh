@@ -57,8 +57,25 @@ export interface CallReject {
   reason: "rejected" | "busy" | "offline" | "timeout";
 }
 
-// Configuration STUN/TURN
+// Configuration STUN/TURN — TURN nécessaire pour traverser les NAT symétriques
 export const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  // Free TURN servers (metered.ca) — fonctionnent pour le dev/MVP
+  {
+    urls: "turn:a.relay.metered.ca:80",
+    username: "e8dd65a92f3c090f4be6e4c0",
+    credential: "SoELzOhU5MEhH97+",
+  },
+  {
+    urls: "turn:a.relay.metered.ca:443",
+    username: "e8dd65a92f3c090f4be6e4c0",
+    credential: "SoELzOhU5MEhH97+",
+  },
+  {
+    urls: "turn:a.relay.metered.ca:443?transport=tcp",
+    username: "e8dd65a92f3c090f4be6e4c0",
+    credential: "SoELzOhU5MEhH97+",
+  },
 ];
