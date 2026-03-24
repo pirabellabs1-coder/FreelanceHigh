@@ -122,12 +122,15 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         iceSentCountRef.current++;
+        console.log(`[WebRTC] ICE candidate gathered: type=${event.candidate.type}, protocol=${event.candidate.protocol}, address=${event.candidate.address}`);
         sendIceCandidate({
           callId: callIdForIce,
           from: currentUser.id,
           to: remoteUserId,
           candidate: event.candidate.toJSON(),
         });
+      } else {
+        console.log("[WebRTC] ICE gathering complete");
       }
     };
 

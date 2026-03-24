@@ -262,6 +262,80 @@ export default function DebugMediaPage() {
       addResult("7. TURN servers", "fail", `ERREUR: ${e}`);
     }
 
+    // ═══ TEST 8: Full TURN relay call (simulates real cross-network call) ═══
+    addResult("8. Appel TURN relay", "running", "Connexion via TURN uniquement...");
+    try {
+      // Fetch dynamic TURN servers
+      let relayServers: RTCIceServer[] = [];
+      try {
+        const res = await fetch("/api/turn-credentials");
+        const data = await res.json();
+        if (data.iceServers?.length > 0) relayServers = data.iceServers;
+      } catch {}
+
+      if (relayServers.length === 0) {
+        addResult("8. Appel TURN relay", "fail", "Pas de TURN servers — /api/turn-credentials vide");
+      } else {
+        // Force relay-only (iceTransportPolicy: "relay") — exactly like a real cross-network call
+        const config = { iceServers: relayServers, iceTransportPolicy: "relay" as RTCIceTransportPolicy };
+        const pc1 = new RTCPeerConnection(config);
+        const pc2 = new RTCPeerConnection(config);
+
+        const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        testStream.getTracks().forEach((t) => pc1.addTrack(t, testStream));
+
+        let remoteTrackReceived = false;
+        const candidateTypes1: string[] = [];
+        const candidateTypes2: string[] = [];
+
+        pc2.ontrack = () => { remoteTrackReceived = true; };
+
+        pc1.onicecandidate = (e) => {
+          if (e.candidate) {
+            candidateTypes1.push(e.candidate.type || "unknown");
+            pc2.addIceCandidate(e.candidate).catch(() => {});
+          }
+        };
+        pc2.onicecandidate = (e) => {
+          if (e.candidate) {
+            candidateTypes2.push(e.candidate.type || "unknown");
+            pc1.addIceCandidate(e.candidate).catch(() => {});
+          }
+        };
+
+        const offer = await pc1.createOffer();
+        await pc1.setLocalDescription(offer);
+        await pc2.setRemoteDescription(offer);
+        const answer = await pc2.createAnswer();
+        await pc2.setLocalDescription(answer);
+        await pc1.setRemoteDescription(answer);
+
+        const result = await new Promise<string>((resolve) => {
+          const timeout = setTimeout(() => {
+            resolve(`TIMEOUT — pc1: ${pc1.connectionState}/${pc1.iceConnectionState}, pc2: ${pc2.connectionState}/${pc2.iceConnectionState}, candidates: pc1=[${candidateTypes1}] pc2=[${candidateTypes2}], track: ${remoteTrackReceived}`);
+          }, 15000);
+
+          pc1.onconnectionstatechange = () => {
+            if (pc1.connectionState === "connected") {
+              clearTimeout(timeout);
+              resolve(`CONNECTE via TURN relay — candidates: pc1=[${candidateTypes1}] pc2=[${candidateTypes2}], track: ${remoteTrackReceived}`);
+            } else if (pc1.connectionState === "failed") {
+              clearTimeout(timeout);
+              resolve(`ECHOUE — pc1 ICE: ${pc1.iceConnectionState}, candidates: pc1=[${candidateTypes1}] pc2=[${candidateTypes2}]`);
+            }
+          };
+        });
+
+        testStream.getTracks().forEach((t) => t.stop());
+        pc1.close();
+        pc2.close();
+
+        addResult("8. Appel TURN relay", result.includes("CONNECTE") ? "ok" : "fail", result);
+      }
+    } catch (e) {
+      addResult("8. Appel TURN relay", "fail", `ERREUR: ${e}`);
+    }
+
     setRunning(false);
   }
 
