@@ -505,18 +505,19 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       },
 
       onIceCandidate: async (ice) => {
-        const pc = pcRef.current;
-        if (!pc) return;
         iceReceivedCountRef.current++;
+        const pc = pcRef.current;
 
-        if (pc.remoteDescription) {
-          try {
-            await pc.addIceCandidate(ice.candidate);
-          } catch {
-            // Ignore late/duplicate
-          }
-        } else {
+        // If PC doesn't exist yet (user hasn't clicked "Répondre"), buffer the candidate
+        if (!pc || !pc.remoteDescription) {
           pendingCandidatesRef.current.push(ice.candidate);
+          return;
+        }
+
+        try {
+          await pc.addIceCandidate(ice.candidate);
+        } catch {
+          // Ignore late/duplicate
         }
       },
 
