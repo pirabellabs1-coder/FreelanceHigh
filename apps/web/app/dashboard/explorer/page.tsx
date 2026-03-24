@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import { formatServiceTitle } from "@/lib/format-service-title";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -195,7 +196,7 @@ function ServiceCard({
 
         {/* Title */}
         <h3 className="text-sm font-bold text-slate-100 line-clamp-2 mb-2 group-hover:text-primary transition-colors leading-snug min-h-[2.5rem]">
-          {service.title}
+          {formatServiceTitle(service.title)}
         </h3>
 
         {/* Tags */}

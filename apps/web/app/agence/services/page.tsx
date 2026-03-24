@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
@@ -258,7 +259,7 @@ export default function AgenceServicesPage() {
               <div className="p-4 flex-1 flex flex-col">
                 {/* Title + category */}
                 <h3 className="text-white font-bold text-sm leading-tight line-clamp-2 mb-1">
-                  {s.title}
+                  {formatServiceTitle(s.title)}
                 </h3>
                 <p className="text-[11px] text-slate-500 mb-2">
                   {s.categoryName}

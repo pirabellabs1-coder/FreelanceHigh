@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { feedApi, type ApiService } from "@/lib/api-client";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { useClientStore } from "@/store/client";
 
 /* ------------------------------------------------------------------ */
@@ -386,7 +387,7 @@ export default function ClientExplorer() {
                     </div>
                     {/* Content */}
                     <div className="p-4">
-                      <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">{s.title}</h3>
+                      <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">{formatServiceTitle(s.title)}</h3>
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold overflow-hidden flex-shrink-0">
                           {s.vendorAvatar ? (
@@ -434,7 +435,7 @@ export default function ClientExplorer() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-1">{s.title}</h3>
+                        <h3 className="font-bold text-white text-sm group-hover:text-primary transition-colors line-clamp-1">{formatServiceTitle(s.title)}</h3>
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleFavorite("service", s.id, s.title, s.mainImage || "", s.rating, s.categoryName); }}
                           className="flex-shrink-0"

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { servicesApi } from "@/lib/api-client";
 
@@ -264,7 +265,7 @@ export default function SeoPage() {
             <option value="">-- Choisir un service --</option>
             {activeServices.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.title} ({s.status === "actif" ? "Actif" : "En pause"})
+                {formatServiceTitle(s.title)} ({s.status === "actif" ? "Actif" : "En pause"})
               </option>
             ))}
           </select>

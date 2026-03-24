@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { cn } from "@/lib/utils";
 import { feedApi } from "@/lib/api-client";
 import type { ApiService } from "@/lib/api-client";
@@ -202,7 +203,7 @@ export default function AgenceCandidatures() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Postuler</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{selectedService.title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{formatServiceTitle(selectedService.title)}</p>
               </div>
               <button onClick={() => setShowApply(false)} className="text-slate-400 hover:text-white">
                 <span className="material-symbols-outlined">close</span>

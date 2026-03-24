@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useToastStore } from "@/store/toast";
 import { feedApi, type ApiService } from "@/lib/api-client";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────
@@ -315,7 +316,7 @@ export default function AgenceExplorer() {
                 <div className="p-4 space-y-3">
                   {/* Title + Badge */}
                   <div>
-                    <h3 className="text-sm font-bold text-white line-clamp-2 leading-tight">{service.title}</h3>
+                    <h3 className="text-sm font-bold text-white line-clamp-2 leading-tight">{formatServiceTitle(service.title)}</h3>
                     <div className="flex items-center gap-2 mt-1.5">
                       <p className="text-xs text-slate-500">{service.vendorName}</p>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-400">

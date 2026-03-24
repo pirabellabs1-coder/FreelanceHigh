@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { PLAN_RULES, normalizePlanName, formatUsage, type PlanName } from "@/lib/plans";
 
 const TABS = ["Actifs", "En attente", "En pause", "Brouillons", "Refusés"];
@@ -139,7 +140,7 @@ export default function ServicesPage() {
             <div className="flex items-center gap-3 mb-6">
               <img src={statsService.image} alt={statsService.title} className="w-12 h-12 rounded-lg object-cover" />
               <div>
-                <h3 className="font-bold text-sm">{statsService.title}</h3>
+                <h3 className="font-bold text-sm">{formatServiceTitle(statsService.title)}</h3>
                 <p className="text-xs text-primary">{statsService.category}</p>
               </div>
             </div>
@@ -387,7 +388,7 @@ export default function ServicesPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-primary transition-colors">
-                            {s.title}
+                            {formatServiceTitle(s.title)}
                             {s.isBoosted && (
                               <span className="ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400">
                                 <span className="material-symbols-outlined text-xs">bolt</span>

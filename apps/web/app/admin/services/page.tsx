@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useToastStore } from "@/store/toast";
 import { useAdminStore } from "@/store/admin";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { cn } from "@/lib/utils";
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -242,7 +243,7 @@ export default function AdminServices() {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-bold text-white">{s.title}</h3>
+                        <h3 className="font-bold text-white">{formatServiceTitle(s.title)}</h3>
                         <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[s.status]?.cls)}>{STATUS_MAP[s.status]?.label}</span>
                         {cat && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: cat.color + "20", color: cat.color }}>

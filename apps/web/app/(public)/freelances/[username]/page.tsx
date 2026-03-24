@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore } from "@/store/currency";
 import { useToastStore } from "@/store/toast";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { analytics } from "@/lib/analytics";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 
@@ -1203,7 +1204,7 @@ export default function FreelanceProfilePage() {
                   {/* Card body */}
                   <div className="p-4">
                     <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                      {service.title}
+                      {formatServiceTitle(service.title)}
                     </h4>
 
                     <div className="flex items-center gap-2 mb-3">

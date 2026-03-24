@@ -9,6 +9,7 @@ import { useCurrencyStore } from "@/store/currency";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 import { cn } from "@/lib/utils";
 import { optimizedUrl } from "@/lib/cloudinary-utils";
+import { formatServiceTitle } from "@/lib/format-service-title";
 
 // ============================================================
 // Types — aligned with API response
@@ -186,7 +187,7 @@ function ServiceMiniCard({
       </div>
       <div className="p-4">
         <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-          {service.title}
+          {formatServiceTitle(service.title)}
         </h4>
         {vendorName && (
           <p className="text-xs text-slate-500 mb-1">{vendorName}</p>
@@ -492,7 +493,7 @@ export default function ServiceDetailPage() {
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-slate-500">{service.categoryName}</span>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-slate-300 font-medium truncate max-w-[200px]">{service.title}</span>
+            <span className="text-slate-300 font-medium truncate max-w-[200px]">{formatServiceTitle(service.title)}</span>
           </nav>
         </div>
       </div>
@@ -518,7 +519,7 @@ export default function ServiceDetailPage() {
                   )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-                  {service.title}
+                  {formatServiceTitle(service.title)}
                 </h1>
               </div>
               <button
@@ -1195,7 +1196,7 @@ export default function ServiceDetailPage() {
           <div className="relative bg-neutral-dark border border-border-dark rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
             <h3 className="text-lg font-bold text-white mb-4">Confirmer la commande</h3>
             <div className="bg-white/5 rounded-xl p-4 mb-4 space-y-2">
-              <p className="text-sm text-white font-semibold">{service.title}</p>
+              <p className="text-sm text-white font-semibold">{formatServiceTitle(service.title)}</p>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Forfait</span>
                 <span className="text-white font-bold capitalize">{selectedPackage}</span>

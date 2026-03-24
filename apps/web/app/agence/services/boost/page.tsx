@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
 
@@ -336,7 +337,7 @@ export default function AgenceBoostPage() {
             >
               {activeServices.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title} ({s.basePrice} EUR)
+                  {formatServiceTitle(s.title)} ({s.basePrice} EUR)
                 </option>
               ))}
             </select>

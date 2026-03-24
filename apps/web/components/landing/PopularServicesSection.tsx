@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
 import { InlineBadge } from "@/components/ui/BadgeDisplay";
+import { formatServiceTitle } from "@/lib/format-service-title";
 
 interface TopService {
   id: string;
@@ -80,7 +81,7 @@ export function PopularServicesSection() {
               </div>
               <div className="p-6">
                 <h4 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                  {service.title}
+                  {formatServiceTitle(service.title)}
                 </h4>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
                   {service.freelancer}

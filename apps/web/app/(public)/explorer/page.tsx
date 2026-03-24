@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { formatServiceTitle } from "@/lib/format-service-title";
 import { useCurrencyStore } from "@/store/currency";
 import { cn } from "@/lib/utils";
 
@@ -293,7 +294,7 @@ function ServiceCard({
               <LevelBadge level={vendorLevel} />
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-2">
-              {service.title}
+              {formatServiceTitle(service.title)}
             </h3>
             <div className="flex items-center gap-2 mb-2">
               <StarRating rating={service.rating} />
@@ -366,7 +367,7 @@ function ServiceCard({
         </div>
 
         <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-3 flex-1">
-          {service.title}
+          {formatServiceTitle(service.title)}
         </h3>
 
         <div className="flex items-center gap-2 mb-3">
