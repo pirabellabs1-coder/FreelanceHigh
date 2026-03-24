@@ -28,7 +28,7 @@ interface SignalingMessage {
 
 const CHANNEL_NAME = "freelancehigh-signaling";
 const POLL_INTERVAL_IDLE = 3000;   // 3s quand pas d'appel
-const POLL_INTERVAL_ACTIVE = 500;  // 500ms pendant un appel (ICE candidates rapides)
+const POLL_INTERVAL_ACTIVE = 200;  // 200ms pendant un appel (ICE candidates rapides)
 
 let channel: BroadcastChannel | null = null;
 let handlers: SignalingEventHandler | null = null;
@@ -189,4 +189,9 @@ export function sendHangup(hangup: CallHangup) {
 export function sendReject(reject: CallReject) {
   post({ type: "reject", to: reject.to, payload: reject });
   setSignalingCallActive(false);
+}
+
+// Trigger an immediate poll (e.g. after receiving answer to fetch buffered ICE candidates)
+export function pollServerNow() {
+  pollServer();
 }

@@ -6,6 +6,7 @@ import { MessageBubble } from "./MessageBubble";
 import { VoiceRecorder } from "./voice/VoiceRecorder";
 import { ImageLightbox } from "./ImageLightbox";
 import type { UnifiedConversation, MessageContentType } from "@/store/messaging";
+import { useToastStore } from "@/store/toast";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const ALLOWED_EXTENSIONS = [
@@ -234,14 +235,24 @@ export function ChatPanel({
   }
 
   const handleVoiceSend = useCallback(async (blob: Blob, duration: number) => {
+    // Derive file extension from actual MIME type
+    const mime = blob.type || "audio/webm";
+    let ext = "webm";
+    if (mime.includes("mp4") || mime.includes("m4a")) ext = "m4a";
+    else if (mime.includes("ogg")) ext = "ogg";
+    else if (mime.includes("mp3") || mime.includes("mpeg")) ext = "mp3";
+
     try {
-      const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+      const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: mime });
       const result = await uploadFileToServer(file);
-      const audioUrl = result?.url || URL.createObjectURL(blob);
-      onSendMessage("Message vocal", "voice", undefined, undefined, audioUrl, duration, undefined, undefined, result?.path);
+      if (!result?.path) {
+        useToastStore.getState().addToast("error", "Erreur lors de l'envoi du message vocal");
+        return;
+      }
+      const audioUrl = result.url;
+      onSendMessage("Message vocal", "voice", undefined, undefined, audioUrl, duration, undefined, undefined, result.path);
     } catch {
-      const audioUrl = URL.createObjectURL(blob);
-      onSendMessage("Message vocal", "voice", undefined, undefined, audioUrl, duration);
+      useToastStore.getState().addToast("error", "Erreur lors de l'envoi du message vocal");
     }
   }, [onSendMessage]);
 

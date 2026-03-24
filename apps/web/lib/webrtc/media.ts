@@ -75,6 +75,43 @@ export async function replaceVideoTrack(
   }
 }
 
+// Check TURN server connectivity (non-blocking probe)
+export async function checkTurnConnectivity(iceServers: RTCIceServer[]): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers,
+        iceTransportPolicy: "relay", // Only TURN, no STUN
+      });
+
+      const timeout = setTimeout(() => {
+        pc.close();
+        console.warn("[WebRTC] TURN server unreachable — STUN only");
+        resolve(false);
+      }, 3000);
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate && event.candidate.type === "relay") {
+          clearTimeout(timeout);
+          pc.close();
+          console.log("[WebRTC] TURN server OK");
+          resolve(true);
+        }
+      };
+
+      // Create a dummy data channel to trigger ICE gathering
+      pc.createDataChannel("turn-test");
+      pc.createOffer().then((offer) => pc.setLocalDescription(offer)).catch(() => {
+        clearTimeout(timeout);
+        pc.close();
+        resolve(false);
+      });
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 // Enumerate available devices
 export async function getAvailableDevices(): Promise<{
   audioInputs: MediaDeviceInfo[];

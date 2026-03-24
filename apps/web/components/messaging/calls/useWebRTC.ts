@@ -14,6 +14,7 @@ import {
   registerSignalingHandlers,
   unregisterSignalingHandlers,
   setSignalingCallActive,
+  pollServerNow,
 } from "@/lib/webrtc/signaling";
 import {
   getAudioStream,
@@ -22,6 +23,7 @@ import {
   stopStream,
   toggleTrack,
   replaceVideoTrack,
+  checkTurnConnectivity,
 } from "@/lib/webrtc/media";
 import {
   startRingtone,
@@ -52,6 +54,9 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   const originalVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ringtimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iceSentCountRef = useRef(0);
+  const iceReceivedCountRef = useRef(0);
+  const callStartTimeRef = useRef<number | null>(null);
 
   const {
     callState,
@@ -112,6 +117,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        iceSentCountRef.current++;
         sendIceCandidate({
           callId: callIdForIce,
           from: currentUser.id,
@@ -139,6 +145,8 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       console.log("[WebRTC] Connection state:", connState);
 
       if (connState === "connected") {
+        const elapsed = callStartTimeRef.current ? Date.now() - callStartTimeRef.current : 0;
+        console.log(`[WebRTC] Connection established in ${elapsed}ms (ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current})`);
         stopAllSounds();
         playConnectedSound();
         setCallState("connected");
@@ -151,15 +159,20 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
         setConnectionQuality("poor");
       } else if (connState === "failed") {
         // Retry: restart ICE
-        console.warn("[WebRTC] Connection failed, attempting ICE restart...");
+        console.warn(`[WebRTC] Connection FAILED — ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current}, iceState: ${pc.iceConnectionState}`);
         pc.restartIce();
-        // If still failed after 5s, hangup
+        // If still failed after 15s, hangup
         setTimeout(() => {
           if (pc.connectionState === "failed") {
+            console.error(`[WebRTC] Connection FAILED after 15s — state: ${pc.connectionState}, iceState: ${pc.iceConnectionState}`);
             handleHangup();
           }
-        }, 5000);
+        }, 15000);
       }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("[WebRTC] ICE state:", pc.iceConnectionState);
     };
 
     pcRef.current = pc;
@@ -187,6 +200,9 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     convId: string,
   ) => {
     const newCallId = generateCallId();
+    iceSentCountRef.current = 0;
+    iceReceivedCountRef.current = 0;
+    callStartTimeRef.current = Date.now();
 
     startCall({
       callId: newCallId,
@@ -197,6 +213,10 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
 
     setSignalingCallActive(true);
     startDialTone();
+    console.log(`[WebRTC] Call initiated: ${newCallId}, type: ${type}`);
+
+    // Non-blocking TURN check
+    checkTurnConnectivity(iceServers).catch(() => {});
 
     try {
       // Get local media
@@ -249,6 +269,9 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     if (!offer) return;
 
     const type = answerAsType ?? state.callType;
+    iceSentCountRef.current = 0;
+    iceReceivedCountRef.current = 0;
+    callStartTimeRef.current = Date.now();
     setCallState("connecting");
     if (answerAsType) setCallType(answerAsType);
     stopRingtone();
@@ -314,6 +337,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   // Hangup
   const handleHangup = useCallback(() => {
     const state = useCallStore.getState();
+    console.log(`[WebRTC] Call ended: duration ${state.callDuration}s (ICE sent: ${iceSentCountRef.current}, received: ${iceReceivedCountRef.current})`);
     if (ringtimeoutRef.current) clearTimeout(ringtimeoutRef.current);
     stopDurationTimer();
     stopAllSounds();
@@ -467,6 +491,8 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
 
           await pc.setRemoteDescription(new RTCSessionDescription(answer.sdp));
           await flushPendingCandidates();
+          // Immediately poll for any buffered ICE candidates
+          pollServerNow();
           console.log("[WebRTC] Remote description set, waiting for ICE connection...");
         } catch (e) {
           console.error("[WebRTC] Error setting remote description:", e);
@@ -476,6 +502,7 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
       onIceCandidate: async (ice) => {
         const pc = pcRef.current;
         if (!pc) return;
+        iceReceivedCountRef.current++;
 
         if (pc.remoteDescription) {
           try {

@@ -9,25 +9,38 @@ import {
 const MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
 // Magic bytes pour valider le type reel du fichier (pas seulement l'extension client)
-const MAGIC_BYTES: Record<string, number[][]> = {
-  pdf: [[0x25, 0x50, 0x44, 0x46]], // %PDF
-  png: [[0x89, 0x50, 0x4E, 0x47]], // .PNG
-  jpg: [[0xFF, 0xD8, 0xFF]],
-  jpeg: [[0xFF, 0xD8, 0xFF]],
-  gif: [[0x47, 0x49, 0x46, 0x38]], // GIF8
-  webp: [[0x52, 0x49, 0x46, 0x46]], // RIFF (WebP)
-  zip: [[0x50, 0x4B, 0x03, 0x04], [0x50, 0x4B, 0x05, 0x06]], // PK
-  doc: [[0xD0, 0xCF, 0x11, 0xE0]], // OLE2
-  docx: [[0x50, 0x4B, 0x03, 0x04]], // ZIP (OOXML)
+interface MagicSignature {
+  bytes: number[];
+  offset?: number; // Default 0
+}
+
+const MAGIC_BYTES: Record<string, MagicSignature[]> = {
+  pdf: [{ bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
+  png: [{ bytes: [0x89, 0x50, 0x4E, 0x47] }], // .PNG
+  jpg: [{ bytes: [0xFF, 0xD8, 0xFF] }],
+  jpeg: [{ bytes: [0xFF, 0xD8, 0xFF] }],
+  gif: [{ bytes: [0x47, 0x49, 0x46, 0x38] }], // GIF8
+  webp: [{ bytes: [0x52, 0x49, 0x46, 0x46] }], // RIFF (WebP)
+  zip: [{ bytes: [0x50, 0x4B, 0x03, 0x04] }, { bytes: [0x50, 0x4B, 0x05, 0x06] }], // PK
+  doc: [{ bytes: [0xD0, 0xCF, 0x11, 0xE0] }], // OLE2
+  docx: [{ bytes: [0x50, 0x4B, 0x03, 0x04] }], // ZIP (OOXML)
+  // Audio formats
+  webm: [{ bytes: [0x1A, 0x45, 0xDF, 0xA3] }], // EBML (WebM/Matroska)
+  ogg: [{ bytes: [0x4F, 0x67, 0x67, 0x53] }], // OggS
+  mp4: [{ bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 }], // ftyp box at offset 4
+  m4a: [{ bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 }], // ftyp box (same as MP4)
+  mp3: [{ bytes: [0x49, 0x44, 0x33] }, { bytes: [0xFF, 0xFB] }], // ID3 tag or MPEG sync
+  mov: [{ bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 }], // ftyp box (QuickTime)
 };
 
 function validateMagicBytes(buffer: Buffer, extension: string): boolean {
   const signatures = MAGIC_BYTES[extension];
-  // txt n'a pas de magic bytes — on accepte tout fichier texte
-  if (!signatures) return extension === "txt";
-  return signatures.some((sig) =>
-    sig.every((byte, i) => buffer.length > i && buffer[i] === byte)
-  );
+  // Extensions sans magic bytes connus — on accepte
+  if (!signatures) return ["txt", "rar", "7z", "xls", "xlsx", "ppt", "pptx"].includes(extension);
+  return signatures.some((sig) => {
+    const offset = sig.offset || 0;
+    return sig.bytes.every((byte, i) => buffer.length > offset + i && buffer[offset + i] === byte);
+  });
 }
 
 const VALID_BUCKETS: StorageBucket[] = [
@@ -89,6 +102,7 @@ export async function POST(req: NextRequest) {
       "zip", "rar", "7z",
       "png", "jpg", "jpeg", "gif", "webp",
       "mp4", "webm", "mov",
+      "ogg", "m4a", "mp3",
     ];
     const extension = (file.name.split(".").pop() || "").toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(extension)) {

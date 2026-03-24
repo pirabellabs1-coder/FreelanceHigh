@@ -27,6 +27,7 @@ export function useVoiceRecorder() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analyserData, setAnalyserData] = useState<Uint8Array>(new Uint8Array(0));
+  const [mimeType, setMimeType] = useState<string>("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -90,8 +91,9 @@ export function useVoiceRecorder() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const mimeType = getSupportedMimeType();
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const selectedMime = getSupportedMimeType();
+      const recorder = new MediaRecorder(stream, { mimeType: selectedMime });
+      setMimeType(selectedMime);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
@@ -100,7 +102,7 @@ export function useVoiceRecorder() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType || "audio/webm" });
+        const blob = new Blob(chunksRef.current, { type: selectedMime || "audio/webm" });
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
@@ -177,6 +179,7 @@ export function useVoiceRecorder() {
     duration,
     audioBlob,
     audioUrl,
+    mimeType,
     error,
     analyserData,
     isSupported,
