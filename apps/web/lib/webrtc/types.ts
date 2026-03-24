@@ -57,48 +57,62 @@ export interface CallReject {
   reason: "rejected" | "busy" | "offline" | "timeout";
 }
 
-// Configuration STUN/TURN — TURN nécessaire pour traverser les NAT symétriques
-// TURN credentials are read from env vars so they can be updated without code change.
-// Set NEXT_PUBLIC_TURN_URL, NEXT_PUBLIC_TURN_USERNAME, NEXT_PUBLIC_TURN_CREDENTIAL on Vercel.
-function buildIceServers(): RTCIceServer[] {
-  const servers: RTCIceServer[] = [
-    // STUN publics Google (gratuits, fiables)
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
-  ];
+// STUN servers (always free, always work)
+const STUN_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+];
 
-  // Dynamic TURN from env vars (preferred — always fresh)
-  const turnUrl = typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_TURN_URL || "").trim()
-    : "";
-  const turnUser = typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_TURN_USERNAME || "").trim()
-    : "";
-  const turnCred = typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "").trim()
-    : "";
-
-  if (turnUrl && turnUser && turnCred) {
-    // Support comma-separated URLs (e.g. "turn:host:80,turn:host:443")
-    const urls = turnUrl.split(",").map((u) => u.trim()).filter(Boolean);
-    for (const url of urls) {
-      servers.push({ urls: url, username: turnUser, credential: turnCred });
-    }
-  } else {
-    // Fallback: hardcoded metered.ca (update these if expired)
-    const fallbackUser = "e8dd65a92f3c090f4be6e4c0";
-    const fallbackCred = "SoELzOhU5MEhH97+";
-    servers.push(
-      { urls: "turn:a.relay.metered.ca:80", username: fallbackUser, credential: fallbackCred },
-      { urls: "turn:a.relay.metered.ca:443", username: fallbackUser, credential: fallbackCred },
-      { urls: "turn:a.relay.metered.ca:443?transport=tcp", username: fallbackUser, credential: fallbackCred },
-    );
-  }
-
-  return servers;
+// Static TURN from env vars (set on Vercel)
+function getStaticTurnServers(): RTCIceServer[] {
+  if (typeof window === "undefined") return [];
+  const turnUrl = (process.env.NEXT_PUBLIC_TURN_URL || "").trim();
+  const turnUser = (process.env.NEXT_PUBLIC_TURN_USERNAME || "").trim();
+  const turnCred = (process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "").trim();
+  if (!turnUrl || !turnUser || !turnCred) return [];
+  return turnUrl.split(",").map((url) => ({
+    urls: url.trim(),
+    username: turnUser,
+    credential: turnCred,
+  }));
 }
 
-export const ICE_SERVERS: RTCIceServer[] = buildIceServers();
+// Default ICE servers (STUN + static TURN from env)
+export const ICE_SERVERS: RTCIceServer[] = [
+  ...STUN_SERVERS,
+  ...getStaticTurnServers(),
+];
+
+// Fetch fresh TURN credentials from our API (metered.ca REST API)
+// Call this before initiating/answering a call for guaranteed-fresh credentials
+let _cachedDynamicServers: RTCIceServer[] | null = null;
+let _cachedAt = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+export async function getFreshIceServers(): Promise<RTCIceServer[]> {
+  // Return cache if fresh
+  if (_cachedDynamicServers && Date.now() - _cachedAt < CACHE_TTL) {
+    return [...STUN_SERVERS, ..._cachedDynamicServers];
+  }
+
+  try {
+    const res = await fetch("/api/turn-credentials");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.iceServers && Array.isArray(data.iceServers) && data.iceServers.length > 0) {
+        _cachedDynamicServers = data.iceServers;
+        _cachedAt = Date.now();
+        console.log(`[WebRTC] Fresh TURN credentials: ${data.iceServers.length} servers`);
+        return [...STUN_SERVERS, ...data.iceServers];
+      }
+    }
+  } catch {
+    console.warn("[WebRTC] Failed to fetch dynamic TURN credentials, using static");
+  }
+
+  // Fallback to static
+  return ICE_SERVERS;
+}

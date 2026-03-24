@@ -3,7 +3,7 @@
 import { useRef, useCallback, useEffect, useState } from "react";
 import { useCallStore } from "@/store/call";
 import type { CallType, CallUser, CallOffer } from "@/lib/webrtc/types";
-import { ICE_SERVERS as iceServers } from "@/lib/webrtc/types";
+import { ICE_SERVERS as staticIceServers, getFreshIceServers } from "@/lib/webrtc/types";
 import {
   generateCallId,
   sendOffer,
@@ -23,7 +23,6 @@ import {
   stopStream,
   toggleTrack,
   replaceVideoTrack,
-  checkTurnConnectivity,
 } from "@/lib/webrtc/media";
 import {
   startRingtone,
@@ -112,8 +111,8 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
   }, []);
 
   // Create RTCPeerConnection with handlers
-  const createPeerConnection = useCallback((callIdForIce: string, remoteUserId: string) => {
-    const pc = new RTCPeerConnection({ iceServers });
+  const createPeerConnection = useCallback((callIdForIce: string, remoteUserId: string, iceServers?: RTCIceServer[]) => {
+    const pc = new RTCPeerConnection({ iceServers: iceServers || staticIceServers });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -220,19 +219,19 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     startDialTone();
     console.log(`[WebRTC] Call initiated: ${newCallId}, type: ${type}`);
 
-    // Non-blocking TURN check
-    checkTurnConnectivity(iceServers).catch(() => {});
-
     try {
-      // Get local media
-      const stream = type === "video"
-        ? await getAudioVideoStream()
-        : await getAudioStream();
+      // Fetch fresh TURN credentials + get local media in parallel
+      const [freshIceServers, stream] = await Promise.all([
+        getFreshIceServers(),
+        type === "video" ? getAudioVideoStream() : getAudioStream(),
+      ]);
+
+      console.log(`[WebRTC] ICE servers: ${freshIceServers.length} (TURN: ${freshIceServers.filter(s => String(s.urls).includes("turn:")).length})`);
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      // Create peer connection
-      const pc = createPeerConnection(newCallId, targetUser.id);
+      // Create peer connection with fresh credentials
+      const pc = createPeerConnection(newCallId, targetUser.id, freshIceServers);
 
       // Add local tracks to peer connection
       stream.getTracks().forEach((track) => {
@@ -282,15 +281,18 @@ export function useWebRTC({ currentUser, onCallEnded, onCallMissed }: UseWebRTCO
     stopRingtone();
 
     try {
-      // Get local media based on answer type
-      const stream = type === "video"
-        ? await getAudioVideoStream()
-        : await getAudioStream();
+      // Fetch fresh TURN credentials + get local media in parallel
+      const [freshIceServers, stream] = await Promise.all([
+        getFreshIceServers(),
+        type === "video" ? getAudioVideoStream() : getAudioStream(),
+      ]);
+
+      console.log(`[WebRTC] Answer ICE servers: ${freshIceServers.length} (TURN: ${freshIceServers.filter(s => String(s.urls).includes("turn:")).length})`);
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      // Create peer connection
-      const pc = createPeerConnection(state.callId, state.remoteUser.id);
+      // Create peer connection with fresh credentials
+      const pc = createPeerConnection(state.callId, state.remoteUser.id, freshIceServers);
 
       // Add local tracks
       stream.getTracks().forEach((track) => {

@@ -213,13 +213,29 @@ export default function DebugMediaPage() {
       addResult("6. WebRTC loopback", "fail", `ERREUR: ${e}`);
     }
 
-    // ═══ TEST 7: TURN connectivity ═══
-    addResult("7. TURN servers", "running", "Test des serveurs TURN...");
+    // ═══ TEST 7: TURN connectivity (dynamic credentials from API) ═══
+    addResult("7. TURN servers", "running", "Fetch credentials + test...");
     try {
-      const turnServers = [
-        { urls: "turn:a.relay.metered.ca:80", username: "e8dd65a92f3c090f4be6e4c0", credential: "SoELzOhU5MEhH97+" },
-        { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-      ];
+      let turnServers: RTCIceServer[] = [];
+      try {
+        const turnRes = await fetch("/api/turn-credentials");
+        const turnData = await turnRes.json();
+        if (turnData.iceServers?.length > 0) {
+          turnServers = turnData.iceServers;
+          addResult("7a. TURN API", "ok", `${turnServers.length} serveurs reçus de metered.ca`);
+        } else {
+          addResult("7a. TURN API", "fail", "Aucun serveur retourné — vérifier METERED_API_KEY");
+        }
+      } catch {
+        addResult("7a. TURN API", "fail", "Erreur fetch /api/turn-credentials");
+      }
+
+      // Fallback to static if API failed
+      if (turnServers.length === 0) {
+        turnServers = [
+          { urls: "turn:a.relay.metered.ca:80", username: "7fa82184ccb6a5dd6457e815", credential: "KDX2ikVOu+FHjB5q" },
+        ];
+      }
 
       const turnResults: string[] = [];
       for (const turn of turnServers) {
