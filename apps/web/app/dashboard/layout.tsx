@@ -7,7 +7,6 @@ import { DashboardNotificationBell } from "@/components/dashboard/DashboardNotif
 import { KycRequiredBanner } from "@/components/kyc/KycRequiredBanner";
 import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useDashboardStore } from "@/store/dashboard";
-import { signOut } from "next-auth/react";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 30_000; // 5min en dev, 30s en prod
@@ -87,13 +86,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <DashboardNotificationBell />
-          <button
-            onClick={() => signOut({ callbackUrl: "/connexion" })}
-            className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-            title="Se déconnecter"
-          >
-            <span className="material-symbols-outlined text-lg">logout</span>
-          </button>
         </div>
 
         <KycRequiredBanner />
