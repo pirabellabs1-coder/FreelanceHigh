@@ -237,7 +237,7 @@ export default function ClientExplorer() {
         <input
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
-          placeholder="Rechercher un service, un freelance, une agence ou une compétence..."
+          placeholder="Rechercher un service, freelance..."
           className="w-full pl-12 pr-4 py-3.5 bg-neutral-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 transition-colors"
         />
         {searchInput && (
@@ -248,8 +248,8 @@ export default function ClientExplorer() {
       </div>
 
       {/* View Tabs + Sort + View Mode */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex gap-1 bg-neutral-dark border border-border-dark rounded-xl p-1">
+      <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
+        <div className="flex gap-0.5 sm:gap-1 bg-neutral-dark border border-border-dark rounded-xl p-0.5 sm:p-1">
           {([
             { key: "services" as ViewType, label: "Services", icon: "work", count: sortedServices.length },
             { key: "freelances" as ViewType, label: "Freelances", icon: "person", count: freelances.length },
@@ -259,13 +259,13 @@ export default function ClientExplorer() {
               key={v.key}
               onClick={() => setView(v.key)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+                "flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all",
                 view === v.key ? "bg-primary text-background-dark" : "text-slate-400 hover:text-white"
               )}
             >
-              <span className="material-symbols-outlined text-lg">{v.icon}</span>
-              {v.label}
-              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-bold", view === v.key ? "bg-background-dark/20 text-background-dark" : "bg-border-dark text-slate-500")}>{v.count}</span>
+              <span className="material-symbols-outlined text-base sm:text-lg">{v.icon}</span>
+              <span className="hidden sm:inline">{v.label}</span>
+              <span className={cn("text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full font-bold", view === v.key ? "bg-background-dark/20 text-background-dark" : "bg-border-dark text-slate-500")}>{v.count}</span>
             </button>
           ))}
         </div>
@@ -301,17 +301,17 @@ export default function ClientExplorer() {
 
       {/* Category filter (services view only) */}
       {view === "services" && (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap">
           {CATEGORIES.map(c => (
             <button
               key={c.key}
               onClick={() => setCategory(c.key)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors",
                 category === c.key ? "bg-primary/10 text-primary border border-primary/30" : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white"
               )}
             >
-              <span className="material-symbols-outlined text-base">{c.icon}</span>
+              <span className="material-symbols-outlined text-sm sm:text-base">{c.icon}</span>
               {c.label}
             </button>
           ))}
@@ -528,10 +528,10 @@ export default function ClientExplorer() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark gap-2">
                     <button
                       onClick={() => toggleFavorite("freelance", f.id, f.name, f.avatar, f.rating, f.skills[0] || "")}
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors"
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
                     >
                       <span
                         className={cn("material-symbols-outlined text-base", isFreelanceFavorited(f.id) ? "text-red-400" : "")}
@@ -539,22 +539,22 @@ export default function ClientExplorer() {
                       >
                         favorite
                       </span>
-                      {isFreelanceFavorited(f.id) ? "Retiré" : "Favoris"}
+                      <span className="hidden sm:inline">{isFreelanceFavorited(f.id) ? "Retiré" : "Favoris"}</span>
                     </button>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-end gap-1.5 sm:gap-2">
                       <button
                         onClick={() => setContactModal(f.name)}
-                        className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="px-2 sm:px-3 py-1.5 bg-border-dark text-slate-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         Contacter
                       </button>
                       <button
                         onClick={() => setProposalModal(f.name)}
-                        className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
+                        className="px-2 sm:px-3 py-1.5 bg-primary/10 text-primary text-[10px] sm:text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
                       >
                         Proposition
                       </button>
-                      <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                      <button className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all">
                         Voir profil
                       </button>
                     </div>
@@ -614,10 +614,10 @@ export default function ClientExplorer() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border-dark gap-2">
                     <button
                       onClick={() => toggleFavorite("agence", a.id, a.name, a.avatar, a.rating, a.specialities[0] || "")}
-                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors"
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
                     >
                       <span
                         className={cn("material-symbols-outlined text-base", isAgenceFavorited(a.id) ? "text-red-400" : "")}
@@ -625,22 +625,22 @@ export default function ClientExplorer() {
                       >
                         favorite
                       </span>
-                      {isAgenceFavorited(a.id) ? "Retiré" : "Favoris"}
+                      <span className="hidden sm:inline">{isAgenceFavorited(a.id) ? "Retiré" : "Favoris"}</span>
                     </button>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-end gap-1.5 sm:gap-2">
                       <button
                         onClick={() => setContactModal(a.name)}
-                        className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="px-2 sm:px-3 py-1.5 bg-border-dark text-slate-300 text-[10px] sm:text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         Contacter
                       </button>
                       <button
                         onClick={() => setProposalModal(a.name)}
-                        className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
+                        className="px-2 sm:px-3 py-1.5 bg-primary/10 text-primary text-[10px] sm:text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors"
                       >
-                        Demander un devis
+                        Devis
                       </button>
-                      <button className="px-3 py-1.5 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                      <button className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all">
                         Voir agence
                       </button>
                     </div>
@@ -655,9 +655,9 @@ export default function ClientExplorer() {
       {/* ===== CONTACT MODAL ===== */}
       {contactModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setContactModal(null)}>
-          <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6 w-full max-w-[min(90vw,512px)]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white text-lg">Contacter {contactModal}</h3>
+              <h3 className="font-bold text-white text-base sm:text-lg">Contacter {contactModal}</h3>
               <button onClick={() => setContactModal(null)} className="text-slate-400 hover:text-white"><span className="material-symbols-outlined">close</span></button>
             </div>
             <textarea
@@ -679,9 +679,9 @@ export default function ClientExplorer() {
       {/* ===== PROPOSAL MODAL ===== */}
       {proposalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProposalModal(null)}>
-          <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6 w-full max-w-[min(90vw,512px)]" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white text-lg">Proposition à {proposalModal}</h3>
+              <h3 className="font-bold text-white text-base sm:text-lg">Proposition à {proposalModal}</h3>
               <button onClick={() => setProposalModal(null)} className="text-slate-400 hover:text-white"><span className="material-symbols-outlined">close</span></button>
             </div>
             <div className="space-y-4">

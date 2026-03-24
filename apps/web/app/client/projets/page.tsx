@@ -104,7 +104,7 @@ export default function ClientProjects() {
         </div>
         <Link
           href="/client/projets/nouveau"
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+          className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 sm:px-5 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20"
         >
           <span className="material-symbols-outlined text-lg">add</span>
           Publier un projet
@@ -119,10 +119,10 @@ export default function ClientProjects() {
           { label: "Terminés", value: counts.termine, icon: "check_circle", color: "text-slate-400" },
           { label: "Brouillons", value: counts.brouillon, icon: "edit_note", color: "text-amber-400" },
         ].map((s) => (
-          <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center gap-3">
-            <span className={cn("material-symbols-outlined text-xl", s.color)}>{s.icon}</span>
+          <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <span className={cn("material-symbols-outlined text-lg sm:text-xl", s.color)}>{s.icon}</span>
             <div>
-              <p className={cn("text-xl font-black", s.color)}>{isLoading ? "-" : s.value}</p>
+              <p className={cn("text-lg sm:text-xl font-black", s.color)}>{isLoading ? "-" : s.value}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
             </div>
           </div>
@@ -130,13 +130,13 @@ export default function ClientProjects() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 border border-border-dark">
+      <div className="flex gap-0.5 sm:gap-1 bg-neutral-dark rounded-xl p-0.5 sm:p-1 border border-border-dark overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setProjectFilter(t.key)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+              "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap",
               projectFilter === t.key
                 ? "bg-primary text-background-dark shadow"
                 : "text-slate-400 hover:text-white",
@@ -145,7 +145,7 @@ export default function ClientProjects() {
             {t.label}
             <span
               className={cn(
-                "text-xs px-1.5 py-0.5 rounded-full",
+                "text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full",
                 projectFilter === t.key ? "bg-background-dark/20" : "bg-border-dark",
               )}
             >
@@ -188,9 +188,9 @@ export default function ClientProjects() {
               key={p.id}
               className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/30 transition-all group"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
                     <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", STATUS_MAP[p.status]?.cls)}>
                       {STATUS_MAP[p.status]?.label}
                     </span>
@@ -222,7 +222,7 @@ export default function ClientProjects() {
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-6 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 flex-wrap text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">payments</span>
                       {(p.budget?.min ?? 0).toLocaleString("fr-FR")} - {(p.budget?.max ?? 0).toLocaleString("fr-FR")}
@@ -252,19 +252,19 @@ export default function ClientProjects() {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 flex-shrink-0">
+                <div className="flex flex-row sm:flex-col gap-2 flex-shrink-0">
                   <Link
                     href={`/client/projets/${p.id}`}
-                    className="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-background-dark transition-all text-center"
+                    className="flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-background-dark transition-all text-center"
                   >
                     Voir détails
                   </Link>
-                  <button className="px-4 py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center">
+                  <button className="flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center">
                     Modifier
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    className="px-4 py-2 bg-red-500/10 text-red-400 text-xs font-semibold rounded-lg hover:bg-red-500/20 transition-colors text-center"
+                    className="flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/10 text-red-400 text-xs font-semibold rounded-lg hover:bg-red-500/20 transition-colors text-center"
                   >
                     Supprimer
                   </button>

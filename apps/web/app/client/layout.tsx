@@ -60,7 +60,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="relative z-50 animate-slide-in max-w-[min(85vw,288px)]">
+          <div className="relative z-50 animate-slide-in max-w-[min(90vw,272px)]">
             <ClientSidebar onClose={() => setMobileOpen(false)} />
           </div>
         </div>

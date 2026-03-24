@@ -260,16 +260,16 @@ export function ClientSidebar({ collapsed = false, onToggle, onClose }: ClientSi
       )}
 
       {/* Logout */}
-      <div className={cn("pb-4 flex-shrink-0", collapsed ? "px-2" : "px-4")}>
+      <div className={cn("pb-3 sm:pb-4 flex-shrink-0", collapsed ? "px-2" : "px-3 sm:px-4")}>
         <button
           onClick={() => signOut({ callbackUrl: "/connexion" })}
           title={collapsed ? "Se déconnecter" : undefined}
           className={cn(
             "flex items-center justify-center gap-2 w-full border border-red-500/20 text-red-400 hover:bg-red-500/10 font-semibold rounded-xl transition-all",
-            collapsed ? "py-2.5 text-xs" : "py-2.5 text-sm"
+            collapsed ? "py-2 text-xs" : "py-2 sm:py-2.5 text-xs sm:text-sm"
           )}
         >
-          <span className="material-symbols-outlined text-lg">logout</span>
+          <span className={cn("material-symbols-outlined", collapsed ? "text-base" : "text-lg")}>logout</span>
           {!collapsed && "Se déconnecter"}
         </button>
       </div>

@@ -79,7 +79,7 @@ export default function ClientOrders() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Mes Commandes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">Mes Commandes</h1>
         <p className="text-slate-400 text-sm mt-1">
           {isLoading
             ? "Chargement..."
@@ -96,24 +96,24 @@ export default function ClientOrders() {
           { label: "Terminées", value: counts.termine, icon: "check_circle", color: "text-slate-400" },
           { label: "Litiges", value: counts.litige, icon: "gavel", color: "text-red-400" },
         ].map((s) => (
-          <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-3 flex items-center gap-3">
-            <span className={cn("material-symbols-outlined text-lg", s.color)}>{s.icon}</span>
+          <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
+            <span className={cn("material-symbols-outlined text-base sm:text-lg", s.color)}>{s.icon}</span>
             <div>
-              <p className={cn("text-lg font-black", s.color)}>{isLoading ? "-" : s.value}</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
+              <p className={cn("text-base sm:text-lg font-black", s.color)}>{isLoading ? "-" : s.value}</p>
+              <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{s.label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap">
         {FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setOrderFilter(f.key)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+              "px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors",
               orderFilter === f.key
                 ? "bg-primary text-background-dark"
                 : "bg-neutral-dark text-slate-400 border border-border-dark hover:text-white",
@@ -123,7 +123,7 @@ export default function ClientOrders() {
             {!isLoading && (
               <span
                 className={cn(
-                  "ml-2 text-xs px-1.5 py-0.5 rounded-full",
+                  "ml-1.5 sm:ml-2 text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full",
                   orderFilter === f.key ? "bg-background-dark/20" : "bg-border-dark",
                 )}
               >
@@ -169,27 +169,27 @@ export default function ClientOrders() {
               <Link
                 key={o.id}
                 href={`/client/commandes/${o.id}`}
-                className="block w-full bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/30 transition-all text-left"
+                className="block w-full bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-5 hover:border-primary/30 transition-all text-left"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-primary">shopping_bag</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-primary text-lg sm:text-2xl">shopping_bag</span>
                     </div>
-                    <div>
-                      <p className="font-bold text-white">{o.serviceTitle}</p>
-                      <p className="text-xs text-slate-500">
+                    <div className="min-w-0">
+                      <p className="font-bold text-white text-sm sm:text-base truncate">{o.serviceTitle}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500 truncate">
                         #{o.id.slice(-4)} -- {o.clientName}{" "}
                         {o.freelanceId && `-- Freelance: ${o.freelanceId}`}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", statusInfo.cls)}>
+                  <div className="flex items-center gap-2 sm:gap-4 ml-13 sm:ml-0 flex-shrink-0">
+                    <span className={cn("text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full", statusInfo.cls)}>
                       {statusInfo.label}
                     </span>
-                    <span className="text-lg font-bold text-white">{(o.amount ?? 0).toLocaleString("fr-FR")} EUR</span>
-                    <span className="material-symbols-outlined text-slate-500">chevron_right</span>
+                    <span className="text-sm sm:text-lg font-bold text-white">{(o.amount ?? 0).toLocaleString("fr-FR")} €</span>
+                    <span className="material-symbols-outlined text-slate-500 text-lg">chevron_right</span>
                   </div>
                 </div>
                 {o.status === "en_cours" && (

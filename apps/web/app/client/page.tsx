@@ -182,13 +182,13 @@ export default function ClientDashboard() {
           ? Array.from({ length: 4 }).map((_, i) => <KPISkeleton key={i} />)
           : STATS.map((s) => (
               <div key={s.label} className="bg-neutral-dark rounded-xl p-3 sm:p-4 lg:p-5 border border-border-dark">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-slate-400 text-sm font-medium">{s.label}</p>
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", s.iconBg)}>
-                    <span className={cn("material-symbols-outlined text-xl", s.iconColor)}>{s.icon}</span>
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <p className="text-slate-400 text-xs sm:text-sm font-medium">{s.label}</p>
+                  <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center", s.iconBg)}>
+                    <span className={cn("material-symbols-outlined text-lg sm:text-xl", s.iconColor)}>{s.icon}</span>
                   </div>
                 </div>
-                <p className="text-lg sm:text-xl lg:text-3xl font-bold text-white">{s.value}</p>
+                <p className="text-base sm:text-xl lg:text-3xl font-bold text-white">{s.value}</p>
                 <p className={cn("text-xs mt-1", s.variationColor)}>{s.variation}</p>
               </div>
             ))}
@@ -203,8 +203,8 @@ export default function ClientDashboard() {
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
             <h2 className="text-base font-bold text-white mb-4">Dépenses Mensuelles</h2>
             {store.stats?.monthlyRevenue && store.stats.monthlyRevenue.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={store.stats.monthlyRevenue} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <ResponsiveContainer width="100%" height={180} className="sm:!h-[240px]">
+                <BarChart data={store.stats.monthlyRevenue} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
                   <XAxis dataKey="month" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
                   <Tooltip content={<ChartTooltip formatter={(v) => `${v.toLocaleString("fr-FR")} €`} />} />
@@ -226,7 +226,7 @@ export default function ClientDashboard() {
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
             <h2 className="text-base font-bold text-white mb-4">Répartition des Commandes</h2>
             {orderStatusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={180} className="sm:!h-[240px]">
                 <PieChart>
                   <Pie
                     data={orderStatusData}
@@ -414,7 +414,7 @@ export default function ClientDashboard() {
           {/* Resume financier */}
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5 relative overflow-hidden">
             <p className="text-primary font-bold text-sm mb-2">Total dépensé</p>
-            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">{totalSpent.toLocaleString("fr-FR")} €</p>
+            <p className="text-xl sm:text-2xl lg:text-4xl font-bold text-white">{totalSpent.toLocaleString("fr-FR")} €</p>
             <div className="mt-3 space-y-1.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">Commandes terminées</span>
