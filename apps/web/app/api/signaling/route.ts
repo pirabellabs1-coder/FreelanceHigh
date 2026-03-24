@@ -1,26 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma } from "@/lib/prisma";
 
-// In-memory signaling store with TTL
-interface Signal {
-  id: string;
-  type: string;
-  from: string;
-  to: string;
-  payload: unknown;
-  createdAt: number;
+// Signaling via Postgres — works across Vercel serverless instances
+// Signals are ephemeral (TTL 60s, cleaned on every request)
+
+const SIGNAL_TTL_MS = 60_000; // 60 seconds
+
+async function ensureTable() {
+  // Create table if not exists (no Prisma migration needed)
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "signaling_signals" (
+      "id" SERIAL PRIMARY KEY,
+      "type" TEXT NOT NULL,
+      "from_user" TEXT NOT NULL,
+      "to_user" TEXT NOT NULL,
+      "payload" JSONB NOT NULL,
+      "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "idx_signaling_to_user" ON "signaling_signals" ("to_user")
+  `);
 }
 
-const signals: Signal[] = [];
-const SIGNAL_TTL_MS = 60_000; // 60 seconds
-let nextId = 1;
+let tableReady = false;
 
-function cleanup() {
-  const cutoff = Date.now() - SIGNAL_TTL_MS;
-  let i = 0;
-  while (i < signals.length && signals[i].createdAt < cutoff) i++;
-  if (i > 0) signals.splice(0, i);
+async function getTable() {
+  if (!tableReady) {
+    await ensureTable();
+    tableReady = true;
+  }
+}
+
+async function cleanup() {
+  try {
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "signaling_signals" WHERE "created_at" < NOW() - INTERVAL '60 seconds'`
+    );
+  } catch {
+    // Table might not exist yet
+  }
+}
+
+interface SignalRow {
+  id: number;
+  type: string;
+  from_user: string;
+  to_user: string;
+  payload: unknown;
+  created_at: Date;
 }
 
 // POST — Send a signal to another user
@@ -38,21 +68,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    cleanup();
+    await getTable();
+    await cleanup();
 
-    const signal: Signal = {
-      id: `sig-${nextId++}`,
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "signaling_signals" ("type", "from_user", "to_user", "payload") VALUES ($1, $2, $3, $4)`,
       type,
       from,
       to,
-      payload,
-      createdAt: Date.now(),
-    };
+      JSON.stringify(payload)
+    );
 
-    signals.push(signal);
-
-    return NextResponse.json({ ok: true, id: signal.id });
-  } catch {
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[Signaling POST]", err);
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }
@@ -66,39 +95,42 @@ export async function GET(req: NextRequest) {
     }
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
-    const afterId = searchParams.get("afterId");
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    cleanup();
+    await getTable();
+    await cleanup();
 
-    let results = signals.filter((s) => s.to === userId);
+    // Fetch signals for this user
+    const rows = await prisma.$queryRawUnsafe<SignalRow[]>(
+      `SELECT "id", "type", "from_user", "to_user", "payload", "created_at"
+       FROM "signaling_signals"
+       WHERE "to_user" = $1
+       ORDER BY "id" ASC`,
+      userId
+    );
 
-    // If afterId is provided, only return signals after that id
-    if (afterId) {
-      const idx = results.findIndex((s) => s.id === afterId);
-      if (idx >= 0) {
-        results = results.slice(idx + 1);
-      }
-    }
-
-    // Remove consumed signals
-    for (const r of results) {
-      const idx = signals.indexOf(r);
-      if (idx >= 0) signals.splice(idx, 1);
+    if (rows.length > 0) {
+      // Delete consumed signals
+      const ids = rows.map((r) => r.id);
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "signaling_signals" WHERE "id" = ANY($1::int[])`,
+        ids
+      );
     }
 
     return NextResponse.json({
-      signals: results.map((s) => ({
-        id: s.id,
-        type: s.type,
-        from: s.from,
-        payload: s.payload,
+      signals: rows.map((r) => ({
+        id: r.id,
+        type: r.type,
+        from: r.from_user,
+        payload: typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload,
       })),
     });
-  } catch {
+  } catch (err) {
+    console.error("[Signaling GET]", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

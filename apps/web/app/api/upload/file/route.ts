@@ -123,38 +123,30 @@ export async function POST(req: NextRequest) {
     // Try Supabase Storage upload
     const result = await uploadFile(bucket, storagePath, buffer, file.type);
 
-    if (result) {
-      // Generate a signed URL with 1-hour expiry for private buckets
-      const signedUrl = await getSignedUrl(bucket, result.path, 3600);
-
-      return NextResponse.json({
-        success: true,
-        file: {
-          id: `file-${Date.now()}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url: signedUrl || result.url,
-          path: result.path,
-          bucket,
-          uploadedAt: new Date().toISOString(),
-        },
-      });
+    if (!result) {
+      console.error("[Upload File] Supabase Storage upload failed — check SUPABASE_SERVICE_ROLE_KEY and bucket existence");
+      return NextResponse.json(
+        { error: "Stockage indisponible. Verifiez la configuration Supabase Storage." },
+        { status: 503 }
+      );
     }
 
-    // Fallback: return placeholder for local development
-    const fileData = {
-      id: `file-${Date.now()}`,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: `/uploads/${bucket}/${storagePath}`,
-      path: storagePath,
-      bucket,
-      uploadedAt: new Date().toISOString(),
-    };
+    // Generate a signed URL with 1-hour expiry for private buckets
+    const signedUrl = await getSignedUrl(bucket, result.path, 3600);
 
-    return NextResponse.json({ success: true, file: fileData });
+    return NextResponse.json({
+      success: true,
+      file: {
+        id: `file-${Date.now()}`,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: signedUrl || result.url,
+        path: result.path,
+        bucket,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
   } catch (error) {
     console.error("[Upload File] Error:", error);
     return NextResponse.json(

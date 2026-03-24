@@ -1,7 +1,7 @@
 // ============================================================
-// FreelanceHigh — WebRTC Signaling via Server API + BroadcastChannel
-// Server API: cross-browser/cross-device signaling
-// BroadcastChannel: same-browser dev fallback
+// FreelanceHigh — WebRTC Signaling via Postgres API + BroadcastChannel
+// Postgres API: cross-browser/cross-device signaling (works on Vercel serverless)
+// BroadcastChannel: same-browser instant fallback
 // ============================================================
 
 import type {
@@ -85,7 +85,7 @@ function handleBroadcastMessage(event: MessageEvent<SignalingMessage>) {
   dispatchSignal(msg.type, msg.payload);
 }
 
-// Server polling
+// Server polling (backed by Postgres — works across Vercel serverless instances)
 async function pollServer() {
   if (!currentUserId) return;
 
@@ -119,7 +119,7 @@ export function registerSignalingHandlers(h: SignalingEventHandler, userId: stri
     channel.addEventListener("message", handleBroadcastMessage);
   }
 
-  // Start server polling
+  // Start server polling (backed by Postgres, shared across serverless instances)
   if (pollTimer) clearInterval(pollTimer);
   const interval = isInCall ? POLL_INTERVAL_ACTIVE : POLL_INTERVAL_IDLE;
   pollTimer = setInterval(pollServer, interval);
@@ -143,14 +143,14 @@ export function unregisterSignalingHandlers() {
   }
 }
 
-// Send signal via server API + BroadcastChannel
+// Send signal via server API (Postgres) + BroadcastChannel
 async function post(msg: SignalingMessage) {
   // BroadcastChannel (same-browser)
   if (channel) {
     channel.postMessage(msg);
   }
 
-  // Server API (cross-browser / cross-device)
+  // Server API (Postgres-backed, cross-browser / cross-device)
   try {
     await fetch("/api/signaling", {
       method: "POST",
