@@ -30,6 +30,8 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
 
   const previewRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const displayError = error || localError;
 
   const handleSend = useCallback(() => {
     if (audioBlob) {
@@ -59,18 +61,34 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
     return () => audio.removeEventListener("ended", onEnded);
   }, [audioUrl]);
 
-  if (!isSupported) return null;
-
-  // État repos : bouton microphone
-  if (state === "idle") {
+  // État repos (ou non supporté) : bouton microphone
+  if (state === "idle" || !isSupported) {
     return (
-      <button
-        onClick={startRecording}
-        className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
-        title="Envoyer un message vocal"
-      >
-        <span className="material-symbols-outlined">mic</span>
-      </button>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={() => {
+            if (!isSupported) {
+              setLocalError("Navigateur non supporte");
+              return;
+            }
+            setLocalError(null);
+            startRecording();
+          }}
+          className="p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+          title="Envoyer un message vocal"
+        >
+          <span className="material-symbols-outlined">mic</span>
+        </button>
+        {displayError && (
+          <div className="flex items-center gap-1 text-xs text-red-400 max-w-[200px]">
+            <span className="material-symbols-outlined text-sm flex-shrink-0">error</span>
+            <span className="truncate">{displayError}</span>
+            <button onClick={() => { resetRecorder(); setLocalError(null); }} className="flex-shrink-0 text-slate-500 hover:text-slate-300">
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -172,17 +190,6 @@ export function VoiceRecorder({ onSend }: VoiceRecorderProps) {
         >
           <span className="material-symbols-outlined text-lg">send</span>
         </button>
-      </div>
-    );
-  }
-
-  // Erreur
-  if (error) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-red-400">
-        <span className="material-symbols-outlined text-sm">error</span>
-        {error}
-        <button onClick={resetRecorder} className="underline">Fermer</button>
       </div>
     );
   }
