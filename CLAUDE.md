@@ -1,485 +1,1047 @@
-# CLAUDE.md — FreelanceHigh
+# CLAUDE.md — FreelanceHigh Workflow Framework
 
-> Plateforme internationale de freelancing, francophone en premier.
-> **Fondateur :** Lissanon Gildas · **Statut :** Phase zéro (maquettes HTML → implémentation)
+> *Framework de workflow avancé pour FreelanceHigh, adapté du système de Boris Cherny (créateur de Claude Code)*
+> **Projet :** FreelanceHigh — Marketplace freelance Afrique francophone  
+> **Fondateur :** Lissanon Gildas  
+> **Statut MVP :** Phase zéro → Implémentation (61 maquettes HTML existantes)  
 > **Slogan :** "La plateforme freelance qui élève votre carrière au plus haut niveau"
 
 ---
 
-## Projet en bref
-
-FreelanceHigh est un marketplace freelance ciblant l'**Afrique francophone + diaspora + international**, avec 4 rôles : **Freelance, Client, Agence, Admin**. Roadmap sur 20 mois : MVP → V1 → V2 → V3 → V4.
-
-- **Marché principal :** Afrique francophone (Sénégal, Côte d'Ivoire, Cameroun, etc.) + France + diaspora
-- **Devise par défaut :** EUR (€) — conversion temps réel vers FCFA, USD, GBP, MAD
-- **Langue de lancement :** Français (FR) — extensible EN (V1), AR/ES (V2), PT (V2+)
-- **Phase actuelle :** 61 maquettes HTML existantes, aucun code de production encore
+## 📋 TABLE DES MATIÈRES
+1. [Initialisation de Session — Contexte FreelanceHigh](#initialisation-de-session)
+2. [Framework de Workflow Avancé](#framework-de-workflow-avancé)
+3. [Principes Fondamentaux](#principes-fondamentaux)
+4. [Systèmes de Gestion](#systèmes-de-gestion)
+5. [Patterns de Résolution](#patterns-de-résolution)
+6. [Métriques et Validation](#métriques-et-validation)
+7. [Contexte Projet FreelanceHigh](#contexte-projet-freelancehigh)
+8. [Commandes & Config](#commandes--config)
 
 ---
 
-## Stack Technique
+## 🚀 INITIALISATION DE SESSION
 
-### Monorepo
+### Phase 1: Diagnostic (5 min)
 ```
-pnpm workspaces + Turborepo
-apps/web      → Next.js 14 (App Router)
-apps/api      → Fastify + tRPC + Socket.io + BullMQ
-packages/db   → Schéma Prisma + client généré
-packages/ui   → Composants shadcn/ui partagés
-packages/types → Types TypeScript partagés
-packages/config → Configs ESLint / TypeScript
+ORDRE STRICT:
+1. tasks/lessons.md      → Charger contexte + historique des erreurs
+2. tasks/todo.md         → État actuel + priorités
+3. tasks/context.md      → Dépendances + contraintes système
+4. Créer si absent       → Structure par défaut + templates
 ```
 
-### Frontend (`apps/web`)
-| Outil | Choix |
-|---|---|
-| Framework | Next.js 14 App Router (SSR + SSG + ISR + RSC) |
-| UI | shadcn/ui + Radix UI |
-| Styles | Tailwind CSS (classes `rtl:` pour arabe) |
-| État client | Zustand (devise, langue, modales, wizards) |
-| État serveur | TanStack Query v5 |
-| i18n | next-intl |
-| SEO | Next.js Metadata API |
+### Phase 2: État Mental
+- [ ] Vérifier le état cognitif (contexte propre, pas de pollution)
+- [ ] Identifier les défis précédents (anti-patterns)
+- [ ] Établir les invariants pour cette session
+- [ ] Fixer le scope — **jamais** dépasser la session courante
 
-### Backend (`apps/api`)
-| Outil | Choix |
-|---|---|
-| Runtime | Node.js 20+ |
-| Framework | Fastify |
-| API | tRPC v11 (sur Fastify) |
-| WebSocket | Socket.io (sur Fastify) |
-| Jobs | BullMQ |
-| Cache/Broker | Redis (Upstash MVP → Railway V2+) |
+### Phase 3: Pré-vérification
+- Lister les tâches bloquantes
+- Identifier les dépendances critiques
+- Valider les ressources disponibles
+- S'arrêter si manque d'infos (poser 1 question, attendre, ne pas supposer)
 
-### Base de données
-| Outil | Rôle |
-|---|---|
-| Supabase (Postgres 15+) | DB principale — région `eu-central-1` Frankfurt |
-| Prisma 5 | ORM — `schema.prisma` = source unique de vérité |
-| RLS Supabase | Contrôle d'accès par rôle au niveau DB |
-| Supabase Realtime | Broadcasts statuts commandes, dashboard admin |
-| Redis (Upstash) | Sessions, cache, rate limiting, broker BullMQ |
+---
 
-### Auth
-- **Supabase Auth** — JWT custom claims : `role`, `kyc_level`, `subscription_tier`
-- OAuth social : Google, Facebook, LinkedIn, Apple
-- 2FA TOTP (Google Authenticator) + SMS (Twilio)
-- Impersonation admin via service-role JWT
+## ⚙️ FRAMEWORK DE WORKFLOW AVANCÉ
 
-### Paiements
-| Couche | Service | Scope |
+### 1️⃣ ÉTAPE: PLANIFICATION STRATÉGIQUE
+
+#### A. Analyse de Complexité
+```
+Trivial (< 30 min)      → Exécute directement
+Simple (30 min - 2h)    → Plan en prose 
+Modéré (2-8h)          → Plan structuré + diagramme dépendances
+Complexe (> 8h)        → Décomposition + sous-agents + phases
+```
+
+#### B. Matrice de Décision
+```
+Décision needed? → Évaluer sur 3 axes:
+  1. Impact (faible/moyen/élevé)
+  2. Réversibilité (facile/difficile/impossible)
+  3. Urgence (peut attendre/aujourd'hui/MAINTENANT)
+
+Matrice résultante:
+- Élevé + Difficile + Urgent   → STOP, poser question
+- Élevé + Difficile + Normal   → Planifier avec extrême soin
+- Moyen/Faible                 → Procéder avec vérification standard
+```
+
+#### C. Plan Structuré (dans tasks/todo.md)
+```markdown
+## Tâche: [Nom]
+- **Scope**: [Périmètre exact]
+- **Dépendances**: [Prérequis]
+- **Risques identifiés**: [Points critiques]
+- **Phases**:
+  1. [Phase] - Résultat attendu - Validation
+  2. [Phase] - Résultat attendu - Validation
+  
+- **Critères de succès**:
+  - [ ] Critère 1 (mesurable)
+  - [ ] Critère 2 (vérifiable)
+```
+
+---
+
+### 2️⃣ ÉTAPE: ARCHITECTURE DE SOUS-AGENTS
+
+**Quand utiliser:** Problème > 8 heures OU contexte > 100KB OU dépendances complexes
+
+#### Hiérarchie:
+```
+Agent Principal (direction, synthèse, validation)
+├── Sous-agent 1 (Domaine A)
+│   ├── Tâche micro 1
+│   └── Tâche micro 2
+├── Sous-agent 2 (Domaine B)
+│   └── Tâche micro 3
+└── [Intégration finale]
+```
+
+#### Protocole Sous-agent:
+- **Input**: Contexte isolé + 1 objectif clair
+- **Scope**: Une tâche, une responsabilité
+- **Output**: Résultat + logs de décisions
+- **Feedback**: Remonter blocages immédiatement
+
+---
+
+### 3️⃣ ÉTAPE: EXÉCUTION AVEC VÉRIFICATION CONTINUE
+
+#### Cycle Micro (toutes les 10-15 min):
+```
+Faire (code) → Vérifier (test/log) → Documenter → Valider
+     ↓                ↓                    ↓           ↓
+  < 5 min      JAMAIS sans          Commentaires   Vs critères
+              preuve                  + decisions   de succès
+```
+
+#### Checklist Vérification (non-trivial):
+- [ ] Code écrit et compilé sans erreur
+- [ ] Tests unitaires passent (ou manuel si N/A)
+- [ ] Logs affichent comportement attendu
+- [ ] Pas de regression (comparer avant/après)
+- [ ] Comportement valide vs spec
+
+#### Pattern: Quand Quelque Chose Sent Mauvais
+```
+Sensation de "bricolage"?
+  → STOP immédiatement
+  → Re-examiner l'approche
+  → Existe-t-il une solution plus propre?
+  → Reconstruire si oui
+  → Ne JAMAIS continuer avec un hack
+```
+
+---
+
+### 4️⃣ ÉTAPE: BOUCLE D'AUTO-AMÉLIORATION
+
+#### Après Chaque Correction:
+```markdown
+## Leçon du [DATE]
+- **Problème**: [Description]
+- **Cause racine**: [Analyse]
+- **Règle**: [Pattern à éviter / appliquer]
+- **Preuve**: [Exemple concret]
+- **Priorité**: [Haute/Normale/Basse]
+```
+
+#### Relecture Ritualisée:
+```
+Avant chaque session:
+  1. Lire tasks/lessons.md
+  2. Identifier 3 patterns critiques
+  3. Les appliquer IMMÉDIATEMENT
+  4. Surveiller ces erreurs spécifiquement
+```
+
+#### Anti-pattern Tracking:
+```
+Créer une section tasks/anti_patterns.md:
+- Pattern mauvais + pourquoi
+- Symptôme d'alerte
+- Technique de détection
+- Correction standard
+```
+
+---
+
+## 💡 PRINCIPES FONDAMENTAUX
+
+### Simplicité Radicale
+```
+• Toucher minimum de code pour effet maximum
+• Pas de couches inutiles
+• Si possible en 10 lignes: ne pas faire 50 lignes
+• Quand en doute: code le plus bête qui marche
+```
+
+### Pas de Paresse
+```
+• Bug? → Cause racine, pas symptôme
+• Performance lente? → Profiler, pas cacher
+• Test qui échoue? → Comprendre pourquoi, pas skip
+• Questions ouvertes? → Les résoudre avant de continuer
+```
+
+### Validation Avant Assomption
+```
+✗ "L'API est probablement /users"
+✓ "J'ai vérifié: c'est /api/v2/users"
+
+✗ "Cette variable doit être définie"
+✓ "Validé: var existe avec type X"
+
+✗ "Le test doit passer"
+✓ "Exécuté: test passe avec logs concrets"
+```
+
+### Élégance Exigée
+```
+Question par défaut: "Un staff engineer approuverait-il ça?"
+  - Code lisible? (self-documenting)
+  - Structure cohérente? (patterns constants)
+  - Maintenable? (quelqu'un d'autre peut le toucher)
+  - Pas de sur-ingénierie? (complexité justifiée)
+```
+
+### Autonomie d'Exécution
+```
+• Bugs: Les corriger directement (logs → cause → fix)
+• Décisions: Les prendre si < 30 min d'impact
+• Blocages: Les escalader IMMÉDIATEMENT
+• Questions: Les poser 1x avant de démarrer, pas pendant
+```
+
+---
+
+## 📊 SYSTÈMES DE GESTION
+
+### A. Système d'Énergie (Token Budget)
+```
+Session = Budget fixe
+  ├─ 20% Planification
+  ├─ 60% Exécution
+  ├─ 15% Vérification
+  └─ 5% Documentation
+
+SI dépassement:
+  1. Prioriser critères de succès
+  2. Créer sous-tâches pour prochaine session
+  3. Documenter l'état précis (pas de perte de contexte)
+```
+
+### B. Système de Priorités (MoSCoW Allégé)
+```
+MUST  (Bloquant)      → Fait AVANT tout
+SHOULD (Important)    → Fait après MUST
+COULD (Nice-to-have)  → Si temps/énergie
+WON'T (Déprioritisé)  → Documenter explicitement
+```
+
+### C. Système d'État (Tâche)
+```
+États:
+  📋 PLANIFIÉE    → Dans le plan, pas commencée
+  🔄 EN_COURS     → Activement travaillée
+  ⏸️  BLOQUÉE      → En attente (cause documentée)
+  ✅ VÉRIFIÉE     → Terminée + validée
+  ❌ ÉCHOUÉE      → Abandonnée + apprise
+```
+
+### D. Gestion des Dépendances
+```
+Pour chaque tâche, identifier:
+  - Hard dependencies (blocke si absent)
+  - Soft dependencies (idéal d'avoir)
+  - Conflits potentiels
+
+Ordre d'exécution:
+  1. Dépendances hard
+  2. Dépendances soft critiques
+  3. Tâche principale
+  4. Vérification globale
+```
+
+---
+
+## 🎯 PATTERNS DE RÉSOLUTION
+
+### Pattern 1: Bug Hunt (Cause Racine)
+```
+1. Symptôme → Description précise + contexte
+2. Reproduction → Cas minimal qui le montre
+3. Hypothèses → Liste ordonnée par probabilité
+4. Test → Valider/invalider chaque hypothèse (logs, debugger)
+5. Cause racine → Formulation claire
+6. Fix → Minimal, non-symptôme
+7. Validation → Prouve que ça marche
+8. Leçon → Documenter pour éviter répétition
+```
+
+### Pattern 2: Refactor Élégant
+```
+1. Analyser le code actuel
+   → Identifier les patterns répétés
+   → Points de friction
+   → Violations de principes
+2. Concevoir la version élégante
+   → Sur papier d'abord (pas de code)
+   → Valider la structure
+3. Implémenter progressivement
+   → Garder green tests à chaque étape
+   → Commits logiques
+4. Comparer
+   → Avant/après côte à côte
+   → Vérifier pas de regression
+5. Documenter
+   → Pourquoi c'est mieux
+   → Patterns appliqués
+```
+
+### Pattern 3: Décision Complexe
+```
+1. Identifier l'enjeu réel
+   → Pas la question surface, la vraie tension
+2. Inventorier les options
+   → Au minimum 3
+   → Même les mauvaises (pour comparaison)
+3. Évaluer sur critères
+   → Impact (maintenant vs long-terme)
+   → Risque
+   → Coût de change (reversibilité)
+4. Prototyper le chemin risqué
+   → Vérifier assumptions
+   → Réviser estimate
+5. Décider + communiquer
+   → Écrire la décision
+   → Raison + alternatives rejetées
+```
+
+### Pattern 4: Performance Lente
+```
+1. Mesurer (profiler)
+   → Où exactement le temps est-il dépensé?
+   → Quels chemins critiques?
+2. Analyser les goulots
+   → DB queries? N+1?
+   → Algorithme O(n²)?
+   → I/O bloquant?
+3. Hypothèses optimisation
+   → Classé par impact théorique
+4. Optimiser + Mesurer
+   → Une chose à la fois
+   → Avant/après comparaison
+5. Réévaluer
+   → Assez rapide?
+   → Autre goulot apparu?
+```
+
+---
+
+## ✅ MÉTRIQUES ET VALIDATION
+
+### A. Criteria de Succès (Défaut)
+```
+Toute tâche doit avoir:
+  1. Mesurable (pas "bon", mais "< 500ms")
+  2. Binaire (marche ou marche pas)
+  3. Exécutable (pas "utilisateur satisfait", mais "test passe")
+  4. Timé (quand vérifier?)
+```
+
+### B. Seuil de Validation
+```
+Trivial       → Pas de test formel (mais vérifier quand même)
+Simple        → Test manuel documenté
+Modéré        → Tests automatisés
+Complexe      → Tests auto + code review mental
+Critique      → Tests auto + pair review + staging
+```
+
+### C. Checklist de Clôture (Avant de marquer ✅)
+```
+Code:
+  [ ] Compilé/Exécuté sans erreur
+  [ ] Tests passent (ou N/A avec justif)
+  [ ] Pas de warnings non-documentés
+  [ ] Relisible par un pair
+
+Logique:
+  [ ] Validé vs spec
+  [ ] Edge cases considérés
+  [ ] Pas de assumptions (tout vérifiés)
+
+Documentation:
+  [ ] Changements documentés
+  [ ] Commentaires non-évidents ajoutés
+  [ ] Tasks/lessons.md mis à jour si nécessaire
+
+Performance:
+  [ ] Pas de regression (avant/après)
+  [ ] Pas de hardcoding de secrets/paths
+  [ ] Pas de logs verbeux qui restent
+```
+
+---
+
+## 🎯 CONTEXTE PROJET FREELANCEHIGH
+
+### Architecture technique (immuable)
+```
+Monorepo pnpm + Turborepo
+├── apps/web           → Next.js 14 App Router (SSR + RSC)
+├── apps/api           → Fastify + tRPC + Socket.io + BullMQ
+├── packages/db        → Prisma ORM (Supabase Postgres 15+)
+├── packages/ui        → shadcn/ui + Tailwind + React Email
+├── packages/types     → Types TypeScript partagés
+└── packages/config    → ESLint, TypeScript configs
+```
+
+### Stack validée — NE PAS SUBSTITUER
+
+#### Frontend
+| Outil | Rôle | Non-négociable |
 |---|---|---|
-| 1 | Stripe Connect | International (cartes, SEPA, PayPal, Apple/Google Pay, abonnements) |
-| 2 | CinetPay | Afrique francophone 17 pays (Orange Money, Wave, MTN MoMo) |
-| 3 (V1) | Flutterwave | Afrique élargie (Nigeria, Ghana, Kenya) + fallback CinetPay |
+| **Next.js 14** | Framework SSR/RSC | App Router seulement |
+| **TypeScript** | Typage | Partout — pas de `any` |
+| **Tailwind CSS** | Styles | Classes `rtl:` dès le MVP |
+| **shadcn/ui** | Composants UI | Vérifier avant d'en créer nouveau |
+| **Zustand** | État UI local | Devise, langue, modales |
+| **TanStack Query v5** | État serveur | Requêtes API, cache |
+| **next-intl** | i18n | FR principal, EN, AR, ES, PT |
 
-### Stockage
-- **Supabase Storage** → fichiers privés (KYC, livrables commandes, contrats)
-- **Cloudinary** → images publiques (avatars, photos services, portfolio)
-
-### Autres services
-| Service | Usage |
-|---|---|
-| Resend + React Email | 23 templates email transactionnels |
-| Twilio / Africa's Talking | SMS 2FA, alertes sécurité |
-| OpenAI GPT-4o | Génération contrats, certifications IA (V3) |
-| Sentry | Monitoring erreurs frontend + backend |
-| PostHog | Analytics produit, funnels, cohortes |
-
-### Hébergement
-```
-Vercel          → Next.js (Edge CDN mondial, nœud Johannesburg inclus)
-Railway         → Fastify + Socket.io + BullMQ (même région EU que Supabase)
-Supabase Cloud  → Postgres + Auth + Storage + Realtime (eu-central-1)
-GitHub Actions  → CI/CD (lint, tests, build, deploy preview + prod)
-```
-
----
-
-## Structure des routes (`apps/web/app/`)
-
-```
-(public)/         Landing, marketplace (/explorer), blog, profils publics
-(auth)/           /inscription, /connexion, /onboarding
-dashboard/        Espace Freelance
-client/           Espace Client
-agence/           Espace Agence
-admin/            Espace Admin
-```
-
-### Routes clés par espace
-
-**Public :**
-`/` · `/explorer` · `/services/[slug]` · `/freelances/[username]` · `/agences/[slug]` · `/projets` · `/blog` · `/tarifs`
-
-**Freelance :** `/dashboard` · `/dashboard/services` · `/dashboard/commandes` · `/dashboard/finances` · `/dashboard/certifications`
-
-**Client :** `/client/dashboard` · `/client/projets/nouveau` · `/client/commandes` · `/client/recherche-ia`
-
-**Agence :** `/agence/dashboard` · `/agence/equipe` · `/agence/projets` · `/agence/contrats`
-
-**Admin :** `/admin/dashboard` · `/admin/utilisateurs` · `/admin/kyc` · `/admin/litiges` · `/admin/finances`
-
----
-
-## Conventions de code
-
-### TypeScript — règles absolues
-- **TypeScript partout** — frontend, backend, schéma DB, types partagés
-- Pas de `any` explicite
-- Types partagés dans `packages/types/`
-- Schéma Prisma = source de vérité pour tous les types DB
-
-### État — séparation stricte
-- **Zustand** → état purement UI : devise choisie, langue active, étape wizard, thème, modales
-- **TanStack Query** → tout ce qui vient de l'API : services, commandes, profils, transactions
-
-### Composants React
-- Server Components par défaut dans App Router
-- `"use client"` uniquement si hooks d'état ou événements nécessaires
-- Composants UI partagés dans `packages/ui/` (shadcn/ui)
-- Styles via Tailwind CSS uniquement — pas de CSS-in-JS
-
-### i18n — RTL dès le départ
-```tsx
-// Toujours utiliser les classes rtl: même si l'arabe n'est pas encore actif
-<div className="ml-4 rtl:mr-4 rtl:ml-0">
-
-// layout.tsx
-<html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-```
-
-### Base de données
-- `prisma migrate dev` pour les nouvelles migrations (jamais de modif directe en prod)
-- `prisma.$queryRaw` pour les requêtes analytics complexes
-- RLS activé sur toutes les tables exposées via Supabase
-- Colonnes `search_vector` générées pour la recherche full-text :
-```sql
-to_tsvector('french', coalesce(title, '') || ' ' || coalesce(description, ''))
-```
-
-### API tRPC
-- Routers dans `apps/api/src/routes/`
-- Procédures : `publicProcedure` pour les routes publiques, `protectedProcedure` pour les routes authentifiées
-- Validation des inputs avec Zod
-
-### Emails
-- Templates dans `packages/ui/emails/` (composants React Email)
-- Locale passée en prop à chaque template
-- Expéditeur : `FreelanceHigh <no-reply@freelancehigh.com>`
-
----
-
-## KYC — 4 niveaux progressifs
-
-| Niveau | Vérification | Débloque |
+#### Backend
+| Outil | Rôle | Non-négociable |
 |---|---|---|
-| 1 | Email vérifié | Accès de base |
-| 2 | Téléphone vérifié | Envoyer des offres, commander |
-| 3 | Pièce d'identité | Retirer des fonds, publier des services |
-| 4 | Vérification professionnelle | Badge Elite, limites relevées |
+| **Fastify** | Framework HTTP | WebSocket + uploads longs |
+| **tRPC v11** | API RPC typée | Sur Fastify, pas Routes serveur |
+| **Socket.io** | Temps réel | Redis adapter dès le jour 1 |
+| **BullMQ** | Jobs async | Redis broker, retries intégrés |
+| **Prisma 5** | ORM | Source de vérité DB |
 
-Les claims JWT `kyc_level` et `role` filtrent l'accès dans le middleware Next.js **sans requête DB supplémentaire**.
+#### Infrastructure
+| Service | Région | Rôle | Non-négociable |
+|---|---|---|---|
+| **Supabase** | eu-central-1 | Postgres + Auth + Storage + Realtime | RLS sur toutes tables |
+| **Stripe Connect** | International | Paiements cartes, SEPA, PayPal, Apple/Google Pay | Pas de substitution |
+| **CinetPay** | 17 pays AF | Mobile Money (Orange, Wave, MTN) | Fallback Flutterwave V1 |
+| **Cloudinary** | Global | Images publiques (avatars, portfolio) | Stockage privé = Supabase |
+| **Redis (Upstash)** | eu-central-1 | Sessions, cache, rate-limit, broker | Upstash MVP → Railway V2+ |
+| **Vercel** | Edge CDN + Johannesburg | Frontend hosting | Railway si besoins Postgres |
 
----
-
-## Plans d'abonnement
-
-| Plan | Prix | Commission |
-|---|---|---|
-| Gratuit | €0/mois | 20% |
-| Pro | €15/mois | 15% |
-| Business | €45/mois | 10% |
-| Agence | €99/mois | 8% |
-
----
-
-## Flux Escrow
-
-```
-Client paie
-  → Fonds bloqués (Stripe Connect hold OU wallet_transactions.escrow_status = 'held')
-  → Commande livrée + validée
-  → Fonds libérés dans le wallet freelance
-  → Retrait : Stripe payouts (international) OU CinetPay withdrawal API (Mobile Money)
-
-En cas de litige :
-  → escrow_status = 'disputed'
-  → Fonds gelés jusqu'à verdict admin
-```
-
-Pour les paiements Mobile Money (CinetPay), l'escrow est géré en DB car CinetPay ne propose pas de hold natif.
-
----
-
-## Roadmap versions
-
-| Version | Mois | Objectif principal |
-|---|---|---|
-| **MVP** | 1–3 | Vendre, acheter, encaisser. 3 rôles fonctionnels. |
-| **V1** | 4–6 | Marketplace complète, matching, multi-devises, Mobile Money |
-| **V2** | 7–10 | Messagerie temps réel, KYC complet, badges, rétention |
-| **V3** | 11–15 | IA (contrats, certifications, recherche sémantique) |
-| **V4** | 16–20 | PWA, Web3/crypto, API publique, affiliation |
-
----
-
-## Recherche — évolution par version
-
-- **MVP–V1 :** Postgres FTS — `pg_trgm` + `tsvector` + index GIN (coût $0)
-- **V2 :** Meilisearch sur Railway (~$15/mois) — sync via BullMQ
-- **V3 :** `pgvector` + OpenAI `text-embedding-3-small` — recherche hybride sémantique
-
----
-
-## Temps réel — architecture hybride
-
-| Outil | Usage |
-|---|---|
-| **Socket.io** (sur Fastify) | Chat, typing indicators, présence utilisateur, messagerie agence |
-| **Supabase Realtime** | Statuts commandes live, métriques dashboard admin |
-
-Redis adapter Socket.io configuré dès le jour 1 pour permettre la montée en charge horizontale.
-
----
-
-## Décisions techniques importantes à ne pas contredire
-
-1. **Supabase Auth** (pas NextAuth.js) — intégré à la DB, pas de duplication d'infrastructure
-2. **Postgres FTS** au MVP (pas Algolia) — Algolia coûte $200–500/mois à l'échelle
-3. **Cloudinary (public) + Supabase Storage (privé)** — documents KYC ne vont JAMAIS dans Cloudinary
-4. **tRPC sur Fastify** (pas Next.js API Routes) — WebSocket + uploads + jobs longs incompatibles avec serverless
-5. **Base L2 (V4)** (pas Ethereum mainnet) — frais gas 1000x inférieurs pour micro-transactions
-6. **pnpm** (pas npm/yarn) — monorepo avec workspaces
-
----
-
-## Commandes utiles
-
+### Variables d'environnement critiques
 ```bash
-# Développement
-pnpm dev                    # Lance tout le monorepo (Turborepo)
-pnpm dev --filter=web       # Frontend seulement
-pnpm dev --filter=api       # Backend seulement
-
-# Build
-pnpm build                  # Build complet Turborepo
-
-# Base de données
-pnpm --filter=db migrate:dev    # Nouvelle migration Prisma
-pnpm --filter=db migrate:deploy # Appliquer migrations en prod
-pnpm --filter=db generate       # Régénérer le client Prisma
-pnpm --filter=db studio         # Prisma Studio (GUI)
-
-# Qualité code
-pnpm lint                   # ESLint sur tout le monorepo
-pnpm typecheck              # TypeScript check complet
-
-# Tests
-pnpm test                   # Tests unitaires
-pnpm test:e2e               # Tests Playwright
-```
-
----
-
-## Variables d'environnement clés
-
-Fichier `.env.local` à la racine — toujours dans `.gitignore`.
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
-# Redis
-REDIS_URL=
-
-# Stripe
+# JAMAIS exposer côté client — serveur uniquement
 STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-
-# CinetPay
 CINETPAY_API_KEY=
-CINETPAY_SITE_ID=
-
-# OpenAI
+SUPABASE_SERVICE_ROLE_KEY=
 OPENAI_API_KEY=
-
-# Resend
 RESEND_API_KEY=
 
-# Cloudinary
-CLOUDINARY_URL=
-
-# Twilio
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-
-# Sentry
-SENTRY_DSN=
-NEXT_PUBLIC_SENTRY_DSN=
+# Public ok (préfixés NEXT_PUBLIC_)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
----
+### 4 rôles à implémenter
+| Rôle | KYC Min | Commission | Limites |
+|---|---|---|---|
+| **Freelance** | Niveau 3 | 20% (gratuit) → 8% (Agence) | Retrait après 48h escrow |
+| **Client** | Niveau 2 | N/A | Paiements Stripe/CinetPay |
+| **Agence** | Niveau 3 | 8% | Équipe + CRM + sous-marché |
+| **Admin** | Système | 0% | Modération, KYC, litiges, analytics |
 
-## Maquettes existantes
+### 6 espaces distincts
+```
+FreelanceHigh
+├── 🌐 Public      → / | /explorer | /services/[slug] | /blog | /tarifs
+├── 🔐 Auth        → /inscription | /connexion | /onboarding | /2fa
+├── 👨‍💻 Freelance    → /dashboard | /services | /commandes | /finances | /certifications
+├── 💼 Client      → /client/dashboard | /client/projets | /client/recherche-ia
+├── 🏢 Agence      → /agence/dashboard | /agence/equipe | /agence/crm
+└── ⚙️  Admin       → /admin/dashboard | /admin/kyc | /admin/litiges
+```
 
-61 maquettes HTML dans `/mnt/c/FreelanceHigh/` — une par fonctionnalité majeure. Elles servent de référence visuelle et fonctionnelle pour l'implémentation. Les dossiers suivent le pattern `nom_de_la_fonctionnalite/`.
+### Maquettes existantes (61 fichiers HTML)
+```
+/mnt/c/FreelanceHigh/
+├── afriquefreelance_landing_page_1/        ← Landing
+├── freelancer_dashboard_overview/          ← Dashboard freelance
+├── tableau_de_bord_client/                 ← Dashboard client
+├── admin_dashboard_global_stats/           ← Dashboard admin
+├── marketplace_service_explorer_1-12/      ← 12 variantes marketplace
+├── messagerie_temps_r_el_int_gr_e_1-2/    ← Messagerie temps réel
+└── ...
+```
 
-Exemples :
-- `afriquefreelance_landing_page_1/` → Landing page v1
-- `freelancer_dashboard_overview/` → Dashboard freelance
-- `tableau_de_bord_client/` → Dashboard client
-- `admin_dashboard_global_stats/` → Dashboard admin
-- `marketplace_service_explorer_1/` à `_12/` → 12 variantes du marketplace
-- `messagerie_temps_r_el_int_gr_e_1/` et `_2/` → Messagerie temps réel
+**RÈGLE IMPÉRATIVE** : Avant de développer une page, **consulter la maquette correspondante** — la maquette a priorité sur toute spec textuelle.
 
----
+### KYC — 4 niveaux (claims JWT)
+```
+Niveau 1 : Email vérifié       → Accès de base
+Niveau 2 : Téléphone +2FA      → Envoyer offres, commander
+Niveau 3 : Pièce d'identité    → Retirer fonds, publier services
+Niveau 4 : Vérif professionnelle → Badge Elite, limites relevées
+```
 
-## Risques à garder en tête
+### Flux escrow (critique)
+```
+Client paie
+  ↓ Fonds bloqués (Stripe hold OU wallet escrow_status = 'held')
+  ↓ Commande livrée + validée
+  ↓ Fonds libérés dans wallet freelance
+  ↓ Retrait : Stripe Payout (international) OU CinetPay Mobile Money
 
+Litige?
+  ↓ escrow_status = 'disputed'
+  ↓ Fonds gelés jusqu'à verdict admin
+```
+
+### Recherche — évolution par version
+```
+MVP–V1  : Postgres FTS (pg_trgm + tsvector + GIN index) — $0
+V2      : Meilisearch sur Railway (~$15/mois) — sync BullMQ
+V3      : pgvector + OpenAI embeddings — recherche sémantique hybride
+```
+
+### Temps réel — architecture hybride
+```
+Socket.io (Fastify)    → Chat, typing, présence, messagerie agence
+Supabase Realtime      → Statuts commandes, dashboard admin
+Redis adapter (jour 1) → Scalabilité horizontale
+```
+
+### Risques identifiés & mitigations
 | Risque | Mitigation |
 |---|---|
 | CinetPay instable | Retry BullMQ + Flutterwave fallback (V1) |
-| Stripe Connect indisponible en Afrique | CinetPay payouts Mobile Money comme méthode principale de retrait locale |
-| Coût OpenAI (V3) | Rate-limit par tier ; `gpt-4o-mini` par défaut, `gpt-4o` uniquement pour contrats |
-| Coût Vercel à grande échelle | Next.js portable sur Railway si nécessaire, sans réécriture |
+| Stripe indisponible en AF | CinetPay Mobile Money retrait principal local |
+| Coût OpenAI (V3) | Rate-limit par tier ; `gpt-4o-mini` défaut |
 | RTL arabe mal géré | Classes `rtl:` Tailwind dès les premiers composants |
-| Socket.io non scalable > 1 serveur | Adaptateur Redis configuré dès le jour 1 |
+| Socket.io non-scalable | Redis adapter configuré jour 1 |
 
----
-
-FreelanceHigh est une plateforme freelance complète destinée à l'Afrique francophone, la diaspora et le marché international. Elle met en relation des freelances, des clients et des agences autour de services numériques.
-
-- **Fondateur :** Lissanon Gildas (2026)
-- **Slogan :** "La plateforme freelance qui élève votre carrière au plus haut niveau"
-- **Devise par défaut :** EUR (€) avec conversion automatique vers FCFA, USD, GBP, MAD
-- **Langues :** Français (principal), Anglais
-- **Référence complète :** voir [@PRD.md](./PRD.md) pour toutes les spécifications fonctionnelles
-
----
-
-## 🏗️ Aperçu de l'architecture globale
-
-La plateforme est organisée en **6 espaces distincts** :
-
-```
-FreelanceHigh
-├── 🌐 Public          → Landing, Marketplace, Profils, Blog
-├── 🔐 Auth            → Inscription multi-rôles, KYC, 2FA
-├── 👨‍💻 Freelance       → Dashboard, Services, Commandes, Finances
-├── 💼 Client          → Dashboard, Projets, Commandes, Explorer
-├── 🏢 Agence          → Dashboard, Équipe, CRM, Projets, Finances
-└── ⚙️  Admin           → Modération, KYC, Litiges, Analytics
-```
-
-- **Référence détaillée :** voir [@ARCHITECTURE.md](./ARCHITECTURE.md) pour le schéma complet, les routes, les modèles de données et les relations entre entités
-
----
-
-## 🎨 Style visuel & Maquettes
-
-### Règles générales
-- Interface **claire et minimaliste**
-- **Pas de mode sombre pour le MVP**
-- Mobile-first, responsive sur tous les écrans
-- Couleurs de la charte FreelanceHigh (violet primaire `#6C2BD9`, bleu `#0EA5E9`, vert `#10B981`)
-
-### Respect des maquettes
-Chaque espace de la plateforme dispose de maquettes de référence fournies dans le projet. Ces maquettes **font autorité** sur toute décision de design.
-
-**Règles impératives :**
-- Avant de développer une page ou un composant, **consulter la maquette correspondante** dans le dossier `/maquettes/`
-- Reproduire fidèlement la structure, la hiérarchie visuelle, les espacements et les composants visibles dans la maquette
-- En cas d'ambiguïté entre la maquette et une spec textuelle, **la maquette a la priorité**
-- Ne pas inventer de composants ou de sections qui ne figurent pas dans la maquette sans validation explicite
-
-### Organisation des maquettes
-Les maquettes sont organisées par espace, correspondant aux 52 écrans définis :
-- `/maquettes/public/` → Landing, Marketplace, Profils, Blog
-- `/maquettes/auth/` → Connexion, Inscription, Onboarding
-- `/maquettes/freelance/` → Dashboard, Services, Commandes, Finances
-- `/maquettes/client/` → Dashboard, Projets, Explorer
-- `/maquettes/agence/` → Dashboard, Équipe, CRM, Projets
-- `/maquettes/admin/` → Dashboard Global, Modération, Litiges
-- `/maquettes/identite/` → Logo, Design System, UI Kit
-
----
-
-## 🔒 Contraintes et Politiques
-
-- **NE JAMAIS exposer les clés API côté client.** Toutes les clés API (Stripe, CinetPay, OpenAI, Cloudinary, etc.) doivent être stockées exclusivement dans les variables d'environnement serveur (`.env`) et n'être utilisées que dans les routes API ou les Server Actions Next.js
-- Ne jamais écrire de clé API en dur dans le code, même à titre de test
-- Toujours valider les données côté serveur, même si une validation existe déjà côté client
-- Les fonds financiers (escrow) ne doivent jamais être manipulés directement côté client
-
----
-
-## 📦 Dépendances
-
-- **Préférer les composants existants** plutôt que d'ajouter de nouvelles bibliothèques UI
-- La bibliothèque de composants de référence est **shadcn/ui** — vérifier qu'un composant n'existe pas déjà dedans avant d'en créer un nouveau
-- Stack validée (ne pas substituer sans validation) :
-  - Frontend : Next.js 14, TypeScript, Tailwind CSS, shadcn/ui, Zustand, React Query
-  - Backend : Prisma ORM, NextAuth.js, Socket.io
-  - Infra : Supabase (PostgreSQL), Cloudinary, Resend, Stripe Connect
-
----
-
-## ✅ Tests & Qualité (après chaque développement UI)
-
-À la fin de **chaque développement qui implique l'interface graphique**, effectuer les vérifications suivantes avec **playwright-skill** :
-
-1. **Responsive** : tester sur mobile (375px), tablette (768px) et desktop (1280px)
-2. **Fonctionnel** : vérifier que tous les éléments interactifs (boutons, formulaires, navigation) répondent correctement
-3. **Conformité maquette** : comparer visuellement le rendu avec la maquette de référence
-4. **Accessibilité de base** : vérifier les contrastes, les labels de formulaires et la navigation clavier
-5. **Besoin couvert** : confirmer que la fonctionnalité développée répond bien au cas d'usage défini dans la spec
-
----
-
-## 📚 Documentation
-
-| Document | Description |
-|---|---|
-| [@PRD.md](./PRD.md) | Product Requirements Document — toutes les spécifications fonctionnelles, user stories, cas d'usage par espace |
-| [@ARCHITECTURE.md](./ARCHITECTURE.md) | Architecture technique — schéma global, routes, modèles de données, relations, décisions techniques |
-
----
-
-## 🔧 Context7
-
-Utiliser **toujours Context7** dans les situations suivantes, **sans attendre une demande explicite** :
-
-- Génération de code impliquant une bibliothèque (Next.js, Prisma, Stripe, Socket.io, shadcn/ui, etc.)
-- Étapes de configuration ou d'installation d'un outil ou service
-- Documentation d'une API externe (Stripe, CinetPay, Cloudinary, Resend, OpenAI, etc.)
-- Résolution d'un comportement inattendu lié à une version spécifique d'une lib
-
-**Procédure :** utiliser automatiquement les outils MCP Context7 pour résoudre l'identifiant de bibliothèque et récupérer la documentation à jour avant de générer le code.
-
----
-
-## 📝 Conventions de rédaction des specs
-
-- Toutes les spécifications doivent être rédigées **en français**, y compris les sections `Purpose` et `Scenarios` des specs OpenSpec
-- Seuls les **titres de Requirements** restent en anglais avec les mots-clés `SHALL` / `MUST` pour la validation OpenSpec
-- Les commentaires dans le code peuvent être en français ou en anglais selon le contexte du fichier
-
----
-
-## 🗓️ Versions du projet
-
-| Version | Statut | Objectif |
+### Roadmap (20 mois)
+| Version | Mois | Objectif |
 |---|---|---|
-| **MVP** | 🔴 En cours | Vendre, acheter, encaisser. Les 3 rôles existent. |
-| **V1** | ⏳ Planifié | Matching complet, marketplace, multi-devises |
-| **V2** | ⏳ Planifié | Confiance, messagerie temps réel, KYC, rétention |
-| **V3** | ⏳ Planifié | IA, automatisation, contrats, différenciation |
-| **V4** | ⏳ Planifié | PWA mobile, Web3, API publique, affiliation |
+| **MVP** | 1–3 | Vendre, acheter, encaisser. 3 rôles fonctionnels. |
+| **V1** | 4–6 | Marketplace + matching + multi-devises + Mobile Money |
+| **V2** | 7–10 | Messagerie temps réel + KYC complet + badges + rétention |
+| **V3** | 11–15 | IA (contrats, certifications, recherche sémantique) |
+| **V4** | 16–20 | PWA + Web3/crypto + API publique + affiliation |
 
 ---
 
-*© 2026 FreelanceHigh — Fondée par Lissanon Gildas*
+## 📚 STRUCTURE DE FICHIERS (Par Défaut)
+
+```
+.claude/
+├── CLAUDE.md              ← Ce fichier
+├── tasks/
+│   ├── todo.md            ← État actuel + plan
+│   ├── lessons.md         ← Apprentissages cumulatifs
+│   ├── context.md         ← Architecture + dépendances
+│   ├── anti_patterns.md   ← Patterns à éviter
+│   └── metrics.md         ← Historique performance
+├── decisions/
+│   └── [date]_decision.md ← Décisions importantes
+├── logs/
+│   └── [date]_session.md  ← Résumé des sessions
+└── reference/
+    ├── api_endpoints.md
+    ├── system_arch.md
+    └── setup_guide.md
+```
+
+---
+
+## 🔄 WORKFLOW TYPIQUE (D'une Tâche)
+
+```
+[PLANIFICATION]
+  tasks/todo.md: Ajouter tâche
+  Analyser complexité
+  Si complexe: Plan détaillé
+
+[EXÉCUTION]
+  Lancer sub-agents si nécessaire
+  Cycle micro: Code → Vérif → Doc
+  Documenter décisions
+
+[VÉRIFICATION]
+  Checklist de clôture
+  Comparer vs critères succès
+  Aller/No-go
+
+[CLÔTURE]
+  Marquer dans todo.md
+  Ajouter leçons dans lessons.md
+  Documenter logs
+
+[PROCHAINE SESSION]
+  Relire lessons.md (3 patterns clés)
+  Appliquer immédiatement
+```
+
+---
+
+## 🔧 COMMANDES FREELANCEHIGH
+
+```bash
+# ═══════════════════════════════════════════════════════════════
+# DÉVELOPPEMENT
+# ═══════════════════════════════════════════════════════════════
+
+# Lancer tout le monorepo (Turborepo)
+pnpm dev
+
+# Développement sélectif
+pnpm dev --filter=web                # Frontend seulement
+pnpm dev --filter=api                # Backend seulement
+pnpm dev --filter=web --filter=api   # Frontend + Backend
+
+# ═══════════════════════════════════════════════════════════════
+# BUILD & DEPLOY
+# ═══════════════════════════════════════════════════════════════
+
+pnpm build                           # Build complet Turborepo
+pnpm build --filter=web              # Build frontend seulement
+
+# ═══════════════════════════════════════════════════════════════
+# BASE DE DONNÉES (packages/db)
+# ═══════════════════════════════════════════════════════════════
+
+pnpm --filter=db migrate:dev         # Nouvelle migration locale
+pnpm --filter=db migrate:deploy      # Appliquer migrations prod
+pnpm --filter=db generate            # Régénérer Prisma client
+pnpm --filter=db studio              # Prisma Studio (GUI)
+pnpm --filter=db seed                # Seed données test
+
+# ═══════════════════════════════════════════════════════════════
+# QUALITÉ CODE
+# ═══════════════════════════════════════════════════════════════
+
+pnpm lint                            # ESLint partout
+pnpm typecheck                       # TypeScript check complet
+pnpm format                          # Prettier format
+pnpm format:check                    # Vérifier format sans appliquer
+
+# ═══════════════════════════════════════════════════════════════
+# TESTS
+# ═══════════════════════════════════════════════════════════════
+
+pnpm test                            # Tests unitaires
+pnpm test:watch                      # Mode watch
+pnpm test:e2e                        # Tests Playwright
+pnpm test:e2e:ui                     # Playwright UI mode
+
+# ═══════════════════════════════════════════════════════════════
+# UTILITAIRES
+# ═══════════════════════════════════════════════════════════════
+
+pnpm clean                           # Nettoyer node_modules + builds
+pnpm deps                            # Checker les dépendances obsolètes
+```
+
+### Variables d'environnement à setup
+
+**Créer à la racine :** `.env.local` (jamais dans Git)
+
+```bash
+# ═════════════════════════════════════════════════════════════
+# SUPABASE (Auth + DB + Storage + Realtime)
+# ═════════════════════════════════════════════════════════════
+NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # ⚠️  SERVEUR UNIQUEMENT
+
+# ═════════════════════════════════════════════════════════════
+# REDIS (Upstash MVP → Railway V2+)
+# ═════════════════════════════════════════════════════════════
+REDIS_URL=redis://[user]:[password]@[host]:[port]
+
+# ═════════════════════════════════════════════════════════════
+# STRIPE (Paiements internationaux)
+# ═════════════════════════════════════════════════════════════
+STRIPE_SECRET_KEY=sk_... # ⚠️  SERVEUR UNIQUEMENT
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
+
+# ═════════════════════════════════════════════════════════════
+# CINETPAY (Mobile Money 17 pays AF)
+# ═════════════════════════════════════════════════════════════
+CINETPAY_API_KEY=... # ⚠️  SERVEUR UNIQUEMENT
+CINETPAY_SITE_ID=...
+
+# ═════════════════════════════════════════════════════════════
+# OPENAI (Contrats, certifications, recherche sémantique V3+)
+# ═════════════════════════════════════════════════════════════
+OPENAI_API_KEY=sk-... # ⚠️  SERVEUR UNIQUEMENT
+
+# ═════════════════════════════════════════════════════════════
+# RESEND (23 templates emails transactionnels)
+# ═════════════════════════════════════════════════════════════
+RESEND_API_KEY=re_... # ⚠️  SERVEUR UNIQUEMENT
+
+# ═════════════════════════════════════════════════════════════
+# CLOUDINARY (Images publiques — avatars, portfolio)
+# ═════════════════════════════════════════════════════════════
+CLOUDINARY_URL=cloudinary://[key]:[secret]@[cloud]
+
+# ═════════════════════════════════════════════════════════════
+# TWILIO / AFRICA'S TALKING (SMS 2FA, alertes sécurité)
+# ═════════════════════════════════════════════════════════════
+TWILIO_ACCOUNT_SID=...
+TWILIO_AUTH_TOKEN=...
+
+# ═════════════════════════════════════════════════════════════
+# MONITORING & ANALYTICS
+# ═════════════════════════════════════════════════════════════
+SENTRY_DSN=...
+NEXT_PUBLIC_SENTRY_DSN=...
+NEXT_PUBLIC_POSTHOG_KEY=...
+
+# ═════════════════════════════════════════════════════════════
+# ENVIRONNEMENT
+# ═════════════════════════════════════════════════════════════
+NODE_ENV=development  # development | staging | production
+API_URL=http://localhost:3001
+```
+
+### Setup initial (première fois)
+
+```bash
+# 1. Installer pnpm (si besoin)
+npm install -g pnpm@latest
+
+# 2. Clone le repo
+git clone [repo-url] freelancehigh && cd freelancehigh
+
+# 3. Installer dépendances
+pnpm install
+
+# 4. Copier .env.local et remplir (voir au-dessus)
+cp .env.example .env.local
+# → Éditer .env.local avec vos clés
+
+# 5. Setup DB locale
+pnpm --filter=db migrate:dev
+
+# 6. Lancer l'app
+pnpm dev
+
+# 7. Accès
+# Frontend: http://localhost:3000
+# Backend:  http://localhost:3001
+# Prisma Studio: http://localhost:5555
+```
+
+---
+
+## 🌍 CONVENTIONS FREELANCEHIGH
+
+### TypeScript — Règles absolues
+
+```typescript
+// ✅ BON
+interface User {
+  id: string;
+  email: string;
+  kycLevel: KYCLevel; // Enum typé
+  role: 'freelance' | 'client' | 'agence' | 'admin';
+}
+
+// ❌ MAUVAIS
+const user: any = { ... };  // Jamais de any
+const role: string = 'freelance';  // Types primitifs pas assez spécifiques
+```
+
+### État — Zustand vs React Query
+
+```typescript
+// ✅ Zustand — UI state local
+const { currency, setCurrency, language, setLanguage } = useCurrencyStore();
+
+// ✅ React Query — Server state
+const { data: services, isLoading } = useServices({ freelanceId });
+
+// ❌ MAUVAIS
+const [services, setServices] = useState([]);  // Pas pour data serveur!
+const [currency] = useQuery({ ... });  // Pas pour UI state local!
+```
+
+### i18n RTL — Dès le MVP
+
+```tsx
+// ✅ Classes Tailwind rtl: jour 1
+<div className="ml-4 rtl:ml-0 rtl:mr-4">
+  Contenu responsif RTL
+</div>
+
+// ✅ Layout HTML
+<html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+```
+
+### Composants shadcn/ui
+
+```bash
+# Avant de créer un nouveau composant :
+# 1. Vérifier shadcn/ui library (boutons, modales, inputs, etc.)
+pnpm dlx shadcn-ui@latest add button   # Ajouter composant existant
+
+# 2. Customiser dans packages/ui/components/
+# 3. Réutiliser dans apps/web
+```
+
+### Sécurité API — Clés jamais côté client
+
+```typescript
+// ❌ JAMAIS CÔTÉ CLIENT
+export const STRIPE_KEY = 'sk_live_...';  // ⚠️  Exposé au monde!
+
+// ✅ Server Action Next.js
+'use server';
+export async function chargeCard(formData) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY); // Sûr
+  // ...
+}
+
+// ✅ Route API (apps/api)
+router.post('/stripe/charge', async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  // ...
+});
+```
+
+### Emails — React Email templates
+
+```typescript
+// packages/ui/emails/WelcomeEmail.tsx
+import { Html, Body, Text } from '@react-email/components';
+
+export default function WelcomeEmail({ locale, userName }) {
+  return (
+    <Html dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <Body>
+        <Text>{locale === 'fr' ? `Bienvenue ${userName}!` : `Welcome ${userName}!`}</Text>
+      </Body>
+    </Html>
+  );
+}
+```
+
+### Prisma — Source de vérité
+
+```prisma
+// schema.prisma définit TOUT
+model Service {
+  id        String   @id @default(cuid())
+  title     String
+  freelance Freelance @relation(fields: [freelanceId], references: [id])
+  freelanceId String
+  searchVector String? @db.Unsupported("tsvector")  // FTS Postgres
+}
+
+// Types générés automatiquement dans Prisma Client
+```
+
+### Maquettes — Non-négociable
+
+```
+Avant de coder une page :
+1. Localiser maquette dans /mnt/c/FreelanceHigh/[espace]/
+2. Reproduire structure, hiérarchie, espacements EXACTEMENT
+3. En cas de doute : la maquette a priorité
+```
+
+---
+
+## ✅ CHECKLIST PRÉ-COMMIT
+
+```markdown
+## Avant chaque commit
+
+- [ ] Code compilé sans erreur : `pnpm typecheck`
+- [ ] Linting OK : `pnpm lint`
+- [ ] Pas de secrets en dur (grep `.env` + API keys)
+- [ ] Tests passent : `pnpm test`
+- [ ] Migrations Prisma documentées
+- [ ] Composants shadcn/ui réutilisés (pas de doublon)
+- [ ] Maquettes respectées pour UI
+- [ ] RLS Supabase activé si table exposée
+- [ ] Variables d'env non exposées côté client
+```
+
+---
+
+## 🚨 RÈGLES D'OR FREELANCEHIGH
+
+```
+1. JAMAIS clé API côté client                  → Variables d'env serveur
+2. JAMAIS manipuler escrow directement côté client → Toujours via API
+3. JAMAIS inventer un composant                → Vérifier shadcn/ui d'abord
+4. JAMAIS modifier maquette sans validation   → La maquette = vérité
+5. JAMAIS de any TypeScript                   → Types stricts partout
+6. JAMAIS skip 2FA/KYC                        → Sécurité d'abord
+7. JAMAIS oublier RTL                         → Classes rtl: jour 1
+```
+
+---
+
+```
+1. JAMAIS supposer → Toujours vérifier
+2. JAMAIS forcer → Si bloqué, re-planifier
+3. JAMAIS laisser un hack → Reconstruire proprement
+4. JAMAIS marquer ✅ sans preuve → Tests/logs/validation
+5. JAMAIS oublier une leçon → tasks/lessons.md
+6. JAMAIS interrompre → Une question avant, pas pendant
+7. JAMAIS sur-ingénieriser → Assez bon est assez bon
+```
+
+---
+
+## 📝 TEMPLATE: NOUVELLE SESSION
+
+```markdown
+# Session du [DATE]
+
+## État Initial
+- Tâche principale: [X]
+- Dépendances bloquantes: [Oui/Non]
+- Leçons appliquées: [Lesquelles]
+
+## Exécution
+- Phase 1: [Résultat] - Status: [✅/🔄/❌]
+- Phase 2: [Résultat] - Status: [✅/🔄/❌]
+
+## Blocages
+- [Blocage]: [Cause] - Action: [Escalade/Re-plan]
+
+## Apprentissages
+- [Nouvelle leçon]
+
+## Prochaine Session
+- [ ] Tâche: [X]
+- [ ] Prérequis: [Y]
+```
+
+---
+
+---
+
+## 📝 TEMPLATE: NOUVELLE SESSION FREELANCEHIGH
+
+```markdown
+# Session du [DATE] — FreelanceHigh MVP
+
+## État Initial
+- **Tâche principale**: [Fonctionnalité clé]
+- **Espace concerné**: [Public|Auth|Freelance|Client|Agence|Admin]
+- **Maquette de référence**: [Lien fichier HTML]
+- **Complexité**: [Triviale|Simple|Modérée|Complexe]
+- **Dépendances bloquantes**: [API tiers? Migrations DB? Authentification?]
+- **Leçons appliquées**: [Lesquelles de tasks/lessons.md]
+
+## Exécution
+### Phase 1: [Description]
+- **Résultat attendu**: [Spécifique, mesurable]
+- **Dépendances**: [Étapes précédentes]
+- **Implémentation**:
+  - [ ] Frontend composant/page
+  - [ ] API route/tRPC procédure
+  - [ ] Migration Prisma si DB changée
+  - [ ] Tests
+- **Status**: [✅ Done | 🔄 In Progress | ❌ Failed]
+- **Leçons**: [Obstacles rencontrés]
+
+### Phase 2: [Description]
+- [Même format]
+
+## Blocages
+- **[Blocage]**: [Description] — **Cause**: [Analyse] — **Action**: [Escalade/Re-plan/Résolution]
+
+## Validation Finale
+- [ ] Code compilé : `pnpm typecheck`
+- [ ] Linting : `pnpm lint`
+- [ ] Maquette respectée : [Vérif visuelle]
+- [ ] Tests passent : `pnpm test`
+- [ ] Variables d'env correctes (pas de secrets exposés)
+- [ ] Migrations Prisma appliquées
+- [ ] RLS activé sur tables sensibles
+- [ ] RTL classes ajoutées (ml- → rtl:mr-, etc.)
+
+## Apprentissages
+- [Nouvelle leçon] — Format: [Date] | Ce qui a mal tourné | Règle pour l'éviter
+
+## Prochaine Session
+- [ ] Tâche: [X]
+- [ ] Maquette prep: [Localiser HTML]
+- [ ] Prérequis: [Y]
+```
+
+---
+
+## 📊 STRUCTURE RECOMMANDÉE (tasks/)
+
+```
+.claude/
+├── CLAUDE.md                    ← Ce fichier
+├── tasks/
+│   ├── todo.md                  ← État des sprints (MVP phases)
+│   ├── lessons.md               ← Erreurs + règles cumulées
+│   ├── context.md               ← Stack technique (copie @ARCHITECTURE.md)
+│   ├── anti_patterns.md         ← Pièges récurrents FreelanceHigh
+│   ├── maquettes_checklist.md   ← Cartographie des 61 maquettes HTML
+│   └── metrics.md               ← Performance, coût, temps
+├── decisions/
+│   └── [date]_[decision].md     ← Décisions techniques (ex: JWT custom claims)
+├── logs/
+│   └── [date]_session_[num].md  ← Résumé de chaque session
+└── reference/
+    ├── @PRD.md                  ← Copie du Product Requirements Document
+    ├── @ARCHITECTURE.md         ← Copie du doc architecture
+    ├── @API_TIERS.md            ← Stripe, CinetPay, OpenAI, Resend, etc.
+    └── @MAQUETTES_URLS.md       ← URLs/chemins vers chaque maquette HTML
+```
+
+---
+
+## 🎯 PRIORITÉS PENDANT LE MVP
+
+```
+MUST (Jour 1–3)
+├── Setup monorepo + env locals
+├── Auth (Supabase) + 2FA basique
+├── Dashboard freelance (CRUD services)
+├── Dashboard client (explorer + commander)
+└── Escrow (Stripe) premier paiement
+
+SHOULD (Semaine 1–2)
+├── Mobile Money CinetPay
+├── Messagerie simple (pas temps réel)
+├── KYC niveaux 2–3
+└── Notifications email (Resend)
+
+COULD (Semaine 2–3)
+├── Recherche FTS avancée
+├── Temps réel Socket.io
+├── IA contrats (OpenAI)
+└── Analytics dashboard admin
+
+WON'T (MVP = scope fixe)
+├── PWA mobile (V4)
+├── Web3/crypto (V4)
+├── Matching IA (V3)
+└── API publique (V4)
+```
+
+---
+
+*Dernière mise à jour: 2026*  
+*FreelanceHigh MVP — Framework adapté aux principes de Boris Cherny*  
+*Documentation complète : [@PRD.md](./PRD.md) | [@ARCHITECTURE.md](./ARCHITECTURE.md)*

@@ -556,6 +556,7 @@ export default function ClientPayments() {
                 <p className="text-slate-600 text-sm mt-1">Vos transactions apparaîtront ici après votre première commande.</p>
               </div>
             ) : (
+              <>
               {/* Desktop table */}
               <table className="w-full hidden md:table">
                 <thead>
@@ -608,6 +609,7 @@ export default function ClientPayments() {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
 

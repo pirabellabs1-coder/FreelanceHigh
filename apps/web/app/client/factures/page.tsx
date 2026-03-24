@@ -260,6 +260,7 @@ export default function ClientInvoices() {
             actionHref="/client/explorer"
           />
         ) : (
+          <>
           {/* Desktop table */}
           <table className="w-full hidden sm:table">
             <thead>
@@ -348,6 +349,7 @@ export default function ClientInvoices() {
               );
             })}
           </div>
+          </>
         )}
       </div>
 
