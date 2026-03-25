@@ -498,7 +498,7 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1100px] mx-auto px-2.5 sm:px-4 lg:px-6 py-6">
         <div>
           {/* ============================================ */}
           {/* FULL WIDTH — Main Content */}
@@ -843,25 +843,9 @@ export default function ServiceDetailPage() {
             )}
 
             {/* ============================================ */}
-            {/* Key Stats + FAQ                              */}
+            {/* FAQ                                          */}
             {/* ============================================ */}
             <div className="mt-8 pt-8 border-t border-border-dark space-y-8">
-              {/* Key Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { icon: "timer", label: t("delivery_time"), value: t("delivery_days", { count: service.deliveryDays }), gradient: "from-blue-500/20 to-blue-600/5" },
-                  { icon: "refresh", label: t("revisions_included"), value: `${service.revisions}`, gradient: "from-emerald-500/20 to-emerald-600/5" },
-                  { icon: "shopping_cart", label: t("orders"), value: `${service.orderCount}`, gradient: "from-primary/20 to-primary/5" },
-                  { icon: "verified", label: t("completion_rate"), value: "98%", gradient: "from-amber-500/20 to-amber-600/5" },
-                ].map((stat) => (
-                  <div key={stat.label} className={cn("bg-gradient-to-br rounded-xl p-4 text-center border border-white/5", stat.gradient)}>
-                    <span className="material-symbols-outlined text-primary text-xl mb-1.5 block" style={{ fontVariationSettings: "'FILL' 1" }}>{stat.icon}</span>
-                    <p className="text-white font-extrabold text-lg">{stat.value}</p>
-                    <p className="text-slate-400 text-[11px] mt-0.5">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-
               {/* FAQ */}
               {(service.faq ?? []).length > 0 && (
                 <div>
