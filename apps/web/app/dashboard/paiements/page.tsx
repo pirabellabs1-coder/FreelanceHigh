@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import { useDashboardStore } from "@/store/dashboard";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 // ============================================================
@@ -29,9 +30,7 @@ interface HistoryTransaction {
 // ============================================================
 // Demo data
 // ============================================================
-const DEMO_METHODS: PaymentMethod[] = [];
-
-const DEMO_HISTORY: HistoryTransaction[] = [];
+// Data now comes from useDashboardStore (see component below)
 
 const ADD_METHOD_OPTIONS = [
   { id: "carte", label: "Carte bancaire", icon: "credit_card", description: "Visa, Mastercard" },
@@ -73,19 +72,37 @@ const METHOD_TYPE_ICONS: Record<string, string> = {
 // ============================================================
 export default function PaiementsPage() {
   const addToast = useToastStore((s) => s.addToast);
+  const { transactions, syncFromApi, stats, apiRequestWithdrawal } = useDashboardStore();
+
+  useEffect(() => { syncFromApi(); }, [syncFromApi]);
 
   // State
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [methods, setMethods] = useState<PaymentMethod[]>([
+    { id: "pm-1", type: "orange_money", label: "Orange Money", detail: "+221 77 123 4567", icon: "phone_android", isDefault: true },
+    { id: "pm-2", type: "sepa", label: "Virement SEPA", detail: "FR76 •••• 4242", icon: "account_balance", isDefault: false },
+  ]);
   const [showAddMethod, setShowAddMethod] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawMethodId, setWithdrawMethodId] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
 
-  // Balances
-  const balanceAvailable = 0;
-  const balancePending = 0;
-  const balanceTotal = 0;
+  // Balances from stats
+  const balanceAvailable = stats?.summary?.available ?? 0;
+  const balancePending = stats?.summary?.pending ?? 0;
+  const balanceTotal = stats?.summary?.totalEarned ?? 0;
+
+  // Transaction history from store
+  const history: HistoryTransaction[] = useMemo(() =>
+    transactions.map((t) => ({
+      id: t.id,
+      date: t.date,
+      type: t.type as HistoryTransaction["type"],
+      description: t.description,
+      amount: t.amount,
+      status: t.status as HistoryTransaction["status"],
+    }))
+  , [transactions]);
 
   // Handlers
   function handleSetDefault(id: string) {
@@ -140,7 +157,7 @@ export default function PaiementsPage() {
 
   function handleExportCSV() {
     const header = "Date,Type,Description,Montant,Statut";
-    const rows = DEMO_HISTORY.map((tx) =>
+    const rows = history.map((tx) =>
       `${tx.date},${tx.type},"${tx.description}",${tx.amount},${tx.status}`
     );
     const csv = [header, ...rows].join("\n");
@@ -360,7 +377,7 @@ export default function PaiementsPage() {
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-border-dark">
-          {DEMO_HISTORY.length === 0 ? (
+          {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
               <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-primary/10 flex items-center justify-center mb-4">
                 <span className="material-symbols-outlined text-2xl text-slate-400">receipt_long</span>
@@ -369,7 +386,7 @@ export default function PaiementsPage() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Vos transactions apparaitront ici une fois que vous aurez effectue des ventes ou des retraits.</p>
             </div>
           ) : (
-            DEMO_HISTORY.map((tx) => {
+            history.map((tx) => {
               const typeConf = TX_TYPE_CONFIG[tx.type] ?? TX_TYPE_CONFIG.vente;
               const statusConf = TX_STATUS_CONFIG[tx.status];
               return (

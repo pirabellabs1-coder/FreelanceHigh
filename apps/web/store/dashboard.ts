@@ -684,6 +684,8 @@ export const useDashboardStore = create<DashboardState>()(
       sendInvite: async (email, message) => {
         try {
           await affiliationApi.invite(email, message);
+          // Re-sync to show the new invite in the list
+          await get().syncAffiliation();
           return true;
         } catch (err) {
           console.error("[Affiliation invite] Error:", err);

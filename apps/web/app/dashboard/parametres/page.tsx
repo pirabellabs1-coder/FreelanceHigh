@@ -25,7 +25,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function ParametresPage() {
-  const { profile, updateProfile, settings, updateSettings, notificationSettings, updateNotificationSetting } = useDashboardStore();
+  const { profile, updateProfile, apiSaveProfile, settings, updateSettings, notificationSettings, updateNotificationSetting } = useDashboardStore();
   const { currency, setCurrency } = useCurrencyStore();
   const changeLocale = useChangeLocale();
   const currentLocale = useLocaleStore((s) => s.locale);
@@ -50,13 +50,15 @@ export default function ParametresPage() {
     country: profile?.country ?? "",
   });
 
-  function handleSaveProfile() {
+  async function handleSaveProfile() {
     setSaving(true);
-    setTimeout(() => {
-      updateProfile(profileForm);
-      setSaving(false);
-      addToast("success", "Profil mis à jour avec succès !");
-    }, 500);
+    const ok = await apiSaveProfile(profileForm);
+    setSaving(false);
+    if (ok) {
+      addToast("success", "Profil mis a jour avec succes !");
+    } else {
+      addToast("error", "Erreur lors de la sauvegarde du profil");
+    }
   }
 
   function handlePasswordChange() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
@@ -27,7 +27,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
 };
 
 export default function CommandesPage() {
-  const { orders, updateOrderStatus, apiAcceptOrder, apiDeliverOrder } = useDashboardStore();
+  const { orders, updateOrderStatus, apiAcceptOrder, apiDeliverOrder, syncFromApi } = useDashboardStore();
+
+  useEffect(() => { syncFromApi(); }, [syncFromApi]);
   const addToast = useToastStore((s) => s.addToast);
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [search, setSearch] = useState("");

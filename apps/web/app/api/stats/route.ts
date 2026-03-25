@@ -85,7 +85,7 @@ export async function GET() {
         available: Math.round((earned._sum.amount ?? 0) * 100) / 100,
         pending: Math.round((pending._sum.amount ?? 0) * 100) / 100,
         totalEarned: Math.round((earned._sum.amount ?? 0) * 100) / 100,
-        commission: 0,
+        commissionThisMonth: 0,
       },
       monthlyRevenue,
       activeOrders,

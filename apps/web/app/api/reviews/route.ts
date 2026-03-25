@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     const freelanceId = searchParams.get("freelanceId");
     const serviceId = searchParams.get("serviceId");
     const orderId = searchParams.get("orderId");
+    const role = searchParams.get("role");
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       let reviews;
@@ -63,8 +64,11 @@ export async function GET(request: NextRequest) {
         reviews = reviewStore.getByService(serviceId);
       } else if (freelanceId) {
         reviews = reviewStore.getByFreelance(freelanceId);
+      } else if (role === "client") {
+        // Client wants reviews they LEFT (as author)
+        reviews = reviewStore.getByClient(session.user.id);
       } else {
-        // Default: return reviews for the current user as freelance
+        // Default: return reviews for the current user as freelance (received)
         reviews = reviewStore.getByFreelance(session.user.id);
       }
 
@@ -81,6 +85,9 @@ export async function GET(request: NextRequest) {
         where.serviceId = serviceId;
       } else if (freelanceId) {
         where.targetId = freelanceId;
+      } else if (role === "client") {
+        // Client: reviews they authored
+        where.authorId = session.user.id;
       } else {
         where.targetId = session.user.id;
       }

@@ -586,7 +586,7 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   closeProject: async (id) => {
     try {
       await projectsApi.update(id, { status: "ferme" });
-      set((s) => ({ projects: s.projects.map((p) => p.id === id ? { ...p, status: "termine" as const } : p) }));
+      set((s) => ({ projects: s.projects.map((p) => p.id === id ? { ...p, status: "ferme" as const } : p) }));
       return true;
     } catch { return false; }
   },
@@ -611,6 +611,7 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   rejectCandidature: async (_projectId, candidatureId) => {
     try {
       await candidaturesApi.reject(candidatureId);
+      await get().syncProjects();
       return true;
     } catch { return false; }
   },
@@ -729,6 +730,9 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   reportReview: async (reviewId) => {
     try {
       await reviewsApi.report(reviewId);
+      set((s) => ({
+        reviews: s.reviews.map((r) => r.id === reviewId ? { ...r, reported: true } : r),
+      }));
       return true;
     } catch { return false; }
   },

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import { useDashboardStore } from "@/store/dashboard";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 // ============================================================
-// Demo data
+// Types
 // ============================================================
 interface Invoice {
   id: string;
@@ -16,8 +17,6 @@ interface Invoice {
   amount: number;
   status: "payee" | "en_attente" | "en_retard";
 }
-
-const DEMO_INVOICES: Invoice[] = [];
 
 // ============================================================
 // Status config
@@ -43,6 +42,23 @@ const MONTH_OPTIONS = [
 // ============================================================
 export default function FacturesPage() {
   const addToast = useToastStore((s) => s.addToast);
+  const { orders, syncFromApi } = useDashboardStore();
+
+  useEffect(() => { syncFromApi(); }, [syncFromApi]);
+
+  // Generate invoices from orders
+  const invoices: Invoice[] = useMemo(() => {
+    return orders
+      .filter((o) => o.status === "termine" || o.status === "livre" || o.status === "en_cours")
+      .map((o) => ({
+        id: `FAC-${o.id.slice(-4)}`,
+        date: o.createdAt,
+        client: o.clientName,
+        description: o.serviceTitle,
+        amount: o.amount,
+        status: (o.status === "termine" ? "payee" : "en_attente") as Invoice["status"],
+      }));
+  }, [orders]);
 
   const [filterMonth, setFilterMonth] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -51,7 +67,7 @@ export default function FacturesPage() {
 
   // Filtered invoices
   const filtered = useMemo(() => {
-    let result = [...DEMO_INVOICES];
+    let result = [...invoices];
 
     // Month filter
     if (filterMonth !== "all") {
@@ -79,9 +95,9 @@ export default function FacturesPage() {
 
   // Stats
   const stats = useMemo(() => {
-    const total = DEMO_INVOICES.length;
-    const totalAmount = DEMO_INVOICES.reduce((s, inv) => s + inv.amount, 0);
-    const pendingAmount = DEMO_INVOICES.filter((inv) => inv.status === "en_attente" || inv.status === "en_retard")
+    const total = invoices.length;
+    const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
+    const pendingAmount = invoices.filter((inv) => inv.status === "en_attente" || inv.status === "en_retard")
       .reduce((s, inv) => s + inv.amount, 0);
     return { total, totalAmount, pendingAmount };
   }, []);

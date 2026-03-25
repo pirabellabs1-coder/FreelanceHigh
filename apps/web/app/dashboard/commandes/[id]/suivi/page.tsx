@@ -172,7 +172,7 @@ export default function OrderTrackingPage() {
   const router = useRouter();
   const orderId = params.id as string;
 
-  const { orders, updateOrderStatus, addOrderMessage, addOrderFile, apiSendOrderMessage } = useDashboardStore();
+  const { orders, updateOrderStatus, addOrderMessage, addOrderFile, apiSendOrderMessage, apiAcceptOrder, apiDeliverOrder } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
 
   const order = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
@@ -310,26 +310,29 @@ export default function OrderTrackingPage() {
     handleDropZoneUpload(e.dataTransfer.files);
   }
 
-  function handleStart() {
+  async function handleStart() {
     if (!order) return;
-    updateOrderStatus(order.id, "en_cours");
-    addToast("success", "Travail demarre ! Bonne chance.");
+    const ok = await apiAcceptOrder(order.id);
+    if (ok) addToast("success", "Travail demarre ! Bonne chance.");
+    else addToast("error", "Erreur lors du demarrage");
   }
 
-  function handleDeliver() {
+  async function handleDeliver() {
     if (!order) return;
     setDelivering(true);
-    setTimeout(() => {
-      updateOrderStatus(order.id, "livre");
-      setDelivering(false);
-      setDeliverModal(false);
-      addToast("success", "Commande livree avec succes !");
-    }, 1000);
+    const ok = await apiDeliverOrder(order.id, "Livraison effectuee", []);
+    setDelivering(false);
+    setDeliverModal(false);
+    if (ok) addToast("success", "Commande livree avec succes !");
+    else addToast("error", "Erreur lors de la livraison");
   }
 
-  function handleCancel() {
+  async function handleCancel() {
     if (!order) return;
-    updateOrderStatus(order.id, "annule");
+    try {
+      await ordersApi.update(order.id, { status: "annule" });
+      updateOrderStatus(order.id, "annule");
+    } catch { /* fallback to local */ }
     setCancelModal(false);
     addToast("info", "Commande annulee");
   }

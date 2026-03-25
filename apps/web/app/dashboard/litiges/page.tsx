@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 
@@ -56,7 +56,7 @@ interface Dispute {
 // Demo Data
 // ---------------------------------------------------------------------------
 
-const DEMO_DISPUTES: Dispute[] = [];
+// Disputes are derived from orders with status "litige" (see component below)
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -685,7 +685,41 @@ function NewReportModal({
 
 export default function LitigesPage() {
   const addToast = useToastStore((s) => s.addToast);
-  const [disputes, setDisputes] = useState<Dispute[]>(DEMO_DISPUTES);
+  const { orders, syncFromApi } = useDashboardStore();
+
+  // Derive disputes from orders with litige status
+  const derivedDisputes: Dispute[] = useMemo(() =>
+    orders.filter((o) => o.status === "litige").map((o) => ({
+      id: `dispute-${o.id}`,
+      clientName: o.clientName,
+      clientAvatar: o.clientAvatar,
+      serviceTitle: o.serviceTitle,
+      amount: o.amount,
+      status: "en_cours" as const,
+      openedAt: o.timeline.find((t) => t.title.toLowerCase().includes("litige"))?.timestamp || o.createdAt,
+      reason: o.messages[o.messages.length - 1]?.content || "Litige ouvert",
+      verdict: null,
+      orderId: o.id,
+      timeline: o.timeline.map((t) => ({
+        id: t.id, type: "message" as const, title: t.title, description: t.description, timestamp: t.timestamp,
+      })),
+      messages: o.messages.map((m) => ({
+        id: m.id, sender: m.sender as "freelance" | "client", senderName: m.senderName, content: m.content, timestamp: m.timestamp,
+      })),
+      evidence: o.files.map((f) => ({
+        id: f.id, name: f.name, size: f.size, type: f.type, uploadedBy: f.uploadedBy as "freelance" | "client", uploadedAt: f.uploadedAt,
+      })),
+    }))
+  , [orders]);
+
+  useEffect(() => { syncFromApi(); }, [syncFromApi]);
+
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+
+  // Sync derived disputes to local state
+  useEffect(() => {
+    if (derivedDisputes.length > 0) setDisputes(derivedDisputes);
+  }, [derivedDisputes]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   const [showNewReport, setShowNewReport] = useState(false);
