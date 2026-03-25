@@ -808,7 +808,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1024", serviceId: "s5", serviceTitle: "Design Dashboard SaaS", category: "UI/UX Design",
       clientId: "dev-client-1", clientName: "TechCorp Inc.", clientAvatar: "TC", clientCountry: "FR",
-      freelanceId: "dev-freelance-1", status: "en_cours", amount: 850, commission: 127.5,
+      freelanceId: "user-freelance-001", status: "en_cours", amount: 850, commission: 127.5,
       packageType: "premium", deadline: "2026-03-10", deliveredAt: null, completedAt: null,
       progress: 65, revisionsLeft: 3,
       messages: [
@@ -827,7 +827,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1019", serviceId: "s4", serviceTitle: "API Backend Node.js", category: "Développement",
       clientId: "dev-client-1", clientName: "Lamine Diallo", clientAvatar: "LD", clientCountry: "SN",
-      freelanceId: "dev-freelance-1", status: "livre", amount: 1200, commission: 180,
+      freelanceId: "user-freelance-001", status: "livre", amount: 1200, commission: 180,
       packageType: "premium", deadline: "2026-02-20", deliveredAt: "2026-02-18", completedAt: null,
       progress: 100, revisionsLeft: 2,
       messages: [
@@ -847,7 +847,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1016", serviceId: "s7", serviceTitle: "Audit SEO E-commerce", category: "Marketing Digital",
       clientId: "dev-client-1", clientName: "Auto-Focus SARL", clientAvatar: "AF", clientCountry: "CI",
-      freelanceId: "dev-freelance-1", status: "en_attente", amount: 450, commission: 67.5,
+      freelanceId: "user-freelance-001", status: "en_attente", amount: 450, commission: 67.5,
       packageType: "standard", deadline: "2026-03-15", deliveredAt: null, completedAt: null,
       progress: 0, revisionsLeft: 1,
       messages: [
@@ -862,7 +862,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1012", serviceId: "s1", serviceTitle: "Logo Startup FinTech", category: "Identité visuelle",
       clientId: "dev-client-1", clientName: "Moussa Keita", clientAvatar: "MK", clientCountry: "ML",
-      freelanceId: "dev-freelance-1", status: "revision", amount: 150, commission: 22.5,
+      freelanceId: "user-freelance-001", status: "revision", amount: 150, commission: 22.5,
       packageType: "premium", deadline: "2026-02-28", deliveredAt: null, completedAt: null,
       progress: 80, revisionsLeft: 2,
       messages: [
@@ -884,7 +884,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1008", serviceId: "s2", serviceTitle: "Pack 5 Articles Blog", category: "Contenu",
       clientId: "dev-client-1", clientName: "Marie Dupont", clientAvatar: "MD", clientCountry: "FR",
-      freelanceId: "dev-freelance-1", status: "termine", amount: 300, commission: 45,
+      freelanceId: "user-freelance-001", status: "termine", amount: 300, commission: 45,
       packageType: "standard", deadline: "2026-01-20", deliveredAt: "2026-01-18", completedAt: "2026-01-19",
       progress: 100, revisionsLeft: 0,
       messages: [
@@ -904,7 +904,7 @@ function _getDefaultOrdersLegacy(): StoredOrder[] {
     {
       id: "ORD-1003", serviceId: "s4", serviceTitle: "Application Mobile React Native", category: "Développement",
       clientId: "dev-client-1", clientName: "Ibrahim Traore", clientAvatar: "IT", clientCountry: "BF",
-      freelanceId: "dev-freelance-1", status: "annule", amount: 700, commission: 105,
+      freelanceId: "user-freelance-001", status: "annule", amount: 700, commission: 105,
       packageType: "premium", deadline: "2026-01-15", deliveredAt: null, completedAt: null,
       progress: 25, revisionsLeft: 5,
       messages: [
@@ -1273,8 +1273,8 @@ const PROFILES_FILE = "profiles.json";
 
 function getDefaultProfiles(): Record<string, StoredProfile> {
   return {
-    "dev-freelance-1": {
-      userId: "dev-freelance-1",
+    "user-freelance-001": {
+      userId: "user-freelance-001",
       firstName: "",
       lastName: "",
       username: "",
@@ -1336,7 +1336,7 @@ export const profileStore = {
   update(userId: string, updates: Partial<StoredProfile>): StoredProfile {
     const profiles = this._loadProfiles();
     if (!profiles[userId]) {
-      profiles[userId] = { ...getDefaultProfiles()["dev-freelance-1"], userId, ...updates };
+      profiles[userId] = { ...getDefaultProfiles()["user-freelance-001"], userId, ...updates };
     } else {
       profiles[userId] = { ...profiles[userId], ...updates };
     }
