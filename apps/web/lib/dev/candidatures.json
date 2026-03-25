@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "id": "cand_seed_001",
+    "projectId": "proj-seed-001",
+    "projectTitle": "Développement d'une application web SaaS de gestion RH",
+    "clientName": "TechCorp Inc.",
+    "freelanceId": "user-freelance-001",
+    "motivation": "Fort de 5 ans d'experience en developpement fullstack avec React/Next.js et Node.js, je suis confiant dans ma capacite a livrer cette plateforme SaaS RH. J'ai deja realise 3 projets similaires incluant gestion des conges et dashboards analytiques.",
+    "proposedPrice": 6500,
+    "deliveryDays": 45,
+    "status": "en_attente",
+    "submittedAt": "2026-03-15T10:30:00.000Z"
+  },
+  {
+    "id": "cand_seed_002",
+    "projectId": "proj-seed-001",
+    "projectTitle": "Développement d'une application web SaaS de gestion RH",
+    "clientName": "TechCorp Inc.",
+    "freelanceId": "user-freelance-003",
+    "motivation": "Specialiste en applications SaaS B2B, j'ai developpe 4 plateformes similaires avec PostgreSQL et Prisma. Mon approche inclut une architecture modulaire avec tests automatises et CI/CD.",
+    "proposedPrice": 7200,
+    "deliveryDays": 60,
+    "status": "en_attente",
+    "submittedAt": "2026-03-16T14:00:00.000Z"
+  },
+  {
+    "id": "cand_seed_003",
+    "projectId": "proj-seed-002",
+    "projectTitle": "Création d'identité visuelle complète pour startup FinTech",
+    "clientName": "Lamine Diallo",
+    "freelanceId": "user-freelance-002",
+    "motivation": "Designer UI/UX avec une forte expertise en branding FinTech africain. J'ai cree l'identite visuelle de 3 startups similaires a Dakar et Abidjan. Mon portfolio inclut des projets pour Wave et Orange Money.",
+    "proposedPrice": 1200,
+    "deliveryDays": 12,
+    "status": "en_attente",
+    "submittedAt": "2026-03-12T09:00:00.000Z"
+  },
+  {
+    "id": "cand_seed_004",
+    "projectId": "proj-seed-002",
+    "projectTitle": "Création d'identité visuelle complète pour startup FinTech",
+    "clientName": "Lamine Diallo",
+    "freelanceId": "user-freelance-006",
+    "motivation": "Directrice artistique freelance avec 8 ans d'experience dans le secteur financier. Je propose une approche design thinking : atelier decouverte, moodboard, 3 propositions de logo, charte graphique complete.",
+    "proposedPrice": 1400,
+    "deliveryDays": 15,
+    "status": "vue",
+    "submittedAt": "2026-03-13T11:00:00.000Z"
+  },
+  {
+    "id": "cand_seed_005",
+    "projectId": "proj-seed-003",
+    "projectTitle": "Rédaction de 20 articles SEO pour blog e-commerce mode",
+    "clientName": "Sophie Martin",
+    "freelanceId": "user-freelance-004",
+    "motivation": "Redactrice web specialisee en mode et lifestyle africain. 200+ articles publies avec un taux de positionnement Google de 85%. Je connais parfaitement le marche de la mode ethique africaine et le wax.",
+    "proposedPrice": 1000,
+    "deliveryDays": 20,
+    "status": "en_attente",
+    "submittedAt": "2026-03-14T08:30:00.000Z"
+  },
+  {
+    "id": "cand_seed_006",
+    "projectId": "proj-seed-004",
+    "projectTitle": "Campagne marketing digital complète pour lancement produit",
+    "clientName": "Auto-Focus SARL",
+    "freelanceId": "user-freelance-005",
+    "motivation": "Expert en marketing digital avec 6 ans d'experience en Afrique de l'Ouest. J'ai gere des budgets pub de 10K+ EUR pour des lancements produits au Senegal, Cote d'Ivoire et Cameroun. ROI moyen de 4.2x.",
+    "proposedPrice": 3500,
+    "deliveryDays": 30,
+    "status": "en_attente",
+    "submittedAt": "2026-03-15T16:00:00.000Z"
+  },
+  {
+    "id": "cand_seed_007",
+    "projectId": "proj-seed-004",
+    "projectTitle": "Campagne marketing digital complète pour lancement produit",
+    "clientName": "Auto-Focus SARL",
+    "freelanceId": "user-freelance-008",
+    "motivation": "Consultante en strategie digitale, je propose une approche data-driven : audit concurrentiel, creation de personas, planning editorial, campagnes multi-canaux avec reporting en temps reel.",
+    "proposedPrice": 4000,
+    "deliveryDays": 28,
+    "status": "en_attente",
+    "submittedAt": "2026-03-16T09:30:00.000Z"
+  }
+]

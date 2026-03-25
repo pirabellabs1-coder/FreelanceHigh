@@ -1562,5 +1562,263 @@
     "vendorPlan": "pro",
     "createdAt": "2026-01-29T11:29:25.790Z",
     "updatedAt": "2026-03-23T01:08:50.867Z"
+  },
+  {
+    "id": "srv-pending-001",
+    "userId": "user-freelance-009",
+    "slug": "creation-chatbot-ia-entreprise",
+    "title": "Creation de chatbot IA pour entreprise",
+    "language": "fr",
+    "description": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Je cree des chatbots IA personnalises pour votre entreprise avec ChatGPT/Claude API."
+            }
+          ]
+        }
+      ]
+    },
+    "descriptionText": "Je cree des chatbots IA personnalises pour votre entreprise avec ChatGPT/Claude API.",
+    "categoryId": "cat-dev",
+    "categoryName": "Developpement Web",
+    "subCategoryId": "sub-ia",
+    "subCategoryName": "Intelligence Artificielle",
+    "tags": [
+      "IA",
+      "Chatbot",
+      "API",
+      "Python"
+    ],
+    "basePrice": 500,
+    "deliveryDays": 14,
+    "revisions": 3,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 500,
+        "deliveryDays": 14,
+        "revisions": 2,
+        "description": "Chatbot simple FAQ"
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 900,
+        "deliveryDays": 21,
+        "revisions": 3,
+        "description": "Chatbot avec base de connaissances"
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 1500,
+        "deliveryDays": 30,
+        "revisions": 5,
+        "description": "Chatbot avance avec integration CRM"
+      }
+    },
+    "options": [],
+    "images": [],
+    "mainImage": "",
+    "videoUrl": "",
+    "status": "en_attente",
+    "views": 0,
+    "clicks": 0,
+    "orderCount": 0,
+    "revenue": 0,
+    "rating": 0,
+    "ratingCount": 0,
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "",
+    "metaDescription": "",
+    "seoScore": 0,
+    "faq": [],
+    "extras": [],
+    "vendorName": "Ousmane Barry",
+    "vendorAvatar": "",
+    "vendorUsername": "ousmane.barry",
+    "vendorCountry": "GN",
+    "vendorBadges": [],
+    "vendorRating": 0,
+    "vendorPlan": "gratuit",
+    "createdAt": "2026-03-22T10:00:00.000Z",
+    "updatedAt": "2026-03-22T10:00:00.000Z"
+  },
+  {
+    "id": "srv-pending-002",
+    "userId": "user-freelance-010",
+    "slug": "conception-maquettes-figma-mobile",
+    "title": "Conception de maquettes Figma pour application mobile",
+    "language": "fr",
+    "description": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Maquettes haute fidelite et prototypes interactifs Figma pour vos apps mobiles."
+            }
+          ]
+        }
+      ]
+    },
+    "descriptionText": "Maquettes haute fidelite et prototypes interactifs Figma pour vos apps mobiles.",
+    "categoryId": "cat-design",
+    "categoryName": "Design & Graphisme",
+    "subCategoryId": "sub-ui",
+    "subCategoryName": "UI/UX Design",
+    "tags": [
+      "Figma",
+      "UI",
+      "UX",
+      "Mobile"
+    ],
+    "basePrice": 300,
+    "deliveryDays": 10,
+    "revisions": 3,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 300,
+        "deliveryDays": 10,
+        "revisions": 2,
+        "description": "5 ecrans mobiles"
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 550,
+        "deliveryDays": 14,
+        "revisions": 3,
+        "description": "10 ecrans + prototype"
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 900,
+        "deliveryDays": 21,
+        "revisions": 5,
+        "description": "20 ecrans + design system"
+      }
+    },
+    "options": [],
+    "images": [],
+    "mainImage": "",
+    "videoUrl": "",
+    "status": "en_attente",
+    "views": 0,
+    "clicks": 0,
+    "orderCount": 0,
+    "revenue": 0,
+    "rating": 0,
+    "ratingCount": 0,
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "",
+    "metaDescription": "",
+    "seoScore": 0,
+    "faq": [],
+    "extras": [],
+    "vendorName": "Awa Diop",
+    "vendorAvatar": "",
+    "vendorUsername": "awa.diop",
+    "vendorCountry": "SN",
+    "vendorBadges": [],
+    "vendorRating": 0,
+    "vendorPlan": "pro",
+    "createdAt": "2026-03-23T14:00:00.000Z",
+    "updatedAt": "2026-03-23T14:00:00.000Z"
+  },
+  {
+    "id": "srv-pending-003",
+    "userId": "user-freelance-011",
+    "slug": "audit-securite-site-web",
+    "title": "Audit de securite complet pour site web et API",
+    "language": "fr",
+    "description": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Audit de securite OWASP Top 10, tests de penetration et rapport detaille."
+            }
+          ]
+        }
+      ]
+    },
+    "descriptionText": "Audit de securite OWASP Top 10, tests de penetration et rapport detaille.",
+    "categoryId": "cat-dev",
+    "categoryName": "Developpement Web",
+    "subCategoryId": "sub-security",
+    "subCategoryName": "Securite",
+    "tags": [
+      "Securite",
+      "OWASP",
+      "Pentest",
+      "Audit"
+    ],
+    "basePrice": 800,
+    "deliveryDays": 7,
+    "revisions": 2,
+    "packages": {
+      "basic": {
+        "name": "Basique",
+        "price": 800,
+        "deliveryDays": 7,
+        "revisions": 1,
+        "description": "Scan automatise + rapport"
+      },
+      "standard": {
+        "name": "Standard",
+        "price": 1500,
+        "deliveryDays": 14,
+        "revisions": 2,
+        "description": "Audit manuel OWASP Top 10"
+      },
+      "premium": {
+        "name": "Premium",
+        "price": 2500,
+        "deliveryDays": 21,
+        "revisions": 3,
+        "description": "Audit complet + pentest + remediation"
+      }
+    },
+    "options": [],
+    "images": [],
+    "mainImage": "",
+    "videoUrl": "",
+    "status": "en_attente",
+    "views": 0,
+    "clicks": 0,
+    "orderCount": 0,
+    "revenue": 0,
+    "rating": 0,
+    "ratingCount": 0,
+    "isBoosted": false,
+    "boostedUntil": null,
+    "boostTier": null,
+    "metaTitle": "",
+    "metaDescription": "",
+    "seoScore": 0,
+    "faq": [],
+    "extras": [],
+    "vendorName": "Pierre Kamga",
+    "vendorAvatar": "",
+    "vendorUsername": "pierre.kamga",
+    "vendorCountry": "CM",
+    "vendorBadges": [],
+    "vendorRating": 0,
+    "vendorPlan": "gratuit",
+    "createdAt": "2026-03-24T09:00:00.000Z",
+    "updatedAt": "2026-03-24T09:00:00.000Z"
   }
 ]

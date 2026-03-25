@@ -14,6 +14,28 @@ export async function GET() {
     }
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      const userRole = (session.user.role || "").toLowerCase();
+      if (userRole === "client") {
+        // Client sees candidatures on their projects
+        const { projectStore: ps } = await import("@/lib/dev/data-store");
+        const projects = ps.getAll().filter((p) => p.clientId === session.user.id);
+        const projectIds = new Set(projects.map((p) => p.id));
+        const allCandidatures = candidatureStore.getAll().filter((c) => projectIds.has(c.projectId));
+        // Enrich with freelance info
+        const { devStore: ds } = await import("@/lib/dev/dev-store");
+        const enriched = allCandidatures.map((c) => {
+          const freelancer = ds.findById(c.freelanceId);
+          const fName = freelancer?.name || "Freelance";
+          const initials = fName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+          return {
+            ...c,
+            freelanceName: fName,
+            freelanceAvatar: initials,
+            freelanceCountry: freelancer?.country || "",
+          };
+        });
+        return NextResponse.json({ candidatures: enriched });
+      }
       const candidatures = candidatureStore.getByFreelance(session.user.id);
       return NextResponse.json({ candidatures });
     }

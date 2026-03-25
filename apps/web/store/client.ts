@@ -602,6 +602,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   acceptCandidature: async (_projectId, candidatureId) => {
     try {
       await candidaturesApi.accept(candidatureId);
+      // Sync projects (status → pourvu) and orders (new order created)
+      await Promise.all([get().syncProjects(), get().syncOrders()]);
       return true;
     } catch { return false; }
   },
@@ -734,7 +736,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   acceptProposal: async (id) => {
     try {
       await offresApi.accept(id);
-      await get().syncProposals();
+      // Sync both proposals (status changed) and orders (new order created)
+      await Promise.all([get().syncProposals(), get().syncOrders()]);
       return true;
     } catch { return false; }
   },

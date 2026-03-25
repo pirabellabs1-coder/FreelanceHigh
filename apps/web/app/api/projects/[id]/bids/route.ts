@@ -18,7 +18,24 @@ export async function GET(
     const { id: projectId } = await params;
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
-      const candidatures = candidatureStore.getByProject(projectId);
+      const rawCandidatures = candidatureStore.getByProject(projectId);
+      // Enrich with freelance info
+      const { devStore: ds } = await import("@/lib/dev/dev-store");
+      const candidatures = rawCandidatures.map((c) => {
+        const freelancer = ds.findById(c.freelanceId);
+        const fName = freelancer?.name || "Freelance";
+        return {
+          ...c,
+          freelanceName: fName,
+          freelanceAvatar: "",
+          freelanceTitle: "",
+          country: freelancer?.country || "",
+          name: fName,
+          rating: 4.5,
+          amount: c.proposedPrice,
+          createdAt: c.submittedAt,
+        };
+      });
       return NextResponse.json({ candidatures });
     }
 

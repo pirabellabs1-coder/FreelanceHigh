@@ -16,7 +16,25 @@ export async function GET() {
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       if (userRole === "client") {
-        const offres = offreStore.getByClient(session.user.id, session.user.email || "");
+        const rawOffres = offreStore.getByClient(session.user.id, session.user.email || "");
+        // Enrich with freelance info for client display
+        const { devStore: ds } = await import("@/lib/dev/dev-store");
+        const offres = rawOffres.map((o) => {
+          const freelancer = ds.findById(o.freelanceId);
+          const fName = freelancer?.name || "Freelance";
+          const initials = fName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+          return {
+            ...o,
+            freelanceId: o.freelanceId,
+            freelanceName: fName,
+            freelanceAvatar: initials,
+            freelanceType: freelancer?.role === "agence" ? "agence" : "freelance",
+            projectTitle: o.title,
+            skills: [],
+            createdAt: o.sentAt,
+            expiresAt: o.expiresAt,
+          };
+        });
         return NextResponse.json({ offres });
       }
       const offres = offreStore.getByFreelance(session.user.id);
@@ -109,8 +127,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      // Resolve clientId from email if possible
+      let resolvedClientId: string | undefined;
+      if (clientEmail) {
+        const { devStore: ds } = await import("@/lib/dev/dev-store");
+        const clientUser = ds.findByEmail(clientEmail);
+        if (clientUser) resolvedClientId = clientUser.id;
+      }
       const offre = offreStore.create({
         freelanceId: session.user.id,
+        clientId: resolvedClientId,
         client,
         clientEmail: clientEmail || "",
         title,

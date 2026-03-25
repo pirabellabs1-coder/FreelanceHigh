@@ -399,5 +399,95 @@
     "files": [],
     "createdAt": "2025-12-15T10:00:00",
     "updatedAt": "2026-03-23T01:08:50.882Z"
+  },
+  {
+    "id": "ORD-LITIGE-001",
+    "serviceId": "srv-seed-001",
+    "serviceTitle": "Creation de site web React & Next.js sur mesure",
+    "category": "Developpement Web",
+    "clientId": "dev-client-1",
+    "clientName": "TechCorp Inc.",
+    "clientAvatar": "TC",
+    "clientCountry": "FR",
+    "freelanceId": "user-freelance-001",
+    "status": "litige",
+    "amount": 1500,
+    "commission": 225,
+    "packageType": "standard",
+    "requirements": "Site web corporate avec 10 pages, integration CMS headless.",
+    "deadline": "2026-04-15",
+    "deliveredAt": "2026-03-20T16:00:00.000Z",
+    "completedAt": null,
+    "progress": 100,
+    "revisionsLeft": 0,
+    "messages": [
+      {
+        "id": "m1",
+        "sender": "client",
+        "senderName": "TechCorp Inc.",
+        "content": "Bonjour, le site livre ne correspond pas au brief. Plusieurs pages sont manquantes et le design ne respecte pas la maquette.",
+        "timestamp": "2026-03-21T10:00:00.000Z",
+        "type": "text"
+      },
+      {
+        "id": "m2",
+        "sender": "freelance",
+        "senderName": "Moussa Diallo",
+        "content": "Je pense avoir respecte le brief. Les pages supplementaires etaient en option payante.",
+        "timestamp": "2026-03-21T11:30:00.000Z",
+        "type": "text"
+      },
+      {
+        "id": "m3",
+        "sender": "client",
+        "senderName": "TechCorp Inc.",
+        "content": "Non, c etait clairement dans le brief initial. J ouvre un litige.",
+        "timestamp": "2026-03-21T14:00:00.000Z",
+        "type": "text"
+      }
+    ],
+    "timeline": [
+      {
+        "id": "t1",
+        "type": "created",
+        "title": "Commande creee",
+        "description": "Forfait Standard - Creation de site web React & Next.js",
+        "timestamp": "2026-03-01T10:00:00.000Z"
+      },
+      {
+        "id": "t2",
+        "type": "started",
+        "title": "Travail demarre",
+        "description": "Le freelance a commence le travail",
+        "timestamp": "2026-03-02T09:00:00.000Z"
+      },
+      {
+        "id": "t3",
+        "type": "delivered",
+        "title": "Livraison effectuee",
+        "description": "Le freelance a livre la commande",
+        "timestamp": "2026-03-20T16:00:00.000Z"
+      },
+      {
+        "id": "t4",
+        "type": "revision",
+        "title": "Litige ouvert",
+        "description": "Le client a ouvert un litige : Livraison non conforme au brief",
+        "timestamp": "2026-03-21T14:00:00.000Z"
+      }
+    ],
+    "files": [
+      {
+        "id": "f1",
+        "name": "site-preview.zip",
+        "size": "4.2 MB",
+        "type": "zip",
+        "uploadedBy": "freelance",
+        "uploadedAt": "2026-03-20T16:00:00.000Z",
+        "url": "/uploads/site-preview.zip"
+      }
+    ],
+    "createdAt": "2026-03-01T10:00:00.000Z",
+    "updatedAt": "2026-03-21T14:00:00.000Z"
   }
 ]

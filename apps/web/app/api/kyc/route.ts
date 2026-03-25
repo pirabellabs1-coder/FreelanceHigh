@@ -19,8 +19,13 @@ export async function GET() {
     }
 
     if (IS_DEV) {
+      const { devStore } = await import("@/lib/dev/dev-store");
       const requests = kycRequestStore.getByUser(session.user.id);
-      const currentLevel = kycRequestStore.getUserLevel(session.user.id);
+      // Use BOTH user record and request-derived level, take the highest
+      const user = devStore.findById(session.user.id);
+      const requestLevel = kycRequestStore.getUserLevel(session.user.id);
+      const userLevel = user?.kyc ?? 1;
+      const currentLevel = Math.max(requestLevel, userLevel);
       const personalInfo = kycPersonalInfoStore.getByUser(session.user.id);
 
       return NextResponse.json({ requests, currentLevel, personalInfo });
