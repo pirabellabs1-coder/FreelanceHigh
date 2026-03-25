@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { useCurrencyStore, CURRENCIES } from "@/store/currency";
+import { useChangeLocale, useLocaleStore } from "@/store/locale";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const TABS = [
@@ -26,6 +27,8 @@ const PAYMENT_METHODS = [
 export default function ParametresPage() {
   const { profile, updateProfile, settings, updateSettings, notificationSettings, updateNotificationSetting } = useDashboardStore();
   const { currency, setCurrency } = useCurrencyStore();
+  const changeLocale = useChangeLocale();
+  const currentLocale = useLocaleStore((s) => s.locale);
   const addToast = useToastStore((s) => s.addToast);
 
   const [activeTab, setActiveTab] = useState<TabId>("profil");
@@ -104,9 +107,20 @@ export default function ParametresPage() {
         <p className="text-slate-400 mt-1">Gérez vos informations personnelles, votre sécurité et vos préférences de paiement.</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar Navigation */}
-        <div className="lg:w-56 flex-shrink-0 space-y-2">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        {/* Sidebar Navigation - Select on mobile, sidebar on desktop */}
+        <div className="lg:hidden">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value as TabId)}
+            className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {TABS.map((tab) => (
+              <option key={tab.id} value={tab.id}>{tab.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="hidden lg:block lg:w-56 flex-shrink-0 space-y-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -400,24 +414,28 @@ export default function ParametresPage() {
                   <span className="material-symbols-outlined text-primary">translate</span>
                   Langue de l&apos;interface
                 </h3>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   {[
-                    { code: "fr", label: "Francais", flag: "🇫🇷" },
-                    { code: "en", label: "English", flag: "🇬🇧" },
+                    { code: "fr" as const, label: "Francais", flag: "🇫🇷" },
+                    { code: "en" as const, label: "English", flag: "🇬🇧" },
                   ].map((lang) => (
                     <button
                       key={lang.code}
-                      onClick={() => { updateSettings({ language: lang.code }); addToast("success", `Langue: ${lang.label}`); }}
+                      onClick={async () => {
+                        updateSettings({ language: lang.code });
+                        await changeLocale(lang.code);
+                        addToast("success", `Langue: ${lang.label}`);
+                      }}
                       className={cn(
                         "flex items-center gap-3 px-6 py-3 rounded-lg border text-sm font-semibold transition-all",
-                        settings.language === lang.code
+                        currentLocale === lang.code
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border-dark text-slate-400 hover:border-primary/30"
                       )}
                     >
                       <span className="text-lg">{lang.flag}</span>
                       {lang.label}
-                      {settings.language === lang.code && (
+                      {currentLocale === lang.code && (
                         <span className="material-symbols-outlined text-lg">check</span>
                       )}
                     </button>
@@ -477,14 +495,30 @@ export default function ParametresPage() {
           {/* NOTIFICATIONS TAB */}
           {activeTab === "notifications" && (
             <div className="space-y-6">
-              <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6 space-y-6">
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">notifications</span>
-                  Preferences de notifications
-                </h3>
+              <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4 sm:p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">notifications</span>
+                    Preferences de notifications
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setSaving(true);
+                      setTimeout(() => {
+                        setSaving(false);
+                        addToast("success", "Preferences de notifications sauvegardees !");
+                      }, 500);
+                    }}
+                    disabled={saving}
+                    className="px-4 py-2 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-lg">save</span>
+                    {saving ? "Sauvegarde..." : "Sauvegarder"}
+                  </button>
+                </div>
 
-                {/* Header row */}
-                <div className="flex items-center justify-end gap-6 pr-2">
+                {/* Header row - hidden on mobile */}
+                <div className="hidden sm:flex items-center justify-end gap-6 pr-2">
                   {(["email", "push", "sms"] as const).map((ch) => (
                     <span key={ch} className="text-[10px] font-bold text-slate-500 uppercase w-12 text-center">{ch}</span>
                   ))}
@@ -494,17 +528,17 @@ export default function ParametresPage() {
                   <div key={cat} className="space-y-3">
                     <p className="text-xs font-bold text-primary uppercase tracking-wider border-b border-border-dark pb-2">{cat}</p>
                     {notificationSettings.filter((n) => n.category === cat).map((n) => (
-                      <div key={n.id} className="flex items-center justify-between py-1">
+                      <div key={n.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-2">
                         <span className="text-sm flex-1">{n.label}</span>
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4 sm:gap-6">
                           {(["email", "push", "sms"] as const).map((ch) => (
-                            <label key={ch} className="w-12 flex justify-center cursor-pointer">
+                            <label key={ch} className="flex sm:w-12 items-center sm:justify-center gap-1.5 cursor-pointer">
                               <input type="checkbox" checked={n[ch]}
                                 onChange={(e) => {
                                   updateNotificationSetting(n.id, { [ch]: e.target.checked });
-                                  addToast("info", `${n.label}: ${ch} ${e.target.checked ? "active" : "desactive"}`);
                                 }}
                                 className="w-4 h-4 rounded accent-primary cursor-pointer" />
+                              <span className="text-[10px] text-slate-500 uppercase sm:hidden">{ch}</span>
                             </label>
                           ))}
                         </div>
@@ -512,6 +546,14 @@ export default function ParametresPage() {
                     ))}
                   </div>
                 ))}
+              </div>
+
+              <div className="bg-blue-500/5 rounded-xl border border-blue-500/10 p-4 flex items-start gap-3">
+                <span className="material-symbols-outlined text-blue-400 text-lg mt-0.5">info</span>
+                <div>
+                  <p className="text-sm text-white font-semibold">A propos des notifications</p>
+                  <p className="text-xs text-slate-400 mt-1">Les notifications push et SMS seront disponibles prochainement. Les notifications email sont actives immediatement.</p>
+                </div>
               </div>
             </div>
           )}

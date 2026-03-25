@@ -828,8 +828,28 @@ export default function LitigesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      {/* Tabs - Select on mobile, pills on desktop */}
+      <div className="sm:hidden">
+        <select
+          value={activeTab ?? ""}
+          onChange={(e) => setActiveTab(e.target.value || null)}
+          className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {TABS.map((tab) => {
+            let count: number;
+            if (!tab.filter) count = disputes.length;
+            else if (tab.filter === "en_cours") count = stats.enCours;
+            else if (tab.filter === "resolu") count = stats.resolus;
+            else count = stats.enFaveur;
+            return (
+              <option key={tab.label} value={tab.filter ?? ""}>
+                {tab.label} ({count})
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      <div className="hidden sm:flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {TABS.map((tab) => {
           let count: number;
           if (!tab.filter) count = disputes.length;

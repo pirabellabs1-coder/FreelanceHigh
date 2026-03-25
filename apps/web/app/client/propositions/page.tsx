@@ -168,14 +168,27 @@ export default function ClientProposals() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 border border-border-dark">
+      {/* Tabs - Select on mobile, pills on desktop */}
+      <div className="sm:hidden">
+        <select
+          value={tab}
+          onChange={(e) => setTab(e.target.value)}
+          className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {TABS.map(t => (
+            <option key={t.key} value={t.key}>
+              {t.label} ({counts[t.key as keyof typeof counts]})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden sm:flex gap-1 bg-neutral-dark rounded-xl p-1 border border-border-dark overflow-x-auto scrollbar-hide">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap",
               tab === t.key
                 ? "bg-primary text-background-dark shadow"
                 : "text-slate-400 hover:text-white"
@@ -213,9 +226,9 @@ export default function ClientProposals() {
             return (
               <div
                 key={p.id}
-                className="bg-neutral-dark rounded-xl border border-border-dark p-5 hover:border-primary/30 transition-all group"
+                className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-5 hover:border-primary/30 transition-all group"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     {/* Status + meta */}
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -226,11 +239,10 @@ export default function ClientProposals() {
                       <span className="text-xs bg-border-dark text-slate-400 px-2.5 py-1 rounded-full">
                         {p.freelanceType === "agence" ? "Agence" : "Freelance"}
                       </span>
-                      <span className="text-xs text-slate-500 font-mono">{p.id}</span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-bold text-white text-lg group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-white text-base sm:text-lg group-hover:text-primary transition-colors">
                       {p.projectTitle}
                     </h3>
 
@@ -238,7 +250,7 @@ export default function ClientProposals() {
                     <div className="flex items-center gap-2 mt-2 mb-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold overflow-hidden">
                         {p.freelanceAvatar ? (
-                          <img src={p.freelanceAvatar} alt="" className="w-full h-full object-cover" />
+                          <img src={p.freelanceAvatar} alt="" className="w-full h-full object-cover object-center" />
                         ) : (
                           getInitials(p.freelanceName)
                         )}
@@ -257,7 +269,7 @@ export default function ClientProposals() {
                     {/* Skills */}
                     {p.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
-                        {p.skills.map(s => (
+                        {p.skills.slice(0, 4).map(s => (
                           <span
                             key={s}
                             className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium border border-primary/20"
@@ -265,11 +277,14 @@ export default function ClientProposals() {
                             {s}
                           </span>
                         ))}
+                        {p.skills.length > 4 && (
+                          <span className="text-xs text-slate-500 px-1 py-1">+{p.skills.length - 4}</span>
+                        )}
                       </div>
                     )}
 
                     {/* Meta info */}
-                    <div className="flex items-center gap-6 text-xs text-slate-500 flex-wrap">
+                    <div className="flex items-center gap-3 sm:gap-6 text-xs text-slate-500 flex-wrap">
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">payments</span>
                         {(p.amount ?? 0).toLocaleString("fr-FR")} EUR
@@ -280,22 +295,16 @@ export default function ClientProposals() {
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">calendar_today</span>
-                        Recue le {new Date(p.createdAt).toLocaleDateString("fr-FR")}
+                        {new Date(p.createdAt).toLocaleDateString("fr-FR")}
                       </span>
-                      {p.expiresAt && (
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm">timer</span>
-                          Expire le {new Date(p.expiresAt).toLocaleDateString("fr-FR")}
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2 flex-shrink-0">
+                  {/* Actions - horizontal on mobile, vertical on desktop */}
+                  <div className="flex flex-row sm:flex-col gap-2 flex-shrink-0 overflow-x-auto scrollbar-hide">
                     <button
                       onClick={() => setShowDetailModal(p.id)}
-                      className="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-background-dark transition-all text-center"
+                      className="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-background-dark transition-all text-center whitespace-nowrap"
                     >
                       Voir details
                     </button>
@@ -305,7 +314,7 @@ export default function ClientProposals() {
                           onClick={() => handleAccept(p.id)}
                           disabled={actionLoading === p.id}
                           className={cn(
-                            "px-4 py-2 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all text-center",
+                            "px-4 py-2 bg-primary text-background-dark text-xs font-bold rounded-lg hover:brightness-110 transition-all text-center whitespace-nowrap",
                             actionLoading === p.id && "opacity-50 cursor-not-allowed"
                           )}
                         >
@@ -315,7 +324,7 @@ export default function ClientProposals() {
                           onClick={() => handleReject(p.id)}
                           disabled={actionLoading === p.id}
                           className={cn(
-                            "px-4 py-2 bg-red-500/10 text-red-400 text-xs font-semibold rounded-lg hover:bg-red-500/20 transition-colors text-center",
+                            "px-4 py-2 bg-red-500/10 text-red-400 text-xs font-semibold rounded-lg hover:bg-red-500/20 transition-colors text-center whitespace-nowrap",
                             actionLoading === p.id && "opacity-50 cursor-not-allowed"
                           )}
                         >
@@ -325,7 +334,7 @@ export default function ClientProposals() {
                     )}
                     <Link
                       href="/client/messages"
-                      className="px-4 py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center"
+                      className="px-4 py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center whitespace-nowrap"
                     >
                       Contacter
                     </Link>

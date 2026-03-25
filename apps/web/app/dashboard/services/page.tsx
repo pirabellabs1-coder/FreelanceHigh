@@ -226,55 +226,7 @@ export default function ServicesPage() {
         </Link>
       </div>
 
-      {/* Plan Limits Banner */}
-      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-primary">verified</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold">Plan {planRules.name}</p>
-              <p className="text-xs text-slate-400">
-                Commission : {planRules.commissionType === "percentage" ? `${planRules.commissionValue}%` : `${planRules.commissionValue} EUR/vente`}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-4 sm:gap-6">
-            <div className="text-center">
-              <p className="text-xs text-slate-400 font-semibold">Services</p>
-              <p className={cn("text-sm font-extrabold",
-                isFinite(planRules.serviceLimit)
-                  ? activeServiceCount >= planRules.serviceLimit ? "text-red-400" : "text-slate-100"
-                  : "text-emerald-400"
-              )}>
-                {formatUsage(activeServiceCount, planRules.serviceLimit)}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-slate-400 font-semibold">Candidatures/mois</p>
-              <p className={cn("text-sm font-extrabold", isFinite(planRules.applicationLimit) ? "text-slate-100" : "text-emerald-400")}>
-                {isFinite(planRules.applicationLimit) ? `${planRules.applicationLimit}/mois` : "Illimite"}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-slate-400 font-semibold">Boosts/mois</p>
-              <p className={cn("text-sm font-extrabold", planRules.boostLimit === 0 ? "text-red-400" : isFinite(planRules.boostLimit) ? "text-slate-100" : "text-emerald-400")}>
-                {planRules.boostLimit === 0 ? "0" : isFinite(planRules.boostLimit) ? `${planRules.boostLimit}/mois` : "Illimite"}
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/abonnement"
-            className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 flex-shrink-0"
-          >
-            {planName === "GRATUIT" ? "Ameliorer" : "Gerer"} mon plan
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Stats Cards — 3 cards matching mockup */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
@@ -323,7 +275,7 @@ export default function ServicesPage() {
       {/* Services Table Card */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden shadow-xl">
         {/* Tabs */}
-        <div className="px-4 sm:px-6 flex gap-4 sm:gap-6 lg:gap-8 border-b border-primary/20 overflow-x-auto">
+        <div className="px-4 sm:px-6 flex gap-2 sm:gap-4 lg:gap-6 border-b border-primary/20 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
             const count = services.filter((s) => s.status === STATUS_MAP[tab]).length;
             const isActive = activeTab === tab;
@@ -384,7 +336,7 @@ export default function ServicesPage() {
                           "w-14 h-14 rounded-lg overflow-hidden flex-shrink-0",
                           isPaused && "grayscale"
                         )}>
-                          <img src={s.image} alt={s.title} className="w-full h-full object-cover" />
+                          <img src={s.image} alt={s.title} className="w-full h-full object-cover object-center" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-primary transition-colors">

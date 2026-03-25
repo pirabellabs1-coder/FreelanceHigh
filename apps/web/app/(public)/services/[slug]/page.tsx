@@ -176,7 +176,7 @@ function ServiceMiniCard({
           <img
             src={service.image}
             alt={service.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         ) : (
@@ -866,11 +866,10 @@ export default function ServiceDetailPage() {
                   </div>
 
                   {/* Vendor stats */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-border-dark">
+                  <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-border-dark">
                     {[
                       { value: vendor.completedOrders.toString(), label: t("completed_orders") },
                       { value: `${vendor.rating}/5`, label: t("average_rating") },
-                      { value: vendor.plan, label: t("plan") },
                     ].map((s) => (
                       <div key={s.label} className="text-center">
                         <p className="text-white font-bold text-lg">{s.value}</p>

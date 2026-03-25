@@ -405,32 +405,31 @@ export function MessageBubble({
               </>
             )}
 
-            {/* Timestamp + edited + read/delivery receipts */}
+            {/* Timestamp + edited + read/delivery receipts — inline WhatsApp style */}
             {!isEditing && (
-              <div className="flex items-center justify-end gap-1 mt-1.5">
+              <div className="flex items-center justify-end gap-1 mt-0.5 float-right ml-3 -mb-1 relative top-1">
                 {isEdited && !isDeleted && (
                   <span className="text-[10px] text-slate-500 italic">modifie</span>
                 )}
-                <span className="text-[10px] text-slate-500">{formatTime(message.createdAt)}</span>
+                <span className="text-[10px] text-slate-500 leading-none">{formatTime(message.createdAt)}</span>
                 {isOwn && !isDeleted && message.status === "failed" && (
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs text-red-400" title="Echec d'envoi">error</span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[10px] text-red-400" title="Echec d'envoi">error</span>
                     {onRetry && (
                       <button
                         onClick={() => onRetry(message.id)}
-                        className="text-[10px] text-red-400 hover:text-red-300 font-medium flex items-center gap-0.5"
+                        className="text-[10px] text-red-400 hover:text-red-300 font-medium"
                         title="Reessayer"
                       >
-                        <span className="material-symbols-outlined text-xs">refresh</span>
-                        Reessayer
+                        <span className="material-symbols-outlined text-[10px]">refresh</span>
                       </button>
                     )}
-                  </div>
+                  </span>
                 )}
                 {isOwn && !isDeleted && message.status !== "failed" && (
                   <span
                     className={cn(
-                      "material-symbols-outlined text-xs",
+                      "material-symbols-outlined text-[11px] leading-none",
                       message.status === "read"
                         ? "text-blue-400"
                         : "text-slate-500"

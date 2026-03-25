@@ -390,13 +390,29 @@ export default function ClientDisputes() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filters - Select on mobile, pills on desktop */}
+      <div className="sm:hidden">
+        <select
+          value={disputeFilter === "all" ? "tous" : disputeFilter}
+          onChange={(e) => setDisputeFilter(e.target.value === "tous" ? "all" : e.target.value)}
+          className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {[
+            { key: "tous", label: "Tous" },
+            { key: "en_cours", label: "En cours" },
+            { key: "en_attente", label: "En attente" },
+            { key: "resolu", label: "Resolus" },
+          ].map((f) => (
+            <option key={f.key} value={f.key}>{f.label}</option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden sm:flex flex-wrap gap-2">
         {[
           { key: "tous", label: "Tous" },
           { key: "en_cours", label: "En cours" },
           { key: "en_attente", label: "En attente" },
-          { key: "resolu", label: "Résolus" },
+          { key: "resolu", label: "Resolus" },
         ].map((f) => (
           <button
             key={f.key}

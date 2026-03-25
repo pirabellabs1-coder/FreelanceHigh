@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useClientStore } from "@/store/client";
 import { profileApi } from "@/lib/api-client";
 import { useToastStore } from "@/store/toast";
+import { useChangeLocale, useLocaleStore } from "@/store/locale";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_ITEMS = [
@@ -27,6 +28,8 @@ export default function ClientSettings() {
   const [activeSection, setActiveSection] = useState("profil");
   const { addToast } = useToastStore();
   const { updateSettings } = useClientStore();
+  const changeLocale = useChangeLocale();
+  const currentLocale = useLocaleStore((s) => s.locale);
   const [fetching, setFetching] = useState(true);
 
   const [profileForm, setProfileForm] = useState({
@@ -86,8 +89,19 @@ export default function ClientSettings() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar */}
-        <div className="w-full lg:w-64 flex-shrink-0">
+        {/* Sidebar - Select on mobile, sidebar on desktop */}
+        <div className="lg:hidden">
+          <select
+            value={activeSection}
+            onChange={(e) => setActiveSection(e.target.value)}
+            className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {SIDEBAR_ITEMS.map((item) => (
+              <option key={item.key} value={item.key}>{item.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <div className="bg-neutral-dark rounded-xl border border-border-dark p-2 space-y-1">
             {SIDEBAR_ITEMS.map((item) => (
               <button
@@ -359,21 +373,26 @@ export default function ClientSettings() {
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { code: "fr", label: "Français" },
-                      { code: "en", label: "English" },
+                      { code: "fr" as const, label: "Francais", flag: "🇫🇷" },
+                      { code: "en" as const, label: "English", flag: "🇬🇧" },
                     ].map((l) => (
                       <button
                         key={l.code}
-                        onClick={() => setLanguage(l.code)}
+                        onClick={async () => {
+                          setLanguage(l.code);
+                          await changeLocale(l.code);
+                          addToast("success", `Langue: ${l.label}`);
+                        }}
                         className={cn(
                           "p-4 rounded-xl border-2 text-center transition-all",
-                          language === l.code
+                          currentLocale === l.code
                             ? "border-primary bg-primary/10"
                             : "border-border-dark hover:border-primary/40"
                         )}
                       >
+                        <p className="text-lg mb-1">{l.flag}</p>
                         <p className="font-bold text-white text-sm">{l.label}</p>
-                        {language === l.code && (
+                        {currentLocale === l.code && (
                           <span className="material-symbols-outlined text-primary text-sm mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                         )}
                       </button>

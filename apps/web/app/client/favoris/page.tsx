@@ -111,14 +111,27 @@ export default function ClientFavorites() {
         <p className="text-slate-400 text-sm mt-1">Gérez vos prestataires et services sauvegardés pour vos futurs projets.</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-4 border-b border-border-dark">
+      {/* Tabs - Select on mobile, tabs on desktop */}
+      <div className="sm:hidden">
+        <select
+          value={tab}
+          onChange={(e) => setTab(e.target.value as TabKey)}
+          className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {TABS.map(t => (
+            <option key={t.key} value={t.key}>
+              {t.label} ({counts[t.key]})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden sm:flex gap-4 border-b border-border-dark overflow-x-auto scrollbar-hide">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors -mb-px",
+              "flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-colors -mb-px whitespace-nowrap",
               tab === t.key ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-300"
             )}
           >
