@@ -470,7 +470,6 @@ export default function ServiceDetailPage() {
   // ============================================================
   // Package data
   // ============================================================
-  const pkg = service.packages[selectedPackage];
   const descriptionText =
     typeof service.description === "object" &&
     service.description !== null &&
@@ -499,12 +498,12 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div>
           {/* ============================================ */}
-          {/* LEFT COLUMN — Main Content */}
+          {/* FULL WIDTH — Main Content */}
           {/* ============================================ */}
-          <div className="flex-1 min-w-0">
+          <div>
             {/* Title + favorite */}
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
@@ -895,11 +894,29 @@ export default function ServiceDetailPage() {
                       <span className="material-symbols-outlined text-sm">person</span>
                       {t("view_full_profile")}
                     </Link>
-                    <button onClick={handleContactSeller} className="flex-1 flex items-center justify-center gap-2 bg-transparent border border-border-dark text-slate-300 hover:text-primary hover:border-primary/30 rounded-xl px-4 py-3 text-sm font-bold transition-all">
+                    <button onClick={() => { if (!session?.user) { router.push(`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}`); return; } setContactOpen(!contactOpen); }} className="flex-1 flex items-center justify-center gap-2 bg-transparent border border-border-dark text-slate-300 hover:text-primary hover:border-primary/30 rounded-xl px-4 py-3 text-sm font-bold transition-all">
                       <span className="material-symbols-outlined text-sm">mail</span>
                       {t("contact")}
                     </button>
                   </div>
+                  {contactOpen && (
+                    <div className="mt-4 space-y-2">
+                      <textarea
+                        value={contactMessage}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        placeholder="Votre message au vendeur..."
+                        className="w-full bg-white/5 border border-border-dark rounded-xl p-3 text-sm text-white placeholder:text-slate-500 resize-none focus:border-primary/50 focus:outline-none"
+                        rows={3}
+                      />
+                      <button
+                        onClick={handleContactSeller}
+                        disabled={sendingMessage || !contactMessage.trim()}
+                        className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
+                      >
+                        {sendingMessage ? "Envoi..." : "Envoyer le message"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1055,83 +1072,6 @@ export default function ServiceDetailPage() {
             )}
           </div>
 
-          {/* ============================================ */}
-          {/* RIGHT COLUMN — Sticky Sidebar */}
-          {/* ============================================ */}
-          <div className="w-full lg:w-80 flex-shrink-0">
-            <div className="lg:sticky lg:top-24">
-              <div className="bg-neutral-dark border border-border-dark rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                {/* Quick price summary */}
-                <div className="p-6 space-y-5">
-                  <div className="text-center">
-                    <p className="text-xs text-slate-400 mb-1">{t("from")}</p>
-                    <p className="text-3xl font-extrabold text-primary">{format(pkg.price)}</p>
-                    <p className="text-sm text-slate-400 mt-1 capitalize">{pkg.name}</p>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-6 text-sm text-slate-300">
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-base text-primary">timer</span>
-                      {t("delivery_days", { count: pkg.deliveryDays ?? pkg.delivery })}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-base text-primary">refresh</span>
-                      {pkg.revisions === 0 ? t("no_revision") : t("revisions", { count: pkg.revisions })}
-                    </div>
-                  </div>
-
-                  {/* CTA Buttons */}
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleOrder}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-xl shadow-primary/30 transition-all hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      <span className="material-symbols-outlined text-base">shopping_cart</span>
-                      {t("order_this_package")}
-                    </button>
-                    <button onClick={() => { if (!session?.user) { router.push(`/connexion?redirect=${encodeURIComponent(`/services/${slug}`)}`); return; } setContactOpen(!contactOpen); }} className="w-full flex items-center justify-center gap-2 bg-transparent border border-border-dark hover:border-primary/50 text-slate-300 hover:text-primary rounded-xl px-6 py-3.5 text-sm font-bold transition-all">
-                      <span className="material-symbols-outlined text-base">mail</span>
-                      {t("contact_seller")}
-                    </button>
-                    {contactOpen && (
-                      <div className="mt-3 space-y-2">
-                        <textarea
-                          value={contactMessage}
-                          onChange={(e) => setContactMessage(e.target.value)}
-                          placeholder="Votre message au vendeur..."
-                          className="w-full bg-white/5 border border-border-dark rounded-xl p-3 text-sm text-white placeholder:text-slate-500 resize-none focus:border-primary/50 focus:outline-none"
-                          rows={3}
-                        />
-                        <button
-                          onClick={handleContactSeller}
-                          disabled={sendingMessage || !contactMessage.trim()}
-                          className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
-                        >
-                          {sendingMessage ? "Envoi..." : "Envoyer le message"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Trust badges */}
-                <div className="border-t border-border-dark px-6 py-4">
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="material-symbols-outlined text-base text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-                    <span>{t("trust_escrow")}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-2">
-                    <span className="material-symbols-outlined text-base text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>support_agent</span>
-                    <span>{t("trust_support")}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-2">
-                    <span className="material-symbols-outlined text-base text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>undo</span>
-                    <span>{t("trust_satisfaction")}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
