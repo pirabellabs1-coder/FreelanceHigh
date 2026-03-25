@@ -691,6 +691,90 @@ export default function ServiceDetailPage() {
             </div>
 
             {/* ============================================ */}
+            {/* Forfaits comparison (3 columns)             */}
+            {/* ============================================ */}
+            <div className="mt-8 pt-8 border-t border-border-dark">
+              <h2 className="text-lg font-bold text-white mb-6">{t("compare_packages")}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(["basic", "standard", "premium"] as const).map((tier) => {
+                  const p = service.packages[tier];
+                  const isSelected = selectedPackage === tier;
+                  return (
+                    <button
+                      key={tier}
+                      onClick={() => setSelectedPackage(tier)}
+                      className={cn(
+                        "bg-neutral-dark border rounded-2xl p-6 text-left transition-all relative group",
+                        isSelected ? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10" : "border-border-dark hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                      )}
+                    >
+                      {tier === "standard" && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+                          {t("popular")}
+                        </div>
+                      )}
+                      <h3 className="text-white font-bold text-base mb-1">{p.name}</h3>
+                      <p className="text-2xl font-extrabold text-primary mb-3">{format(p.price)}</p>
+                      <p className="text-slate-400 text-xs leading-relaxed mb-4">{p.description}</p>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-2 text-slate-300">
+                          <span className="material-symbols-outlined text-sm text-primary">timer</span>
+                          {t("delivery_days", { count: p.deliveryDays ?? p.delivery })}
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-300">
+                          <span className="material-symbols-outlined text-sm text-primary">refresh</span>
+                          {p.revisions === 0 ? t("no_revision") : t("revisions", { count: p.revisions })}
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-border-dark space-y-2">
+                        {packageFeatures.map((f, i) => {
+                          const included = f[tier];
+                          return (
+                            <div key={i} className={cn("flex items-center gap-2 text-xs", included ? "text-slate-300" : "text-slate-600 line-through")}>
+                              <span className={cn("material-symbols-outlined text-sm", included ? "text-primary" : "text-slate-600")} style={included ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                                {included ? "check_circle" : "cancel"}
+                              </span>
+                              {f.label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={handleOrder}
+                        className={cn(
+                          "mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all",
+                          isSelected
+                            ? "bg-primary text-white hover:bg-primary/90"
+                            : "bg-white/5 text-slate-300 border border-border-dark hover:border-primary/30 hover:text-primary"
+                        )}
+                      >
+                        <span className="material-symbols-outlined text-sm">shopping_cart</span>
+                        {t("order_button")}
+                      </button>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ============================================ */}
+            {/* Extras (options supplementaires)             */}
+            {/* ============================================ */}
+            {(service.extras ?? []).length > 0 && (
+              <div className="mt-8 pt-8 border-t border-border-dark">
+                <h2 className="text-lg font-bold text-white mb-4">{t("available_extras")}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(service.extras ?? []).map((extra, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-neutral-dark border border-border-dark rounded-xl px-5 py-4">
+                      <span className="text-sm text-slate-300">{extra.label}</span>
+                      <span className="text-sm font-bold text-primary">+{format(extra.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ============================================ */}
             {/* Key Stats + FAQ                              */}
             {/* ============================================ */}
             <div className="mt-8 pt-8 border-t border-border-dark space-y-8">
@@ -974,82 +1058,30 @@ export default function ServiceDetailPage() {
           {/* ============================================ */}
           {/* RIGHT COLUMN — Sticky Sidebar */}
           {/* ============================================ */}
-          <div className="w-full lg:w-96 flex-shrink-0">
+          <div className="w-full lg:w-80 flex-shrink-0">
             <div className="lg:sticky lg:top-24">
               <div className="bg-neutral-dark border border-border-dark rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                {/* Package tabs */}
-                <div className="flex border-b border-border-dark bg-background-dark/50">
-                  {(["basic", "standard", "premium"] as const).map((tier) => (
-                    <button
-                      key={tier}
-                      onClick={() => setSelectedPackage(tier)}
-                      className={cn(
-                        "flex-1 py-3.5 text-xs font-bold transition-all text-center",
-                        selectedPackage === tier
-                          ? "bg-primary/10 text-primary border-b-2 border-primary"
-                          : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                      )}
-                    >
-                      {service.packages[tier].name}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Package details */}
+                {/* Quick price summary */}
                 <div className="p-6 space-y-5">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-white font-bold text-base">{pkg.name}</h3>
-                      <p className="text-2xl font-extrabold text-primary">{format(pkg.price)}</p>
-                    </div>
-                    <p className="text-slate-400 text-sm leading-relaxed">{pkg.description}</p>
+                  <div className="text-center">
+                    <p className="text-xs text-slate-400 mb-1">{t("from")}</p>
+                    <p className="text-3xl font-extrabold text-primary">{format(pkg.price)}</p>
+                    <p className="text-sm text-slate-400 mt-1 capitalize">{pkg.name}</p>
                   </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <div className="flex items-center justify-center gap-6 text-sm text-slate-300">
+                    <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-base text-primary">timer</span>
                       {t("delivery_days", { count: pkg.deliveryDays ?? pkg.delivery })}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                    <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-base text-primary">refresh</span>
                       {pkg.revisions === 0 ? t("no_revision") : t("revisions", { count: pkg.revisions })}
                     </div>
                   </div>
 
-                  <div className="space-y-2.5 py-4 border-t border-b border-border-dark">
-                    {packageFeatures.map((f, i) => {
-                      const included = f[selectedPackage];
-                      return (
-                        <div key={i} className={cn("flex items-center gap-2 text-sm", included ? "text-slate-300" : "text-slate-600")}>
-                          <span
-                            className={cn("material-symbols-outlined text-base", included ? "text-primary" : "text-slate-600")}
-                            style={included ? { fontVariationSettings: "'FILL' 1" } : {}}
-                          >
-                            {included ? "check_circle" : "cancel"}
-                          </span>
-                          <span className={cn(!included && "line-through")}>{f.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Extras */}
-                  {(service.extras ?? []).length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{t("available_extras")}</h4>
-                      <div className="space-y-2">
-                        {(service.extras ?? []).map((extra, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-background-dark rounded-lg px-4 py-2.5 border border-border-dark">
-                            <span className="text-sm text-slate-300">{extra.label}</span>
-                            <span className="text-sm font-bold text-primary">+{format(extra.price)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* CTA Buttons */}
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3">
                     <button
                       onClick={handleOrder}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white rounded-xl px-6 py-3.5 text-sm font-bold shadow-xl shadow-primary/30 transition-all hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99]"
