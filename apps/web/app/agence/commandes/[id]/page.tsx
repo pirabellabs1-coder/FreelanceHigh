@@ -21,7 +21,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
 
 const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const fmtTime = (ts: string) => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-const initials = (name: string) => name.split(" ").map((n) => n[0]).join("").toUpperCase();
+const initials = (name: string) => (name || "??").split(" ").map((n) => n[0]).join("").toUpperCase();
 
 export default function AgenceCommandeDetail() {
   const { id } = useParams();

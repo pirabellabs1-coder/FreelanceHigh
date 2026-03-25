@@ -400,14 +400,14 @@ export default function ClientOrderDetailPage() {
         <div className="bg-neutral-dark rounded-xl border border-border-dark flex flex-col h-[700px]">
           <div className="p-4 border-b border-border-dark flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
-              {order.clientName
+              {(order.clientName || "??")
                 .split(" ")
                 .map((n) => n[0])
                 .join("")
                 .slice(0, 2)}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-white">{order.clientName}</p>
+              <p className="text-sm font-bold text-white">{order.clientName || "Client"}</p>
               <p className="text-xs text-slate-400">Commande #{order.id.slice(-4)}</p>
             </div>
           </div>

@@ -349,7 +349,7 @@ export default function AgenceCommandes() {
                             />
                           ) : (
                             <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
-                              {order.clientName
+                              {(order.clientName || "??")
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")

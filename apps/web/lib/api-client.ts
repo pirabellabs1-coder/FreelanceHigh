@@ -727,7 +727,7 @@ export function mapApiOrderToLocal(o: ApiOrder): Order {
     serviceId: o.serviceId,
     serviceTitle: o.serviceTitle,
     category: o.category,
-    clientName: o.clientName,
+    clientName: o.clientName || "Client",
     clientAvatar: o.clientAvatar,
     clientCountry: o.clientCountry,
     status: o.status as Order["status"],

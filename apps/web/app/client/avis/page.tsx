@@ -251,7 +251,7 @@ export default function ClientReviews() {
                       {r.clientAvatar ? (
                         <img src={r.clientAvatar} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        r.clientName.split(" ").map(n => n[0]).join("").slice(0, 2)
+                        (r.clientName || "??").split(" ").map(n => n[0]).join("").slice(0, 2)
                       )}
                     </div>
                     <div>
