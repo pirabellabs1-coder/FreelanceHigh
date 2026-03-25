@@ -322,7 +322,7 @@ function ServiceCard({
       className="group flex flex-col bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark hover:border-primary/40 dark:hover:border-primary/40 hover:shadow-xl hover:-translate-y-1 transition-all overflow-hidden"
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden">
         {service.image ? (
           <img src={service.image} alt={service.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
         ) : (
@@ -1115,7 +1115,7 @@ export default function ExplorerPage() {
           <div
             className={cn(
               view === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6"
                 : "flex flex-col gap-3 sm:gap-4"
             )}
           >
@@ -1142,7 +1142,7 @@ export default function ExplorerPage() {
           <div
             className={cn(
               view === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6"
                 : "flex flex-col gap-3 sm:gap-4"
             )}
           >
