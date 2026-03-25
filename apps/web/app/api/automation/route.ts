@@ -127,6 +127,7 @@ export async function POST(request: Request) {
       ...body.scenario,
       id: body.id,
       triggerCount: existing.triggerCount,
+      lastTriggered: existing.lastTriggered,
       createdAt: existing.createdAt,
     };
     scenarios[idx] = updated;

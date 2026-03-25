@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { cn } from "@/lib/utils";
-import { normalizePlanName, PLAN_RULES, canCreateScenario } from "@/lib/plans";
+import { normalizePlanName, PLAN_RULES, canCreateScenario, formatLimit } from "@/lib/plans";
 import type { ApiAutomationTrigger, ApiAutomationCondition, ApiAutomationAction, ApiAutomationScenario } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
-// UI config (not data)
+// UI config
 // ---------------------------------------------------------------------------
 
 const MESSAGE_VARIABLES = [
@@ -64,6 +64,45 @@ function formatTimeAgo(isoDate: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Delete Confirm Dialog
+// ---------------------------------------------------------------------------
+function DeleteConfirmDialog({ scenarioName, onConfirm, onCancel }: {
+  scenarioName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-neutral-dark border border-border-dark rounded-xl w-full max-w-sm p-6 space-y-4 animate-scale-in">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-red-400 text-xl">delete</span>
+          </div>
+          <div>
+            <h3 className="font-bold">Supprimer le scenario ?</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Cette action est irreversible.</p>
+          </div>
+        </div>
+        <p className="text-sm text-slate-300">
+          Le scenario <strong>&laquo;{scenarioName}&raquo;</strong> sera supprime definitivement, ainsi que son historique de declenchements.
+        </p>
+        <div className="flex gap-3 pt-2">
+          <button onClick={onCancel}
+            className="flex-1 px-4 py-2.5 border border-border-dark rounded-xl text-sm font-semibold text-slate-300 hover:bg-border-dark transition-colors">
+            Annuler
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 transition-colors">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page Component
 // ---------------------------------------------------------------------------
 
@@ -78,6 +117,7 @@ export default function AutomationPage() {
   const [sideTab, setSideTab] = useState<"scenarios" | "historique" | "modeles">("scenarios");
   const [showCreator, setShowCreator] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Creator state
   const [creatorStep, setCreatorStep] = useState(0);
@@ -86,6 +126,8 @@ export default function AutomationPage() {
   const [selectedConditions, setSelectedConditions] = useState<{ condition: ApiAutomationCondition; value: string }[]>([]);
   const [selectedActions, setSelectedActions] = useState<{ action: ApiAutomationAction; message?: string }[]>([]);
   const [creating, setCreating] = useState(false);
+
+  const creatorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     syncAutomation();
@@ -103,6 +145,18 @@ export default function AutomationPage() {
 
   const plan = normalizePlanName(currentPlan);
   const planRules = PLAN_RULES[plan];
+
+  // Scroll wizard into view when opened
+  useEffect(() => {
+    if (showCreator && creatorRef.current) {
+      creatorRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showCreator]);
+
+  // Refresh history after any CRUD action if on that tab
+  const refreshHistoryIfNeeded = useCallback(() => {
+    if (sideTab === "historique") syncAutomationHistory();
+  }, [sideTab, syncAutomationHistory]);
 
   // Plan gate
   if (planRules.scenarioLimit === 0) {
@@ -137,21 +191,38 @@ export default function AutomationPage() {
     const sc = scenarios.find((s) => s.id === id);
     if (!sc) return;
     const ok = await toggleScenario(id, !sc.active);
-    if (ok) addToast("success", sc.active ? "Scenario desactive" : "Scenario active");
+    if (ok) {
+      addToast("success", sc.active ? "Scenario desactive" : "Scenario active");
+      refreshHistoryIfNeeded();
+    }
   }
 
-  async function handleDelete(id: string) {
-    const ok = await deleteScenario(id);
-    if (ok) addToast("success", "Scenario supprime");
+  function handleDeleteClick(id: string) {
+    const sc = scenarios.find((s) => s.id === id);
+    if (!sc) return;
+    setDeleteTarget({ id, name: sc.name });
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const ok = await deleteScenario(deleteTarget.id);
+    if (ok) {
+      addToast("success", "Scenario supprime");
+      refreshHistoryIfNeeded();
+    }
+    setDeleteTarget(null);
   }
 
   async function handleDuplicate(id: string) {
     if (!canCreateScenario(plan, scenarios.length)) {
-      addToast("error", `Limite atteinte (${scenarios.length}/${planRules.scenarioLimit} scenarios). Passez au plan superieur.`);
+      addToast("error", `Limite atteinte (${scenarios.length}/${formatLimit(planRules.scenarioLimit)} scenarios). Passez au plan superieur.`);
       return;
     }
     const ok = await duplicateScenario(id);
-    if (ok) addToast("success", "Scenario duplique");
+    if (ok) {
+      addToast("success", "Scenario duplique");
+      refreshHistoryIfNeeded();
+    }
   }
 
   function resetCreator() {
@@ -164,19 +235,30 @@ export default function AutomationPage() {
     setEditingId(null);
   }
 
+  function openCreator() {
+    setCreatorStep(0);
+    setScenarioName("");
+    setSelectedTrigger(null);
+    setSelectedConditions([]);
+    setSelectedActions([]);
+    setEditingId(null);
+    setShowCreator(true);
+    setSideTab("scenarios");
+  }
+
   function handleEdit(scenario: ApiAutomationScenario) {
     setEditingId(scenario.id);
     setScenarioName(scenario.name);
     setSelectedTrigger(scenario.trigger);
     setSelectedConditions(scenario.conditions);
     setSelectedActions(scenario.actions);
-    setCreatorStep(0);
+    setCreatorStep(4); // Go to preview so user sees current state
     setShowCreator(true);
   }
 
   function handleUseTemplate(template: typeof TEMPLATES[number]) {
     if (!canCreateScenario(plan, scenarios.length)) {
-      addToast("error", `Limite atteinte (${scenarios.length}/${planRules.scenarioLimit} scenarios). Passez au plan superieur.`);
+      addToast("error", `Limite atteinte (${scenarios.length}/${formatLimit(planRules.scenarioLimit)} scenarios). Passez au plan superieur.`);
       return;
     }
     const trigger = triggers.find((t) => t.id === template.triggerId);
@@ -191,17 +273,17 @@ export default function AutomationPage() {
     setSelectedTrigger(trigger);
     setSelectedConditions([]);
     setSelectedActions(templateActions.map((a) => ({ action: a, message: a.hasMessage ? template.defaultMessage : "" })));
-    setCreatorStep(4); // Go directly to preview
+    setCreatorStep(4);
     setShowCreator(true);
+    setSideTab("scenarios");
   }
 
   function handleCreateNew() {
-    if (!canCreateScenario(plan, scenarios.length) && !editingId) {
-      addToast("error", `Limite atteinte (${scenarios.length}/${planRules.scenarioLimit} scenarios). Passez au plan superieur.`);
+    if (!canCreateScenario(plan, scenarios.length)) {
+      addToast("error", `Limite atteinte (${scenarios.length}/${formatLimit(planRules.scenarioLimit)} scenarios). Passez au plan superieur.`);
       return;
     }
-    resetCreator();
-    setShowCreator(true);
+    openCreator();
   }
 
   async function handleCreateScenario() {
@@ -227,6 +309,7 @@ export default function AutomationPage() {
     setCreating(false);
     if (ok) {
       resetCreator();
+      refreshHistoryIfNeeded();
     } else {
       addToast("error", editingId ? "Erreur lors de la mise a jour" : "Erreur lors de la creation du scenario");
     }
@@ -257,12 +340,19 @@ export default function AutomationPage() {
     setSelectedActions((prev) => prev.map((a, i) => (i === idx ? { ...a, message } : a)));
   }
 
-  const limitLabel = isFinite(planRules.scenarioLimit)
-    ? `${scenarios.length}/${planRules.scenarioLimit}`
-    : `${scenarios.length}`;
+  const limitLabel = `${scenarios.length} / ${formatLimit(planRules.scenarioLimit)}`;
 
   return (
     <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-80px)]">
+      {/* Delete Confirmation Dialog */}
+      {deleteTarget && (
+        <DeleteConfirmDialog
+          scenarioName={deleteTarget.name}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className="w-full lg:w-72 p-6 border-r border-border-dark shrink-0">
         <div className="sticky top-24">
@@ -271,8 +361,8 @@ export default function AutomationPage() {
             <nav className="space-y-1">
               {([
                 { key: "scenarios" as const, icon: "settings_suggest", label: "Scenarios", count: scenarios.length },
-                { key: "historique" as const, icon: "history", label: "Historique" },
-                { key: "modeles" as const, icon: "class", label: "Modeles" },
+                { key: "historique" as const, icon: "history", label: "Historique", count: automationHistory.length > 0 ? automationHistory.length : undefined },
+                { key: "modeles" as const, icon: "class", label: "Modeles", count: TEMPLATES.length },
               ]).map((item) => (
                 <button key={item.key} onClick={() => setSideTab(item.key)}
                   className={cn("flex items-center gap-3 px-3 py-2 rounded-lg font-semibold w-full text-left transition-colors",
@@ -321,7 +411,7 @@ export default function AutomationPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <nav className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-              <span className="hover:text-primary cursor-pointer">Dashboard</span>
+              <Link href="/dashboard" className="hover:text-primary transition-colors">Dashboard</Link>
               <span className="material-symbols-outlined text-[10px]">chevron_right</span>
               <span className="text-primary font-medium">Automatisation</span>
             </nav>
@@ -331,32 +421,39 @@ export default function AutomationPage() {
             </p>
           </div>
           <button onClick={handleCreateNew}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 shrink-0">
             <span className="material-symbols-outlined">add</span>
             Creer un scenario
           </button>
         </div>
 
-        {/* Scenario Creator Modal */}
+        {/* Scenario Creator / Editor */}
         {showCreator && (
-          <div className="mb-10 bg-white dark:bg-neutral-dark border border-primary/20 rounded-2xl p-6 shadow-xl">
+          <div ref={creatorRef} className="mb-10 bg-white dark:bg-neutral-dark border border-primary/20 rounded-2xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">magic_button</span>
+                <span className="material-symbols-outlined text-primary">{editingId ? "edit" : "magic_button"}</span>
                 {editingId ? "Modifier le scenario" : "Nouveau scenario"}
               </h2>
-              <button onClick={resetCreator} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors">
+              <button onClick={resetCreator} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-border-dark transition-colors" title="Fermer">
                 <span className="material-symbols-outlined text-slate-400">close</span>
               </button>
             </div>
 
             {/* Step indicator */}
-            <div className="flex items-center gap-2 mb-8">
-              {["Nom", "Déclencheur", "Conditions", "Actions", "Aperçu"].map((step, i) => (
-                <div key={step} className="flex items-center gap-2">
-                  <button onClick={() => setCreatorStep(i)}
+            <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
+              {["Nom", "Declencheur", "Conditions", "Actions", "Apercu"].map((step, i) => (
+                <div key={step} className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => {
+                    // Only allow going to steps that have been filled
+                    if (i === 0) setCreatorStep(0);
+                    else if (i === 1 && scenarioName) setCreatorStep(1);
+                    else if (i === 2 && selectedTrigger) setCreatorStep(2);
+                    else if (i === 3 && selectedTrigger) setCreatorStep(3);
+                    else if (i === 4 && selectedTrigger && selectedActions.length > 0) setCreatorStep(4);
+                  }}
                     className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                      creatorStep === i ? "bg-primary text-white" : creatorStep > i ? "bg-primary/10 text-primary" : "bg-slate-100 dark:bg-border-dark text-slate-400")}>
+                      creatorStep === i ? "bg-primary text-white" : creatorStep > i ? "bg-primary/10 text-primary cursor-pointer" : "bg-slate-100 dark:bg-border-dark text-slate-400")}>
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] bg-white/20">
                       {creatorStep > i ? "\u2713" : i + 1}
                     </span>
@@ -372,8 +469,9 @@ export default function AutomationPage() {
               <div className="max-w-lg">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">Nom du scenario</label>
                 <input type="text" value={scenarioName} onChange={(e) => setScenarioName(e.target.value)}
-                  placeholder="Ex: Accueil des nouveaux clients"
-                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+                  placeholder="Ex: Accueil des nouveaux clients" autoFocus
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  onKeyDown={(e) => e.key === "Enter" && scenarioName && setCreatorStep(1)} />
                 <button onClick={() => scenarioName && setCreatorStep(1)} disabled={!scenarioName}
                   className="mt-4 px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40">
                   Suivant
@@ -475,7 +573,7 @@ export default function AutomationPage() {
                           <div className="mt-3">
                             <div className="flex flex-wrap gap-1 mb-2">
                               {MESSAGE_VARIABLES.map((v) => (
-                                <button key={v.var} onClick={() => updateActionMessage(idx, (sa.message || "") + v.var)}
+                                <button key={v.var} onClick={() => updateActionMessage(idx, (sa.message || "") + " " + v.var)}
                                   className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded hover:bg-primary/20 transition-colors" title={v.label}>
                                   {v.var}
                                 </button>
@@ -503,7 +601,7 @@ export default function AutomationPage() {
                 <div className="flex gap-3 mt-6">
                   <button onClick={() => setCreatorStep(2)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">Retour</button>
                   <button onClick={() => selectedActions.length > 0 && setCreatorStep(4)} disabled={selectedActions.length === 0}
-                    className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40">Aperçu</button>
+                    className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-40">Apercu</button>
                 </div>
               </div>
             )}
@@ -564,11 +662,13 @@ export default function AutomationPage() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setCreatorStep(3)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">Modifier</button>
+                  <button onClick={() => setCreatorStep(0)} className="px-4 py-2 border border-slate-200 dark:border-border-dark rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-border-dark transition-all">
+                    Modifier les etapes
+                  </button>
                   <button onClick={handleCreateScenario} disabled={creating}
                     className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50">
                     {creating ? <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span> : <span className="material-symbols-outlined text-sm">check</span>}
-                    {creating ? "En cours..." : editingId ? "Sauvegarder" : "Activer le scenario"}
+                    {creating ? "En cours..." : editingId ? "Sauvegarder les modifications" : "Activer le scenario"}
                   </button>
                 </div>
               </div>
@@ -591,108 +691,147 @@ export default function AutomationPage() {
                 <SkeletonScenario />
               </>
             ) : scenarios.length > 0 ? (
-              scenarios.map((scenario) => (
-                <div key={scenario.id} className="bg-white dark:bg-primary/5 p-5 rounded-xl border border-slate-200 dark:border-primary/10 shadow-sm border-l-4 border-l-primary">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-3">
-                        <button onClick={() => handleToggle(scenario.id)}
-                          className={cn("relative w-10 h-6 rounded-full transition-colors", scenario.active ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600")}>
-                          <div className={cn("absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", scenario.active ? "left-[18px]" : "left-0.5")} />
-                        </button>
-                        <h4 className="font-bold text-sm">{scenario.name}</h4>
-                        <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider",
-                          scenario.active ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-700 text-slate-400")}>
-                          {scenario.active ? "Actif" : "Inactif"}
-                        </span>
+              scenarios.map((scenario) => {
+                const isBeingEdited = editingId === scenario.id && showCreator;
+                return (
+                  <div key={scenario.id}
+                    className={cn("p-5 rounded-xl border shadow-sm border-l-4 transition-all",
+                      isBeingEdited
+                        ? "bg-primary/10 border-primary/30 border-l-amber-500 ring-1 ring-amber-500/20"
+                        : "bg-white dark:bg-primary/5 border-slate-200 dark:border-primary/10 border-l-primary")}>
+                    {isBeingEdited && (
+                      <div className="flex items-center gap-2 mb-3 text-xs text-amber-500 font-bold">
+                        <span className="material-symbols-outlined text-sm animate-pulse">edit</span>
+                        En cours d&apos;edition — Voir le formulaire ci-dessus
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap text-xs">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/5 rounded-lg border border-blue-500/10">
-                          <span className="material-symbols-outlined text-blue-500 text-sm">{scenario.trigger.icon}</span>
-                          <span className="font-medium text-blue-700 dark:text-blue-400">{scenario.trigger.label}</span>
-                        </div>
-                        {scenario.conditions.length > 0 && (
-                          <>
-                            <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/5 rounded-lg border border-amber-500/10">
-                              <span className="material-symbols-outlined text-amber-500 text-sm">filter_alt</span>
-                              <span className="font-medium text-amber-700 dark:text-amber-400">{scenario.conditions.length} condition{scenario.conditions.length > 1 ? "s" : ""}</span>
-                            </div>
-                          </>
-                        )}
-                        <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
-                          <span className="material-symbols-outlined text-emerald-500 text-sm">{scenario.actions[0]?.action.icon}</span>
-                          <span className="font-medium text-emerald-700 dark:text-emerald-400">{scenario.actions.length} action{scenario.actions.length > 1 ? "s" : ""}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">bolt</span>
-                          {scenario.triggerCount} declenchements
-                        </span>
-                        {scenario.lastTriggered && (
-                          <span className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">schedule</span>
-                            Dernier: {scenario.lastTriggered}
+                    )}
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-3">
+                          <button onClick={() => handleToggle(scenario.id)}
+                            className={cn("relative w-10 h-6 rounded-full transition-colors shrink-0", scenario.active ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600")}>
+                            <div className={cn("absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", scenario.active ? "left-[18px]" : "left-0.5")} />
+                          </button>
+                          <h4 className="font-bold text-sm">{scenario.name}</h4>
+                          <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider shrink-0",
+                            scenario.active ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-700 text-slate-400")}>
+                            {scenario.active ? "Actif" : "Inactif"}
                           </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">calendar_today</span>
-                          Cree le {scenario.createdAt}
-                        </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap text-xs">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/5 rounded-lg border border-blue-500/10">
+                            <span className="material-symbols-outlined text-blue-500 text-sm">{scenario.trigger.icon}</span>
+                            <span className="font-medium text-blue-700 dark:text-blue-400">{scenario.trigger.label}</span>
+                          </div>
+                          {scenario.conditions.length > 0 && (
+                            <>
+                              <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/5 rounded-lg border border-amber-500/10">
+                                <span className="material-symbols-outlined text-amber-500 text-sm">filter_alt</span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">{scenario.conditions.length} condition{scenario.conditions.length > 1 ? "s" : ""}</span>
+                              </div>
+                            </>
+                          )}
+                          <span className="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                            <span className="material-symbols-outlined text-emerald-500 text-sm">{scenario.actions[0]?.action.icon}</span>
+                            <span className="font-medium text-emerald-700 dark:text-emerald-400">{scenario.actions.length} action{scenario.actions.length > 1 ? "s" : ""}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">bolt</span>
+                            {scenario.triggerCount} declenchement{scenario.triggerCount !== 1 ? "s" : ""}
+                          </span>
+                          {scenario.lastTriggered && (
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">schedule</span>
+                              Dernier: {scenario.lastTriggered}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-xs">calendar_today</span>
+                            Cree le {scenario.createdAt}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button onClick={() => handleEdit(scenario)} className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Modifier">
-                        <span className="material-symbols-outlined text-lg">edit</span>
-                      </button>
-                      <button onClick={() => handleDuplicate(scenario.id)} className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Dupliquer">
-                        <span className="material-symbols-outlined text-lg">content_copy</span>
-                      </button>
-                      <button onClick={() => handleDelete(scenario.id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title="Supprimer">
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => handleEdit(scenario)}
+                          disabled={isBeingEdited}
+                          className={cn("p-2 rounded-lg transition-colors",
+                            isBeingEdited ? "text-amber-500 bg-amber-500/10" : "text-slate-400 hover:text-primary hover:bg-primary/10")}
+                          title="Modifier">
+                          <span className="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button onClick={() => handleDuplicate(scenario.id)} className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Dupliquer">
+                          <span className="material-symbols-outlined text-lg">content_copy</span>
+                        </button>
+                        <button onClick={() => handleDeleteClick(scenario.id)}
+                          className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title="Supprimer">
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-16 text-slate-500">
                 <span className="material-symbols-outlined text-5xl mb-4 block">settings_suggest</span>
                 <p className="text-lg font-bold mb-2">Aucun scenario</p>
                 <p className="text-sm mb-6">Creez votre premier scenario d&apos;automatisation pour gagner du temps.</p>
-                <button onClick={handleCreateNew}
-                  className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all">
-                  Creer un scenario
-                </button>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={handleCreateNew}
+                    className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+                    <span className="material-symbols-outlined text-sm align-middle mr-1">add</span>
+                    Creer un scenario
+                  </button>
+                  <button onClick={() => setSideTab("modeles")}
+                    className="px-6 py-3 border border-primary/30 text-primary font-bold rounded-xl hover:bg-primary/5 transition-all">
+                    <span className="material-symbols-outlined text-sm align-middle mr-1">class</span>
+                    Utiliser un modele
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Historique tab — real data from API */}
+        {/* Historique tab */}
         {sideTab === "historique" && (
           <div className="space-y-4">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">history</span>
-              Historique des declenchements
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">history</span>
+                Historique des actions
+              </h3>
+              <button onClick={syncAutomationHistory}
+                className="p-2 hover:bg-primary/10 rounded-lg text-slate-400 hover:text-primary transition-colors" title="Rafraichir">
+                <span className="material-symbols-outlined text-lg">refresh</span>
+              </button>
+            </div>
             {automationHistory.length === 0 ? (
               <div className="text-center py-16 text-slate-500">
                 <span className="material-symbols-outlined text-5xl mb-4 block">history</span>
                 <p className="text-lg font-bold mb-2">Aucun historique</p>
-                <p className="text-sm">Les declenchements de vos scenarios apparaitront ici.</p>
+                <p className="text-sm">Les actions sur vos scenarios (creation, modification, activation...) apparaitront ici.</p>
               </div>
             ) : (
               automationHistory.map((entry) => (
                 <div key={entry.id} className="flex items-start gap-4 p-4 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-primary">bolt</span>
+                    <span className="material-symbols-outlined text-primary">
+                      {entry.action.includes("cree") ? "add_circle" :
+                       entry.action.includes("modifie") ? "edit" :
+                       entry.action.includes("duplique") ? "content_copy" :
+                       entry.action.includes("supprime") ? "delete" :
+                       entry.action.includes("active") ? "toggle_on" :
+                       entry.action.includes("desactive") ? "toggle_off" :
+                       "bolt"}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold">{entry.scenarioName}</p>
+                    <p className="text-sm font-bold truncate">{entry.scenarioName}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{entry.action}</p>
                   </div>
                   <div className="text-right shrink-0">
@@ -705,7 +844,7 @@ export default function AutomationPage() {
           </div>
         )}
 
-        {/* Modeles tab — with "Utiliser" buttons */}
+        {/* Modeles tab */}
         {sideTab === "modeles" && (
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
@@ -733,7 +872,7 @@ export default function AutomationPage() {
                   </div>
                 </div>
                 <button onClick={() => handleUseTemplate(template)}
-                  className="px-4 py-2 bg-primary/10 text-primary font-bold text-xs rounded-lg hover:bg-primary/20 transition-colors shrink-0">
+                  className="px-4 py-2 bg-primary text-white font-bold text-xs rounded-lg hover:opacity-90 transition-all shadow-sm shadow-primary/20 shrink-0">
                   Utiliser
                 </button>
               </div>
