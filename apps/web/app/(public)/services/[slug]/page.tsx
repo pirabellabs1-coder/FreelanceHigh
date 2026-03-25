@@ -624,9 +624,9 @@ export default function ServiceDetailPage() {
             {/* Image Gallery */}
             {galleryImages.length > 0 && (
               <div className="mb-6">
-                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark aspect-video shadow-xl ring-1 ring-white/5">
+                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark shadow-xl ring-1 ring-white/5 max-h-[400px] aspect-[16/9] sm:aspect-[2/1]">
                   <img
-                    src={optimizedUrl(galleryImages[currentImage], 1200)}
+                    src={optimizedUrl(galleryImages[currentImage], 900)}
                     alt={`${service.title} - Image ${currentImage + 1}`}
                     className="w-full h-full object-cover"
                   />
