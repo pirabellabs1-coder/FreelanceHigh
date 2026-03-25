@@ -33,13 +33,34 @@ export async function GET() {
     }
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
-      const profile = profileStore.get(session.user.id);
+      let profile = profileStore.get(session.user.id);
 
+      // Auto-create profile if not found
       if (!profile) {
-        return NextResponse.json(
-          { error: "Profil introuvable" },
-          { status: 404 }
-        );
+        const nameParts = (session.user.name || "").split(" ");
+        profile = profileStore.update(session.user.id, {
+          userId: session.user.id,
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+          username: (session.user.email || "").split("@")[0] || "",
+          email: session.user.email || "",
+          phone: "",
+          photo: "",
+          coverPhoto: "",
+          title: "",
+          bio: "",
+          city: "",
+          country: "",
+          hourlyRate: 0,
+          skills: [],
+          languages: [],
+          education: [],
+          links: { linkedin: "", github: "", portfolio: "", behance: "" },
+          completionPercent: 0,
+          badges: [],
+          availability: [],
+          vacationMode: false,
+        });
       }
 
       // Compute badges dynamically based on actual metrics

@@ -1308,13 +1308,33 @@ function getDefaultProfiles(): Record<string, StoredProfile> {
 }
 
 export const profileStore = {
+  _loadProfiles(): Record<string, StoredProfile> {
+    const raw = readJson<Record<string, StoredProfile> | unknown[]>(PROFILES_FILE, getDefaultProfiles());
+    // Fix: if profiles.json is an array (legacy/empty), convert to default object
+    if (Array.isArray(raw) || typeof raw !== "object" || raw === null) {
+      const defaults = getDefaultProfiles();
+      writeJson(PROFILES_FILE, defaults);
+      // Also update memory cache
+      memoryCache.set(PROFILES_FILE, defaults);
+      return defaults;
+    }
+    // If it's an object but empty, populate with defaults
+    if (Object.keys(raw).length === 0) {
+      const defaults = getDefaultProfiles();
+      writeJson(PROFILES_FILE, defaults);
+      memoryCache.set(PROFILES_FILE, defaults);
+      return defaults;
+    }
+    return raw as Record<string, StoredProfile>;
+  },
+
   get(userId: string): StoredProfile | null {
-    const profiles = readJson<Record<string, StoredProfile>>(PROFILES_FILE, getDefaultProfiles());
+    const profiles = this._loadProfiles();
     return profiles[userId] ?? null;
   },
 
   update(userId: string, updates: Partial<StoredProfile>): StoredProfile {
-    const profiles = readJson<Record<string, StoredProfile>>(PROFILES_FILE, getDefaultProfiles());
+    const profiles = this._loadProfiles();
     if (!profiles[userId]) {
       profiles[userId] = { ...getDefaultProfiles()["dev-freelance-1"], userId, ...updates };
     } else {
