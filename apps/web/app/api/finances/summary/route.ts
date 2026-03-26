@@ -8,12 +8,13 @@ import { IS_DEV } from "@/lib/env";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user && process.env.DEV_MODE !== "true") {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
+    const devUserId = session?.user?.id || "dev-user";
 
     if (IS_DEV) {
-      const summary = transactionStore.getSummary(session.user.id);
+      const summary = transactionStore.getSummary(devUserId);
 
       return NextResponse.json(summary);
     } else {
@@ -65,3 +66,4 @@ export async function GET() {
     );
   }
 }
+
