@@ -82,8 +82,11 @@ export default function OrderDetailPage() {
   const order = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
   const [activeTab, setActiveTab] = useState<"chat" | "fichiers">("chat");
   const [message, setMessage] = useState("");
+  const [accepting, setAccepting] = useState(false);
   const [delivering, setDelivering] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showDeliverModal, setShowDeliverModal] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -193,23 +196,27 @@ export default function OrderDetailPage() {
   async function handleDeliver() {
     if (!order) return;
     setDelivering(true);
-    const success = await apiDeliverOrder(order.id, "Livraison effectuee", order.files.filter((f) => f.uploadedBy === "freelance"));
-    if (!success) {
-      // Fallback to local store if API fails
-      updateOrderStatus(order.id, "livre");
-    }
+    const result = await apiDeliverOrder(order.id, "Livraison effectuee", order.files.filter((f) => f.uploadedBy === "freelance"));
     setDelivering(false);
-    addToast("success", "Commande livree avec succes !");
+    setShowDeliverModal(false);
+    if (result.success) {
+      addToast("success", "Commande livree avec succes !");
+    } else {
+      addToast("error", result.error || "Erreur lors de la livraison");
+    }
   }
 
   async function handleStart() {
     if (!order) return;
-    const success = await apiAcceptOrder(order.id);
-    if (!success) {
-      // Fallback to local store if API fails
-      updateOrderStatus(order.id, "en_cours");
+    setAccepting(true);
+    const result = await apiAcceptOrder(order.id);
+    setAccepting(false);
+    setShowAcceptModal(false);
+    if (result.success) {
+      addToast("success", "Commande acceptee ! Travail demarre.");
+    } else {
+      addToast("error", result.error || "Erreur lors de l'acceptation");
     }
-    addToast("success", "Travail demarre !");
   }
 
   function handleCancel() {
@@ -233,6 +240,22 @@ export default function OrderDetailPage() {
         variant="danger"
         onConfirm={handleCancel}
         onCancel={() => setCancelModal(false)}
+      />
+      <ConfirmModal
+        open={showAcceptModal}
+        title="Accepter la commande"
+        message={`Vous allez accepter la commande "${order?.serviceTitle}". Vous vous engagez a livrer dans les delais convenus.`}
+        confirmLabel="Accepter"
+        onConfirm={handleStart}
+        onCancel={() => setShowAcceptModal(false)}
+      />
+      <ConfirmModal
+        open={showDeliverModal}
+        title="Livrer la commande"
+        message={`Vous allez marquer la commande "${order?.serviceTitle}" comme livree. Le client pourra valider ou demander une revision.`}
+        confirmLabel="Livrer"
+        onConfirm={handleDeliver}
+        onCancel={() => setShowDeliverModal(false)}
       />
 
       {/* Header */}
@@ -266,10 +289,10 @@ export default function OrderDetailPage() {
               <p className="text-sm text-slate-400">Acceptez cette commande pour commencer le travail.</p>
             </div>
           </div>
-          <button onClick={handleStart}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white text-base font-black rounded-xl hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
-            <span className="material-symbols-outlined text-2xl">play_arrow</span>
-            Accepter la commande
+          <button onClick={() => setShowAcceptModal(true)} disabled={accepting}
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white text-base font-black rounded-xl hover:bg-primary/90 disabled:opacity-50 shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+            {accepting ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">play_arrow</span>}
+            {accepting ? "Acceptation..." : "Accepter la commande"}
           </button>
         </div>
       )}
@@ -285,7 +308,7 @@ export default function OrderDetailPage() {
               <p className="text-sm text-slate-400">Quand le travail est termine, livrez la commande au client.</p>
             </div>
           </div>
-          <button onClick={handleDeliver} disabled={delivering}
+          <button onClick={() => setShowDeliverModal(true)} disabled={delivering}
             className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
             {delivering ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">local_shipping</span>}
             {delivering ? "Livraison..." : "Livrer la commande"}
@@ -294,29 +317,13 @@ export default function OrderDetailPage() {
       )}
 
       {order.status === "livre" && (
-        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
-            </div>
-            <div>
-              <p className="text-lg font-black text-white">Commande livree</p>
-              <p className="text-sm text-slate-400">En attente de validation par le client.</p>
-            </div>
+        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
           </div>
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={() => { updateOrderStatus(order.id, "termine"); addToast("success", "Commande validee ! Les fonds seront liberes."); }}
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl text-sm hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all">
-              <span className="material-symbols-outlined text-lg">check_circle</span>
-              Valider la livraison
-            </button>
-            <button
-              onClick={() => { updateOrderStatus(order.id, "revision"); addToast("info", "Revision demandee au freelance."); }}
-              className="flex items-center gap-2 px-6 py-3 border border-orange-500/30 text-orange-400 font-bold rounded-xl text-sm hover:bg-orange-500/10 transition-all">
-              <span className="material-symbols-outlined text-lg">edit_note</span>
-              Demander une revision
-            </button>
+          <div>
+            <p className="text-lg font-black text-white">Commande livree</p>
+            <p className="text-sm text-slate-400">En attente de validation par le client. Vous serez notifie une fois la livraison validee.</p>
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ import { useClientStore } from "@/store/client";
 import { useToastStore } from "@/store/toast";
 import { ordersApi, reviewsApi, type ApiOrder } from "@/lib/api-client";
 import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 // ---------------------------------------------------------------------------
 // Status badge mapping
@@ -62,6 +63,7 @@ export default function ClientOrderDetailPage() {
 
   // Action loading
   const [actionLoading, setActionLoading] = useState(false);
+  const [showValidateModal, setShowValidateModal] = useState(false);
 
   // Review
   const [reviewQualite, setReviewQualite] = useState(5);
@@ -135,13 +137,13 @@ export default function ClientOrderDetailPage() {
   // Actions
   async function handleValidateDelivery() {
     setActionLoading(true);
-    const ok = await validateDelivery(id);
+    const result = await validateDelivery(id);
     setActionLoading(false);
-    if (ok) {
+    setShowValidateModal(false);
+    if (result.success) {
       addToast("success", "Livraison validee ! Les fonds ont ete liberes.");
-      syncOrders();
     } else {
-      addToast("error", "Erreur lors de la validation");
+      addToast("error", result.error || "Erreur lors de la validation");
     }
   }
 
@@ -151,15 +153,14 @@ export default function ClientOrderDetailPage() {
       return;
     }
     setActionLoading(true);
-    const ok = await requestRevision(id, revisionComment);
+    const result = await requestRevision(id, revisionComment);
     setActionLoading(false);
-    if (ok) {
+    if (result.success) {
       addToast("success", "Demande de revision envoyee");
       setShowRevisionModal(false);
       setRevisionComment("");
-      syncOrders();
     } else {
-      addToast("error", "Erreur lors de la demande de revision");
+      addToast("error", result.error || "Erreur lors de la demande de revision");
     }
   }
 
@@ -169,19 +170,18 @@ export default function ClientOrderDetailPage() {
       return;
     }
     setActionLoading(true);
-    const ok = await openDispute(id, {
+    const result = await openDispute(id, {
       reason: disputeReason,
       description: disputeDescription,
     });
     setActionLoading(false);
-    if (ok) {
-      addToast("success", "Litige ouvert. Notre équipe va examiner le cas.");
+    if (result.success) {
+      addToast("success", "Litige ouvert. Notre equipe va examiner le cas.");
       setShowDisputeModal(false);
       setDisputeReason("");
       setDisputeDescription("");
-      syncOrders();
     } else {
-      addToast("error", "Erreur lors de l'ouverture du litige");
+      addToast("error", result.error || "Erreur lors de l'ouverture du litige");
     }
   }
 
@@ -206,6 +206,15 @@ export default function ClientOrderDetailPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        open={showValidateModal}
+        title="Valider la livraison"
+        message="Vous confirmez que le travail est conforme a vos attentes. Les fonds seront liberes au freelance. Cette action est irreversible."
+        confirmLabel="Valider et liberer les fonds"
+        onConfirm={handleValidateDelivery}
+        onCancel={() => setShowValidateModal(false)}
+      />
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
         <Link href="/client/commandes" className="text-primary hover:underline">
@@ -285,9 +294,9 @@ export default function ClientOrderDetailPage() {
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
-            <button onClick={handleValidateDelivery} disabled={actionLoading}
+            <button onClick={() => setShowValidateModal(true)} disabled={actionLoading}
               className="flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
-              <span className="material-symbols-outlined text-2xl">check_circle</span>
+              {actionLoading ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">check_circle</span>}
               {actionLoading ? "Validation..." : "Valider la livraison"}
             </button>
             <button onClick={() => setShowRevisionModal(true)} disabled={actionLoading}
@@ -410,7 +419,7 @@ export default function ClientOrderDetailPage() {
               {order.status === "livre" && (
                 <>
                   <button
-                    onClick={handleValidateDelivery}
+                    onClick={() => setShowValidateModal(true)}
                     disabled={actionLoading}
                     className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >

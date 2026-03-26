@@ -8,6 +8,7 @@ import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
 import { ordersApi } from "@/lib/api-client";
 import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   en_attente: { label: "En attente", color: "bg-amber-500/20 text-amber-400", icon: "schedule" },
@@ -37,6 +38,8 @@ export default function AgenceCommandeDetail() {
   const [draftFiles, setDraftFiles] = useState<{ name: string; size: string }[]>([]);
   const [accepting, setAccepting] = useState(false);
   const [delivering, setDelivering] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showDeliverModal, setShowDeliverModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -91,21 +94,48 @@ export default function AgenceCommandeDetail() {
 
   async function handleAccept() {
     setAccepting(true);
-    const ok = await acceptOrder(orderId);
-    addToast(ok ? "success" : "error", ok ? "Commande acceptee ! Travail demarre." : "Erreur lors de l'acceptation");
+    const result = await acceptOrder(orderId);
     setAccepting(false);
+    setShowAcceptModal(false);
+    if (result.success) {
+      addToast("success", "Commande acceptee ! Travail demarre.");
+    } else {
+      addToast("error", result.error || "Erreur lors de l'acceptation");
+    }
   }
 
   async function handleDeliver() {
     setDelivering(true);
-    const ok = await deliverOrder(orderId, "Livraison effectuee par l'agence");
-    addToast(ok ? "success" : "error", ok ? "Commande livree avec succes !" : "Erreur lors de la livraison");
-    if (ok) setDraftFiles([]);
+    const result = await deliverOrder(orderId, "Livraison effectuee par l'agence");
     setDelivering(false);
+    setShowDeliverModal(false);
+    if (result.success) {
+      addToast("success", "Commande livree avec succes !");
+      setDraftFiles([]);
+    } else {
+      addToast("error", result.error || "Erreur lors de la livraison");
+    }
   }
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        open={showAcceptModal}
+        title="Accepter la commande"
+        message={`Vous allez accepter la commande "${order.serviceTitle}". L'agence s'engage a livrer dans les delais convenus.`}
+        confirmLabel="Accepter"
+        onConfirm={handleAccept}
+        onCancel={() => setShowAcceptModal(false)}
+      />
+      <ConfirmModal
+        open={showDeliverModal}
+        title="Livrer la commande"
+        message={`Vous allez marquer la commande "${order.serviceTitle}" comme livree. Le client pourra valider ou demander une revision.`}
+        confirmLabel="Livrer"
+        onConfirm={handleDeliver}
+        onCancel={() => setShowDeliverModal(false)}
+      />
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
         <Link href="/agence/commandes" className="text-primary hover:underline">Commandes</Link>
@@ -142,7 +172,7 @@ export default function AgenceCommandeDetail() {
               <p className="text-sm text-slate-400">Acceptez la commande pour commencer le travail.</p>
             </div>
           </div>
-          <button onClick={handleAccept} disabled={accepting}
+          <button onClick={() => setShowAcceptModal(true)} disabled={accepting}
             className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 shadow-lg shadow-primary/20 transition-all">
             {accepting ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">play_arrow</span>}
             {accepting ? "Acceptation..." : "Accepter la commande"}
@@ -236,7 +266,7 @@ export default function AgenceCommandeDetail() {
               </div>
             )}
             {order.status === "en_cours" && (
-              <button onClick={handleDeliver} disabled={delivering}
+              <button onClick={() => setShowDeliverModal(true)} disabled={delivering}
                 className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 text-white font-bold rounded-lg text-sm hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-500/20 transition-all">
                 {delivering ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">local_shipping</span>}
                 {delivering ? "Livraison..." : "Marquer comme livree"}

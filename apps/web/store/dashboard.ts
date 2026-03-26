@@ -60,8 +60,8 @@ interface DashboardState {
   addOrderMessage: (orderId: string, message: Omit<OrderMessage, "id">) => void;
   addOrderFile: (orderId: string, file: Omit<OrderFile, "id">) => void;
   // API-backed order operations
-  apiAcceptOrder: (id: string) => Promise<boolean>;
-  apiDeliverOrder: (id: string, message: string, files: Omit<OrderFile, "id">[]) => Promise<boolean>;
+  apiAcceptOrder: (id: string) => Promise<{ success: boolean; error?: string }>;
+  apiDeliverOrder: (id: string, message: string, files: Omit<OrderFile, "id">[]) => Promise<{ success: boolean; error?: string }>;
   apiUpdateProgress: (id: string, progress: number) => Promise<boolean>;
   apiSendOrderMessage: (orderId: string, content: string) => Promise<boolean>;
 
@@ -415,27 +415,11 @@ export const useDashboardStore = create<DashboardState>()(
           const result = await ordersApi.update(id, { status: "en_cours" });
           const local = mapApiOrderToLocal(result);
           set((s) => ({ orders: s.orders.map((o) => (o.id === id ? local : o)) }));
-          return true;
+          return { success: true };
         } catch (err) {
-          console.error("[Order accept] API error, applying locally:", err);
-          // Fallback: apply locally so UI updates even if API fails
-          const now = new Date().toISOString();
-          set((s) => ({
-            orders: s.orders.map((o) =>
-              o.id === id
-                ? {
-                    ...o,
-                    status: "en_cours" as Order["status"],
-                    progress: 10,
-                    timeline: [
-                      ...o.timeline,
-                      { id: "t" + Date.now(), type: "started" as const, title: "Travail démarré", description: "Vous avez commencé à travailler", timestamp: now },
-                    ],
-                  }
-                : o
-            ),
-          }));
-          return true;
+          const msg = err instanceof Error ? err.message : "Erreur lors de l'acceptation";
+          console.error("[Order accept]", msg);
+          return { success: false, error: msg };
         }
       },
       apiDeliverOrder: async (id, message, files) => {
@@ -443,27 +427,11 @@ export const useDashboardStore = create<DashboardState>()(
           const result = await ordersApi.update(id, { deliveryMessage: message, deliveryFiles: files });
           const local = mapApiOrderToLocal(result);
           set((s) => ({ orders: s.orders.map((o) => (o.id === id ? local : o)) }));
-          return true;
+          return { success: true };
         } catch (err) {
-          console.error("[Order deliver] API error, applying locally:", err);
-          const now = new Date().toISOString();
-          set((s) => ({
-            orders: s.orders.map((o) =>
-              o.id === id
-                ? {
-                    ...o,
-                    status: "livre" as Order["status"],
-                    progress: 100,
-                    deliveredAt: now,
-                    timeline: [
-                      ...o.timeline,
-                      { id: "t" + Date.now(), type: "delivered" as const, title: "Livraison effectuée", description: message || "Commande livrée", timestamp: now },
-                    ],
-                  }
-                : o
-            ),
-          }));
-          return true;
+          const msg = err instanceof Error ? err.message : "Erreur lors de la livraison";
+          console.error("[Order deliver]", msg);
+          return { success: false, error: msg };
         }
       },
       apiUpdateProgress: async (id, progress) => {

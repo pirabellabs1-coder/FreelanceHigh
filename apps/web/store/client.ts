@@ -148,9 +148,9 @@ interface ClientState {
   deleteProject: (id: string) => Promise<boolean>;
   acceptCandidature: (projectId: string, candidatureId: string) => Promise<boolean>;
   rejectCandidature: (projectId: string, candidatureId: string) => Promise<boolean>;
-  validateDelivery: (orderId: string) => Promise<boolean>;
-  requestRevision: (orderId: string, comment: string) => Promise<boolean>;
-  openDispute: (orderId: string, data: Record<string, unknown>) => Promise<boolean>;
+  validateDelivery: (orderId: string) => Promise<{ success: boolean; error?: string }>;
+  requestRevision: (orderId: string, comment: string) => Promise<{ success: boolean; error?: string }>;
+  openDispute: (orderId: string, data: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>;
   submitReview: (data: { orderId: string; qualite: number; communication: number; delai: number; comment?: string }) => Promise<boolean>;
   toggleFavorite: (type: ClientFavorite["type"], targetId: string, name: string, avatar: string, rating: number, specialty: string) => Promise<boolean>;
   addPaymentMethod: (data: Record<string, unknown>) => Promise<boolean>;
@@ -620,24 +620,33 @@ export const useClientStore = create<ClientState>()((set, get) => ({
     try {
       await ordersApi.update(orderId, { status: "termine" });
       await get().syncOrders();
-      return true;
-    } catch { return false; }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de la validation";
+      return { success: false, error: msg };
+    }
   },
 
   requestRevision: async (orderId, comment) => {
     try {
       await ordersApi.update(orderId, { status: "revision", revisionComment: comment });
       await get().syncOrders();
-      return true;
-    } catch { return false; }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de la demande de revision";
+      return { success: false, error: msg };
+    }
   },
 
   openDispute: async (orderId, data) => {
     try {
       await ordersApi.update(orderId, { status: "litige", ...data });
       await get().syncOrders();
-      return true;
-    } catch { return false; }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'ouverture du litige";
+      return { success: false, error: msg };
+    }
   },
 
   submitReview: async (data) => {

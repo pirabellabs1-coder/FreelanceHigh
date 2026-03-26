@@ -102,8 +102,8 @@ interface AgencyState {
   deleteService: (id: string) => Promise<boolean>;
 
   // Order actions
-  acceptOrder: (id: string) => Promise<boolean>;
-  deliverOrder: (id: string, message: string) => Promise<boolean>;
+  acceptOrder: (id: string) => Promise<{ success: boolean; error?: string }>;
+  deliverOrder: (id: string, message: string) => Promise<{ success: boolean; error?: string }>;
 
   // Finance actions
   requestWithdrawal: (amount: number, method: string) => Promise<boolean>;
@@ -303,16 +303,22 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
     try {
       await ordersApi.update(id, { status: "en_cours" });
       await get().syncOrders();
-      return true;
-    } catch { return false; }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'acceptation";
+      return { success: false, error: msg };
+    }
   },
 
   deliverOrder: async (id: string, message: string) => {
     try {
       await ordersApi.update(id, { deliveryMessage: message, deliveryFiles: [] });
       await get().syncOrders();
-      return true;
-    } catch { return false; }
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de la livraison";
+      return { success: false, error: msg };
+    }
   },
 
   // Finance actions
