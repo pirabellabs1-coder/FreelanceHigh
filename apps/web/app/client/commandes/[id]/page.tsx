@@ -246,6 +246,59 @@ export default function ClientOrderDetailPage() {
         </div>
       </div>
 
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* BANNER D'ACTION — visible en haut selon le statut          */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {order.status === "en_attente" && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-amber-400 text-3xl">schedule</span>
+          </div>
+          <div>
+            <p className="text-lg font-black text-white">En attente d&apos;acceptation</p>
+            <p className="text-sm text-slate-400">Le freelance n&apos;a pas encore accepte votre commande.</p>
+          </div>
+        </div>
+      )}
+
+      {order.status === "en_cours" && (
+        <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-blue-400 text-3xl">construction</span>
+          </div>
+          <div>
+            <p className="text-lg font-black text-white">Travail en cours</p>
+            <p className="text-sm text-slate-400">Le freelance travaille sur votre commande. Progression : {order.progress}%</p>
+          </div>
+        </div>
+      )}
+
+      {order.status === "livre" && (
+        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
+            </div>
+            <div>
+              <p className="text-lg font-black text-white">Commande livree !</p>
+              <p className="text-sm text-slate-400">Verifiez le travail et validez ou demandez une revision.</p>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <button onClick={handleValidateDelivery} disabled={actionLoading}
+              className="flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
+              <span className="material-symbols-outlined text-2xl">check_circle</span>
+              {actionLoading ? "Validation..." : "Valider la livraison"}
+            </button>
+            <button onClick={() => setShowRevisionModal(true)} disabled={actionLoading}
+              className="flex items-center justify-center gap-3 px-8 py-4 border-2 border-orange-500/30 text-orange-400 text-base font-black rounded-xl hover:bg-orange-500/10 disabled:opacity-50 transition-all">
+              <span className="material-symbols-outlined text-2xl">edit_note</span>
+              Demander une revision
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left column: pipeline, timeline, files, actions */}

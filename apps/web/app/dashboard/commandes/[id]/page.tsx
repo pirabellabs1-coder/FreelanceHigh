@@ -252,6 +252,87 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* BANNER D'ACTION PRINCIPAL — toujours visible en haut     */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {order.status === "en_attente" && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-amber-400 text-3xl">schedule</span>
+            </div>
+            <div>
+              <p className="text-lg font-black text-white">Nouvelle commande en attente</p>
+              <p className="text-sm text-slate-400">Acceptez cette commande pour commencer le travail.</p>
+            </div>
+          </div>
+          <button onClick={handleStart}
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white text-base font-black rounded-xl hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
+            <span className="material-symbols-outlined text-2xl">play_arrow</span>
+            Accepter la commande
+          </button>
+        </div>
+      )}
+
+      {order.status === "en_cours" && (
+        <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-blue-400 text-3xl">construction</span>
+            </div>
+            <div>
+              <p className="text-lg font-black text-white">Commande en cours</p>
+              <p className="text-sm text-slate-400">Quand le travail est termine, livrez la commande au client.</p>
+            </div>
+          </div>
+          <button onClick={handleDeliver} disabled={delivering}
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
+            {delivering ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">local_shipping</span>}
+            {delivering ? "Livraison..." : "Livrer la commande"}
+          </button>
+        </div>
+      )}
+
+      {order.status === "livre" && (
+        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
+            </div>
+            <div>
+              <p className="text-lg font-black text-white">Commande livree</p>
+              <p className="text-sm text-slate-400">En attente de validation par le client.</p>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={() => { updateOrderStatus(order.id, "termine"); addToast("success", "Commande validee ! Les fonds seront liberes."); }}
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl text-sm hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all">
+              <span className="material-symbols-outlined text-lg">check_circle</span>
+              Valider la livraison
+            </button>
+            <button
+              onClick={() => { updateOrderStatus(order.id, "revision"); addToast("info", "Revision demandee au freelance."); }}
+              className="flex items-center gap-2 px-6 py-3 border border-orange-500/30 text-orange-400 font-bold rounded-xl text-sm hover:bg-orange-500/10 transition-all">
+              <span className="material-symbols-outlined text-lg">edit_note</span>
+              Demander une revision
+            </button>
+          </div>
+        </div>
+      )}
+
+      {order.status === "termine" && (
+        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-emerald-400 text-3xl">celebration</span>
+          </div>
+          <div>
+            <p className="text-lg font-black text-emerald-400">Commande terminee</p>
+            <p className="text-sm text-slate-400">Le client a valide la livraison. Les fonds ont ete liberes.</p>
+          </div>
+        </div>
+      )}
+
       {/* Info Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
@@ -333,51 +414,12 @@ export default function OrderDetailPage() {
         </details>
       )}
 
-      {/* Buyer actions when order is delivered */}
-      {order.status === "livre" && (
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-emerald-400">local_shipping</span>
-            <p className="font-bold text-sm">La commande a été livrée</p>
-          </div>
-          <p className="text-sm text-slate-400">Vérifiez le travail livré et validez ou demandez une révision.</p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => { updateOrderStatus(order.id, "termine"); addToast("success", "Commande validée ! Les fonds seront libérés."); }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-bold rounded-lg text-sm hover:bg-emerald-600 shadow-lg shadow-emerald-500/20"
-            >
-              <span className="material-symbols-outlined text-lg">check_circle</span>
-              Valider la livraison
-            </button>
-            <button
-              onClick={() => { updateOrderStatus(order.id, "revision"); addToast("info", "Révision demandée au freelance."); }}
-              className="flex items-center gap-2 px-5 py-2.5 border border-orange-500/30 text-orange-400 font-bold rounded-lg text-sm hover:bg-orange-500/10"
-            >
-              <span className="material-symbols-outlined text-lg">edit_note</span>
-              Demander une révision
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
+      {/* Secondary actions */}
       <div className="flex gap-3 flex-wrap">
-        {order.status === "en_attente" && (
-          <button onClick={handleStart} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined text-lg">play_arrow</span> Demarrer le travail
-          </button>
-        )}
-        {order.status === "en_cours" && (
-          <button onClick={handleDeliver} disabled={delivering}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-bold rounded-lg text-sm hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-500/20">
-            {delivering ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : <span className="material-symbols-outlined text-lg">local_shipping</span>}
-            {delivering ? "Livraison..." : "Marquer comme livre"}
-          </button>
-        )}
         {["en_cours", "en_attente"].includes(order.status) && (
           <button onClick={() => setCancelModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 border border-red-500/30 text-red-400 font-semibold rounded-lg text-sm hover:bg-red-500/10">
-            <span className="material-symbols-outlined text-lg">cancel</span> Annuler
+            <span className="material-symbols-outlined text-lg">cancel</span> Annuler la commande
           </button>
         )}
         <button onClick={() => fileInputRef.current?.click()}
