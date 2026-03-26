@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useClientStore } from "@/store/client";
+import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
@@ -50,8 +51,11 @@ export default function ClientOrders() {
     orderFilter,
     setOrderFilter,
     syncOrders,
+    validateDelivery,
+    requestRevision,
     loading,
   } = useClientStore();
+  const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     syncOrders();
@@ -179,8 +183,7 @@ export default function ClientOrders() {
                     <div className="min-w-0">
                       <p className="font-bold text-white text-sm sm:text-base truncate">{o.serviceTitle}</p>
                       <p className="text-[10px] sm:text-xs text-slate-500 truncate">
-                        #{o.id.slice(-4)} -- {o.clientName}{" "}
-                        {o.freelanceId && `-- Freelance: ${o.freelanceId}`}
+                        #{o.id.slice(-4)} -- Freelance: {o.freelanceName || "En cours d'attribution"}
                       </p>
                     </div>
                   </div>
@@ -189,6 +192,26 @@ export default function ClientOrders() {
                       {statusInfo.label}
                     </span>
                     <span className="text-sm sm:text-lg font-bold text-white">{(o.amount ?? 0).toLocaleString("fr-FR")} €</span>
+
+                    {/* Quick action buttons */}
+                    {o.status === "livre" && (
+                      <>
+                        <button onClick={(e) => { e.preventDefault(); validateDelivery(o.id).then(r => { if (r.success) addToast("success", "Livraison validee ! Fonds liberes."); else addToast("error", r.error || "Erreur"); }); }}
+                          className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">check_circle</span>
+                          Valider
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); requestRevision(o.id, "Modifications demandees").then(r => { if (r.success) addToast("success", "Revision demandee"); else addToast("error", r.error || "Erreur"); }); }}
+                          className="px-3 py-1.5 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-lg hover:bg-orange-500/10 transition-all flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">edit_note</span>
+                          Revision
+                        </button>
+                      </>
+                    )}
+                    {o.status === "en_attente" && (
+                      <span className="text-[10px] text-amber-400 font-semibold">En attente du freelance (3j)</span>
+                    )}
+
                     <span className="material-symbols-outlined text-slate-500 text-lg">chevron_right</span>
                   </div>
                 </div>
