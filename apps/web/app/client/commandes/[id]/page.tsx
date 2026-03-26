@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useClientStore } from "@/store/client";
 import { useToastStore } from "@/store/toast";
-import { ordersApi, type ApiOrder } from "@/lib/api-client";
+import { ordersApi, reviewsApi, type ApiOrder } from "@/lib/api-client";
 import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
 
 // ---------------------------------------------------------------------------
@@ -63,10 +63,14 @@ export default function ClientOrderDetailPage() {
   // Action loading
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Chat
-  const [newMessage, setNewMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  // Review
+  const [reviewQualite, setReviewQualite] = useState(5);
+  const [reviewCommunication, setReviewCommunication] = useState(5);
+  const [reviewDelai, setReviewDelai] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
 
   // Sync orders on mount if needed
   useEffect(() => {
@@ -94,10 +98,14 @@ export default function ClientOrderDetailPage() {
   const order = storeOrder || localOrder;
   const isLoading = (loading.orders && orders.length === 0) || fetchLoading;
 
-  // Scroll chat to bottom when messages change
+  // Check existing review
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [order?.messages?.length]);
+    if (order?.status === "termine") {
+      reviewsApi.getByOrder(id).then((data) => {
+        if ((data.reviews ?? []).length > 0) setHasExistingReview(true);
+      }).catch(() => {});
+    }
+  }, [order?.status, id]);
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -177,20 +185,22 @@ export default function ClientOrderDetailPage() {
     }
   }
 
-  async function handleSendMessage() {
-    if (!newMessage.trim()) return;
-    setSendingMessage(true);
+  async function handleSubmitReview() {
+    setReviewSubmitting(true);
     try {
-      const updatedOrder = await ordersApi.sendMessage(id, {
-        content: newMessage,
-        type: "text",
+      await reviewsApi.create({
+        orderId: id,
+        qualite: reviewQualite,
+        communication: reviewCommunication,
+        delai: reviewDelai,
+        comment: reviewComment,
       });
-      setLocalOrder(updatedOrder);
-      setNewMessage("");
+      setReviewSubmitted(true);
+      addToast("success", "Avis publie avec succes !");
     } catch {
-      addToast("error", "Erreur lors de l'envoi du message");
+      addToast("error", "Erreur lors de la publication de l'avis");
     } finally {
-      setSendingMessage(false);
+      setReviewSubmitting(false);
     }
   }
 
@@ -396,105 +406,89 @@ export default function ClientOrderDetailPage() {
           </div>
         </div>
 
-        {/* Right column: chat */}
-        <div className="bg-neutral-dark rounded-xl border border-border-dark flex flex-col h-[700px]">
-          <div className="p-4 border-b border-border-dark flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
-              {(order.clientName || "??")
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .slice(0, 2)}
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-white">{order.clientName || "Client"}</p>
-              <p className="text-xs text-slate-400">Commande #{order.id.slice(-4)}</p>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {order.messages && order.messages.length > 0 ? (
-              order.messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={cn("flex", m.sender === "client" ? "justify-end" : "justify-start")}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[85%] px-4 py-2.5 text-sm leading-relaxed",
-                      m.sender === "client"
-                        ? "bg-primary text-background-dark rounded-2xl rounded-tr-none"
-                        : "bg-background-dark text-slate-200 rounded-2xl rounded-tl-none border border-border-dark",
-                    )}
-                  >
-                    {m.type === "file" ? (
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">attach_file</span>
-                        <span className="font-medium">{m.fileName || "Fichier"}</span>
-                        {m.fileSize && (
-                          <span className="text-xs opacity-60">({m.fileSize})</span>
-                        )}
-                      </div>
-                    ) : m.type === "system" ? (
-                      <p className="italic opacity-70">{m.content}</p>
-                    ) : (
-                      <p>{m.content}</p>
-                    )}
-                    <p
-                      className={cn(
-                        "text-[10px] mt-1 text-right",
-                        m.sender === "client" ? "text-background-dark/60" : "text-slate-500",
-                      )}
-                    >
-                      {m.senderName} --{" "}
-                      {new Date(m.timestamp).toLocaleTimeString("fr-FR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+        {/* Right column: review + info */}
+        <div className="space-y-6">
+          {/* Review section — after order is completed */}
+          {order.status === "termine" && !hasExistingReview && !reviewSubmitted && (
+            <div className="bg-neutral-dark rounded-xl border border-primary/30 p-6 space-y-5">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">rate_review</span>
+                Laisser un avis
+              </h3>
+              <p className="text-sm text-slate-400">Evaluez cette prestation sur 3 criteres.</p>
+              <div className="space-y-4">
+                {[
+                  { label: "Qualite", value: reviewQualite, setter: setReviewQualite, icon: "workspace_premium" },
+                  { label: "Communication", value: reviewCommunication, setter: setReviewCommunication, icon: "forum" },
+                  { label: "Delai", value: reviewDelai, setter: setReviewDelai, icon: "schedule" },
+                ].map(({ label, value, setter, icon }) => (
+                  <div key={label} className="bg-primary/5 rounded-xl border border-primary/10 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-primary text-sm">{icon}</span>
+                      <span className="text-sm font-bold">{label}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setter(star)} className="transition-transform hover:scale-110">
+                          <span className={cn("material-symbols-outlined text-2xl", star <= value ? "text-amber-400" : "text-slate-600")}
+                            style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10">
-                <span className="material-symbols-outlined text-3xl text-slate-600 block mb-2">
-                  chat
-                </span>
-                <p className="text-slate-500 text-sm">Aucun message pour le moment</p>
-                <p className="text-slate-600 text-xs mt-1">
-                  Envoyez un message pour demarrer la conversation
-                </p>
+                ))}
               </div>
-            )}
-            <div ref={chatEndRef} />
+              <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Partagez votre experience..." rows={3}
+                className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-slate-500" />
+              <button onClick={handleSubmitReview} disabled={reviewSubmitting}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 shadow-lg shadow-primary/20 transition-all">
+                {reviewSubmitting ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : <span className="material-symbols-outlined text-lg">send</span>}
+                {reviewSubmitting ? "Publication..." : "Publier l'avis"}
+              </button>
+            </div>
+          )}
+
+          {(reviewSubmitted || hasExistingReview) && order.status === "termine" && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 flex items-center gap-4">
+              <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
+              <div>
+                <p className="font-bold text-emerald-400">Avis publie</p>
+                <p className="text-sm text-slate-400">Merci pour votre evaluation !</p>
+              </div>
+            </div>
+          )}
+
+          {/* Freelance info */}
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">person</span>
+              Freelance
+            </h4>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
+                {(order.freelanceName || "FL").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">{order.freelanceName || "Freelance"}</p>
+                <Link href="/client/messages" className="text-xs text-primary hover:underline">Envoyer un message</Link>
+              </div>
+            </div>
           </div>
 
-          <div className="p-3 border-t border-border-dark flex items-center gap-2">
-            <button className="text-slate-500 hover:text-primary">
-              <span className="material-symbols-outlined">attach_file</span>
-            </button>
-            <input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Votre message..."
-              disabled={sendingMessage}
-              className="flex-1 px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50 disabled:opacity-50"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={sendingMessage || !newMessage.trim()}
-              className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-background-dark hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:hover:scale-100"
-            >
-              <span className="material-symbols-outlined text-lg">
-                {sendingMessage ? "progress_activity" : "send"}
-              </span>
-            </button>
+          {/* Order summary */}
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">info</span>
+              Resume
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-slate-400">Montant</span><span className="font-bold">{(order.amount ?? 0).toLocaleString("fr-FR")} EUR</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Forfait</span><span className="capitalize">{order.packageType}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Progression</span><span className="text-primary font-bold">{order.progress}%</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Revisions</span><span>{order.revisionsLeft} restante(s)</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Deadline</span><span>{new Date(order.deadline).toLocaleDateString("fr-FR")}</span></div>
+            </div>
           </div>
         </div>
       </div>

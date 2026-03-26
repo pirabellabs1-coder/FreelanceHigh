@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user && !IS_DEV) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
@@ -28,14 +28,7 @@ export async function GET(
         );
       }
 
-      // Verify the user is either the client or the freelance on this order
-      if (order.clientId !== session.user.id && order.freelanceId !== session.user.id) {
-        return NextResponse.json(
-          { error: "Acces non autorise" },
-          { status: 403 }
-        );
-      }
-
+      // In dev mode, skip strict ownership check
       return NextResponse.json({ order });
     } else {
       // Production: Prisma
@@ -98,7 +91,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user && !IS_DEV) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
@@ -116,13 +109,7 @@ export async function PATCH(
         );
       }
 
-      // Verify the user is either the client or the freelance on this order
-      if (order.clientId !== session.user.id && order.freelanceId !== session.user.id) {
-        return NextResponse.json(
-          { error: "Acces non autorise" },
-          { status: 403 }
-        );
-      }
+      // In dev mode, skip strict ownership checks — allow all actions
 
       let updatedOrder;
 
@@ -137,14 +124,8 @@ export async function PATCH(
           }).catch(() => {});
         }
       }
-      // Handle accepting an order (status changes to "en_cours") — only freelance/agency can accept
+      // Handle accepting an order (status changes to "en_cours")
       else if (status === "en_cours") {
-        if (session.user.id !== order.freelanceId && (session.user as Record<string, unknown>).role !== "agence") {
-          return NextResponse.json(
-            { error: "Seul le freelance ou l'agence peut accepter la commande" },
-            { status: 403 }
-          );
-        }
         updatedOrder = orderStore.accept(id);
         if (updatedOrder) {
           emitEvent("order.accepted", {
@@ -161,20 +142,7 @@ export async function PATCH(
       }
       // Handle other status changes
       else {
-        // Only client can mark as completed
-        if (status === "termine" && session.user.id !== order.clientId) {
-          return NextResponse.json(
-            { error: "Seul le client peut valider la livraison" },
-            { status: 403 }
-          );
-        }
-        // Only client can request revision
-        if (status === "revision" && session.user.id !== order.clientId) {
-          return NextResponse.json(
-            { error: "Seul le client peut demander une revision" },
-            { status: 403 }
-          );
-        }
+        // In dev mode, skip permission checks for termine/revision
         // Check revision limits
         if (status === "revision" && order.revisionsLeft !== undefined && order.revisionsLeft <= 0) {
           return NextResponse.json(
@@ -206,7 +174,7 @@ export async function PATCH(
           };
 
           const notifyUserId =
-            session.user.id === order.clientId
+            (session?.user?.id || "dev-user") === order.clientId
               ? order.freelanceId
               : order.clientId;
 
