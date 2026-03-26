@@ -246,6 +246,20 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
     try {
       const { orders } = await ordersApi.list();
       set({ orders });
+      // Auto-cancel/auto-validate stale orders — fire and forget
+      Promise.allSettled([
+        fetch("/api/orders/auto-cancel", { method: "POST" }),
+        fetch("/api/orders/auto-validate", { method: "POST" }),
+      ]).then(async (results) => {
+        const c = results[0].status === "fulfilled" ? await results[0].value.json().catch(() => null) : null;
+        const v = results[1].status === "fulfilled" ? await results[1].value.json().catch(() => null) : null;
+        if ((c?.count > 0) || (v?.count > 0)) {
+          try {
+            const fresh = await ordersApi.list();
+            set({ orders: fresh.orders });
+          } catch { /* ignore */ }
+        }
+      }).catch(() => {});
     } catch { /* silently fail */ }
   },
 

@@ -238,6 +238,22 @@ export const useDashboardStore = create<DashboardState>()(
           }
 
           set(updates);
+
+          // Auto-cancel stale orders (3 days) + auto-validate (7 days) — fire and forget
+          Promise.allSettled([
+            fetch("/api/orders/auto-cancel", { method: "POST" }),
+            fetch("/api/orders/auto-validate", { method: "POST" }),
+          ]).then(async (results) => {
+            const cancelRes = results[0].status === "fulfilled" ? await results[0].value.json().catch(() => null) : null;
+            const validateRes = results[1].status === "fulfilled" ? await results[1].value.json().catch(() => null) : null;
+            if ((cancelRes?.count > 0) || (validateRes?.count > 0)) {
+              // Re-fetch orders if any were auto-cancelled/validated
+              try {
+                const freshOrders = await ordersApi.list();
+                set({ orders: (freshOrders?.orders ?? []).map(mapApiOrderToLocal) });
+              } catch { /* ignore */ }
+            }
+          }).catch(() => {});
         } catch (err) {
           console.error("[Dashboard Sync] Error:", err);
           set({ isLoading: false });

@@ -255,58 +255,139 @@ export default function ClientOrderDetailPage() {
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/* BANNER D'ACTION — visible en haut selon le statut          */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      {order.status === "en_attente" && (
-        <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-amber-400 text-3xl">schedule</span>
-          </div>
-          <div>
-            <p className="text-lg font-black text-white">En attente d&apos;acceptation</p>
-            <p className="text-sm text-slate-400">Le freelance n&apos;a pas encore accepte votre commande.</p>
-          </div>
-        </div>
-      )}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* ETAPES D'ACTION CLIENT — Ligne de progression + boutons      */}
+      {/* TOUJOURS VISIBLE                                              */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-5 space-y-4">
+        <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
+          <span className="material-symbols-outlined text-primary">timeline</span>
+          Suivi de la commande
+        </h3>
 
-      {order.status === "en_cours" && (
-        <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-blue-400 text-3xl">construction</span>
+        <div className="flex items-center gap-0 overflow-x-auto pb-2">
+          {/* Step 1: Commande passee */}
+          <div className="flex items-center flex-shrink-0">
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 bg-emerald-500 border-emerald-500 text-white">
+                <span className="material-symbols-outlined text-lg">check</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-400 text-center whitespace-nowrap">Commandee</span>
+            </div>
+            <div className="w-8 h-0.5 mx-1 bg-emerald-500" />
           </div>
-          <div>
-            <p className="text-lg font-black text-white">Travail en cours</p>
-            <p className="text-sm text-slate-400">Le freelance travaille sur votre commande. Progression : {order.progress}%</p>
-          </div>
-        </div>
-      )}
 
-      {order.status === "livre" && (
-        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
-            </div>
-            <div>
-              <p className="text-lg font-black text-white">Commande livree !</p>
-              <p className="text-sm text-slate-400">Verifiez le travail et validez ou demandez une revision.</p>
-            </div>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <button onClick={() => setShowValidateModal(true)} disabled={actionLoading}
-              className="flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
-              {actionLoading ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">check_circle</span>}
-              {actionLoading ? "Validation..." : "Valider la livraison"}
-            </button>
-            <button onClick={() => setShowRevisionModal(true)} disabled={actionLoading}
-              className="flex items-center justify-center gap-3 px-8 py-4 border-2 border-orange-500/30 text-orange-400 text-base font-black rounded-xl hover:bg-orange-500/10 disabled:opacity-50 transition-all">
-              <span className="material-symbols-outlined text-2xl">edit_note</span>
-              Demander une revision
-            </button>
-          </div>
+          {/* Step 2: Acceptation freelance */}
+          {(() => {
+            const done = ["en_cours", "livre", "revision", "termine"].includes(order.status);
+            const active = order.status === "en_attente";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-amber-500/20 border-amber-500/50 text-amber-400 animate-pulse" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "hourglass_top"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", active ? "text-amber-400" : done ? "text-emerald-400" : "text-slate-500")}>
+                    {active ? "En attente" : "Acceptee"}
+                  </span>
+                  {active && <span className="text-[9px] text-amber-400/70 font-semibold">3j max</span>}
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
+
+          {/* Step 3: Travail en cours */}
+          {(() => {
+            const done = ["livre", "termine"].includes(order.status);
+            const active = order.status === "en_cours" || order.status === "revision";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-blue-500 border-blue-500 text-white" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "construction"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", active ? "text-blue-400" : done ? "text-emerald-400" : "text-slate-500")}>
+                    {active ? "En cours" : done ? "Travaille" : "Travail"}
+                  </span>
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
+
+          {/* Step 4: Livre */}
+          {(() => {
+            const done = order.status === "termine";
+            const active = order.status === "livre";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-primary border-primary text-white animate-pulse" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "local_shipping"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", active ? "text-primary" : done ? "text-emerald-400" : "text-slate-500")}>Livre</span>
+                  {active && (
+                    <div className="flex gap-1.5 mt-1">
+                      <button onClick={() => setShowValidateModal(true)} disabled={actionLoading}
+                        className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black rounded-lg hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-1">
+                        {actionLoading ? <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-xs">check_circle</span>}
+                        Valider
+                      </button>
+                      <button onClick={() => setShowRevisionModal(true)} disabled={actionLoading}
+                        className="px-3 py-1.5 border border-orange-500/30 text-orange-400 text-[10px] font-bold rounded-lg hover:bg-orange-500/10 disabled:opacity-50 transition-all flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">edit_note</span>
+                        Revision
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
+
+          {/* Step 5: Termine */}
+          {(() => {
+            const done = order.status === "termine";
+            return (
+              <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                  done ? "bg-emerald-500 border-emerald-500 text-white" :
+                  "bg-slate-800 border-slate-600 text-slate-500"
+                )}>
+                  <span className="material-symbols-outlined text-lg">{done ? "celebration" : "flag"}</span>
+                </div>
+                <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", done ? "text-emerald-400" : "text-slate-500")}>Termine</span>
+                {done && <span className="text-[9px] text-emerald-400 font-semibold">Fonds liberes</span>}
+              </div>
+            );
+          })()}
         </div>
-      )}
+
+        {order.status === "annule" && (
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg text-red-400 text-sm font-bold">
+            <span className="material-symbols-outlined">cancel</span>
+            Commande annulee
+          </div>
+        )}
+      </div>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

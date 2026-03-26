@@ -146,6 +146,42 @@ export async function POST(request: NextRequest) {
         description,
         validityDays: Number(validityDays) || 14,
       });
+
+      // Send offer message in conversation with client
+      try {
+        const { conversationStore } = await import("@/lib/dev/data-store");
+        const clientParticipantId = resolvedClientId || `email:${clientEmail}`;
+        // Find or create conversation
+        let conv = conversationStore.getByUser(session.user.id)
+          .find((c) => c.participants.includes(clientParticipantId) || c.contactName === client);
+        if (!conv) {
+          conv = conversationStore.create({
+            participants: [session.user.id, clientParticipantId],
+            contactName: client,
+            contactAvatar: client.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
+            contactRole: "client",
+          });
+        }
+        conversationStore.sendMessage(
+          conv.id, session.user.id,
+          `Offre personnalisee : ${title}`,
+          "offer", undefined, undefined, undefined, undefined, undefined,
+          {
+            offerId: offre.id,
+            title: offre.title,
+            amount: offre.amount,
+            delay: offre.delay,
+            revisions: offre.revisions,
+            description: offre.description,
+            status: "en_attente",
+            validityDays: offre.validityDays,
+            expiresAt: offre.expiresAt,
+          }
+        );
+      } catch (e) {
+        console.error("[Offres POST] Failed to send offer message:", e);
+      }
+
       return NextResponse.json({ offre }, { status: 201 });
     }
 

@@ -307,7 +307,7 @@ export interface ChatMsg {
   sender: "me" | "them";
   content: string;
   timestamp: string;
-  type: "text" | "image" | "file" | "voice" | "call_audio" | "call_video" | "call_missed" | "system";
+  type: "text" | "image" | "file" | "voice" | "call_audio" | "call_video" | "call_missed" | "system" | "offer";
   fileName?: string;
   fileSize?: string;
   fileUrl?: string;
@@ -320,6 +320,17 @@ export interface ChatMsg {
   editedAt?: string;
   deletedAt?: string;
   linkPreviewData?: { title: string; description: string; image?: string; domain: string; url?: string }[];
+  offerData?: {
+    offerId: string;
+    title: string;
+    amount: number;
+    delay: string;
+    revisions: number;
+    description: string;
+    status: string;
+    validityDays: number;
+    expiresAt: string;
+  };
 }
 
 export interface StoredReview {
@@ -1046,6 +1057,52 @@ export const orderStore = {
     writeJson(ORDERS_FILE, orders);
     return orders[idx];
   },
+
+  autoCancelStale(): string[] {
+    const orders = this.getAll();
+    const now = Date.now();
+    const THREE_DAYS_MS = 72 * 60 * 60 * 1000;
+    const cancelled: string[] = [];
+    for (const order of orders) {
+      if (order.status === "en_attente" && (now - new Date(order.createdAt).getTime()) > THREE_DAYS_MS) {
+        order.status = "annule";
+        order.updatedAt = new Date().toISOString();
+        order.timeline.push({
+          id: `t${Date.now()}_${order.id}`, type: "cancelled",
+          title: "Commande annulee automatiquement",
+          description: "Le freelance n'a pas accepte la commande dans le delai de 3 jours.",
+          timestamp: new Date().toISOString(),
+        });
+        cancelled.push(order.id);
+      }
+    }
+    if (cancelled.length > 0) writeJson(ORDERS_FILE, orders);
+    return cancelled;
+  },
+
+  autoValidateStale(): string[] {
+    const orders = this.getAll();
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const validated: string[] = [];
+    for (const order of orders) {
+      if (order.status === "livre" && order.deliveredAt && (now - new Date(order.deliveredAt).getTime()) > SEVEN_DAYS_MS) {
+        order.status = "termine";
+        order.completedAt = new Date().toISOString();
+        order.progress = 100;
+        order.updatedAt = new Date().toISOString();
+        order.timeline.push({
+          id: `t${Date.now()}_${order.id}`, type: "completed",
+          title: "Commande validee automatiquement",
+          description: "Le client n'a pas repondu dans le delai de 7 jours. Les fonds ont ete liberes.",
+          timestamp: new Date().toISOString(),
+        });
+        validated.push(order.id);
+      }
+    }
+    if (validated.length > 0) writeJson(ORDERS_FILE, orders);
+    return validated;
+  },
 };
 
 // ── Transaction Store ──────────────────────────────────────────────────────
@@ -1730,7 +1787,7 @@ export const conversationStore = {
     return this.getAll().find((c) => c.id === id) ?? null;
   },
 
-  sendMessage(convId: string, senderId: string, content: string, type: "text" | "image" | "file" = "text", fileName?: string, fileSize?: string, linkPreviewData?: { title: string; description: string; image?: string; domain: string; url?: string }[], fileUrl?: string, fileType?: string): StoredConversation | null {
+  sendMessage(convId: string, senderId: string, content: string, type: "text" | "image" | "file" | "offer" | "system" = "text", fileName?: string, fileSize?: string, linkPreviewData?: { title: string; description: string; image?: string; domain: string; url?: string }[], fileUrl?: string, fileType?: string, offerData?: ChatMsg["offerData"]): StoredConversation | null {
     const convs = this.getAll();
     const idx = convs.findIndex((c) => c.id === convId);
     if (idx === -1) return null;
@@ -1738,7 +1795,7 @@ export const conversationStore = {
     const msg: ChatMsg = {
       id: `cm_${Date.now().toString(36)}`,
       senderId,
-      sender: "me",
+      sender: type === "system" ? "them" : "me",
       content,
       timestamp: now,
       type,
@@ -1746,8 +1803,9 @@ export const conversationStore = {
       fileSize,
       fileUrl,
       fileType,
-      read: true,
+      read: type === "system" ? false : true,
       linkPreviewData: linkPreviewData && linkPreviewData.length > 0 ? linkPreviewData : undefined,
+      offerData,
     };
     convs[idx].messages.push(msg);
     convs[idx].lastMessage = content;

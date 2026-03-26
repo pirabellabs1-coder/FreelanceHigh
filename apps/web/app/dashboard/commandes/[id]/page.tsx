@@ -322,70 +322,154 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/* BANNER D'ACTION PRINCIPAL — toujours visible en haut     */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      {order.status === "en_attente" && (
-        <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-amber-400 text-3xl">schedule</span>
-            </div>
-            <div>
-              <p className="text-lg font-black text-white">Nouvelle commande en attente</p>
-              <p className="text-sm text-slate-400">Acceptez cette commande pour commencer le travail.</p>
-            </div>
-          </div>
-          <button onClick={() => setShowAcceptModal(true)} disabled={accepting}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white text-base font-black rounded-xl hover:bg-primary/90 disabled:opacity-50 shadow-xl shadow-primary/30 transition-all hover:scale-105 active:scale-95">
-            {accepting ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">play_arrow</span>}
-            {accepting ? "Acceptation..." : "Accepter la commande"}
-          </button>
-        </div>
-      )}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* ETAPES D'ACTION — Ligne de progression avec boutons d'action */}
+      {/* TOUJOURS VISIBLE — impossible a manquer                       */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-5 space-y-4">
+        <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
+          <span className="material-symbols-outlined text-primary">timeline</span>
+          Actions de la commande
+        </h3>
 
-      {order.status === "en_cours" && (
-        <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-blue-400 text-3xl">construction</span>
-            </div>
-            <div>
-              <p className="text-lg font-black text-white">Commande en cours</p>
-              <p className="text-sm text-slate-400">Quand le travail est termine, livrez la commande au client.</p>
-            </div>
-          </div>
-          <button onClick={() => setShowDeliverModal(true)} disabled={delivering}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-emerald-500 text-white text-base font-black rounded-xl hover:bg-emerald-600 disabled:opacity-50 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95">
-            {delivering ? <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-2xl">local_shipping</span>}
-            {delivering ? "Livraison..." : "Livrer la commande"}
-          </button>
-        </div>
-      )}
+        {/* Step line */}
+        <div className="flex items-center gap-0 overflow-x-auto pb-2">
+          {/* Step 1: Accepter */}
+          {(() => {
+            const done = ["en_cours", "livre", "revision", "termine"].includes(order.status);
+            const active = order.status === "en_attente";
+            const cancelled = order.status === "annule";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-primary border-primary text-white animate-pulse" :
+                    cancelled ? "bg-red-500/20 border-red-500/30 text-red-400" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : cancelled ? "cancel" : "play_arrow"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", active ? "text-primary" : done ? "text-emerald-400" : "text-slate-500")}>Accepter</span>
+                  {active && (
+                    <button onClick={() => setShowAcceptModal(true)} disabled={accepting}
+                      className="mt-1 px-4 py-2 bg-primary text-white text-xs font-black rounded-lg hover:bg-primary/90 disabled:opacity-50 shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5">
+                      {accepting ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-sm">play_arrow</span>}
+                      {accepting ? "..." : "Accepter"}
+                    </button>
+                  )}
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
 
-      {order.status === "livre" && (
-        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-emerald-400 text-3xl">local_shipping</span>
-          </div>
-          <div>
-            <p className="text-lg font-black text-white">Commande livree</p>
-            <p className="text-sm text-slate-400">En attente de validation par le client. Vous serez notifie une fois la livraison validee.</p>
-          </div>
-        </div>
-      )}
+          {/* Step 2: Travailler */}
+          {(() => {
+            const done = ["livre", "termine"].includes(order.status);
+            const active = order.status === "en_cours" || order.status === "revision";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-blue-500 border-blue-500 text-white" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "construction"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", active ? "text-blue-400" : done ? "text-emerald-400" : "text-slate-500")}>En cours</span>
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
 
-      {order.status === "termine" && (
-        <div className="bg-emerald-500/10 border-2 border-emerald-500/30 rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-emerald-400 text-3xl">celebration</span>
-          </div>
-          <div>
-            <p className="text-lg font-black text-emerald-400">Commande terminee</p>
-            <p className="text-sm text-slate-400">Le client a valide la livraison. Les fonds ont ete liberes.</p>
-          </div>
+          {/* Step 3: Livrer */}
+          {(() => {
+            const done = ["livre", "termine"].includes(order.status);
+            const active = order.status === "en_cours" || order.status === "revision";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "local_shipping"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", done ? "text-emerald-400" : active ? "text-emerald-400" : "text-slate-500")}>Livrer</span>
+                  {active && (
+                    <button onClick={() => setShowDeliverModal(true)} disabled={delivering}
+                      className="mt-1 px-4 py-2 bg-emerald-500 text-white text-xs font-black rounded-lg hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5">
+                      {delivering ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span> : <span className="material-symbols-outlined text-sm">local_shipping</span>}
+                      {delivering ? "..." : "Livrer"}
+                    </button>
+                  )}
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", order.status === "termine" ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
+
+          {/* Step 4: Validation client */}
+          {(() => {
+            const done = order.status === "termine";
+            const active = order.status === "livre";
+            return (
+              <div className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    done ? "bg-emerald-500 border-emerald-500 text-white" :
+                    active ? "bg-amber-500/20 border-amber-500/50 text-amber-400 animate-pulse" :
+                    "bg-slate-800 border-slate-600 text-slate-500"
+                  )}>
+                    <span className="material-symbols-outlined text-lg">{done ? "check" : "hourglass_top"}</span>
+                  </div>
+                  <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", done ? "text-emerald-400" : active ? "text-amber-400" : "text-slate-500")}>
+                    {active ? "Attente client" : done ? "Valide" : "Validation"}
+                  </span>
+                  {active && (
+                    <span className="text-[9px] text-amber-400/70 font-semibold">7j pour valider</span>
+                  )}
+                </div>
+                <div className={cn("w-8 h-0.5 mx-1", done ? "bg-emerald-500" : "bg-slate-700")} />
+              </div>
+            );
+          })()}
+
+          {/* Step 5: Termine */}
+          {(() => {
+            const done = order.status === "termine";
+            return (
+              <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                  done ? "bg-emerald-500 border-emerald-500 text-white" :
+                  "bg-slate-800 border-slate-600 text-slate-500"
+                )}>
+                  <span className="material-symbols-outlined text-lg">{done ? "celebration" : "flag"}</span>
+                </div>
+                <span className={cn("text-[10px] font-bold text-center whitespace-nowrap", done ? "text-emerald-400" : "text-slate-500")}>Termine</span>
+                {done && <span className="text-[9px] text-emerald-400 font-semibold">Fonds liberes</span>}
+              </div>
+            );
+          })()}
         </div>
-      )}
+
+        {/* Status message */}
+        {order.status === "annule" && (
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg text-red-400 text-sm font-bold">
+            <span className="material-symbols-outlined">cancel</span>
+            Commande annulee
+          </div>
+        )}
+      </div>
 
       {/* Info Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

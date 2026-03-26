@@ -54,6 +54,37 @@ export async function POST(
         files: [],
       });
 
+      // Send system message in conversation
+      try {
+        const { conversationStore } = await import("@/lib/dev/data-store");
+        // Find conversation between freelance and client
+        const convs = conversationStore.getByUser(session.user.id);
+        const conv = convs.find((c) =>
+          c.participants.includes(offre.freelanceId) ||
+          c.messages.some((m) => m.offerData?.offerId === offreId)
+        );
+        if (conv) {
+          // Update offer message status to acceptee
+          const allConvs = conversationStore.getAll();
+          const cIdx = allConvs.findIndex((c) => c.id === conv.id);
+          if (cIdx !== -1) {
+            for (const msg of allConvs[cIdx].messages) {
+              if (msg.offerData?.offerId === offreId) {
+                msg.offerData.status = "acceptee";
+              }
+            }
+          }
+          // Send system message
+          conversationStore.sendMessage(
+            conv.id, "system",
+            `Offre acceptee ! Commande #${order.id} creee. Le freelance dispose de 3 jours pour commencer le travail.`,
+            "system"
+          );
+        }
+      } catch (e) {
+        console.error("[Offres accept] Failed to send system message:", e);
+      }
+
       return NextResponse.json({ ok: true, order });
     }
 

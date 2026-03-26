@@ -222,6 +222,7 @@ export function MessagingLayout({
           <ChatPanel
             conversation={selectedConv}
             currentUserId={userId}
+            currentUserRole={userRole}
             onSendMessage={(content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath) => {
               if (selectedId) {
                 sendMessage(selectedId, content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath);
@@ -245,6 +246,29 @@ export function MessagingLayout({
                 ? (content) => { if (selectedId) addSystemMessage(selectedId, content); }
                 : undefined
             }
+            onAcceptOffer={async (offerId) => {
+              try {
+                const res = await fetch(`/api/offres/${offerId}/accept`, { method: "POST" });
+                if (!res.ok) throw new Error("Erreur acceptation");
+                // Reload messages to get the system message + updated offer status
+                if (selectedId) {
+                  setTimeout(() => loadMessages(selectedId), 500);
+                }
+              } catch (e) {
+                throw e;
+              }
+            }}
+            onRefuseOffer={async (offerId) => {
+              try {
+                const res = await fetch(`/api/offres/${offerId}/refuse`, { method: "POST" });
+                if (!res.ok) throw new Error("Erreur refus");
+                if (selectedId) {
+                  setTimeout(() => loadMessages(selectedId), 500);
+                }
+              } catch (e) {
+                throw e;
+              }
+            }}
             onSendOffer={userRole === "freelance" || userRole === "agence" ? async (data) => {
               if (!selectedId) return false;
               try {
@@ -264,7 +288,8 @@ export function MessagingLayout({
                   }),
                 });
                 if (!res.ok) return false;
-                sendMessage(selectedId, `Offre personnalisee : ${data.title} — ${data.amount}EUR (${data.delay}, ${data.revisions} revision(s))\n${data.description}`, "text");
+                // Reload messages to see the offer card (sent by API)
+                setTimeout(() => loadMessages(selectedId), 500);
                 return true;
               } catch { return false; }
             } : undefined}
