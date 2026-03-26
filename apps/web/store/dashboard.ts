@@ -956,7 +956,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
     }),
     {
-      name: "freelancehigh-dashboard-v2",
+      name: "freelancehigh-dashboard-v3",
       partialize: (state) => ({
         services: state.services,
         orders: state.orders,

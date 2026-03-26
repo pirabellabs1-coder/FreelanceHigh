@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
-import { reviewsApi } from "@/lib/api-client";
+import { reviewsApi, ordersApi, type ApiOrder } from "@/lib/api-client";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   en_attente: { label: "En attente", color: "bg-amber-500/10 text-amber-400", icon: "schedule" },
@@ -76,10 +76,47 @@ export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
-  const { orders, updateOrderStatus, addOrderMessage, addOrderFile, apiAcceptOrder, apiDeliverOrder, apiSendOrderMessage } = useDashboardStore();
+  const { orders, isLoading, syncFromApi, updateOrderStatus, addOrderMessage, addOrderFile, apiAcceptOrder, apiDeliverOrder, apiSendOrderMessage } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
 
-  const order = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+  // Direct API fetch for this specific order (fallback if store is stale)
+  const [localOrder, setLocalOrder] = useState<ApiOrder | null>(null);
+  const [fetchLoading, setFetchLoading] = useState(false);
+
+  // Sync from API on mount to ensure fresh data
+  useEffect(() => { syncFromApi(); }, [syncFromApi]);
+
+  const storeOrder = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+
+  // Direct fetch if not found in store
+  useEffect(() => {
+    if (!storeOrder && !fetchLoading && !localOrder) {
+      setFetchLoading(true);
+      ordersApi.get(orderId)
+        .then((data) => setLocalOrder(data))
+        .catch(() => {})
+        .finally(() => setFetchLoading(false));
+    }
+  }, [storeOrder, orderId, fetchLoading, localOrder]);
+
+  const order = storeOrder || (localOrder ? {
+    id: localOrder.id,
+    serviceTitle: localOrder.serviceTitle,
+    category: localOrder.category,
+    clientName: localOrder.clientName,
+    status: localOrder.status as "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule",
+    amount: localOrder.amount,
+    packageType: localOrder.packageType,
+    deadline: localOrder.deadline,
+    progress: localOrder.progress,
+    revisionsLeft: localOrder.revisionsLeft,
+    messages: localOrder.messages || [],
+    timeline: localOrder.timeline || [],
+    files: localOrder.files || [],
+    deliveredAt: localOrder.deliveredAt,
+  } : null) as typeof storeOrder;
+
+  const pageLoading = (isLoading && orders.length === 0) || fetchLoading;
   const [activeTab, setActiveTab] = useState<"chat" | "fichiers">("chat");
   const [message, setMessage] = useState("");
   const [accepting, setAccepting] = useState(false);
@@ -133,6 +170,16 @@ export default function OrderDetailPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [order?.messages]);
+
+  if (pageLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-4 w-32 bg-border-dark rounded" />
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 h-28" />
+        <div className="bg-neutral-dark rounded-xl border border-border-dark p-6 h-40" />
+      </div>
+    );
+  }
 
   if (!order) {
     return (
