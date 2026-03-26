@@ -28,6 +28,49 @@ const TIMELINE_ICONS: Record<string, { icon: string; color: string }> = {
   message: { icon: "chat_bubble", color: "text-slate-400" },
 };
 
+// Interactive progress slider for freelance
+function ProgressSlider({ orderId, currentProgress }: { orderId: string; currentProgress: number }) {
+  const { apiUpdateProgress } = useDashboardStore();
+  const addToast = useToastStore((s) => s.addToast);
+  const [value, setValue] = useState(currentProgress);
+  const [saving, setSaving] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { setValue(currentProgress); }, [currentProgress]);
+
+  function handleChange(newVal: number) {
+    setValue(newVal);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSaving(true);
+      await apiUpdateProgress(orderId, newVal);
+      addToast("success", `Progression mise a jour : ${newVal}%`);
+      setSaving(false);
+    }, 600);
+  }
+
+  const milestones = [0, 25, 50, 75, 100];
+  return (
+    <div className="mt-1">
+      <div className="flex items-center gap-2">
+        <p className="text-lg font-bold text-primary">{value}%</p>
+        {saving && <span className="material-symbols-outlined animate-spin text-xs text-primary">progress_activity</span>}
+      </div>
+      <input type="range" min={0} max={100} step={5} value={value}
+        onChange={(e) => handleChange(Number(e.target.value))}
+        className="w-full h-1.5 mt-1 accent-primary cursor-pointer" />
+      <div className="flex justify-between mt-0.5">
+        {milestones.map((m) => (
+          <button key={m} onClick={() => handleChange(m)}
+            className={cn("text-[9px] font-bold px-1 rounded", value >= m ? "text-primary" : "text-slate-600")}>
+            {m}%
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -227,7 +270,11 @@ export default function OrderDetailPage() {
         </div>
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
           <p className="text-xs text-slate-500 font-semibold">Progression</p>
-          <p className="text-lg font-bold mt-1 text-primary">{order.progress}%</p>
+          {order.status === "en_cours" || order.status === "revision" ? (
+            <ProgressSlider orderId={order.id} currentProgress={order.progress} />
+          ) : (
+            <p className="text-lg font-bold mt-1 text-primary">{order.progress}%</p>
+          )}
         </div>
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
           <p className="text-xs text-slate-500 font-semibold">Revisions</p>

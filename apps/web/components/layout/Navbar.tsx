@@ -2,16 +2,29 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useCurrencyStore, CURRENCIES, type Currency } from "@/store/currency";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
+const ROLE_DASHBOARDS: Record<string, { href: string; label: string; icon: string }> = {
+  freelance: { href: "/dashboard", label: "Mon Dashboard", icon: "dashboard" },
+  client: { href: "/client", label: "Espace Client", icon: "storefront" },
+  agence: { href: "/agence", label: "Espace Agence", icon: "business" },
+  admin: { href: "/admin", label: "Administration", icon: "admin_panel_settings" },
+};
+
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { currency, setCurrency } = useCurrencyStore();
   const t = useTranslations("navbar");
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated" && !!session?.user;
+  const userRole = (session?.user as Record<string, unknown>)?.role as string || "freelance";
+  const dashboardInfo = ROLE_DASHBOARDS[userRole] || ROLE_DASHBOARDS.freelance;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -25,7 +38,9 @@ export function Navbar() {
         {/* Nav desktop */}
         <nav className="hidden md:flex flex-1 justify-center gap-8">
           <Link href="/explorer" className="text-sm font-semibold hover:text-primary transition-colors">{t("explorer")}</Link>
-          <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">{t("devenir_freelance")}</Link>
+          {!isLoggedIn && (
+            <Link href="/inscription" className="text-sm font-semibold hover:text-primary transition-colors">{t("devenir_freelance")}</Link>
+          )}
           {process.env.NEXT_PUBLIC_FORMATIONS_ENABLED !== "false" && (
             <Link href="/formations" className="text-sm font-semibold hover:text-primary transition-colors">{t("formations")}</Link>
           )}
@@ -64,20 +79,61 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Auth buttons — hidden on mobile, shown in mobile menu */}
+          {/* Auth section — adapts to login state */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/connexion"
-              className="text-sm font-bold hover:text-primary transition-colors px-2 py-2"
-            >
-              {t("connexion")}
-            </Link>
-            <Link
-              href="/inscription"
-              className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all"
-            >
-              {t("inscription")}
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href={dashboardInfo.href}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-all">
+                  <span className="material-symbols-outlined text-lg">{dashboardInfo.icon}</span>
+                  {dashboardInfo.label}
+                </Link>
+                <div className="relative">
+                  <button onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary text-xs font-bold">
+                      {(session.user.name || session.user.email || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <span className="material-symbols-outlined text-sm text-slate-400">expand_more</span>
+                  </button>
+                  {profileOpen && (
+                    <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 p-2"
+                      onMouseLeave={() => setProfileOpen(false)}>
+                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+                        <p className="text-sm font-bold truncate">{session.user.name || "Utilisateur"}</p>
+                        <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
+                      </div>
+                      <Link href={dashboardInfo.href} onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold hover:bg-primary/10 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-lg">{dashboardInfo.icon}</span>
+                        {dashboardInfo.label}
+                      </Link>
+                      <Link href="/dashboard/parametres" onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold hover:bg-primary/10 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-lg">settings</span>
+                        Parametres
+                      </Link>
+                      <button onClick={() => signOut({ callbackUrl: "/" })}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                        <span className="material-symbols-outlined text-lg">logout</span>
+                        Deconnexion
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href="/connexion"
+                  className="text-sm font-bold hover:text-primary transition-colors px-2 py-2">
+                  {t("connexion")}
+                </Link>
+                <Link href="/inscription"
+                  className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all">
+                  {t("inscription")}
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -136,8 +192,35 @@ export function Navbar() {
           </div>
 
           <div className="flex flex-col gap-2 pt-2 border-t border-primary/20">
-            <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>{t("connexion")}</Link>
-            <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>{t("inscription")}</Link>
+            {isLoggedIn ? (
+              <>
+                <div className="flex items-center gap-3 px-3 py-2 mb-1">
+                  <div className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary text-sm font-bold">
+                    {(session.user.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{session.user.name || "Utilisateur"}</p>
+                    <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
+                  </div>
+                </div>
+                <Link href={dashboardInfo.href}
+                  className="flex items-center gap-2 px-3 py-2.5 bg-primary/10 text-primary rounded-lg text-sm font-bold"
+                  onClick={() => setMobileOpen(false)}>
+                  <span className="material-symbols-outlined text-lg">{dashboardInfo.icon}</span>
+                  {dashboardInfo.label}
+                </Link>
+                <button onClick={() => { signOut({ callbackUrl: "/" }); setMobileOpen(false); }}
+                  className="flex items-center justify-center gap-2 text-sm font-bold text-red-500 py-2">
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                  Deconnexion
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>{t("connexion")}</Link>
+                <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>{t("inscription")}</Link>
+              </>
+            )}
           </div>
         </div>
       )}

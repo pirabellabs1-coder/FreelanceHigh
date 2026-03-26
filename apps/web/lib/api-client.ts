@@ -586,16 +586,29 @@ export interface ApiCertificationQuestion {
   id: string;
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
 }
 
 export interface ApiCertificationResult {
   id: string;
   certificationId: string;
+  certificationName?: string;
+  certificationCategory?: string;
   score: number;
   passed: boolean;
   date: string;
   answers: number[];
+  totalQuestions?: number;
+  correctCount?: number;
+  questionResults?: {
+    questionId: string;
+    question: string;
+    options: string[];
+    userAnswer: number;
+    correctAnswer: number;
+    isCorrect: boolean;
+  }[];
+  certificateId?: string | null;
 }
 
 export const certificationsApi = {

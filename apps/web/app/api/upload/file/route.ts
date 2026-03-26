@@ -6,6 +6,8 @@ import {
   type StorageBucket,
 } from "@/lib/supabase-storage";
 
+const IS_DEV = process.env.DEV_MODE === "true";
+
 const MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
 // Magic bytes pour valider le type reel du fichier (pas seulement l'extension client)
@@ -57,9 +59,10 @@ function isValidBucket(bucket: string): bucket is StorageBucket {
 
 export async function POST(req: NextRequest) {
   try {
-    // Require authentication
+    // Require authentication (dev mode fallback)
     const session = await auth();
-    if (!session?.user?.id) {
+    const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentification requise" },
         { status: 401 }
@@ -118,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build a unique path scoped to the user
-    const storagePath = `${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
+    const storagePath = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
 
     // Try Supabase Storage upload
     const result = await uploadFile(bucket, storagePath, buffer, file.type);

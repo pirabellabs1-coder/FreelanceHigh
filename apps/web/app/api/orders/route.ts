@@ -25,15 +25,24 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const statusFilter = searchParams.get("status");
+    // ?side=seller (default for freelance) or ?side=buyer (achats)
+    const sideFilter = searchParams.get("side");
 
     if (IS_DEV) {
       let orders;
-      if (session.user.role === "freelance") {
+
+      // All roles can be both buyer and seller
+      if (sideFilter === "buyer") {
+        // Only orders where user is the client (buyer)
+        orders = orderStore.getByClient(session.user.id);
+      } else if (sideFilter === "seller") {
+        // Only orders where user is the freelance (seller)
         orders = orderStore.getByFreelance(session.user.id);
       } else if (session.user.role === "client") {
+        // Default for client role: show buyer orders
         orders = orderStore.getByClient(session.user.id);
       } else {
-        // Admin or agence — return all orders for the user across both roles
+        // Default for freelance/agence/admin: show ALL orders (both roles)
         const freelanceOrders = orderStore.getByFreelance(session.user.id);
         const clientOrders = orderStore.getByClient(session.user.id);
         const seen = new Set<string>();
@@ -53,12 +62,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ orders });
     } else {
       // Production: Prisma
-      const where: Record<string, unknown> =
-        session.user.role === "freelance"
-          ? { freelanceId: session.user.id }
-          : session.user.role === "client"
-          ? { clientId: session.user.id }
-          : { OR: [{ freelanceId: session.user.id }, { clientId: session.user.id }] };
+      let where: Record<string, unknown>;
+
+      if (sideFilter === "buyer") {
+        where = { clientId: session.user.id };
+      } else if (sideFilter === "seller") {
+        where = { freelanceId: session.user.id };
+      } else if (session.user.role === "client") {
+        where = { clientId: session.user.id };
+      } else {
+        // Freelance/agence/admin: both buyer and seller
+        where = { OR: [{ freelanceId: session.user.id }, { clientId: session.user.id }] };
+      }
 
       if (statusFilter) {
         where.status = statusFilter.toUpperCase() as string;

@@ -137,8 +137,14 @@ export async function PATCH(
           }).catch(() => {});
         }
       }
-      // Handle accepting an order (status changes to "en_cours")
+      // Handle accepting an order (status changes to "en_cours") — only freelance can accept
       else if (status === "en_cours") {
+        if (session.user.id !== order.freelanceId) {
+          return NextResponse.json(
+            { error: "Seul le freelance peut accepter la commande" },
+            { status: 403 }
+          );
+        }
         updatedOrder = orderStore.accept(id);
         if (updatedOrder) {
           emitEvent("order.accepted", {
@@ -147,6 +153,11 @@ export async function PATCH(
             clientId: order.clientId, clientName: order.clientName, clientEmail: "",
           }).catch(() => {});
         }
+      }
+      // Handle progress update only (no status change)
+      else if (progress !== undefined && status === undefined) {
+        const clampedProgress = Math.min(100, Math.max(0, Number(progress)));
+        updatedOrder = orderStore.update(id, { progress: clampedProgress });
       }
       // Handle other status changes
       else {
@@ -157,6 +168,20 @@ export async function PATCH(
             { status: 403 }
           );
         }
+        // Only client can request revision
+        if (status === "revision" && session.user.id !== order.clientId) {
+          return NextResponse.json(
+            { error: "Seul le client peut demander une revision" },
+            { status: 403 }
+          );
+        }
+        // Check revision limits
+        if (status === "revision" && order.revisionsLeft !== undefined && order.revisionsLeft <= 0) {
+          return NextResponse.json(
+            { error: "Nombre de revisions epuise" },
+            { status: 400 }
+          );
+        }
 
         const updates: Record<string, unknown> = {};
         if (status !== undefined) updates.status = status;
@@ -164,6 +189,10 @@ export async function PATCH(
         if (status === "termine") {
           updates.completedAt = new Date().toISOString();
           updates.progress = 100;
+        }
+        // Decrement revision count when a revision is requested
+        if (status === "revision" && order.revisionsLeft !== undefined) {
+          updates.revisionsLeft = order.revisionsLeft - 1;
         }
 
         updatedOrder = orderStore.update(id, updates);

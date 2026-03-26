@@ -39,6 +39,7 @@ const SECTIONS: NavSection[] = [
       { label: "SEO Services", href: "/dashboard/services/seo", icon: "search_check" },
       { label: "Boost", href: "/dashboard/boost", icon: "rocket_launch" },
       { label: "Commandes", href: "/dashboard/commandes", icon: "shopping_cart" },
+      { label: "Mes Achats", href: "/dashboard/mes-achats", icon: "shopping_bag" },
     ],
   },
   {

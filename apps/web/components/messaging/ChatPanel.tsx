@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { MessageBubble } from "./MessageBubble";
 import { VoiceRecorder } from "./voice/VoiceRecorder";
 import { ImageLightbox } from "./ImageLightbox";
+import { OfferBubble } from "./OfferBubble";
+import { InlineOfferForm } from "./InlineOfferForm";
 import type { UnifiedConversation, MessageContentType } from "@/store/messaging";
 import { useToastStore } from "@/store/toast";
 
@@ -36,11 +38,15 @@ function sanitizeDisplay(text: string, fallback: string): string {
 interface ChatPanelProps {
   conversation: UnifiedConversation | null;
   currentUserId: string;
+  currentUserRole?: string;
   onSendMessage: (content: string, type?: MessageContentType, fileName?: string, fileSize?: string, audioUrl?: string, audioDuration?: number, fileUrl?: string, fileType?: string, storagePath?: string) => void;
   onMarkRead: () => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   onDeleteMessage?: (messageId: string) => void;
   onRetryMessage?: (messageId: string) => void;
+  onSendOffer?: (data: { title: string; amount: number; delay: string; revisions: number; description: string; validityDays: number }) => Promise<boolean>;
+  onAcceptOffer?: (offerId: string) => Promise<void>;
+  onRefuseOffer?: (offerId: string) => Promise<void>;
   showAdminActions?: boolean;
   onSendSystemMessage?: (content: string) => void;
   onStartAudioCall?: () => void;
@@ -102,11 +108,15 @@ function uploadFileToServer(
 export function ChatPanel({
   conversation,
   currentUserId,
+  currentUserRole = "freelance",
   onSendMessage,
   onMarkRead,
   onEditMessage,
   onDeleteMessage,
   onRetryMessage,
+  onSendOffer,
+  onAcceptOffer,
+  onRefuseOffer,
   showAdminActions = false,
   onSendSystemMessage,
   onStartAudioCall,
@@ -114,6 +124,7 @@ export function ChatPanel({
   onMobileBack,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
+  const [showOfferForm, setShowOfferForm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ fileName: string; progress: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -385,6 +396,24 @@ export function ChatPanel({
             const isOwn = msg.senderId === currentUserId;
             const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
             const showSenderInfo = !isOwn && (!prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.type === "system");
+
+            // Render offer messages as OfferBubble
+            if (msg.type === "offer" && msg.offerData) {
+              return (
+                <div key={msg.id} className={cn("flex flex-col gap-1 px-2 md:px-4 my-3", isOwn ? "items-end" : "items-start")}>
+                  {showSenderInfo && <p className="text-xs font-semibold text-slate-500 mb-1">{msg.senderName}</p>}
+                  <OfferBubble
+                    offer={msg.offerData}
+                    isMine={isOwn}
+                    currentUserRole={currentUserRole}
+                    onAccept={onAcceptOffer}
+                    onRefuse={onRefuseOffer}
+                  />
+                  <p className="text-[10px] text-slate-600 mt-0.5">{new Date(msg.createdAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+              );
+            }
+
             return (
               <MessageBubble
                 key={msg.id}
@@ -434,12 +463,41 @@ export function ChatPanel({
       )}
 
       {/* ── Input ── */}
+      {/* Inline offer form */}
+      {showOfferForm && conversation && (
+        <div className="border-t border-border-dark p-3 md:p-4 bg-background-dark/80 backdrop-blur-sm">
+          <InlineOfferForm
+            recipientName={conversation.participants.find((p) => p.id !== currentUserId)?.name || "le destinataire"}
+            conversationId={conversation.id}
+            onSubmit={async (data) => {
+              if (onSendOffer) {
+                const ok = await onSendOffer(data);
+                if (ok) setShowOfferForm(false);
+                return ok;
+              }
+              return false;
+            }}
+            onCancel={() => setShowOfferForm(false)}
+          />
+        </div>
+      )}
+
+      {/* Input bar */}
       <div className="border-t border-border-dark p-2 md:p-4 flex-shrink-0 bg-background-dark/80 backdrop-blur-sm">
         <div className="flex gap-1.5 md:gap-3 items-end">
           <button onClick={() => fileRef.current?.click()} className="p-2 md:p-2.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors flex-shrink-0" aria-label="Joindre un fichier">
             <span className="material-symbols-outlined text-xl md:text-2xl">attach_file</span>
           </button>
           <input ref={fileRef} type="file" multiple accept={ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(",")} className="hidden" onChange={(e) => handleFileUpload(e.target.files)} />
+
+          {/* Offer button — visible for freelance/agence */}
+          {onSendOffer && !showOfferForm && (
+            <button onClick={() => setShowOfferForm(true)}
+              className="p-2 md:p-2.5 rounded-lg text-slate-400 hover:text-accent hover:bg-accent/10 transition-colors flex-shrink-0" aria-label="Faire une offre"
+              title="Envoyer une offre personnalisee">
+              <span className="material-symbols-outlined text-xl md:text-2xl">local_offer</span>
+            </button>
+          )}
 
           <input
             type="text"

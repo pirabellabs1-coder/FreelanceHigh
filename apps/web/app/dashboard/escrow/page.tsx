@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
@@ -77,10 +77,15 @@ type FilterTab = "all" | "escrow" | "validation" | "libere" | "litige";
 // Main page
 // ---------------------------------------------------------------------------
 export default function EscrowPage() {
-  const { orders } = useDashboardStore();
+  const { orders, syncFromApi } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  // Sync orders on mount
+  useEffect(() => {
+    syncFromApi();
+  }, [syncFromApi]);
 
   // All orders with their derived escrow status
   const allOrders = useMemo(() => {

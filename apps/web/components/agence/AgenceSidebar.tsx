@@ -45,6 +45,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { label: "Équipe", href: "/agence/equipe", icon: "groups" },
       { label: "Commandes", href: "/agence/commandes", icon: "shopping_cart" },
+      { label: "Mes Achats", href: "/agence/mes-achats", icon: "shopping_bag" },
       { label: "Clients", href: "/agence/clients", icon: "people" },
       { label: "Sous-traitance", href: "/agence/sous-traitance", icon: "handshake" },
       { label: "Candidatures", href: "/agence/candidatures", icon: "description" },

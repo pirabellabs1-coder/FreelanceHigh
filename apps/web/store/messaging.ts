@@ -18,7 +18,7 @@ function showToast(type: "error" | "success" | "info", message: string) {
 // ── Types ──
 
 export type ConversationType = "direct" | "group" | "order" | "admin";
-export type MessageContentType = "text" | "file" | "image" | "system" | "voice" | "call_audio" | "call_video" | "call_missed";
+export type MessageContentType = "text" | "file" | "image" | "system" | "voice" | "call_audio" | "call_video" | "call_missed" | "offer";
 export type UserRole = "freelance" | "client" | "agence" | "admin";
 export type MessageDeliveryStatus = "sending" | "sent" | "delivered" | "read" | "failed";
 
@@ -61,6 +61,18 @@ export interface UnifiedMessage {
   deletedAt?: string;
   linkPreview?: LinkPreviewData;
   linkPreviews?: LinkPreviewData[];
+  /** Offer data embedded in message (type: "offer") */
+  offerData?: {
+    offerId: string;
+    title: string;
+    amount: number;
+    delay: string;
+    revisions: number;
+    description: string;
+    status: string;
+    validityDays: number;
+    expiresAt?: string;
+  };
   /** Retry count for failed messages */
   _retryCount?: number;
 }

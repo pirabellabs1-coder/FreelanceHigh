@@ -62,6 +62,7 @@ interface DashboardState {
   // API-backed order operations
   apiAcceptOrder: (id: string) => Promise<boolean>;
   apiDeliverOrder: (id: string, message: string, files: Omit<OrderFile, "id">[]) => Promise<boolean>;
+  apiUpdateProgress: (id: string, progress: number) => Promise<boolean>;
   apiSendOrderMessage: (orderId: string, content: string) => Promise<boolean>;
 
   // Transactions
@@ -465,6 +466,21 @@ export const useDashboardStore = create<DashboardState>()(
           return true;
         }
       },
+      apiUpdateProgress: async (id, progress) => {
+        const clamped = Math.min(100, Math.max(0, progress));
+        try {
+          const result = await ordersApi.update(id, { progress: clamped });
+          const local = mapApiOrderToLocal(result);
+          set((s) => ({ orders: s.orders.map((o) => (o.id === id ? local : o)) }));
+          return true;
+        } catch (err) {
+          console.error("[Order progress] API error, applying locally:", err);
+          set((s) => ({
+            orders: s.orders.map((o) => o.id === id ? { ...o, progress: clamped } : o),
+          }));
+          return true;
+        }
+      },
       apiSendOrderMessage: async (orderId, content) => {
         try {
           const result = await ordersApi.sendMessage(orderId, { content });
@@ -630,20 +646,28 @@ export const useDashboardStore = create<DashboardState>()(
         const newMode = !get().vacationMode;
         try {
           await profileApi.update({ vacationMode: newMode });
-          set((s) => {
-            if (newMode) {
-              return {
-                vacationMode: newMode,
-                services: s.services.map((sv) =>
-                  sv.status === "actif" ? { ...sv, status: "pause" as const } : sv
-                ),
-              };
-            }
-            return { vacationMode: newMode };
-          });
-        } catch {
-          // Revert: state not changed since we only update on success
+        } catch (err) {
+          console.warn("[Vacation] API update failed, applying locally:", err);
         }
+        // Apply state change regardless (dev mode might not have API)
+        set((s) => {
+          if (newMode) {
+            // Activating vacation: pause all active services
+            return {
+              vacationMode: newMode,
+              services: s.services.map((sv) =>
+                sv.status === "actif" ? { ...sv, status: "pause" as const } : sv
+              ),
+            };
+          }
+          // Deactivating vacation: restore paused services to actif
+          return {
+            vacationMode: newMode,
+            services: s.services.map((sv) =>
+              sv.status === "pause" ? { ...sv, status: "actif" as const } : sv
+            ),
+          };
+        });
       },
 
       // Notifications
@@ -770,11 +794,11 @@ export const useDashboardStore = create<DashboardState>()(
         try {
           const result = await automationApi.createScenario(scenario);
           set((s) => {
-            if (!s.automation) return s;
+            const base = s.automation || { triggers: [], conditions: [], actions: [], scenarios: [] };
             return {
               automation: {
-                ...s.automation,
-                scenarios: [...s.automation.scenarios, result.scenario],
+                ...base,
+                scenarios: [...base.scenarios, result.scenario],
               },
             };
           });

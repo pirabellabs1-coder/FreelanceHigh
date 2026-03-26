@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import fs from "fs";
 import path from "path";
 
+const IS_DEV = process.env.DEV_MODE === "true";
+
 // ── Persistence ──
 const DEV_DIR = path.join(process.cwd(), "lib", "dev");
 const AFFILIATIONS_FILE = path.join(DEV_DIR, "affiliations.json");
@@ -91,7 +93,8 @@ function computeTier(totalReferrals: number) {
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
@@ -106,7 +109,7 @@ export async function GET() {
   const host = headersList.get("host") || "localhost:3000";
   const proto = headersList.get("x-forwarded-proto") || "http";
   const origin = `${proto}://${host}`;
-  const referralLink = `${origin}/inscription?ref=${session.user.id}`;
+  const referralLink = `${origin}/inscription?ref=${userId}`;
 
   const tierData = computeTier(totalReferrals);
 
@@ -142,7 +145,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 

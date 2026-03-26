@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
+import pathModule from "path";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const IS_DEV = process.env.DEV_MODE === "true";
 
 // Service role client for server-side file operations
 const supabase =
@@ -17,28 +20,67 @@ export type StorageBucket =
   | "message-attachments"
   | "certificates";
 
-// Upload a file to a private Supabase Storage bucket
+// ── Dev mode local storage fallback ──
+const DEV_STORAGE_DIR = pathModule.join(process.cwd(), "public", "uploads");
+
+function ensureDevStorageDir(bucket: string, filePath: string) {
+  const dir = pathModule.join(DEV_STORAGE_DIR, bucket, pathModule.dirname(filePath));
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function devUpload(bucket: string, filePath: string, file: Buffer): { url: string; path: string } {
+  ensureDevStorageDir(bucket, filePath);
+  const fullPath = pathModule.join(DEV_STORAGE_DIR, bucket, filePath);
+  fs.writeFileSync(fullPath, file);
+  const url = `/uploads/${bucket}/${filePath}`;
+  return { url, path: filePath };
+}
+
+function devGetUrl(bucket: string, filePath: string): string {
+  return `/uploads/${bucket}/${filePath}`;
+}
+
+function devDelete(bucket: string, filePath: string): boolean {
+  const fullPath = pathModule.join(DEV_STORAGE_DIR, bucket, filePath);
+  try {
+    if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Upload a file to a private Supabase Storage bucket (falls back to local in dev)
 export async function uploadFile(
   bucket: StorageBucket,
   path: string, // e.g. "user-123/passport.pdf"
   file: Buffer,
   contentType: string
 ): Promise<{ url: string; path: string } | null> {
-  if (!supabase) {
-    console.warn("[Supabase Storage] Not configured");
-    return null;
+  // Try Supabase first
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { contentType, upsert: true });
+
+      if (!error && data) {
+        return { url: data.path, path: data.path };
+      }
+      console.error("[Supabase Storage] Upload error:", error);
+    } catch (err) {
+      console.error("[Supabase Storage] Upload exception:", err);
+    }
   }
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, file, { contentType, upsert: true });
-
-  if (error) {
-    console.error("[Supabase Storage] Upload error:", error);
-    return null;
+  // Dev fallback: store locally
+  if (IS_DEV) {
+    console.info("[Storage] Using local dev fallback for upload");
+    return devUpload(bucket, path, file);
   }
 
-  return { url: data.path, path: data.path };
+  console.warn("[Supabase Storage] Not configured and not in dev mode");
+  return null;
 }
 
 // Get a signed URL for a private file (expires in 1 hour by default)
@@ -47,18 +89,23 @@ export async function getSignedUrl(
   path: string,
   expiresIn: number = 3600
 ): Promise<string | null> {
-  if (!supabase) return null;
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, expiresIn);
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, expiresIn);
-
-  if (error) {
-    console.error("[Supabase Storage] Signed URL error:", error);
-    return null;
+      if (!error && data) return data.signedUrl;
+      console.error("[Supabase Storage] Signed URL error:", error);
+    } catch (err) {
+      console.error("[Supabase Storage] Signed URL exception:", err);
+    }
   }
 
-  return data.signedUrl;
+  // Dev fallback: return local URL
+  if (IS_DEV) return devGetUrl(bucket, path);
+
+  return null;
 }
 
 // Delete a file from a bucket
@@ -66,26 +113,35 @@ export async function deleteFile(
   bucket: StorageBucket,
   path: string
 ): Promise<boolean> {
-  if (!supabase) return false;
-
-  const { error } = await supabase.storage.from(bucket).remove([path]);
-  if (error) {
+  if (supabase) {
+    const { error } = await supabase.storage.from(bucket).remove([path]);
+    if (!error) return true;
     console.error("[Supabase Storage] Delete error:", error);
-    return false;
   }
 
-  return true;
+  if (IS_DEV) return devDelete(bucket, path);
+
+  return false;
 }
 
 // List files in a bucket path
 export async function listFiles(bucket: StorageBucket, folder: string) {
-  if (!supabase) return [];
-
-  const { data, error } = await supabase.storage.from(bucket).list(folder);
-  if (error) {
+  if (supabase) {
+    const { data, error } = await supabase.storage.from(bucket).list(folder);
+    if (!error) return data || [];
     console.error("[Supabase Storage] List error:", error);
-    return [];
   }
 
-  return data || [];
+  // Dev fallback: list local files
+  if (IS_DEV) {
+    const dir = pathModule.join(DEV_STORAGE_DIR, bucket, folder);
+    try {
+      if (!fs.existsSync(dir)) return [];
+      return fs.readdirSync(dir).map((name) => ({ name, id: name }));
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 }

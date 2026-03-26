@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth/config";
 import fs from "fs";
 import path from "path";
 
+const IS_DEV = process.env.DEV_MODE === "true";
+
 // ── Persistence ──
 const DEV_DIR = path.join(process.cwd(), "lib", "dev");
 const RESULTS_FILE = path.join(DEV_DIR, "certification-results.json");
@@ -36,125 +38,92 @@ function writeResults(data: StoredResult[]) {
   fs.writeFileSync(RESULTS_FILE, JSON.stringify(data, null, 2), "utf-8");
 }
 
-// ── Certification catalog ──
+// ── 40 certifications catalog (inline — small, no external import needed) ──
 const CERTIFICATIONS = [
-  {
-    id: "cert-dev-web",
-    name: "Developpement Web",
-    category: "Technique",
-    icon: "code",
-    description: "Validez vos competences en HTML, CSS, JavaScript et frameworks modernes.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
-  {
-    id: "cert-design-ui",
-    name: "Design UI/UX",
-    category: "Design",
-    icon: "palette",
-    description: "Demontrez votre maitrise des principes de design d'interface et d'experience utilisateur.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
-  {
-    id: "cert-marketing",
-    name: "Marketing Digital",
-    category: "Marketing",
-    icon: "campaign",
-    description: "Prouvez vos connaissances en SEO, publicite en ligne et strategie de contenu.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
-  {
-    id: "cert-redaction",
-    name: "Redaction & Copywriting",
-    category: "Redaction",
-    icon: "edit_note",
-    description: "Validez vos competences en redaction web, storytelling et copywriting persuasif.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
-  {
-    id: "cert-gestion-projet",
-    name: "Gestion de Projet",
-    category: "Management",
-    icon: "assignment",
-    description: "Demontrez votre capacite a planifier, executer et livrer des projets avec succes.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
-  {
-    id: "cert-service-client",
-    name: "Service Client",
-    category: "Communication",
-    icon: "support_agent",
-    description: "Prouvez votre excellence en communication client et resolution de problemes.",
-    questionCount: 5,
-    passingScore: 70,
-    durationMinutes: 10,
-  },
+  { id: "cert-dev-web", name: "Developpement Web", category: "Technique", icon: "code", description: "HTML, CSS, JavaScript et frameworks modernes.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-dev-mobile", name: "Developpement Mobile", category: "Technique", icon: "phone_android", description: "React Native, Flutter et apps mobiles.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-dev-backend", name: "Developpement Backend", category: "Technique", icon: "dns", description: "Node.js, APIs et bases de donnees.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-dev-python", name: "Python & Data Science", category: "Technique", icon: "data_object", description: "Python, pandas, numpy et machine learning.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-dev-wordpress", name: "WordPress & CMS", category: "Technique", icon: "web", description: "WordPress, themes, plugins et CMS.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-cybersecurite", name: "Cybersecurite", category: "Technique", icon: "security", description: "Securite informatique et protection des systemes.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-devops", name: "DevOps & Cloud", category: "Technique", icon: "cloud", description: "CI/CD, Docker, Kubernetes et cloud.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-ia-ml", name: "Intelligence Artificielle & ML", category: "Technique", icon: "smart_toy", description: "IA, machine learning et deep learning.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-blockchain", name: "Blockchain & Web3", category: "Technique", icon: "currency_bitcoin", description: "Blockchain, smart contracts et DApps.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-qa-testing", name: "Tests & Assurance Qualite", category: "Technique", icon: "bug_report", description: "Tests unitaires, integration et QA.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-ui", name: "Design UI/UX", category: "Design", icon: "palette", description: "Principes de design d'interface et UX.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-graphique", name: "Design Graphique", category: "Design", icon: "brush", description: "Graphisme, composition et outils de design.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-3d", name: "Design 3D & Animation", category: "Design", icon: "view_in_ar", description: "Modelisation 3D, animation et rendu.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-video", name: "Montage Video & Motion", category: "Design", icon: "movie", description: "Montage video, motion design et effets.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-photo", name: "Photographie & Retouche", category: "Design", icon: "photo_camera", description: "Photographie, retouche et post-production.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-design-branding", name: "Branding & Identite Visuelle", category: "Design", icon: "branding_watermark", description: "Identite visuelle, logos et charte graphique.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-marketing-digital", name: "Marketing Digital", category: "Marketing", icon: "campaign", description: "Strategies marketing et canaux digitaux.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-seo", name: "SEO & Referencement", category: "Marketing", icon: "travel_explore", description: "Optimisation pour les moteurs de recherche.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-social-media", name: "Social Media Management", category: "Marketing", icon: "share", description: "Gestion des reseaux sociaux et engagement.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-email-marketing", name: "Email Marketing & Automation", category: "Marketing", icon: "email", description: "Campagnes email, automation et newsletters.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-publicite", name: "Publicite en Ligne", category: "Marketing", icon: "ads_click", description: "Google Ads, Facebook Ads et campagnes payantes.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-analytics", name: "Analytics & Data Marketing", category: "Marketing", icon: "analytics", description: "Google Analytics, KPIs et dashboards.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-redaction", name: "Redaction Web & Copywriting", category: "Redaction", icon: "edit_note", description: "Redaction web, SEO writing et storytelling.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-traduction", name: "Traduction & Localisation", category: "Redaction", icon: "translate", description: "Traduction, localisation et adaptation culturelle.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-content-strategy", name: "Strategie de Contenu", category: "Redaction", icon: "article", description: "Strategie editoriale et content marketing.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-journalisme", name: "Journalisme Digital", category: "Redaction", icon: "newspaper", description: "Journalisme web, fact-checking et ethique.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-gestion-projet", name: "Gestion de Projet", category: "Management", icon: "assignment", description: "Planification, suivi et livraison de projets.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-product-management", name: "Product Management", category: "Management", icon: "inventory_2", description: "Decouverte produit, roadmap et priorisation.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-agile", name: "Methodologies Agiles", category: "Management", icon: "sprint", description: "Scrum, Kanban, SAFe et ceremonies agiles.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-leadership", name: "Leadership & Management", category: "Management", icon: "groups", description: "Leadership, delegation et gestion d'equipe.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-entrepreneuriat", name: "Entrepreneuriat & Startup", category: "Management", icon: "rocket_launch", description: "Business model, lean startup et financement.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-service-client", name: "Service Client & Support", category: "Communication", icon: "support_agent", description: "Support client, NPS et resolution de problemes.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-community", name: "Community Management", category: "Communication", icon: "forum", description: "Gestion de communaute et engagement.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-relation-publique", name: "Relations Publiques", category: "Communication", icon: "record_voice_over", description: "Relations presse, communication de crise.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-presentation", name: "Art de la Presentation", category: "Communication", icon: "slideshow", description: "Storytelling, slides et prise de parole.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-comptabilite", name: "Comptabilite & Finance", category: "Finance", icon: "account_balance", description: "Bilan, compte de resultat et tresorerie.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-ecommerce", name: "E-commerce & Vente en Ligne", category: "Finance", icon: "shopping_cart", description: "Conversion, checkout et logistique.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-crypto-finance", name: "Finance Decentralisee (DeFi)", category: "Finance", icon: "currency_exchange", description: "Protocoles DeFi, wallets et smart contracts.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-rgpd", name: "RGPD & Protection des Donnees", category: "Juridique", icon: "gavel", description: "Consentement, DPO, droits et sanctions RGPD.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
+  { id: "cert-droit-numerique", name: "Droit du Numerique & Contrats", category: "Juridique", icon: "policy", description: "CGV, propriete intellectuelle et e-signature.", questionCount: 20, passingScore: 70, durationMinutes: 25 },
 ];
 
-// ── Questions per certification (correct answer = correctIndex) ──
-const QUESTIONS: Record<string, { id: string; question: string; options: string[]; correctIndex: number }[]> = {
-  "cert-dev-web": [
-    { id: "q1", question: "Quel attribut HTML5 permet de rendre un champ de formulaire obligatoire ?", options: ["mandatory", "required", "validate", "needed"], correctIndex: 1 },
-    { id: "q2", question: "Quelle propriete CSS est utilisee pour creer une grille responsive ?", options: ["display: grid", "display: flex", "position: grid", "layout: responsive"], correctIndex: 0 },
-    { id: "q3", question: "Que retourne typeof null en JavaScript ?", options: ["null", "undefined", "object", "boolean"], correctIndex: 2 },
-    { id: "q4", question: "Quel hook React est utilise pour gerer les effets de bord ?", options: ["useState", "useEffect", "useContext", "useMemo"], correctIndex: 1 },
-    { id: "q5", question: "Quelle methode HTTP est idempotente par convention ?", options: ["POST", "PATCH", "PUT", "DELETE + POST"], correctIndex: 2 },
-  ],
-  "cert-design-ui": [
-    { id: "q1", question: "Quel principe stipule que les elements proches sont percus comme lies ?", options: ["Contraste", "Proximite", "Alignement", "Repetition"], correctIndex: 1 },
-    { id: "q2", question: "Quelle est la taille minimale recommandee pour une zone tactile mobile ?", options: ["24px", "36px", "44px", "64px"], correctIndex: 2 },
-    { id: "q3", question: "Quel rapport de contraste minimum est requis par WCAG AA pour le texte normal ?", options: ["3:1", "4.5:1", "7:1", "2:1"], correctIndex: 1 },
-    { id: "q4", question: "Que mesure un test A/B en UX ?", options: ["La vitesse de chargement", "La performance entre deux variantes", "Le nombre de couleurs", "La taille de la police"], correctIndex: 1 },
-    { id: "q5", question: "Quel outil est le plus adapte pour creer des prototypes interactifs ?", options: ["Photoshop", "Figma", "Excel", "Notepad"], correctIndex: 1 },
-  ],
-  "cert-marketing": [
-    { id: "q1", question: "Que signifie SEO ?", options: ["Search Engine Optimization", "Social Engine Output", "Site Enhancement Option", "Search External Outreach"], correctIndex: 0 },
-    { id: "q2", question: "Quel KPI mesure le cout d'acquisition d'un client ?", options: ["CLV", "CAC", "CTR", "CPC"], correctIndex: 1 },
-    { id: "q3", question: "Quelle plateforme est la plus adaptee au marketing B2B ?", options: ["TikTok", "LinkedIn", "Snapchat", "Pinterest"], correctIndex: 1 },
-    { id: "q4", question: "Qu'est-ce qu'un tunnel de conversion ?", options: ["Un outil de SEO", "Le parcours utilisateur vers l'achat", "Un type de publicite", "Un format d'email"], correctIndex: 1 },
-    { id: "q5", question: "Quel est le taux d'ouverture moyen des emails marketing ?", options: ["5-10%", "15-25%", "40-50%", "60-70%"], correctIndex: 1 },
-  ],
-  "cert-redaction": [
-    { id: "q1", question: "Quelle technique de redaction consiste a commencer par la conclusion ?", options: ["Storytelling", "Pyramide inversee", "Accroche emotionnelle", "Call to action"], correctIndex: 1 },
-    { id: "q2", question: "Quel element est essentiel dans un titre accrocheur ?", options: ["Longueur", "Benefice clair pour le lecteur", "Mots techniques", "Ponctuation multiple"], correctIndex: 1 },
-    { id: "q3", question: "Quelle longueur ideale pour un paragraphe web ?", options: ["1-2 phrases", "3-4 phrases", "5-8 phrases", "10+ phrases"], correctIndex: 1 },
-    { id: "q4", question: "Qu'est-ce que le tone of voice en copywriting ?", options: ["Le volume sonore", "La personnalite de la marque a l'ecrit", "La vitesse de lecture", "Le format du texte"], correctIndex: 1 },
-    { id: "q5", question: "Quel framework de copywriting utilise : Attention, Interet, Desir, Action ?", options: ["PAS", "AIDA", "FAB", "STAR"], correctIndex: 1 },
-  ],
-  "cert-gestion-projet": [
-    { id: "q1", question: "Quelle methodologie utilise des sprints de 2-4 semaines ?", options: ["Waterfall", "Scrum", "Kanban", "Prince2"], correctIndex: 1 },
-    { id: "q2", question: "Que represente un diagramme de Gantt ?", options: ["Le budget", "La planification temporelle des taches", "Les risques", "Les parties prenantes"], correctIndex: 1 },
-    { id: "q3", question: "Qu'est-ce qu'un MVP (Minimum Viable Product) ?", options: ["Le produit final", "La version minimale fonctionnelle", "Un prototype visuel", "Un plan marketing"], correctIndex: 1 },
-    { id: "q4", question: "Quel outil mesure la satisfaction de l'equipe en Agile ?", options: ["Burndown chart", "Retrospective", "Daily standup", "Sprint review"], correctIndex: 1 },
-    { id: "q5", question: "Que signifie le triangle de fer en gestion de projet ?", options: ["Cout, Qualite, Delai", "Equipe, Client, Produit", "Plan, Execute, Controle", "Risque, Budget, Scope"], correctIndex: 0 },
-  ],
-  "cert-service-client": [
-    { id: "q1", question: "Quelle est la premiere etape pour gerer un client mecontent ?", options: ["Offrir un remboursement", "Ecouter activement", "Transferer a un superieur", "Envoyer un email type"], correctIndex: 1 },
-    { id: "q2", question: "Que mesure le NPS (Net Promoter Score) ?", options: ["Le chiffre d'affaires", "La probabilite de recommandation", "Le nombre de tickets", "Le temps de reponse"], correctIndex: 1 },
-    { id: "q3", question: "Quel delai de reponse est considere comme excellent en support ?", options: ["24h", "1h", "Moins de 15 min", "1 semaine"], correctIndex: 2 },
-    { id: "q4", question: "Quelle technique consiste a reformuler les propos du client ?", options: ["Empathie active", "Mirroring", "Upselling", "Escalade"], correctIndex: 1 },
-    { id: "q5", question: "Quel canal de support a le taux de satisfaction le plus eleve ?", options: ["Email", "Telephone", "Chat en direct", "FAQ"], correctIndex: 2 },
-  ],
-};
+// ── Questions loaded lazily from JSON at runtime (avoids Turbopack issues with huge TS files) ──
+let _questionsCache: Record<string, { id: string; question: string; options: string[]; correctIndex: number }[]> | null = null;
 
-export { CERTIFICATIONS, QUESTIONS };
+async function getQuestions(): Promise<Record<string, { id: string; question: string; options: string[]; correctIndex: number }[]>> {
+  if (_questionsCache) return _questionsCache;
+
+  // Load questions from the data files at runtime
+  const dataDir = path.join(process.cwd(), "lib");
+
+  try {
+    // Read and parse part 1 (certifications-data.ts exports QUESTIONS)
+    const part1Path = path.join(dataDir, "certifications-questions.json");
+    const part2Path = path.join(dataDir, "certifications-questions-part2.json");
+
+    // If JSON cache files exist, use them
+    if (fs.existsSync(part1Path) && fs.existsSync(part2Path)) {
+      const q1 = JSON.parse(fs.readFileSync(part1Path, "utf-8"));
+      const q2 = JSON.parse(fs.readFileSync(part2Path, "utf-8"));
+      _questionsCache = { ...q1, ...q2 };
+      return _questionsCache!;
+    }
+
+    // Fallback: dynamic import
+    const certData = await import("@/lib/certifications-data");
+    const part2Data = await import("@/lib/certifications-questions-part2");
+    _questionsCache = { ...certData.QUESTIONS, ...part2Data.QUESTIONS_PART2 };
+    return _questionsCache!;
+  } catch (err) {
+    console.error("[Certifications] Failed to load questions:", err);
+    _questionsCache = {};
+    return _questionsCache;
+  }
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  const results = readResults().filter((r) => r.userId === session.user.id);
+  const results = readResults().filter((r) => r.userId === userId);
 
   return NextResponse.json({
     certifications: CERTIFICATIONS,
@@ -171,7 +140,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
@@ -183,22 +153,35 @@ export async function POST(request: Request) {
     const cert = CERTIFICATIONS.find((c) => c.id === certId);
     if (!cert) return NextResponse.json({ error: "Certification introuvable" }, { status: 404 });
 
-    const questions = QUESTIONS[certId] || [];
+    const allQ = await getQuestions();
+    const questions = allQ[certId] || [];
+    if (questions.length === 0) {
+      return NextResponse.json({ error: "Questions non disponibles pour cette certification" }, { status: 404 });
+    }
     if (answers.length !== questions.length) {
       return NextResponse.json({ error: "Nombre de reponses incorrect" }, { status: 400 });
     }
 
-    // Score
     let correct = 0;
-    for (let i = 0; i < questions.length; i++) {
-      if (answers[i] === questions[i].correctIndex) correct++;
-    }
+    const questionResults = questions.map((q, i) => {
+      const isCorrect = answers[i] === q.correctIndex;
+      if (isCorrect) correct++;
+      return {
+        questionId: q.id,
+        question: q.question,
+        options: q.options,
+        userAnswer: answers[i],
+        correctAnswer: q.correctIndex,
+        isCorrect,
+      };
+    });
+
     const score = Math.round((correct / questions.length) * 100);
     const passed = score >= cert.passingScore;
 
     const result: StoredResult = {
       id: "cr" + Date.now(),
-      userId: session.user.id,
+      userId,
       certificationId: certId,
       score,
       passed,
@@ -210,14 +193,22 @@ export async function POST(request: Request) {
     allResults.push(result);
     writeResults(allResults);
 
+    const certificateId = passed ? `CERT-${certId.toUpperCase().replace("CERT-", "")}-${Date.now().toString(36).toUpperCase()}` : null;
+
     return NextResponse.json({
       result: {
         id: result.id,
         certificationId: result.certificationId,
+        certificationName: cert.name,
+        certificationCategory: cert.category,
         score: result.score,
         passed: result.passed,
         date: result.date,
         answers: result.answers,
+        totalQuestions: questions.length,
+        correctCount: correct,
+        questionResults,
+        certificateId,
       },
     });
   }

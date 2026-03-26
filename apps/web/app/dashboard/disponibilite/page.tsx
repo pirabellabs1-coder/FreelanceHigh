@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 
 export default function DisponibilitePage() {
   const { availability, vacationMode, updateAvailability, toggleVacationMode, services } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
+  const [toggling, setToggling] = useState(false);
 
   function handleToggleDay(day: number) {
     const slot = availability.find((a) => a.day === day);
@@ -19,13 +21,21 @@ export default function DisponibilitePage() {
     updateAvailability(day, { [field]: value });
   }
 
-  function handleVacation() {
-    toggleVacationMode();
+  async function handleVacation() {
+    if (toggling) return;
+    setToggling(true);
     const newMode = !vacationMode;
-    if (newMode) {
-      addToast("info", "Mode vacances active - Tous les services sont en pause");
-    } else {
-      addToast("success", "Mode vacances desactive");
+    try {
+      await toggleVacationMode();
+      if (newMode) {
+        addToast("info", "Mode vacances active - Tous les services sont en pause");
+      } else {
+        addToast("success", "Mode vacances desactive - Vos services sont reactives");
+      }
+    } catch {
+      addToast("error", "Erreur lors du changement de mode vacances");
+    } finally {
+      setToggling(false);
     }
   }
 
