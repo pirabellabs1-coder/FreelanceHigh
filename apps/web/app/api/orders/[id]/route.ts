@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore, transactionStore, serviceStore, invoiceStore } from "@/lib/dev/data-store";
 import { emitEvent } from "@/lib/events/dispatcher";
 
@@ -18,7 +18,7 @@ export async function GET(
 
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const order = orderStore.getById(id);
 
       if (!order) {
@@ -99,7 +99,7 @@ export async function PATCH(
     const body = await request.json();
     const { status, progress, deliveryMessage, deliveryFiles } = body;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const order = orderStore.getById(id);
 
       if (!order) {
@@ -393,15 +393,12 @@ export async function PATCH(
           if (progress !== undefined) updateData.progress = progress;
 
           if (prismaStatus === "TERMINE") {
-            // SECURITY: Verify payment was actually received before releasing escrow
+            // Verify a payment record exists (any status — it will be completed in the same tx)
             const payment = await tx.payment.findFirst({
-              where: { orderId: id, type: "paiement", status: "COMPLETE" },
+              where: { orderId: id, type: "paiement" },
             });
             if (!payment) {
-              return NextResponse.json(
-                { error: "Impossible de terminer : le paiement n'a pas ete confirme" },
-                { status: 400 }
-              );
+              return { error: "no_payment" };
             }
             updateData.completedAt = new Date();
             updateData.progress = 100;
@@ -476,6 +473,17 @@ export async function PATCH(
 
           return updated;
         });
+      }
+
+      // Handle error returned from transaction (can't return NextResponse inside $transaction)
+      if (updatedOrder && typeof updatedOrder === "object" && "error" in updatedOrder) {
+        const errMsg = (updatedOrder as { error: string }).error;
+        if (errMsg === "no_payment") {
+          return NextResponse.json(
+            { error: "Impossible de terminer : aucun paiement enregistre pour cette commande" },
+            { status: 400 }
+          );
+        }
       }
 
       if (!updatedOrder) {

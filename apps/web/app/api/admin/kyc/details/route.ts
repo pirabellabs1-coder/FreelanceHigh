@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { kycRequestStore } from "@/lib/dev/data-store";
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const pendingRequests = kycRequestStore.getPending();
 
       const details = pendingRequests.map((req) => ({

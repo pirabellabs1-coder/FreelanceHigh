@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { serviceStore, orderStore, transactionStore } from "@/lib/dev/data-store";
 import { createAuditLog } from "@/lib/admin/audit";
@@ -20,7 +20,7 @@ export async function GET(
     }
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.findById(id);
       if (!user) {
         return NextResponse.json({ error: "Utilisateur non trouve" }, { status: 404 });
@@ -100,7 +100,7 @@ export async function PATCH(
     const body = await req.json();
     const { status, role, plan, kyc, reason } = body;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.findById(id);
       if (!user) {
         return NextResponse.json({ error: "Utilisateur non trouve" }, { status: 404 });

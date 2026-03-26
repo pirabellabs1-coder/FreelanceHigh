@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma as _prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { kycRequestStore, kycPersonalInfoStore } from "@/lib/dev/data-store";
 
 // Cast prisma to allow new fields that may not be reflected in cached TS types
@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       const requests = kycRequestStore.getByUser(session.user.id);
       // Use BOTH user record and request-derived level, take the highest
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const existing = kycRequestStore.getByUser(session.user.id);
       const pendingForLevel = existing.find(
         (r) => r.level === level && r.status === "en_attente"
@@ -217,7 +217,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       kycPersonalInfoStore.upsert(session.user.id, {
         firstName: personalInfo.firstName,
         lastName: personalInfo.lastName,
@@ -303,7 +303,7 @@ async function handleIndividualSubmission(userId: string, body: Record<string, s
     return NextResponse.json({ error: "Champs requis manquants", errors }, { status: 400 });
   }
 
-  if (IS_DEV) {
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
     // Check for existing pending request
     const existing = kycRequestStore.getByUser(userId);
     const pending = existing.find((r) => r.level === 3 && r.status === "en_attente");
@@ -449,7 +449,7 @@ async function handleAgencySubmission(userId: string, body: Record<string, strin
     return NextResponse.json({ error: "Champs requis manquants", errors }, { status: 400 });
   }
 
-  if (IS_DEV) {
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
     // Check for existing pending request
     const existing = kycRequestStore.getByUser(userId);
     const pending = existing.find((r) => r.level === 3 && r.status === "en_attente");

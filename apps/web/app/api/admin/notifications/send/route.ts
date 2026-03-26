@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma as _prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { notificationStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
 import { sendAdminBroadcastEmail } from "@/lib/admin/admin-emails";
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const channelInfo = channel ?? "in_app";
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const allUsers = devStore.getAll();
       let targetUsers = allUsers.filter((u) => u.role !== "admin");
 

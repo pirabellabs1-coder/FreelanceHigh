@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const service = serviceStore.update(id, { status, refuseReason });
       if (!service) {
         return NextResponse.json(

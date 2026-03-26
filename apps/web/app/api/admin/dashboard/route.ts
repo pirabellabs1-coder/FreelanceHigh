@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { serviceStore, orderStore, transactionStore, reviewStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
 import { trackingStore } from "@/lib/tracking/tracking-store";
@@ -16,7 +16,7 @@ export async function GET() {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const users = devStore.getAll();
       const orders = orderStore.getAll();
       const services = serviceStore.getAll();

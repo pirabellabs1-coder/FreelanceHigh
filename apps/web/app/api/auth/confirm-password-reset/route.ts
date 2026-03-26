@@ -3,7 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { validateResetToken, consumeResetToken } from "@/lib/auth/password-reset";
 import { rateLimit } from "@/lib/api-rate-limit";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 const schema = z.object({
   token: z.string().min(64),
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Update password in database
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       const user = devStore.findByEmail(email);
       if (!user) {

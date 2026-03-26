@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore } from "@/lib/dev/data-store";
 import { createNotification } from "@/lib/notifications/service";
 
@@ -20,7 +20,7 @@ export async function POST(
     // Invoice IDs follow pattern "inv-{orderId}"
     const orderId = invoiceId.startsWith("inv-") ? invoiceId.slice(4) : invoiceId;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const order = orderStore.getById(orderId);
       if (!order) {
         return NextResponse.json({ error: "Facture introuvable" }, { status: 404 });

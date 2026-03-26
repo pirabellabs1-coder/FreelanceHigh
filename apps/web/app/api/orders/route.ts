@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore, serviceStore, transactionStore, conversationStore } from "@/lib/dev/data-store";
 import { emitEvent } from "@/lib/events/dispatcher";
 import { trackingStore } from "@/lib/tracking/tracking-store";
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     // ?side=seller (default for freelance) or ?side=buyer (achats)
     const sideFilter = searchParams.get("side");
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       let orders;
 
       // All roles can be both buyer and seller
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
     const { serviceId, packageType, requirements } = result.data;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       // Look up the service
       const service = serviceStore.getById(serviceId);
       if (!service) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore, transactionStore } from "@/lib/dev/data-store";
 import { devStore } from "@/lib/dev/dev-store";
 import { createAuditLog } from "@/lib/admin/audit";
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") ?? "1");
     const limit = parseInt(searchParams.get("limit") ?? "200");
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const allUsers = devStore.getAll();
       const allOrders = orderStore.getAll();
       const allTransactions = transactionStore.getAll();
@@ -145,7 +145,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "id et status sont requis" }, { status: 400 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.update(id, { status });
       if (!user) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
       return NextResponse.json({ user });

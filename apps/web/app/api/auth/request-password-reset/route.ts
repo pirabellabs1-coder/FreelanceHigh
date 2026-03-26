@@ -3,7 +3,7 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/api-rate-limit";
 import { emitEvent } from "@/lib/events/dispatcher";
 import { generateResetToken } from "@/lib/auth/password-reset";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
 
 const schema = z.object({ email: z.string().email() });
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     let userName = "Utilisateur";
     let userExists = false;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       const user = devStore.findByEmail(email);
       if (user) {

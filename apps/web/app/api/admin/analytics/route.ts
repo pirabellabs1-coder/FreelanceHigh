@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import {
   serviceStore,
   orderStore,
@@ -29,7 +29,7 @@ export async function GET() {
       "Jul", "Aou", "Sep", "Oct", "Nov", "Dec",
     ];
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       // ── DEV MODE: use dev stores (unchanged) ──
       const users = devStore.getAll().filter((u) => u.role !== "admin");
       const orders = orderStore.getAll();

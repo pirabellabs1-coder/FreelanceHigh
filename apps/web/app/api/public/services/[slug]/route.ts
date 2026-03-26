@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  if (IS_DEV) {
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
     return handleDevMode(slug);
   }
 

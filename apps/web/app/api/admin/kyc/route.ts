@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { kycRequestStore } from "@/lib/dev/data-store";
 import { emitEvent } from "@/lib/events/dispatcher";
@@ -15,7 +15,7 @@ export async function GET() {
     if (!session?.user?.id || session.user.role !== "admin") {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const users = devStore.getAll();
 
       // Build KYC queue from actual pending KYC requests
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.findById(userId);
       if (!user) {
         return NextResponse.json(

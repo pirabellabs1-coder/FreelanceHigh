@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { notificationStore } from "@/lib/dev/data-store";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 export async function GET() {
   try {
@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const notifications = notificationStore.getByUser(session.user.id);
       const unreadCount = notificationStore.getUnreadCount(session.user.id);
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Create a new notification
     if (create && title && message) {
-      if (IS_DEV) {
+      if (IS_DEV && !USE_PRISMA_FOR_DATA) {
         notificationStore.add({
           userId: session.user.id,
           title,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       if (all) {
         notificationStore.markAllRead(session.user.id);
       } else if (id) {

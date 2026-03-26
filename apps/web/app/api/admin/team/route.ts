@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma as _prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { notificationStore } from "@/lib/dev/data-store";
 import { ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
@@ -20,7 +20,7 @@ export async function GET() {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const allUsers = devStore.getAll();
       const admins = allUsers
         .filter((u) => u.role === "admin")
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Role invalide: ${adminRole}` }, { status: 400 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       // Dev: check duplicate and create user directly
       const existing = devStore.findByEmail(email);
       if (existing) {
@@ -184,7 +184,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: `Role invalide: ${adminRole}` }, { status: 400 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.findById(memberId);
       if (!user || user.role !== "admin") {
         return NextResponse.json({ error: "Membre introuvable" }, { status: 404 });
@@ -217,7 +217,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id est requis" }, { status: 400 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const user = devStore.findById(memberId);
       if (!user || user.role !== "admin") {
         return NextResponse.json({ error: "Membre introuvable" }, { status: 404 });

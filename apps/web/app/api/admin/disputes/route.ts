@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore, transactionStore } from "@/lib/dev/data-store";
 import { createNotification } from "@/lib/notifications/service";
 import { createAuditLog } from "@/lib/admin/audit";
@@ -15,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const orders = orderStore.getAll();
       const disputes = orders
         .filter((o) => o.status === "litige")
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, orderId, disputeId, verdict, resolution, partialPercent } = body;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       // Keep full dev implementation
       if (!orderId) return NextResponse.json({ error: "orderId est requis" }, { status: 400 });
       const order = orderStore.getById(orderId);

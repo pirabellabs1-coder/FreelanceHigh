@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { projectStore } from "@/lib/dev/data-store";
 import { z } from "zod";
 
@@ -27,7 +27,7 @@ export async function GET(
 
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const project = projectStore.getById(id);
       if (!project) {
         return NextResponse.json({ error: "Projet non trouve" }, { status: 404 });
@@ -69,7 +69,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Donnees invalides", details: parsed.error.issues }, { status: 400 });
     }
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const project = projectStore.update(id, parsed.data as any);
       if (!project) {
         return NextResponse.json({ error: "Projet non trouve" }, { status: 404 });
@@ -103,7 +103,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const deleted = projectStore.delete(id);
       if (!deleted) {
         return NextResponse.json({ error: "Projet non trouve" }, { status: 404 });

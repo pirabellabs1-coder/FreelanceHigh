@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 // GET /api/admin/audit-log — Paginated audit log entries
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get("page") ?? "1");
   const limit = parseInt(searchParams.get("limit") ?? "50");
 
-  if (IS_DEV) {
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
     // In dev mode, audit logs are only printed to console (see lib/admin/audit.ts)
     return NextResponse.json({ entries: [], total: 0, page, limit });
   }

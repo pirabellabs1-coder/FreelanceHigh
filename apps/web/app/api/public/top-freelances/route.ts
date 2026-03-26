@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { serviceStore, orderStore, reviewStore } from "@/lib/dev/data-store";
 
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const limit = Math.min(parseInt(searchParams.get("limit") || "3", 10), 12);
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       // Inclure freelances ET agences — les agences sont aussi des prestataires
       const users = devStore.getAll().filter((u) => (u.role === "freelance" || u.role === "agence") && u.status === "ACTIF");
       const allServices = serviceStore.getAll();

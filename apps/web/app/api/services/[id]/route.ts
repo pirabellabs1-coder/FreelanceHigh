@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { serviceStore } from "@/lib/dev/data-store";
 
 // GET /api/services/[id] — Get a service by ID (public, increments views)
@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const service = serviceStore.getById(id);
 
       if (!service) {
@@ -91,7 +91,7 @@ export async function PATCH(
 
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const service = serviceStore.getById(id);
 
       if (!service) {
@@ -304,7 +304,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const service = serviceStore.getById(id);
 
       if (!service) {

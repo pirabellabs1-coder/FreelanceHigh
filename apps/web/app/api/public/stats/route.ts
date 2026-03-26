@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { serviceStore, orderStore, reviewStore } from "@/lib/dev/data-store";
 
 export async function GET() {
   try {
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const users = devStore.getAll();
       const services = serviceStore.getAll();
       const orders = orderStore.getAll();

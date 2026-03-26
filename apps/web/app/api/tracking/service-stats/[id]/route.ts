@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { trackingStore } from "@/lib/tracking/tracking-store";
 import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { serviceStore } from "@/lib/dev/data-store";
 
 // GET /api/tracking/service-stats/[id] — Get tracking stats for a specific service
@@ -21,7 +21,7 @@ export async function GET(
 
     // Get the service slug to build the correct URL path
     let serviceSlug = id; // Fallback to ID
-    if (IS_DEV) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const svc = serviceStore.getById(id);
       if (svc?.slug) serviceSlug = svc.slug;
     } else {
