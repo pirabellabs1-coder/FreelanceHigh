@@ -39,7 +39,7 @@ async function handleProductionMode(slug: string) {
   // Reviews
   const reviews = await prisma.review.findMany({
     where: { serviceId: service.id },
-    include: { author: { select: { name: true, image: true } } },
+    include: { author: { select: { name: true, image: true, avatar: true, country: true, countryFlag: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -101,11 +101,14 @@ async function handleProductionMode(slug: string) {
         rating: r.rating,
         comment: r.comment,
         clientName: r.author?.name || "Client",
-        clientAvatar: r.author?.image || "",
+        clientAvatar: r.author?.avatar || r.author?.image || "",
+        clientCountry: r.author?.countryFlag || r.author?.country || "",
         qualite: r.quality,
         communication: r.communication,
         delai: r.timeliness,
         reply: r.response,
+        repliedAt: r.response ? r.updatedAt : null,
+        helpful: 0,
         createdAt: r.createdAt,
       })),
       vendor: {

@@ -95,34 +95,37 @@ export async function GET(request: NextRequest) {
       const dbReviews = await prisma.review.findMany({
         where,
         include: {
-          author: true,
-          service: true,
+          author: { select: { name: true, image: true, avatar: true, country: true, countryFlag: true } },
+          service: { select: { title: true } },
         },
         orderBy: { createdAt: "desc" },
       });
 
       // Map to same shape as dev-store
-      const reviews = dbReviews.map((r) => ({
-        id: r.id,
-        orderId: r.orderId,
-        serviceId: r.serviceId,
-        clientId: r.authorId,
-        clientName: (r as any).author?.name || "",
-        clientAvatar: (r as any).author?.image || "",
-        clientCountry: "",
-        freelanceId: r.targetId,
-        serviceTitle: (r as any).service?.title || "",
-        qualite: r.quality ?? 0,
-        communication: r.communication ?? 0,
-        delai: r.timeliness ?? 0,
-        rating: r.rating,
-        comment: r.comment || "",
-        reply: r.response || null,
-        repliedAt: r.response ? r.updatedAt.toISOString() : null,
-        helpful: 0,
-        reported: false,
-        createdAt: r.createdAt.toISOString(),
-      }));
+      const reviews = dbReviews.map((r) => {
+        const author = r.author as { name?: string; image?: string; avatar?: string; country?: string; countryFlag?: string } | null;
+        return {
+          id: r.id,
+          orderId: r.orderId,
+          serviceId: r.serviceId,
+          clientId: r.authorId,
+          clientName: author?.name || "",
+          clientAvatar: author?.avatar || author?.image || "",
+          clientCountry: author?.countryFlag || author?.country || "",
+          freelanceId: r.targetId,
+          serviceTitle: (r.service as { title?: string } | null)?.title || "",
+          qualite: r.quality ?? 0,
+          communication: r.communication ?? 0,
+          delai: r.timeliness ?? 0,
+          rating: r.rating,
+          comment: r.comment || "",
+          reply: r.response || null,
+          repliedAt: r.response ? r.updatedAt.toISOString() : null,
+          helpful: 0,
+          reported: false,
+          createdAt: r.createdAt.toISOString(),
+        };
+      });
 
       const summary = computeReviewSummary(reviews);
 
@@ -254,7 +257,10 @@ export async function POST(request: NextRequest) {
           timeliness: delai,
           comment: comment || "",
         },
-        include: { author: true, service: true },
+        include: {
+          author: { select: { name: true, image: true, avatar: true, country: true, countryFlag: true } },
+          service: { select: { title: true } },
+        },
       });
 
       // Update service rating and ratingCount
@@ -286,16 +292,17 @@ export async function POST(request: NextRequest) {
       }).catch(() => {}); // ignore if profile doesn't exist
 
       // Map to same shape as dev-store
+      const author = dbReview.author as { name?: string; image?: string; avatar?: string; country?: string; countryFlag?: string } | null;
       const review = {
         id: dbReview.id,
         orderId: dbReview.orderId,
         serviceId: dbReview.serviceId,
         clientId: dbReview.authorId,
-        clientName: (dbReview as any).author?.name || "",
-        clientAvatar: (dbReview as any).author?.image || "",
-        clientCountry: "",
+        clientName: author?.name || "",
+        clientAvatar: author?.avatar || author?.image || "",
+        clientCountry: author?.countryFlag || author?.country || "",
         freelanceId: dbReview.targetId,
-        serviceTitle: (dbReview as any).service?.title || "",
+        serviceTitle: (dbReview.service as { title?: string } | null)?.title || "",
         qualite: dbReview.quality ?? qualite,
         communication: dbReview.communication ?? communication,
         delai: dbReview.timeliness ?? delai,

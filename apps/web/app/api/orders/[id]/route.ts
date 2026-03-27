@@ -297,7 +297,12 @@ export async function PATCH(
 
       return NextResponse.json({ order: updatedOrder });
     } else {
-      // Production: Prisma
+      // Production: Prisma — session required
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+      }
+      const userId = session.user.id;
+
       const order = await prisma.order.findUnique({
         where: { id },
         include: { service: true, client: true, freelance: true },
@@ -311,7 +316,7 @@ export async function PATCH(
       }
 
       // Verify the user is either the client or the freelance on this order
-      if (order.clientId !== session.user.id && order.freelanceId !== session.user.id) {
+      if (order.clientId !== userId && order.freelanceId !== userId) {
         return NextResponse.json(
           { error: "Acces non autorise" },
           { status: 403 }
@@ -321,6 +326,7 @@ export async function PATCH(
       let updatedOrder;
 
       // Handle delivery (status change to "LIVRE" with message and files)
+      const serviceTitle = order.service?.title || "votre commande";
       if (deliveryMessage !== undefined && deliveryFiles !== undefined) {
         updatedOrder = await prisma.$transaction(async (tx) => {
           const updated = await tx.order.update({
@@ -341,7 +347,7 @@ export async function PATCH(
             await tx.message.create({
               data: {
                 conversationId: conversation.id,
-                senderId: session.user.id,
+                senderId: userId,
                 content: deliveryMessage,
                 type: "TEXT",
               },
@@ -352,7 +358,7 @@ export async function PATCH(
                 await tx.message.create({
                   data: {
                     conversationId: conversation.id,
-                    senderId: session.user.id,
+                    senderId: userId,
                     content: file.name || "Fichier joint",
                     type: "FILE",
                     fileName: file.name,
@@ -368,7 +374,7 @@ export async function PATCH(
             data: {
               userId: order.clientId,
               title: "Livraison effectuee",
-              message: `La commande ${order.service!.title} a ete livree`,
+              message: `La commande ${serviceTitle} a ete livree`,
               type: "ORDER",
               read: false,
               link: `/client/commandes/${id}`,
@@ -395,7 +401,7 @@ export async function PATCH(
             data: {
               userId: order.clientId,
               title: "Commande acceptee",
-              message: `Votre commande ${order.service!.title} a ete acceptee`,
+              message: `Votre commande ${serviceTitle} a ete acceptee`,
               type: "ORDER",
               read: false,
               link: `/client/commandes/${id}`,
@@ -410,7 +416,7 @@ export async function PATCH(
         const prismaStatus = status ? (STATUS_MAP[status] || status.toUpperCase()) : undefined;
 
         // Only the client can mark as completed (validates delivery)
-        if (prismaStatus === "TERMINE" && session.user.id !== order.clientId) {
+        if (prismaStatus === "TERMINE" && userId !== order.clientId) {
           return NextResponse.json(
             { error: "Seul le client peut valider la livraison" },
             { status: 403 }
@@ -459,14 +465,14 @@ export async function PATCH(
             };
 
             const notifyUserId =
-              session.user.id === order.clientId
+              userId === order.clientId
                 ? order.freelanceId
                 : order.clientId;
 
             if (statusLabels[prismaStatus]) {
               const notifMessage = prismaStatus === "REVISION" && revisionComment
                 ? `Revision demandee : ${revisionComment}`
-                : `${statusLabels[prismaStatus]} pour ${order.service!.title}`;
+                : `${statusLabels[prismaStatus]} pour ${serviceTitle}`;
 
               await tx.notification.create({
                 data: {
@@ -489,7 +495,7 @@ export async function PATCH(
                 await tx.message.create({
                   data: {
                     conversationId: conversation.id,
-                    senderId: session.user.id,
+                    senderId: userId,
                     content: `Revision demandee : ${revisionComment}`,
                     type: "SYSTEM",
                   },
@@ -523,9 +529,9 @@ export async function PATCH(
 
               // Emit order.completed event (notification + email — outside tx)
               emitEvent("order.completed", {
-                orderId: order.id, serviceTitle: order.service!.title, amount: netAmount,
-                freelanceId: order.freelanceId, freelanceName: order.freelance!.name, freelanceEmail: order.freelance!.email,
-                clientId: order.clientId, clientName: order.client!.name, clientEmail: order.client!.email,
+                orderId: order.id, serviceTitle: serviceTitle, amount: netAmount,
+                freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
+                clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
               }).catch(() => {});
             }
           }
