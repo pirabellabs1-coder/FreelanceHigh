@@ -809,6 +809,182 @@ export const conversationsApi = {
     fetchApi<{ conversation: ApiConversation }>("/api/conversations", { method: "POST", body: JSON.stringify(data) }),
 };
 
+// ── Propositions ──
+
+export interface ApiProposition {
+  id: string;
+  serviceId: string;
+  freelanceId: string;
+  clientId: string;
+  projectId: string | null;
+  title: string;
+  description: string;
+  amount: number;
+  deliveryDays: number;
+  revisions: number;
+  status: string;
+  viewedAt: string | null;
+  acceptedAt: string | null;
+  rejectedAt: string | null;
+  expiresAt: string | null;
+  orderId: string | null;
+  service?: { id: string; title: string; slug?: string; images?: string[] };
+  freelance?: { id: string; name: string; image?: string | null };
+  client?: { id: string; name: string; image?: string | null };
+  order?: { id: string; status: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const propositionsApi = {
+  list: (role?: "freelance" | "client") => {
+    const url = role ? `/api/propositions?role=${role}` : "/api/propositions";
+    return fetchApi<{ propositions: ApiProposition[] }>(url);
+  },
+
+  get: (id: string) =>
+    fetchApi<{ proposition: ApiProposition }>(`/api/propositions/${id}`).then((r) => r.proposition),
+
+  create: (data: { serviceId: string; clientId: string; projectId?: string; title?: string; description?: string; amount?: number; deliveryDays?: number; revisions?: number }) =>
+    fetchApi<{ proposition: ApiProposition }>("/api/propositions", { method: "POST", body: JSON.stringify(data) }),
+
+  accept: (id: string) =>
+    fetchApi<{ success: boolean; orderId: string }>(`/api/propositions/${id}`, { method: "PATCH", body: JSON.stringify({ action: "accept" }) }),
+
+  reject: (id: string) =>
+    fetchApi<{ success: boolean }>(`/api/propositions/${id}`, { method: "PATCH", body: JSON.stringify({ action: "reject" }) }),
+};
+
+// ── Service Tracking ──
+
+export const trackingApi = {
+  trackView: (serviceId: string) =>
+    fetchApi<{ success: boolean }>(`/api/services/${serviceId}/track-view`, { method: "POST" }),
+
+  trackClick: (serviceId: string) =>
+    fetchApi<{ success: boolean }>(`/api/services/${serviceId}/track-click`, { method: "POST" }),
+};
+
+// ── Wallet (Freelance & Agency) ──
+
+export interface ApiWallet {
+  id: string;
+  balance: number;
+  pending: number;
+  totalEarned: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiWalletTransaction {
+  id: string;
+  freelanceWalletId: string | null;
+  agencyWalletId: string | null;
+  type: string;
+  amount: number;
+  description: string;
+  status: string;
+  orderId: string | null;
+  withdrawalMethod: string | null;
+  externalRef: string | null;
+  createdAt: string;
+}
+
+export const walletApi = {
+  get: (section?: "transactions") => {
+    const url = section ? `/api/wallet?section=${section}` : "/api/wallet";
+    return fetchApi<{ wallet: ApiWallet; transactions: ApiWalletTransaction[] }>(url);
+  },
+
+  withdraw: (amount: number, method: string, details?: string) =>
+    fetchApi<{ wallet?: ApiWallet; transaction: ApiWalletTransaction }>("/api/wallet", {
+      method: "POST",
+      body: JSON.stringify({ amount, method, details }),
+    }),
+};
+
+// ── Admin Wallet ──
+
+export interface ApiAdminWallet {
+  id: string;
+  totalFeesHeld: number;
+  totalFeesReleased: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiAdminTransaction {
+  id: string;
+  adminWalletId: string;
+  type: string;
+  amount: number;
+  currency: string;
+  description: string;
+  orderId: string | null;
+  boostId: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface ApiAdminPayout {
+  id: string;
+  adminWalletId: string;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export const adminWalletApi = {
+  get: (section?: "transactions" | "payouts") => {
+    const url = section ? `/api/admin/wallet?section=${section}` : "/api/admin/wallet";
+    return fetchApi<{ wallet: ApiAdminWallet; transactions?: ApiAdminTransaction[]; payouts?: ApiAdminPayout[] }>(url);
+  },
+
+  createPayout: (amount: number, method: string) =>
+    fetchApi<{ payout: ApiAdminPayout }>("/api/admin/wallet", { method: "POST", body: JSON.stringify({ amount, method }) }),
+};
+
+// ── Agency Team Members ──
+
+export interface ApiAgencyTeamMember {
+  id: string;
+  agencyId: string;
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+  status: string;
+  activeOrders: number;
+  revenue: number;
+  joinedAt: string;
+}
+
+export const agencyTeamApi = {
+  list: () =>
+    fetchApi<{ members: ApiAgencyTeamMember[] }>("/api/agence/equipe"),
+
+  invite: (email: string, role: string) =>
+    fetchApi<{ success: boolean; member: ApiAgencyTeamMember; message: string }>("/api/agence/equipe", {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    }),
+
+  updateRole: (memberId: string, role: string) =>
+    fetchApi<{ success: boolean }>(`/api/agence/equipe/${memberId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }),
+
+  remove: (memberId: string) =>
+    fetchApi<{ success: boolean }>(`/api/agence/equipe/${memberId}`, {
+      method: "DELETE",
+    }),
+};
+
 // ── Type Mappers (API types → local store types) ──
 
 import type { Service, Order, Transaction, Conversation, ChatMessage } from "@/lib/demo-data";
@@ -845,6 +1021,11 @@ export function mapApiServiceToLocal(s: ApiService): Service {
     },
     faq: s.faq || [],
     extras: s.extras || [],
+    isBoosted: s.isBoosted || false,
+    rating: s.rating || 0,
+    ratingCount: s.ratingCount || 0,
+    totalContacts: (s as Record<string, unknown>).totalContacts as number || 0,
+    slug: s.slug || "",
   };
 }
 

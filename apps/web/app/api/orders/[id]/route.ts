@@ -305,7 +305,7 @@ export async function PATCH(
 
       const order = await prisma.order.findUnique({
         where: { id },
-        include: { service: true, client: true, freelance: true },
+        include: { service: true, client: true, freelance: true, escrow: true },
       });
 
       if (!order) {
@@ -315,8 +315,11 @@ export async function PATCH(
         );
       }
 
-      // Verify the user is either the client or the freelance on this order
-      if (order.clientId !== userId && order.freelanceId !== userId) {
+      // Verify the user is the client, the freelance, or the agency owner on this order
+      const isAgencyOwner = order.agencyId
+        ? await prisma.agencyProfile.findFirst({ where: { id: order.agencyId, userId } }).then((a) => !!a)
+        : false;
+      if (order.clientId !== userId && order.freelanceId !== userId && !isAgencyOwner) {
         return NextResponse.json(
           { error: "Acces non autorise" },
           { status: 403 }
@@ -503,7 +506,7 @@ export async function PATCH(
               }
             }
 
-            // When order is completed, create payment records and update service stats
+            // When order is completed, create payment records, credit wallet, and update service stats
             if (prismaStatus === "TERMINE") {
               const netAmount = order.amount - order.commission;
 
@@ -518,6 +521,65 @@ export async function PATCH(
                 where: { orderId: order.id, type: "commission" },
                 data: { status: "COMPLETE" },
               });
+
+              // Release escrow record
+              await tx.escrow.updateMany({
+                where: { orderId: order.id, status: "HELD" },
+                data: { status: "RELEASED", releasedAt: new Date() },
+              });
+
+              // Release admin commission (held → released)
+              const adminWallet = await tx.adminWallet.findFirst();
+              if (adminWallet) {
+                await tx.adminWallet.update({
+                  where: { id: adminWallet.id },
+                  data: {
+                    totalFeesHeld: { decrement: order.platformFee },
+                    totalFeesReleased: { increment: order.platformFee },
+                  },
+                });
+                await tx.adminTransaction.updateMany({
+                  where: { orderId: order.id, status: "PENDING" },
+                  data: { status: "CONFIRMED" },
+                });
+              }
+
+              // Credit freelancer or agency wallet
+              if (order.agencyId) {
+                // Agency wallet
+                const agencyWallet = await tx.walletAgency.upsert({
+                  where: { agencyId: order.agencyId },
+                  create: { agencyId: order.agencyId, balance: netAmount, totalEarned: netAmount },
+                  update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
+                });
+                await tx.walletTransaction.create({
+                  data: {
+                    agencyWalletId: agencyWallet.id,
+                    type: "ORDER_PAYOUT",
+                    amount: netAmount,
+                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
+                    status: "WALLET_COMPLETED",
+                    orderId: order.id,
+                  },
+                });
+              } else {
+                // Freelancer wallet
+                const freelanceWallet = await tx.walletFreelance.upsert({
+                  where: { userId: order.freelanceId },
+                  create: { userId: order.freelanceId, balance: netAmount, totalEarned: netAmount },
+                  update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
+                });
+                await tx.walletTransaction.create({
+                  data: {
+                    freelanceWalletId: freelanceWallet.id,
+                    type: "ORDER_PAYOUT",
+                    amount: netAmount,
+                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
+                    status: "WALLET_COMPLETED",
+                    orderId: order.id,
+                  },
+                });
+              }
 
               // Increment service orderCount
               if (order.serviceId) {

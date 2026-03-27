@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { prisma } from "@/lib/prisma";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { transactionStore } from "@/lib/dev/data-store";
 import { emitEvent } from "@/lib/events/dispatcher";
-import { checkRateLimit, recordFailedAttempt, resetAttempts } from "@/lib/auth/rate-limiter";
+import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
 
-const VALID_METHODS = ["SEPA", "PayPal", "Wave", "Orange Money", "MTN Mobile Money"];
+const VALID_METHODS_DEV = ["SEPA", "PayPal", "Wave", "Orange Money", "MTN Mobile Money"];
+const VALID_METHODS_PRISMA = ["SEPA", "MOBILE_MONEY", "PAYPAL", "WISE", "CRYPTO"] as const;
 const MINIMUM_WITHDRAWAL = 20;
 
 export async function POST(request: NextRequest) {
@@ -15,11 +18,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    // Verification KYC obligatoire (niveau 3 minimum pour retirer des fonds)
+    // KYC level 3 required
     if ((session.user.kyc ?? 1) < 3) {
       return NextResponse.json(
         {
-          error: "Verification d'identite requise pour retirer des fonds. Completez votre KYC (niveau 3 minimum).",
+          error: "Verification d'identite requise pour retirer des fonds (KYC niveau 3 minimum).",
           code: "KYC_REQUIRED",
           requiredLevel: 3,
           currentLevel: session.user.kyc ?? 1,
@@ -29,12 +32,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting : 1 retrait par minute par utilisateur
+    // Rate limiting
     const rateLimitKey = `withdrawal:${session.user.id}`;
     const rateCheck = checkRateLimit(rateLimitKey);
     if (!rateCheck.allowed) {
       return NextResponse.json(
-        { error: "Trop de demandes de retrait. Veuillez patienter avant de reessayer." },
+        { error: "Trop de demandes de retrait. Veuillez patienter." },
         { status: 429 }
       );
     }
@@ -42,7 +45,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { amount, method, details } = body;
 
-    // Validate amount
     if (typeof amount !== "number" || amount < MINIMUM_WITHDRAWAL) {
       return NextResponse.json(
         { error: `Le montant minimum de retrait est de ${MINIMUM_WITHDRAWAL} EUR` },
@@ -50,52 +52,117 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate method
-    if (!method || !VALID_METHODS.includes(method)) {
-      return NextResponse.json(
-        { error: `Methode de retrait invalide. Methodes acceptees : ${VALID_METHODS.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    // Check available balance
-    const summary = transactionStore.getSummary(session.user.id);
-    if (amount > summary.available) {
-      return NextResponse.json(
-        { error: "Solde insuffisant pour ce retrait" },
-        { status: 400 }
-      );
-    }
-
-    // Enregistrer la tentative pour le rate limiting
     recordFailedAttempt(rateLimitKey);
 
-    // Create the withdrawal transaction
-    const transaction = transactionStore.add({
-      userId: session.user.id,
-      type: "retrait",
-      description: `Retrait vers ${method}${details ? ` - ${details}` : ""}`,
-      amount: -amount,
-      status: "en_attente",
-      date: new Date().toISOString().slice(0, 10),
-      method,
-    });
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      if (!method || !VALID_METHODS_DEV.includes(method)) {
+        return NextResponse.json(
+          { error: `Methode invalide. Acceptees : ${VALID_METHODS_DEV.join(", ")}` },
+          { status: 400 }
+        );
+      }
 
-    // Emit withdrawal event (notification + email)
+      const summary = transactionStore.getSummary(session.user.id);
+      if (amount > summary.available) {
+        return NextResponse.json({ error: "Solde insuffisant" }, { status: 400 });
+      }
+
+      const transaction = transactionStore.add({
+        userId: session.user.id,
+        type: "retrait",
+        description: `Retrait vers ${method}${details ? ` - ${details}` : ""}`,
+        amount: -amount,
+        status: "en_attente",
+        date: new Date().toISOString().slice(0, 10),
+        method,
+      });
+
+      emitEvent("withdrawal.requested", {
+        userId: session.user.id, userName: session.user.name || "", userEmail: session.user.email || "",
+        amount, method,
+      }).catch(() => {});
+
+      return NextResponse.json({ transaction }, { status: 201 });
+    }
+
+    // Production: Prisma — use wallet models
+    if (!method || !(VALID_METHODS_PRISMA as readonly string[]).includes(method)) {
+      return NextResponse.json(
+        { error: `Methode invalide. Acceptees : ${VALID_METHODS_PRISMA.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    const userId = session.user.id;
+    const userRole = (session.user as Record<string, unknown>).role as string;
+
+    if (userRole === "AGENCE" || userRole === "agence") {
+      const agencyProfile = await prisma.agencyProfile.findUnique({ where: { userId }, select: { id: true } });
+      if (!agencyProfile) {
+        return NextResponse.json({ error: "Profil agence introuvable" }, { status: 404 });
+      }
+
+      const wallet = await prisma.walletAgency.findUnique({ where: { agencyId: agencyProfile.id } });
+      if (!wallet || wallet.balance < amount) {
+        return NextResponse.json({ error: "Solde insuffisant" }, { status: 400 });
+      }
+
+      const [, transaction] = await prisma.$transaction([
+        prisma.walletAgency.update({
+          where: { id: wallet.id },
+          data: { balance: { decrement: amount } },
+        }),
+        prisma.walletTransaction.create({
+          data: {
+            agencyWalletId: wallet.id,
+            type: "WITHDRAWAL",
+            amount: -amount,
+            description: `Retrait vers ${method}${details ? ` - ${details}` : ""}`,
+            status: "WALLET_PENDING",
+            withdrawalMethod: method as "SEPA" | "MOBILE_MONEY" | "PAYPAL" | "WISE" | "CRYPTO",
+          },
+        }),
+      ]);
+
+      emitEvent("withdrawal.requested", {
+        userId, userName: session.user.name || "", userEmail: session.user.email || "",
+        amount, method,
+      }).catch(() => {});
+
+      return NextResponse.json({ transaction }, { status: 201 });
+    }
+
+    // Freelance
+    const wallet = await prisma.walletFreelance.findUnique({ where: { userId } });
+    if (!wallet || wallet.balance < amount) {
+      return NextResponse.json({ error: "Solde insuffisant" }, { status: 400 });
+    }
+
+    const [, transaction] = await prisma.$transaction([
+      prisma.walletFreelance.update({
+        where: { id: wallet.id },
+        data: { balance: { decrement: amount } },
+      }),
+      prisma.walletTransaction.create({
+        data: {
+          freelanceWalletId: wallet.id,
+          type: "WITHDRAWAL",
+          amount: -amount,
+          description: `Retrait vers ${method}${details ? ` - ${details}` : ""}`,
+          status: "WALLET_PENDING",
+          withdrawalMethod: method as "SEPA" | "MOBILE_MONEY" | "PAYPAL" | "WISE" | "CRYPTO",
+        },
+      }),
+    ]);
+
     emitEvent("withdrawal.requested", {
-      userId: session.user.id,
-      userName: session.user.name || "Utilisateur",
-      userEmail: session.user.email || "",
-      amount,
-      method,
-    }).catch((err) => console.error("[Withdrawal] emitEvent error:", err));
+      userId, userName: session.user.name || "", userEmail: session.user.email || "",
+      amount, method,
+    }).catch(() => {});
 
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error) {
     console.error("[API /finances/withdrawal POST]", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la demande de retrait" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur lors de la demande de retrait" }, { status: 500 });
   }
 }

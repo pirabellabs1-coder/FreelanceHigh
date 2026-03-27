@@ -11,12 +11,13 @@ import {
 } from "@/lib/demo-data";
 import {
   servicesApi, ordersApi, financesApi, profileApi, notificationsApi, conversationsApi, statsApi, reviewsApi,
-  affiliationApi, automationApi, productiviteApi, certificationsApi,
+  affiliationApi, automationApi, productiviteApi, certificationsApi, walletApi,
   mapApiServiceToLocal, mapApiOrderToLocal, mapApiTransactionToLocal, mapApiConversationToLocal,
   type ApiNotification, type ApiReview, type ApiReviewSummary, type ApiStats,
   type ApiAffiliationData, type ApiAutomationData, type ApiAutomationScenario,
   type ApiAutomationHistoryEntry, type ApiProductiviteSession,
   type ApiCertification, type ApiCertificationResult,
+  type ApiWallet, type ApiWalletTransaction,
 } from "@/lib/api-client";
 
 // ============================================================
@@ -69,6 +70,11 @@ interface DashboardState {
   transactions: Transaction[];
   addTransaction: (tx: Omit<Transaction, "id">) => void;
   apiRequestWithdrawal: (amount: number, method: string) => Promise<boolean>;
+
+  // Wallet
+  wallet: ApiWallet | null;
+  walletTransactions: ApiWalletTransaction[];
+  syncWallet: () => Promise<void>;
 
   // Conversations
   conversations: Conversation[];
@@ -167,7 +173,7 @@ export const useDashboardStore = create<DashboardState>()(
       syncFromApi: async () => {
         set({ isLoading: true });
         try {
-          const [servicesRes, ordersRes, transactionsRes, conversationsRes, profileRes, notificationsRes, statsRes, reviewsRes] = await Promise.allSettled([
+          const [servicesRes, ordersRes, transactionsRes, conversationsRes, profileRes, notificationsRes, statsRes, reviewsRes, walletRes] = await Promise.allSettled([
             servicesApi.list(),
             ordersApi.list(),
             financesApi.transactions(),
@@ -176,6 +182,7 @@ export const useDashboardStore = create<DashboardState>()(
             notificationsApi.list(),
             statsApi.get(),
             reviewsApi.getByFreelance(),
+            walletApi.get("transactions"),
           ]);
 
           const updates: Partial<DashboardState> = {
@@ -235,6 +242,10 @@ export const useDashboardStore = create<DashboardState>()(
           if (reviewsRes.status === "fulfilled") {
             updates.reviews = reviewsRes.value?.reviews ?? [];
             updates.reviewSummary = reviewsRes.value?.summary ?? null;
+          }
+          if (walletRes.status === "fulfilled") {
+            updates.wallet = walletRes.value?.wallet || null;
+            updates.walletTransactions = walletRes.value?.transactions || [];
           }
 
           set(updates);
@@ -494,6 +505,21 @@ export const useDashboardStore = create<DashboardState>()(
         } catch (err) {
           console.error("[Withdrawal] Error:", err);
           return false;
+        }
+      },
+
+      // Wallet
+      wallet: null,
+      walletTransactions: [],
+      syncWallet: async () => {
+        try {
+          const data = await walletApi.get("transactions");
+          set({
+            wallet: data.wallet || null,
+            walletTransactions: data.transactions || [],
+          });
+        } catch (err) {
+          console.error("[Wallet sync] Error:", err);
         }
       },
 

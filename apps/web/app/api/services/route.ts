@@ -28,14 +28,57 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json(services);
     }
 
-    // Production: Prisma
+    // Production: Prisma — with REAL stats from related data
+    // Include services owned by user OR owned by user's agency
+    const userRole = (session.user as Record<string, unknown>).role as string;
+    let serviceWhere: Record<string, unknown> = { userId: session.user.id };
+    if (userRole === "AGENCE" || userRole === "agence") {
+      const agencyProfile = await prisma.agencyProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      });
+      if (agencyProfile) {
+        serviceWhere = { OR: [{ userId: session.user.id }, { agencyId: agencyProfile.id }] };
+      }
+    }
+
     const services = await prisma.service.findMany({
-      where: { userId: session.user.id },
-      include: { category: true, options: true, media: true },
+      where: serviceWhere,
+      include: {
+        category: true,
+        options: true,
+        media: true,
+        _count: {
+          select: {
+            viewTracking: true,
+            clickTracking: true,
+            reviews: true,
+            propositions: true,
+          },
+        },
+        orders: {
+          where: { status: "TERMINE" },
+          select: { id: true, freelancerPayout: true },
+        },
+      },
       orderBy: { updatedAt: "desc" },
     });
 
-    return NextResponse.json(services);
+    // Enrich with real computed stats
+    const enriched = services.map((s) => ({
+      ...s,
+      views: s._count.viewTracking || s.views,
+      clicks: s._count.clickTracking,
+      orderCount: s.orders.length || s.orderCount,
+      totalRevenue: s.orders.reduce((sum, o) => sum + (o.freelancerPayout || 0), 0) || s.totalRevenue,
+      ratingCount: s._count.reviews || s.ratingCount,
+      totalContacts: s._count.propositions || s.totalContacts,
+      // Remove raw orders from response to keep payload small
+      orders: undefined,
+      _count: undefined,
+    }));
+
+    return NextResponse.json(enriched);
   } catch (error) {
     console.error("[API /services GET]", error);
     return NextResponse.json(
@@ -245,6 +288,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Production: Prisma
+    // Determine agencyId if user is an agency
+    let agencyId: string | undefined;
+    if ((session.user as Record<string, unknown>).role === "AGENCE" || (session.user as Record<string, unknown>).role === "agence") {
+      const agencyProfile = await prisma.agencyProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      });
+      if (agencyProfile) {
+        agencyId = agencyProfile.id;
+      }
+    }
+
     // Generate a unique slug
     let slug = generateSlug(body.title);
     const existingSlug = await prisma.service.findUnique({ where: { slug } });
@@ -357,6 +412,7 @@ export async function POST(request: NextRequest) {
         categoryId,
         ...(subCategoryId ? { subCategoryId } : {}),
         userId: session.user.id,
+        ...(agencyId ? { agencyId } : {}),
         status: "EN_ATTENTE",
         basePrice,
         price: basePrice,

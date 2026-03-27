@@ -29,6 +29,10 @@ export interface Service {
   faq: { question: string; answer: string }[];
   extras: { label: string; price: number }[];
   isBoosted?: boolean;
+  rating?: number;
+  ratingCount?: number;
+  totalContacts?: number;
+  slug?: string;
 }
 
 export interface Order {

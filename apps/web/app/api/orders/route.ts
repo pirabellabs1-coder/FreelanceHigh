@@ -63,15 +63,33 @@ export async function GET(request: NextRequest) {
       // Production: Prisma
       let where: Record<string, unknown>;
 
+      // For agencies, also include orders linked to the agency profile
+      let agencyProfileId: string | null = null;
+      const userRole = (session.user as Record<string, unknown>).role as string;
+      if (userRole === "AGENCE" || userRole === "agence") {
+        const agencyProfile = await prisma.agencyProfile.findUnique({
+          where: { userId: session.user.id },
+          select: { id: true },
+        });
+        if (agencyProfile) agencyProfileId = agencyProfile.id;
+      }
+
       if (sideFilter === "buyer") {
         where = { clientId: session.user.id };
       } else if (sideFilter === "seller") {
-        where = { freelanceId: session.user.id };
-      } else if (session.user.role === "client") {
+        const orConditions: Record<string, unknown>[] = [{ freelanceId: session.user.id }];
+        if (agencyProfileId) orConditions.push({ agencyId: agencyProfileId });
+        where = { OR: orConditions };
+      } else if (session.user.role === "client" || userRole === "CLIENT") {
         where = { clientId: session.user.id };
       } else {
         // Freelance/agence/admin: both buyer and seller
-        where = { OR: [{ freelanceId: session.user.id }, { clientId: session.user.id }] };
+        const orConditions: Record<string, unknown>[] = [
+          { freelanceId: session.user.id },
+          { clientId: session.user.id },
+        ];
+        if (agencyProfileId) orConditions.push({ agencyId: agencyProfileId });
+        where = { OR: orConditions };
       }
 
       if (statusFilter) {
@@ -332,9 +350,13 @@ export async function POST(request: NextRequest) {
       const deliveryDays = pkg.deliveryDays ?? service.deliveryDays;
       const deadlineDate = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
 
+      // Calculate platformFee (20%) and freelancerPayout (80%)
+      const platformFee = commission; // commission = calculateCommissionEur() already gives the platform fee
+      const freelancerPayout = amount - platformFee;
+
       // Create the order and related records in a transaction
       const order = await prisma.$transaction(async (tx) => {
-        // Create the order
+        // Create the order with platformFee + freelancerPayout
         const newOrder = await tx.order.create({
           data: {
             serviceId,
@@ -343,12 +365,29 @@ export async function POST(request: NextRequest) {
             status: "EN_ATTENTE",
             escrowStatus: "HELD",
             amount,
+            currency: "EUR",
             commission,
+            platformFee,
+            freelancerPayout,
+            title: service.title,
+            description: service.descriptionText || null,
+            deliveryDays,
             packageType,
             requirements: requirements || null,
             deadline: deadlineDate,
           },
           include: { service: true, client: true, freelance: true },
+        });
+
+        // Create Escrow record (funds blocked)
+        await tx.escrow.create({
+          data: {
+            orderId: newOrder.id,
+            amount,
+            currency: "EUR",
+            reason: "ORDER_PAYMENT",
+            status: "HELD",
+          },
         });
 
         // Create escrow payment record (funds held)
@@ -357,7 +396,7 @@ export async function POST(request: NextRequest) {
             orderId: newOrder.id,
             payerId: session.user.id,
             payeeId: service.userId,
-            amount: amount - commission,
+            amount: freelancerPayout,
             currency: "EUR",
             status: "EN_ATTENTE",
             type: "paiement",
@@ -370,11 +409,32 @@ export async function POST(request: NextRequest) {
           data: {
             orderId: newOrder.id,
             payerId: session.user.id,
-            amount: commission,
+            amount: platformFee,
             currency: "EUR",
             status: "EN_ATTENTE",
             type: "commission",
             description: `Commission ${commissionLabel} sur commande ${newOrder.id}`,
+          },
+        });
+
+        // Add commission to Admin Wallet
+        let adminWallet = await tx.adminWallet.findFirst();
+        if (!adminWallet) {
+          adminWallet = await tx.adminWallet.create({ data: {} });
+        }
+        await tx.adminWallet.update({
+          where: { id: adminWallet.id },
+          data: { totalFeesHeld: { increment: platformFee } },
+        });
+        await tx.adminTransaction.create({
+          data: {
+            adminWalletId: adminWallet.id,
+            type: "SERVICE_FEE",
+            amount: platformFee,
+            currency: "EUR",
+            description: `Commission ${commissionLabel} - ${service.title} (Commande #${newOrder.id.slice(0, 8)})`,
+            orderId: newOrder.id,
+            status: "PENDING",
           },
         });
 

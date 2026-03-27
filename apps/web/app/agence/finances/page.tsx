@@ -65,6 +65,9 @@ export default function AgenceFinances() {
     syncFinances,
     syncStats,
     requestWithdrawal,
+    wallet,
+    walletTransactions,
+    syncWallet,
   } = useAgencyStore();
 
   const { addToast } = useToastStore();
@@ -79,7 +82,8 @@ export default function AgenceFinances() {
   useEffect(() => {
     syncFinances();
     syncStats();
-  }, [syncFinances, syncStats]);
+    syncWallet();
+  }, [syncFinances, syncStats, syncWallet]);
 
   // Derived data
   const monthlyRevenue = stats?.monthlyRevenue ?? [];
@@ -147,24 +151,29 @@ export default function AgenceFinances() {
 
   // ── Metric cards ──
 
+  // Prefer wallet data over financeSummary when available
+  const available = wallet?.balance ?? financeSummary?.available ?? 0;
+  const pending = wallet?.pending ?? financeSummary?.pending ?? 0;
+  const totalEarned = wallet?.totalEarned ?? financeSummary?.totalEarned ?? 0;
+
   const metrics = [
     {
       label: "Solde disponible",
-      value: fmtEur(financeSummary?.available),
+      value: fmtEur(available),
       icon: "account_balance_wallet",
       color: "text-emerald-400",
       borderColor: "border-emerald-500/30",
     },
     {
       label: "En attente",
-      value: fmtEur(financeSummary?.pending),
+      value: fmtEur(pending),
       icon: "schedule",
       color: "text-amber-400",
       borderColor: "border-amber-500/30",
     },
     {
       label: "CA total",
-      value: fmtEur(financeSummary?.totalEarned),
+      value: fmtEur(totalEarned),
       icon: "trending_up",
       color: "text-primary",
       borderColor: "border-primary/30",
@@ -393,6 +402,46 @@ export default function AgenceFinances() {
           </div>
         )}
       </div>
+
+      {/* Wallet Transactions (from /api/wallet) */}
+      {walletTransactions.length > 0 && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+          <div className="px-5 py-4 border-b border-border-dark">
+            <h2 className="font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">account_balance_wallet</span>
+              Transactions Wallet
+              <span className="text-slate-500 font-normal text-sm">({walletTransactions.length})</span>
+            </h2>
+          </div>
+          <div className="divide-y divide-border-dark/50">
+            {walletTransactions.map((wtx) => {
+              const isPositive = wtx.amount >= 0;
+              const statusLabel = wtx.status === "WALLET_COMPLETED" ? "Complete" : wtx.status === "WALLET_PENDING" ? "En attente" : wtx.status;
+              const statusCls = wtx.status === "WALLET_COMPLETED" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400";
+              return (
+                <div key={wtx.id} className="flex items-center gap-3 px-5 py-3 hover:bg-background-dark/30 transition-colors">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm", isPositive ? "text-emerald-400 bg-emerald-500/10" : "text-blue-400 bg-blue-500/10")}>
+                    <span className="material-symbols-outlined text-base">{isPositive ? "payments" : "arrow_upward"}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{wtx.description}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {fmtDate(wtx.createdAt)}
+                      {wtx.withdrawalMethod && ` · ${wtx.withdrawalMethod}`}
+                    </p>
+                  </div>
+                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap", statusCls)}>
+                    {statusLabel}
+                  </span>
+                  <span className={cn("text-sm font-bold", isPositive ? "text-emerald-400" : "text-red-400")}>
+                    {isPositive ? "+" : ""}{fmtEur(Math.abs(wtx.amount))}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Withdrawal Modal */}
       {showRetrait && (

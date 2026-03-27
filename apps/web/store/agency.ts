@@ -3,8 +3,10 @@
 import { create } from "zustand";
 import {
   servicesApi, ordersApi, financesApi, reviewsApi, statsApi, notificationsApi,
+  walletApi, agencyTeamApi,
   type ApiService, type ApiOrder, type ApiTransaction, type ApiNotification,
   type ApiReview, type ApiReviewSummary, type ApiStats, type ApiFinanceSummary,
+  type ApiWallet, type ApiWalletTransaction, type ApiAgencyTeamMember,
 } from "@/lib/api-client";
 
 // ── Agency-specific types ──
@@ -79,6 +81,10 @@ interface AgencyState {
   // Transactions
   transactions: ApiTransaction[];
 
+  // Wallet
+  wallet: ApiWallet | null;
+  walletTransactions: ApiWalletTransaction[];
+
   // Activity feed
   activities: AgencyActivity[];
 
@@ -96,6 +102,8 @@ interface AgencyState {
   syncReviews: () => Promise<void>;
   syncStats: () => Promise<void>;
   syncNotifications: () => Promise<void>;
+  syncMembers: () => Promise<void>;
+  syncWallet: () => Promise<void>;
 
   // Service actions
   toggleService: (id: string) => Promise<boolean>;
@@ -110,6 +118,11 @@ interface AgencyState {
 
   // Review actions
   replyToReview: (reviewId: string, reply: string) => Promise<boolean>;
+
+  // Team member actions
+  inviteMember: (email: string, role: string) => Promise<boolean>;
+  updateMemberRole: (memberId: string, role: string) => Promise<boolean>;
+  removeMember: (memberId: string) => Promise<boolean>;
 
   // Filter setters
   setServiceFilter: (filter: string) => void;
@@ -133,6 +146,8 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
   notifications: [],
   unreadCount: 0,
   transactions: [],
+  wallet: null,
+  walletTransactions: [],
   activities: [],
   serviceFilter: "all",
   orderFilter: "all",
@@ -143,7 +158,7 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
   syncAll: async () => {
     set({ isLoading: true });
     try {
-      const [servicesRes, ordersRes, financeRes, transactionsRes, reviewsRes, statsRes, notifRes] = await Promise.allSettled([
+      const [servicesRes, ordersRes, financeRes, transactionsRes, reviewsRes, statsRes, notifRes, membersRes, walletRes] = await Promise.allSettled([
         servicesApi.list(),
         ordersApi.list(),
         financesApi.summary(),
@@ -151,6 +166,8 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
         reviewsApi.getByFreelance(),
         statsApi.get(),
         notificationsApi.list(),
+        agencyTeamApi.list(),
+        walletApi.get("transactions"),
       ]);
 
       const updates: Partial<AgencyState> = { isLoading: false, lastSyncAt: new Date().toISOString() };
@@ -167,6 +184,23 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
       if (notifRes.status === "fulfilled") {
         updates.notifications = notifRes.value.notifications;
         updates.unreadCount = notifRes.value.unreadCount;
+      }
+      if (membersRes.status === "fulfilled") {
+        updates.members = (membersRes.value.members || []).map((m: ApiAgencyTeamMember) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          avatar: m.avatar || "",
+          role: (m.role || "freelance").toLowerCase() as AgencyMember["role"],
+          status: (m.status || "actif").toLowerCase() as AgencyMember["status"],
+          activeOrders: m.activeOrders || 0,
+          revenue: m.revenue || 0,
+          joinedAt: m.joinedAt || new Date().toISOString(),
+        }));
+      }
+      if (walletRes.status === "fulfilled") {
+        updates.wallet = walletRes.value.wallet || null;
+        updates.walletTransactions = walletRes.value.transactions || [];
       }
 
       // Build activity feed from recent orders, reviews, etc.
@@ -297,6 +331,34 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
     } catch { /* silently fail */ }
   },
 
+  syncMembers: async () => {
+    try {
+      const { members: rawMembers } = await agencyTeamApi.list();
+      const members: AgencyMember[] = (rawMembers || []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        avatar: m.avatar || "",
+        role: (m.role || "freelance").toLowerCase() as AgencyMember["role"],
+        status: (m.status || "actif").toLowerCase() as AgencyMember["status"],
+        activeOrders: m.activeOrders || 0,
+        revenue: m.revenue || 0,
+        joinedAt: m.joinedAt || new Date().toISOString(),
+      }));
+      set({ members });
+    } catch { /* silently fail */ }
+  },
+
+  syncWallet: async () => {
+    try {
+      const data = await walletApi.get("transactions");
+      set({
+        wallet: data.wallet || null,
+        walletTransactions: data.transactions || [],
+      });
+    } catch { /* silently fail */ }
+  },
+
   // Service actions
   toggleService: async (id: string) => {
     try {
@@ -351,6 +413,31 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
     try {
       await reviewsApi.reply(reviewId, reply);
       await get().syncReviews();
+      return true;
+    } catch { return false; }
+  },
+
+  // Team member actions
+  inviteMember: async (email: string, role: string) => {
+    try {
+      await agencyTeamApi.invite(email, role);
+      await get().syncMembers();
+      return true;
+    } catch { return false; }
+  },
+
+  updateMemberRole: async (memberId: string, role: string) => {
+    try {
+      await agencyTeamApi.updateRole(memberId, role);
+      await get().syncMembers();
+      return true;
+    } catch { return false; }
+  },
+
+  removeMember: async (memberId: string) => {
+    try {
+      await agencyTeamApi.remove(memberId);
+      set((s) => ({ members: s.members.filter((m) => m.id !== memberId) }));
       return true;
     } catch { return false; }
   },

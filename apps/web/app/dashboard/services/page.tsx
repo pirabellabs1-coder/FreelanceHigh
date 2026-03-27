@@ -166,6 +166,22 @@ export default function ServicesPage() {
                 <p className="text-2xl font-extrabold text-primary">{statsService.revenue} €</p>
               </div>
             </div>
+            {/* Rating & Contacts */}
+            {((statsService.ratingCount ?? 0) > 0 || (statsService.totalContacts ?? 0) > 0) && (
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-neutral-dark border border-border-dark rounded-xl p-4">
+                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Note</p>
+                  <p className="text-2xl font-extrabold flex items-center gap-1">
+                    <span className="text-amber-400">{(statsService.rating ?? 0).toFixed(1)}</span>
+                    <span className="text-xs text-slate-500 font-normal">/ 5 ({statsService.ratingCount ?? 0} avis)</span>
+                  </p>
+                </div>
+                <div className="bg-neutral-dark border border-border-dark rounded-xl p-4">
+                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Propositions</p>
+                  <p className="text-2xl font-extrabold">{statsService.totalContacts ?? 0}</p>
+                </div>
+              </div>
+            )}
             {/* Performance Metrics */}
             <div className="space-y-4">
               <div>
@@ -227,7 +243,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-primary/60 text-sm font-semibold uppercase tracking-wider">Total Vues</p>
@@ -254,7 +270,16 @@ export default function ServicesPage() {
         </div>
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-primary/60 text-sm font-semibold uppercase tracking-wider">Revenus Estimes</p>
+            <p className="text-primary/60 text-sm font-semibold uppercase tracking-wider">Ventes</p>
+            <span className="material-symbols-outlined text-primary">shopping_bag</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <AnimatedCounter value={totals.orders} className="text-2xl sm:text-3xl font-black block" />
+          </div>
+        </div>
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-primary/60 text-sm font-semibold uppercase tracking-wider">Revenus</p>
             <span className="material-symbols-outlined text-primary">payments</span>
           </div>
           <div className="flex items-baseline gap-2">
@@ -363,6 +388,12 @@ export default function ServicesPage() {
                             <span className="material-symbols-outlined text-[14px]">ads_click</span>
                             {s.clicks}
                           </span>
+                          {(s.ratingCount ?? 0) > 0 && (
+                            <span className={cn("text-xs font-semibold flex items-center gap-1", isPaused ? "text-amber-400/40" : "text-amber-400")}>
+                              <span className="material-symbols-outlined text-[14px]">star</span>
+                              {(s.rating ?? 0).toFixed(1)} ({s.ratingCount})
+                            </span>
+                          )}
                         </div>
                         <div className="w-24 h-1.5 bg-primary/20 rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full", isPaused ? "bg-primary/40" : "bg-primary")} style={{ width: `${progressPct}%` }} />
@@ -373,6 +404,9 @@ export default function ServicesPage() {
                       <div className={cn("flex flex-col", isPaused && s.orders === 0 && "opacity-70")}>
                         <p className="text-sm font-bold text-slate-100">{s.orders} commande{s.orders !== 1 ? "s" : ""}</p>
                         <p className={cn("text-xs font-medium", s.revenue > 0 ? "text-primary" : "text-slate-500")}>{s.revenue}€ generes</p>
+                        {(s.totalContacts ?? 0) > 0 && (
+                          <p className="text-xs font-medium text-blue-400 mt-0.5">{s.totalContacts} proposition{(s.totalContacts ?? 0) !== 1 ? "s" : ""}</p>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-5">

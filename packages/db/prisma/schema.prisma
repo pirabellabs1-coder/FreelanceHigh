@@ -163,6 +163,94 @@ enum AutomationStatus {
   BROUILLON
 }
 
+enum PropositionStatus {
+  PENDING
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+}
+
+enum BoostType {
+  VIEWS_BOOST
+  FEATURED
+  PREMIUM
+}
+
+enum BoostStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum EscrowReason {
+  ORDER_PAYMENT
+  BOOST_PAYMENT
+}
+
+enum TransactionType {
+  SERVICE_FEE
+  BOOST_FEE
+  SUBSCRIPTION_FEE
+  REFUND
+  PAYOUT
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  PAID_OUT
+}
+
+enum PayoutStatus {
+  PAYOUT_PENDING
+  PROCESSING
+  PAYOUT_COMPLETED
+  FAILED
+}
+
+enum TeamMemberRole {
+  PROPRIETAIRE
+  MANAGER
+  FREELANCE_MEMBRE
+  COMMERCIAL
+}
+
+enum TeamMemberStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+  REMOVED
+}
+
+enum WalletTransactionType {
+  ORDER_PAYOUT
+  REFUND_WALLET
+  WITHDRAWAL
+  DEPOSIT
+  BOOST_REFUND
+  COMMISSION_INTERNAL
+}
+
+enum WalletTransactionStatus {
+  WALLET_PENDING
+  WALLET_COMPLETED
+  WALLET_FAILED
+  WALLET_CANCELLED
+}
+
+enum WithdrawalMethod {
+  SEPA
+  MOBILE_MONEY
+  PAYPAL
+  WISE
+  CRYPTO
+}
+
 // ── OTP Codes ──
 
 model OtpCode {
@@ -273,6 +361,15 @@ model User {
   offers               Offer[]                  @relation("UserOffers")
   offersReceived       Offer[]                  @relation("OffersReceived")
 
+  // Relations Phase 1 — données correctement liées
+  propositionsAsFreelance Proposition[]          @relation("PropositionFreelance")
+  propositionsAsClient    Proposition[]          @relation("PropositionClient")
+  boosts                  Boost[]                @relation("UserBoosts")
+  serviceViews            ServiceView[]
+  serviceClicks           ServiceClick[]
+  teamMemberships         TeamMember[]
+  walletFreelance         WalletFreelance?
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -347,9 +444,84 @@ model AgencyProfile {
   website     String?
   siret       String?
   verified    Boolean  @default(false)
-  teamMembers Json?    // Array d'objets { userId, role, joinedAt }
+  teamMembers Json?    // Array d'objets { userId, role, joinedAt } (legacy)
+  settings    Json?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members        TeamMember[]
+  agServices     Service[]     @relation("AgencyServices")
+  agOrders       Order[]       @relation("AgencyOrders")
+  agPropositions Proposition[] @relation("AgencyPropositions")
+  agBoosts       Boost[]       @relation("AgencyBoosts")
+  wallet         WalletAgency?
+}
+
+model TeamMember {
+  id          String           @id @default(cuid())
+  agencyId    String
+  userId      String
+  role        TeamMemberRole   @default(FREELANCE_MEMBRE)
+  status      TeamMemberStatus @default(INVITED)
+  joinedAt    DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  agency      AgencyProfile    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyId, userId])
+  @@index([agencyId])
+  @@index([userId])
+}
+
+model WalletFreelance {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  balance     Float    @default(0)
+  pending     Float    @default(0)
+  totalEarned Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[] @relation("FreelanceWalletTx")
+}
+
+model WalletAgency {
+  id          String   @id @default(cuid())
+  agencyId    String   @unique
+  balance     Float    @default(0)
+  pending     Float    @default(0)
+  totalEarned Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agency       AgencyProfile      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[] @relation("AgencyWalletTx")
+}
+
+model WalletTransaction {
+  id                  String                  @id @default(cuid())
+  freelanceWalletId   String?
+  agencyWalletId      String?
+  type                WalletTransactionType
+  amount              Float
+  description         String
+  status              WalletTransactionStatus @default(WALLET_PENDING)
+  orderId             String?
+  withdrawalMethod    WithdrawalMethod?
+  externalRef         String?
+  createdAt           DateTime                @default(now())
+
+  freelanceWallet     WalletFreelance?        @relation("FreelanceWalletTx", fields: [freelanceWalletId], references: [id])
+  agencyWallet        WalletAgency?           @relation("AgencyWalletTx", fields: [agencyWalletId], references: [id])
+
+  @@index([freelanceWalletId])
+  @@index([agencyWalletId])
+  @@index([status])
 }
 
 model Session {
@@ -425,14 +597,29 @@ model Service {
   faq                  Json?
   extras               Json?
 
-  // Stats
+  // Stats — liées aux vraies données
+  // totalOrders = COUNT(Order WHERE status=TERMINE)
+  // totalRevenue = SUM(Order.freelancerPayout WHERE status=TERMINE)
+  // totalViews = COUNT(ServiceView)
+  // totalClicks = COUNT(ServiceClick)
   views                Int           @default(0)
   orderCount           Int           @default(0)
+  totalRevenue         Float         @default(0)
+  totalContacts        Int           @default(0)
   rating               Float         @default(0)
   ratingCount          Int           @default(0)
   isBoosted            Boolean       @default(false)
   boostedUntil         DateTime?
   refuseReason         String?
+
+  // SEO complet
+  seoTitle             String?
+  seoDescription       String?
+  seoKeywords          String[]      @default([])
+  seoFocusKeyword      String?
+  seoLongTail          String[]      @default([])
+  seoMetaTitle         String?
+  seoMetaDescription   String?
 
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
@@ -445,6 +632,11 @@ model Service {
   options              ServiceOption[]
   media                ServiceMedia[]
   serviceTags          ServiceTag[]
+  propositions         Proposition[]
+  boosts               Boost[]
+  viewTracking         ServiceView[]
+  clickTracking        ServiceClick[]
+  agency               AgencyProfile? @relation("AgencyServices", fields: [agencyId], references: [id], onDelete: SetNull)
 
   @@index([slug])
   @@index([categoryId])
@@ -538,6 +730,7 @@ model Project {
 
   client        User          @relation("ProjectClient", fields: [clientId], references: [id], onDelete: Cascade)
   bids          ProjectBid[]
+  propositions  Proposition[]
 
   @@index([clientId])
   @@index([status])
@@ -567,16 +760,33 @@ model Order {
   serviceId     String?
   clientId      String
   freelanceId   String
+  agencyId      String?
   status        OrderStatus  @default(EN_ATTENTE)
   escrowStatus  EscrowStatus @default(HELD)
   amount        Float
+  currency      String       @default("EUR")
+
+  // Commission calculée automatiquement
+  // platformFee = 20% de amount (va à Admin)
+  // freelancerPayout = 80% de amount (au freelancer)
   commission    Float        @default(0)
+  platformFee   Float        @default(0)
+  freelancerPayout Float     @default(0)
+
+  title         String?
+  description   String?      @db.Text
+  deliveryDays  Int?
   packageType   String?      // "basic", "standard", "premium"
   requirements  String?      @db.Text
+  progress      Int          @default(0)
+
+  // Timeline complète
   deadline      DateTime
+  deliveredDeadline DateTime?
+  acceptedAt    DateTime?
+  startedAt     DateTime?
   deliveredAt   DateTime?
   completedAt   DateTime?
-  progress      Int          @default(0)
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -588,9 +798,14 @@ model Order {
   reviews       Review[]
   disputes      Dispute[]
   conversation  Conversation?
+  escrow        Escrow?
+  revisions     RevisionRequest[]
+  proposition   Proposition?
+  agency        AgencyProfile? @relation("AgencyOrders", fields: [agencyId], references: [id], onDelete: SetNull)
 
   @@index([clientId])
   @@index([freelanceId])
+  @@index([agencyId])
   @@index([status])
   @@index([createdAt])
 }
@@ -980,6 +1195,252 @@ model AdminNotificationLog {
   createdAt       DateTime @default(now())
 
   @@index([adminId])
+  @@index([createdAt])
+}
+
+// ══════════════════════════════════════════════════════════════
+// PHASE 1 — DONNÉES CORRECTEMENT LIÉES
+// Tracking, Propositions, Boosts, Escrow, Admin Wallet
+// ══════════════════════════════════════════════════════════════
+
+// ── Tracking réel des vues et clics service ──
+
+model ServiceView {
+  id        String   @id @default(cuid())
+  serviceId String
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ServiceClick {
+  id        String   @id @default(cuid())
+  serviceId String
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ── Propositions (offres basées sur un service) ──
+
+model Proposition {
+  id          String            @id @default(cuid())
+
+  serviceId   String
+  freelanceId String
+  clientId    String
+  agencyId    String?
+  projectId   String?
+
+  title       String
+  description String            @db.Text
+  amount      Float
+  deliveryDays Int
+  revisions   Int               @default(1)
+
+  status      PropositionStatus @default(PENDING)
+
+  viewedAt    DateTime?
+  acceptedAt  DateTime?
+  rejectedAt  DateTime?
+  expiresAt   DateTime?
+
+  // Devient commande si acceptée
+  orderId     String?           @unique
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  service     Service           @relation(fields: [serviceId], references: [id])
+  freelance   User              @relation("PropositionFreelance", fields: [freelanceId], references: [id])
+  client      User              @relation("PropositionClient", fields: [clientId], references: [id])
+  project     Project?          @relation(fields: [projectId], references: [id])
+  order       Order?            @relation(fields: [orderId], references: [id])
+  agency      AgencyProfile?    @relation("AgencyPropositions", fields: [agencyId], references: [id], onDelete: SetNull)
+
+  @@index([serviceId])
+  @@index([freelanceId])
+  @@index([clientId])
+  @@index([agencyId])
+  @@index([status])
+}
+
+// ── Demandes de révision sur une commande ──
+
+model RevisionRequest {
+  id          String   @id @default(cuid())
+  orderId     String
+  requestedBy String
+  message     String   @db.Text
+  status      String   @default("pending") // pending, resolved
+  resolvedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+}
+
+// ── Boosts (promotions payantes de services) ──
+
+model Boost {
+  id          String      @id @default(cuid())
+
+  serviceId   String
+  userId      String
+  agencyId    String?
+
+  type        BoostType
+  durationDays Int
+  costPerDay  Float
+  totalCost   Float
+
+  // Estimations
+  estimatedDailyImpressions Int @default(0)
+  totalEstimatedImpressions Int @default(0)
+
+  // Stats réelles (non simulées)
+  // actualImpressions = SUM(BoostDailyStat.impressions)
+  // actualClicks = SUM(BoostDailyStat.clicks)
+  actualImpressions Int @default(0)
+  actualClicks      Int @default(0)
+  actualContacts    Int @default(0)
+  actualOrders      Int @default(0)
+
+  status      BoostStatus @default(PENDING_PAYMENT)
+
+  paidAt      DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  service     Service     @relation(fields: [serviceId], references: [id])
+  user        User        @relation("UserBoosts", fields: [userId], references: [id])
+  escrow      Escrow?
+  dailyStats  BoostDailyStat[]
+  agency      AgencyProfile?  @relation("AgencyBoosts", fields: [agencyId], references: [id], onDelete: SetNull)
+
+  @@index([serviceId])
+  @@index([userId])
+  @@index([agencyId])
+  @@index([status])
+}
+
+model BoostDailyStat {
+  id          String   @id @default(cuid())
+  boostId     String
+  date        DateTime
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  contacts    Int      @default(0)
+  orders      Int      @default(0)
+
+  boost       Boost    @relation(fields: [boostId], references: [id], onDelete: Cascade)
+
+  @@unique([boostId, date])
+  @@index([boostId])
+  @@index([date])
+}
+
+// ── Escrow (paiement bloqué — ordres et boosts) ──
+
+model Escrow {
+  id        String       @id @default(cuid())
+
+  orderId   String?      @unique
+  boostId   String?      @unique
+
+  amount    Float
+  currency  String       @default("EUR")
+  reason    EscrowReason
+  status    EscrowStatus @default(HELD)
+
+  heldAt    DateTime     @default(now())
+  releasedAt DateTime?
+
+  order     Order?       @relation(fields: [orderId], references: [id])
+  boost     Boost?       @relation(fields: [boostId], references: [id])
+
+  @@index([orderId])
+  @@index([boostId])
+  @@index([status])
+}
+
+// ── Admin Wallet (toutes les commissions plateforme) ──
+
+model AdminWallet {
+  id                String             @id @default(cuid())
+
+  // Montants totaux réels
+  totalFeesHeld     Float              @default(0)
+  totalFeesReleased Float              @default(0)
+
+  transactions      AdminTransaction[]
+  payouts           AdminPayout[]
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model AdminTransaction {
+  id            String            @id @default(cuid())
+  adminWalletId String
+
+  type          TransactionType
+  amount        Float
+  currency      String            @default("EUR")
+  description   String
+
+  orderId       String?
+  boostId       String?
+
+  status        TransactionStatus @default(PENDING)
+
+  createdAt     DateTime          @default(now())
+
+  adminWallet   AdminWallet       @relation(fields: [adminWalletId], references: [id])
+
+  @@index([adminWalletId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AdminPayout {
+  id            String      @id @default(cuid())
+  adminWalletId String
+
+  amount        Float
+  currency      String      @default("EUR")
+  method        String
+  status        PayoutStatus @default(PAYOUT_PENDING)
+
+  paidAt        DateTime?
+
+  createdAt     DateTime    @default(now())
+
+  adminWallet   AdminWallet @relation(fields: [adminWalletId], references: [id])
+
+  @@index([adminWalletId])
+  @@index([status])
   @@index([createdAt])
 }
 

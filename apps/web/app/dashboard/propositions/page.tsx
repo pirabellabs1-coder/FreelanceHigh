@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
+import { propositionsApi, type ApiProposition } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type ProposalStatus = "en_attente" | "acceptee" | "refusee";
+type ProposalStatus = "en_attente" | "acceptee" | "refusee" | "vue" | "expiree";
 
 type Proposal = {
   id: string;
   projectTitle: string;
   clientName: string;
+  clientAvatar?: string | null;
   budget: string;
   proposedPrice: number;
   deliveryDays: number;
   status: ProposalStatus;
   submittedAt: string;
   motivation: string;
+  orderId?: string | null;
+  serviceTitle?: string;
 };
 
 type ClientProject = {
@@ -36,10 +40,39 @@ type ClientProject = {
 };
 
 // ---------------------------------------------------------------------------
-// Demo data
+// Map API proposition to local type
 // ---------------------------------------------------------------------------
 
-const DEMO_PROPOSALS: Proposal[] = [];
+const API_STATUS_MAP: Record<string, ProposalStatus> = {
+  PENDING: "en_attente",
+  SENT: "en_attente",
+  VIEWED: "vue",
+  ACCEPTED: "acceptee",
+  REJECTED: "refusee",
+  EXPIRED: "expiree",
+  WITHDRAWN: "refusee",
+};
+
+function mapApiToLocal(p: ApiProposition): Proposal {
+  return {
+    id: p.id,
+    projectTitle: p.title || p.service?.title || "Proposition",
+    clientName: p.client?.name || "Client",
+    clientAvatar: p.client?.image,
+    budget: `${p.amount}`,
+    proposedPrice: p.amount,
+    deliveryDays: p.deliveryDays,
+    status: API_STATUS_MAP[p.status] || "en_attente",
+    submittedAt: p.createdAt,
+    motivation: p.description || "",
+    orderId: p.orderId,
+    serviceTitle: p.service?.title,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Demo data (fallback for empty state)
+// ---------------------------------------------------------------------------
 
 const DEMO_CLIENT_PROJECTS: ClientProject[] = [];
 
@@ -56,6 +89,11 @@ const STATUS_CONFIG: Record<
     color: "bg-amber-500/10 text-amber-400",
     icon: "schedule",
   },
+  vue: {
+    label: "Vue",
+    color: "bg-blue-500/10 text-blue-400",
+    icon: "visibility",
+  },
   acceptee: {
     label: "Accept\u00e9e",
     color: "bg-emerald-500/10 text-emerald-400",
@@ -66,11 +104,17 @@ const STATUS_CONFIG: Record<
     color: "bg-red-500/10 text-red-400",
     icon: "cancel",
   },
+  expiree: {
+    label: "Expir\u00e9e",
+    color: "bg-slate-500/10 text-slate-400",
+    icon: "timer_off",
+  },
 };
 
 const TABS = [
   { label: "Toutes", filter: null },
   { label: "En attente", filter: "en_attente" as ProposalStatus },
+  { label: "Vues", filter: "vue" as ProposalStatus },
   { label: "Accept\u00e9es", filter: "acceptee" as ProposalStatus },
   { label: "Refus\u00e9es", filter: "refusee" as ProposalStatus },
 ];
@@ -196,14 +240,29 @@ function ProposalCard({
           </span>
         </div>
 
+        {/* Accepted → order link */}
+        {proposal.status === "acceptee" && proposal.orderId && (
+          <div className="mt-2 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+            <p className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              Commande creee : #{proposal.orderId.slice(0, 8)}
+            </p>
+          </div>
+        )}
+
         {/* Expanded details */}
         {expanded && (
           <div className="mt-3 pt-3 border-t border-border-dark">
+            {proposal.serviceTitle && (
+              <p className="text-xs text-primary mb-2">
+                Service : {proposal.serviceTitle}
+              </p>
+            )}
             <p className="text-xs font-bold text-slate-400 mb-1.5">
               Lettre de motivation
             </p>
             <p className="text-sm text-slate-300 leading-relaxed">
-              {proposal.motivation}
+              {proposal.motivation || "Aucune description fournie."}
             </p>
           </div>
         )}
@@ -653,7 +712,25 @@ export default function PropositionsPage() {
   const [selectedProject, setSelectedProject] = useState<ClientProject | null>(
     null
   );
-  const [proposals, setProposals] = useState<Proposal[]>(DEMO_PROPOSALS);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch propositions from API on mount
+  const fetchPropositions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await propositionsApi.list("freelance");
+      setProposals((data.propositions || []).map(mapApiToLocal));
+    } catch (err) {
+      console.error("[Propositions] Fetch error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPropositions();
+  }, [fetchPropositions]);
 
   // Filtered proposals
   const filteredProposals = useMemo(() => {
@@ -667,7 +744,8 @@ export default function PropositionsPage() {
     const total = proposals.length;
     const accepted = proposals.filter((p) => p.status === "acceptee").length;
     const pending = proposals.filter((p) => p.status === "en_attente").length;
-    return { total, accepted, pending };
+    const viewed = proposals.filter((p) => p.status === "vue").length;
+    return { total, accepted, pending, viewed };
   }, [proposals]);
 
   // Handlers
@@ -689,7 +767,7 @@ export default function PropositionsPage() {
     setView("list");
   }
 
-  function handleSubmitProposal(data: ProposalFormData) {
+  async function handleSubmitProposal(data: ProposalFormData) {
     if (!selectedProject) return;
 
     if (!data.motivation.trim()) {
@@ -705,25 +783,31 @@ export default function PropositionsPage() {
       return;
     }
 
-    const newProposal: Proposal = {
-      id: "P-" + String(proposals.length + 1).padStart(3, "0"),
-      projectTitle: selectedProject.title,
-      clientName: selectedProject.clientName,
-      budget: selectedProject.budget,
-      proposedPrice: Number(data.price),
-      deliveryDays: Number(data.deliveryDays),
-      status: "en_attente",
-      submittedAt: new Date().toISOString().slice(0, 10),
-      motivation: data.motivation,
-    };
+    try {
+      const result = await propositionsApi.create({
+        serviceId: selectedProject.id,
+        clientId: "", // Will be determined by the API based on the service owner
+        title: selectedProject.title,
+        description: data.motivation,
+        amount: Number(data.price),
+        deliveryDays: Number(data.deliveryDays),
+        revisions: 1,
+      });
 
-    setProposals((prev) => [newProposal, ...prev]);
-    setSelectedProject(null);
-    setView("list");
-    addToast(
-      "success",
-      `Proposition envoy\u00e9e pour "${selectedProject.title}"`
-    );
+      if (result?.proposition) {
+        setProposals((prev) => [mapApiToLocal(result.proposition), ...prev]);
+      }
+
+      setSelectedProject(null);
+      setView("list");
+      addToast(
+        "success",
+        `Proposition envoy\u00e9e pour "${selectedProject.title}"`
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'envoi";
+      addToast("error", msg);
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -854,23 +938,29 @@ export default function PropositionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon="send"
           label="Total soumises"
           value={stats.total}
         />
         <StatCard
-          icon="check_circle"
-          label="Accept\u00e9es"
-          value={stats.accepted}
-          accent="bg-emerald-500/10"
-        />
-        <StatCard
           icon="schedule"
           label="En attente"
           value={stats.pending}
           accent="bg-amber-500/10"
+        />
+        <StatCard
+          icon="visibility"
+          label="Vues par client"
+          value={stats.viewed}
+          accent="bg-blue-500/10"
+        />
+        <StatCard
+          icon="check_circle"
+          label="Accept\u00e9es"
+          value={stats.accepted}
+          accent="bg-emerald-500/10"
         />
       </div>
 
@@ -897,7 +987,16 @@ export default function PropositionsPage() {
         </div>
 
         {/* Proposals */}
-        {filteredProposals.length === 0 ? (
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <span className="material-symbols-outlined text-4xl leading-none text-primary animate-spin mx-auto mb-3 block">
+              progress_activity
+            </span>
+            <p className="text-slate-500 font-semibold">
+              Chargement des propositions...
+            </p>
+          </div>
+        ) : filteredProposals.length === 0 ? (
           <div className="py-16 text-center">
             <span className="material-symbols-outlined text-4xl leading-none text-slate-600 mx-auto mb-3 block">
               send

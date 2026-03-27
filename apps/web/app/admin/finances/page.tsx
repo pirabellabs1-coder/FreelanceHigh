@@ -67,6 +67,10 @@ export default function AdminFinances() {
     approveTransaction,
     refreshInterval,
     lastRefreshedAt,
+    adminWallet,
+    adminTransactions,
+    adminPayouts,
+    createAdminPayout,
   } = useAdminStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -197,6 +201,36 @@ export default function AdminFinances() {
           ))
         )}
       </div>
+
+      {/* Admin Wallet — Real commission data */}
+      {adminWallet && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-neutral-dark rounded-xl p-5 border border-emerald-500/30">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-emerald-500/20">
+              <span className="material-symbols-outlined text-emerald-400">account_balance</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{adminWallet.totalFeesReleased.toLocaleString()} &euro;</p>
+            <p className="text-xs text-slate-500 mt-1">Commissions liberees</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">20% sur chaque vente + boosts</p>
+          </div>
+          <div className="bg-neutral-dark rounded-xl p-5 border border-blue-500/30">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-500/20">
+              <span className="material-symbols-outlined text-blue-400">lock</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{adminWallet.totalFeesHeld.toLocaleString()} &euro;</p>
+            <p className="text-xs text-slate-500 mt-1">Commissions en escrow</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">Bloquees jusqu&apos;a livraison</p>
+          </div>
+          <div className="bg-neutral-dark rounded-xl p-5 border border-purple-500/30">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-purple-500/20">
+              <span className="material-symbols-outlined text-purple-400">analytics</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{(adminWallet.totalFeesHeld + adminWallet.totalFeesReleased).toLocaleString()} &euro;</p>
+            <p className="text-xs text-slate-500 mt-1">Total commissions</p>
+            <p className="text-[10px] text-slate-600 mt-0.5">Held + Released</p>
+          </div>
+        </div>
+      )}
 
       {/* Extra metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -332,6 +366,121 @@ export default function AdminFinances() {
           <div className="text-center py-12">
             <span className="material-symbols-outlined text-4xl text-slate-600">inbox</span>
             <p className="text-slate-500 mt-2">Aucune transaction trouvée</p>
+          </div>
+        )}
+      </div>
+
+      {/* Admin Commission Transactions (from Wallet API) */}
+      {adminTransactions.length > 0 && (
+        <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+          <div className="p-5 border-b border-border-dark">
+            <h2 className="font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-400 text-lg">receipt_long</span>
+              Commissions plateforme ({adminTransactions.length})
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Revenus automatiques : 20% sur chaque vente + frais de boost</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border-dark">
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Type</th>
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Description</th>
+                  <th className="px-5 py-3 text-right text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Montant</th>
+                  <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Statut</th>
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminTransactions.map(t => (
+                  <tr key={t.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <span className={cn("text-xs font-semibold flex items-center gap-1", t.type === "BOOST_FEE" ? "text-purple-400" : "text-emerald-400")}>
+                        <span className="material-symbols-outlined text-sm">{t.type === "BOOST_FEE" ? "rocket_launch" : "payments"}</span>
+                        {t.type === "SERVICE_FEE" ? "Vente service" : t.type === "BOOST_FEE" ? "Boost" : t.type}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-300 max-w-[300px] truncate">{t.description}</td>
+                    <td className="px-5 py-3 text-sm font-bold text-emerald-400 text-right">+{t.amount.toLocaleString("fr-FR")} &euro;</td>
+                    <td className="px-5 py-3 text-center">
+                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
+                        t.status === "CONFIRMED" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"
+                      )}>
+                        {t.status === "CONFIRMED" ? "Confirme" : t.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(t.createdAt).toLocaleDateString("fr-FR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Payouts */}
+      <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+        <div className="p-5 border-b border-border-dark flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-400 text-lg">account_balance_wallet</span>
+              Versements ({adminPayouts.length})
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Retraits des commissions vers le compte du fondateur</p>
+          </div>
+          <button
+            onClick={async () => {
+              const amount = prompt("Montant du versement (EUR) :");
+              if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
+              const method = prompt("Methode (virement, paypal, wise) :") || "virement";
+              const ok = await createAdminPayout(Number(amount), method);
+              if (ok) {
+                addToast("success", `Versement de ${amount}€ cree`);
+              } else {
+                addToast("error", "Erreur lors de la creation du versement");
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm">add</span>
+            Nouveau versement
+          </button>
+        </div>
+        {adminPayouts.length === 0 ? (
+          <div className="text-center py-12">
+            <span className="material-symbols-outlined text-4xl text-slate-600">account_balance_wallet</span>
+            <p className="text-slate-500 mt-2">Aucun versement pour le moment</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border-dark">
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Montant</th>
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Methode</th>
+                  <th className="px-5 py-3 text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Statut</th>
+                  <th className="px-5 py-3 text-left text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminPayouts.map(p => (
+                  <tr key={p.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
+                    <td className="px-5 py-3 text-sm font-bold text-white">{p.amount.toLocaleString("fr-FR")} &euro;</td>
+                    <td className="px-5 py-3 text-sm text-slate-400 capitalize">{p.method}</td>
+                    <td className="px-5 py-3 text-center">
+                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
+                        p.status === "PAYOUT_COMPLETED" ? "bg-emerald-500/20 text-emerald-400" :
+                        p.status === "PROCESSING" ? "bg-blue-500/20 text-blue-400" :
+                        "bg-amber-500/20 text-amber-400"
+                      )}>
+                        {p.status === "PAYOUT_COMPLETED" ? "Complete" : p.status === "PROCESSING" ? "En cours" : "En attente"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(p.createdAt).toLocaleDateString("fr-FR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

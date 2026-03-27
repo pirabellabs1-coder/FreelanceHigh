@@ -32,7 +32,7 @@ const WITHDRAWAL_METHODS = [
 ];
 
 export default function FinancesPage() {
-  const { transactions, addTransaction, apiRequestWithdrawal, stats: apiStats, syncStats } = useDashboardStore();
+  const { transactions, addTransaction, apiRequestWithdrawal, stats: apiStats, syncStats, wallet, walletTransactions, syncWallet } = useDashboardStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +41,14 @@ export default function FinancesPage() {
     setError(null);
     try {
       syncStats();
+      syncWallet();
     } catch {
       setError("Impossible de charger les donnees financieres.");
     } finally {
       const timer = setTimeout(() => setLoading(false), 600);
       return () => clearTimeout(timer);
     }
-  }, [syncStats]);
+  }, [syncStats, syncWallet]);
 
   const monthlyRevenue = apiStats?.monthlyRevenue ?? [];
   const addToast = useToastStore((s) => s.addToast);
@@ -60,7 +61,15 @@ export default function FinancesPage() {
   const [withdrawing, setWithdrawing] = useState(false);
 
   const balances = useMemo(() => {
-    // Use API summary if available
+    // Prefer wallet data (from /api/wallet) if available
+    if (wallet) {
+      return {
+        available: wallet.balance ?? 0,
+        pending: wallet.pending ?? 0,
+        totalEarned: wallet.totalEarned ?? 0,
+      };
+    }
+    // Fallback to API stats summary
     if (apiStats?.summary) {
       return {
         available: apiStats.summary.available,
@@ -72,7 +81,7 @@ export default function FinancesPage() {
     const pending = transactions.filter((t) => t.status === "en_attente").reduce((s, t) => s + t.amount, 0);
     const totalEarned = transactions.filter((t) => t.type === "vente" && t.status === "complete").reduce((s, t) => s + t.amount, 0);
     return { available: complete, pending, totalEarned };
-  }, [transactions, apiStats]);
+  }, [transactions, apiStats, wallet]);
 
   const filtered = useMemo(() => {
     let result = [...transactions];
@@ -310,6 +319,43 @@ export default function FinancesPage() {
           })}
         </div>
       </div>
+
+      {/* Wallet Transactions (from /api/wallet) */}
+      {walletTransactions.length > 0 && (
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-border-dark">
+            <h3 className="font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">account_balance_wallet</span>
+              Transactions Wallet ({walletTransactions.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-border-dark">
+            {walletTransactions.map((wtx) => {
+              const isPositive = wtx.amount >= 0;
+              const statusLabel = wtx.status === "WALLET_COMPLETED" ? "Complete" : wtx.status === "WALLET_PENDING" ? "En attente" : wtx.status;
+              const statusColor = wtx.status === "WALLET_COMPLETED" ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10";
+              return (
+                <div key={wtx.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-primary/5 transition-colors">
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isPositive ? "text-emerald-400 bg-emerald-500/10" : "text-blue-400 bg-blue-500/10")}>
+                    <span className="material-symbols-outlined">{isPositive ? "payments" : "arrow_upward"}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{wtx.description}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {new Date(wtx.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                      {wtx.withdrawalMethod && ` · ${wtx.withdrawalMethod}`}
+                    </p>
+                  </div>
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", statusColor)}>{statusLabel}</span>
+                  <p className={cn("text-sm font-bold w-24 text-right", isPositive ? "text-emerald-400" : "text-red-400")}>
+                    {isPositive ? "+" : ""}€{Math.abs(wtx.amount).toLocaleString("fr-FR")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -266,6 +266,11 @@ interface AdminState {
   services: AdminService[];
   teamMembers: AdminTeamMember[];
 
+  // Admin Wallet (real commission data)
+  adminWallet: { totalFeesHeld: number; totalFeesReleased: number } | null;
+  adminTransactions: { id: string; type: string; amount: number; description: string; status: string; orderId: string | null; boostId: string | null; createdAt: string }[];
+  adminPayouts: { id: string; amount: number; method: string; status: string; createdAt: string }[];
+
   // Sync actions
   syncDashboard: () => Promise<void>;
   syncUsers: () => Promise<void>;
@@ -273,6 +278,8 @@ interface AdminState {
   syncOrderDetail: (id: string) => Promise<void>;
   syncServices: () => Promise<void>;
   syncFinances: () => Promise<void>;
+  syncAdminWallet: () => Promise<void>;
+  createAdminPayout: (amount: number, method: string) => Promise<boolean>;
   syncKyc: () => Promise<void>;
   syncDisputes: () => Promise<void>;
   syncBlog: () => Promise<void>;
@@ -358,6 +365,9 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   auditLog: [],
   services: [],
   teamMembers: [],
+  adminWallet: null,
+  adminTransactions: [],
+  adminPayouts: [],
 
   // ── Sync actions ──
 
@@ -419,17 +429,52 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
   syncFinances: async () => {
     set({ loading: { ...get().loading, finances: true } });
     try {
-      const data = await fetchAdmin<{ transactions: AdminTransaction[]; summary: AdminFinanceSummary }>("/api/admin/finances");
-      set({
-        transactions: data.transactions,
-        financeSummary: data.summary,
+      const [finData, walletData] = await Promise.allSettled([
+        fetchAdmin<{ transactions: AdminTransaction[]; summary: AdminFinanceSummary }>("/api/admin/finances"),
+        fetchAdmin<{ wallet: { totalFeesHeld: number; totalFeesReleased: number }; transactions?: unknown[]; payouts?: unknown[] }>("/api/admin/wallet"),
+      ]);
+
+      const updates: Partial<AdminState> = {
         loading: { ...get().loading, finances: false },
         error: { ...get().error, finances: null },
         lastRefreshedAt: { ...get().lastRefreshedAt, finances: Date.now() },
-      });
+      };
+
+      if (finData.status === "fulfilled") {
+        updates.transactions = finData.value.transactions;
+        updates.financeSummary = finData.value.summary;
+      }
+      if (walletData.status === "fulfilled") {
+        updates.adminWallet = walletData.value.wallet;
+        updates.adminTransactions = (walletData.value.transactions || []) as AdminState["adminTransactions"];
+        updates.adminPayouts = (walletData.value.payouts || []) as AdminState["adminPayouts"];
+      }
+
+      set(updates);
     } catch (e: unknown) {
       set({ loading: { ...get().loading, finances: false }, error: { ...get().error, finances: (e as Error).message } });
     }
+  },
+
+  syncAdminWallet: async () => {
+    try {
+      const data = await fetchAdmin<{ wallet: { totalFeesHeld: number; totalFeesReleased: number }; transactions?: unknown[]; payouts?: unknown[] }>("/api/admin/wallet");
+      set({
+        adminWallet: data.wallet,
+        adminTransactions: (data.transactions || []) as AdminState["adminTransactions"],
+        adminPayouts: (data.payouts || []) as AdminState["adminPayouts"],
+      });
+    } catch (e: unknown) {
+      console.error("[Admin Wallet sync]", (e as Error).message);
+    }
+  },
+
+  createAdminPayout: async (amount, method) => {
+    try {
+      await fetchAdmin("/api/admin/wallet", { method: "POST", body: JSON.stringify({ amount, method }) });
+      await get().syncAdminWallet();
+      return true;
+    } catch { return false; }
   },
 
   syncKyc: async () => {
