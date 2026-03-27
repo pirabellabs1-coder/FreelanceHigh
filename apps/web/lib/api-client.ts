@@ -858,7 +858,7 @@ export function mapApiOrderToLocal(o: ApiOrder): Order {
     clientAvatar: o.clientAvatar,
     clientCountry: o.clientCountry,
     freelanceName: o.freelanceName || "Freelance",
-    status: o.status as Order["status"],
+    status: (o.status || "en_attente").toLowerCase() as Order["status"],
     amount: o.amount,
     createdAt: (o.createdAt || new Date().toISOString()).slice(0, 10),
     deadline: (o.deadline || new Date().toISOString()).slice(0, 10),

@@ -29,7 +29,9 @@ export default function AgenceCommandeDetail() {
   const orderId = id as string;
   const { orders, members, syncAll, acceptOrder, deliverOrder } = useAgencyStore();
   const addToast = useToastStore((s) => s.addToast);
-  const order = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+  const rawOrder = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+  // Normalize status to lowercase (Prisma returns UPPERCASE enum values)
+  const order = rawOrder ? { ...rawOrder, status: (rawOrder.status || "en_attente").toLowerCase() } : null;
 
   const [assignee, setAssignee] = useState("");
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);

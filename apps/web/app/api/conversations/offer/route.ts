@@ -29,6 +29,17 @@ export async function POST(request: NextRequest) {
     const validDays = Number(validityDays) || 14;
     const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString();
 
+    const offerMessageData = {
+      title,
+      amount: Number(amount),
+      delay,
+      revisions: Number(revisions) || 2,
+      description,
+      status: "en_attente",
+      validityDays: validDays,
+      expiresAt,
+    };
+
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const offre = offreStore.create({
         freelanceId: userId,
@@ -43,20 +54,21 @@ export async function POST(request: NextRequest) {
         validityDays: validDays,
       });
 
-      // Return the offer data to embed in a message
+      // Persist offer message in the conversation so both parties can see it
+      if (conversationId) {
+        const { conversationStore } = await import("@/lib/dev/data-store");
+        conversationStore.sendMessage(
+          conversationId, userId,
+          `Offre: ${title} — ${Number(amount)} EUR`,
+          "offer",
+          undefined, undefined, undefined, undefined, undefined,
+          { ...offerMessageData, offerId: offre.id },
+        );
+      }
+
       return NextResponse.json({
         offre,
-        offerMessageData: {
-          offerId: offre.id,
-          title: offre.title,
-          amount: offre.amount,
-          delay: offre.delay,
-          revisions: offre.revisions || 2,
-          description: offre.description,
-          status: "en_attente",
-          validityDays: validDays,
-          expiresAt,
-        },
+        offerMessageData: { ...offerMessageData, offerId: offre.id },
       }, { status: 201 });
     }
 
@@ -79,19 +91,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Persist offer message in the conversation so both parties can see it
+    if (conversationId) {
+      const fullOfferData = { ...offerMessageData, offerId: dbOffre.id };
+      await prisma.message.create({
+        data: {
+          conversationId,
+          senderId: userId,
+          content: `Offre: ${title} — ${Number(amount)} EUR`,
+          type: "SYSTEM",
+          linkPreviewData: { _type: "offer", ...fullOfferData },
+        },
+      });
+    }
+
     return NextResponse.json({
       offre: dbOffre,
-      offerMessageData: {
-        offerId: dbOffre.id,
-        title: dbOffre.title,
-        amount: dbOffre.amount,
-        delay: dbOffre.delay,
-        revisions: dbOffre.revisions,
-        description: dbOffre.description,
-        status: "en_attente",
-        validityDays: validDays,
-        expiresAt,
-      },
+      offerMessageData: { ...offerMessageData, offerId: dbOffre.id },
     }, { status: 201 });
   } catch (error) {
     console.error("[API /conversations/offer POST]", error);
@@ -202,6 +218,15 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
+        // Update the offer message in DB to reflect accepted status
+        await tx.$executeRaw`
+          UPDATE "Message"
+          SET "linkPreviewData" = jsonb_set("linkPreviewData"::jsonb, '{status}', '"acceptee"')
+          WHERE "type" = 'SYSTEM'
+          AND "linkPreviewData"::jsonb->>'_type' = 'offer'
+          AND "linkPreviewData"::jsonb->>'offerId' = ${offerId}
+        `;
+
         return order;
       });
 
@@ -209,7 +234,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Refuse
-    await prisma.offer.update({ where: { id: offerId }, data: { status: "REFUSEE" } });
+    await prisma.$transaction(async (tx) => {
+      await tx.offer.update({ where: { id: offerId }, data: { status: "REFUSEE" } });
+      // Update the offer message in DB to reflect refused status
+      await tx.$executeRaw`
+        UPDATE "Message"
+        SET "linkPreviewData" = jsonb_set("linkPreviewData"::jsonb, '{status}', '"refusee"')
+        WHERE "type" = 'SYSTEM'
+        AND "linkPreviewData"::jsonb->>'_type' = 'offer'
+        AND "linkPreviewData"::jsonb->>'offerId' = ${offerId}
+      `;
+    });
     return NextResponse.json({ ok: true, newStatus: "refusee" });
   } catch (error) {
     console.error("[API /conversations/offer PATCH]", error);

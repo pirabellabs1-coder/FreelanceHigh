@@ -98,7 +98,9 @@ export default function ClientOrderDetailPage() {
     }
   }, [storeOrder, id, fetchLoading, localOrder]);
 
-  const order = storeOrder || localOrder;
+  // Normalize status to lowercase (Prisma returns UPPERCASE enum values)
+  const rawOrder = storeOrder || localOrder;
+  const order = rawOrder ? { ...rawOrder, status: (rawOrder.status || "en_attente").toLowerCase() } : null;
   const isLoading = (loading.orders && orders.length === 0) || fetchLoading;
 
   // Check existing review

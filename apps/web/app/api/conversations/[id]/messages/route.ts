@@ -75,6 +75,10 @@ export async function GET(
       const fileUrl = await resolveUrl(m.fileUrl);
       const audioUrl = await resolveUrl(m.audioUrl);
 
+      // Detect offer messages stored via linkPreviewData
+      const lpd = m.linkPreviewData as Record<string, unknown> | null;
+      const isOffer = lpd && lpd._type === "offer";
+
       return {
         id: m.id,
         senderId: m.senderId,
@@ -82,7 +86,7 @@ export async function GET(
         senderAvatar: m.sender?.image || "",
         senderRole: ((m.sender as Record<string, unknown>)?.role as string) || "client",
         content: m.content,
-        type: (m.type || "TEXT").toLowerCase(),
+        type: isOffer ? "offer" : (m.type || "TEXT").toLowerCase(),
         createdAt: m.createdAt.toISOString(),
         read: m.read,
         status,
@@ -96,7 +100,9 @@ export async function GET(
         callDuration: m.callDuration,
         editedAt: m.editedAt?.toISOString(),
         deletedAt: m.deletedAt?.toISOString(),
-        linkPreviewData: m.linkPreviewData,
+        linkPreviewData: isOffer ? undefined : m.linkPreviewData,
+        // Inject offerData for offer-type messages so frontend can render OfferBubble
+        ...(isOffer ? { offerData: lpd } : {}),
       };
     }));
 

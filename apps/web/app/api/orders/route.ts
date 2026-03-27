@@ -78,11 +78,18 @@ export async function GET(request: NextRequest) {
         where.status = statusFilter.toUpperCase() as string;
       }
 
-      const orders = await prisma.order.findMany({
+      const rawOrders = await prisma.order.findMany({
         where,
         include: { service: true, client: true, freelance: true },
         orderBy: { createdAt: "desc" },
       });
+
+      // Normalize Prisma UPPERCASE enum values to lowercase for frontend compatibility
+      const orders = rawOrders.map((o) => ({
+        ...o,
+        status: o.status.toLowerCase(),
+        escrowStatus: o.escrowStatus?.toLowerCase() ?? o.escrowStatus,
+      }));
 
       return NextResponse.json({ orders });
     }

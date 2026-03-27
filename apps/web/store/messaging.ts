@@ -285,11 +285,19 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
           return newMsg;
         });
 
-        // Preserve local-only messages (temp IDs, offer messages) not in API response
+        // Preserve local-only messages (temp IDs, system messages) not in API response
+        // But skip local offer messages if the API already has the same offer (by offerId)
         const apiIds = new Set(newMessages.map((m) => m.id));
-        const localOnly = existingMessages.filter((m) =>
-          !apiIds.has(m.id) && (m.id.startsWith("temp-") || m.type === "offer" || m.type === "system")
+        const apiOfferIds = new Set(
+          newMessages.filter((m) => m.type === "offer" && m.offerData?.offerId)
+            .map((m) => m.offerData!.offerId)
         );
+        const localOnly = existingMessages.filter((m) => {
+          if (apiIds.has(m.id)) return false;
+          // Skip local offer messages that already exist in API response (by offerId)
+          if (m.type === "offer" && m.offerData?.offerId && apiOfferIds.has(m.offerData.offerId)) return false;
+          return m.id.startsWith("temp-") || m.type === "offer" || m.type === "system";
+        });
 
         // Sort all messages by creation time
         const finalMessages = [...merged, ...localOnly].sort(

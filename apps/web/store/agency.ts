@@ -244,7 +244,9 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
 
   syncOrders: async () => {
     try {
-      const { orders } = await ordersApi.list();
+      const { orders: rawOrders } = await ordersApi.list();
+      // Normalize status to lowercase (Prisma returns UPPERCASE enum values)
+      const orders = rawOrders.map((o) => ({ ...o, status: (o.status || "en_attente").toLowerCase() }));
       set({ orders });
       // Auto-cancel/auto-validate stale orders — fire and forget
       Promise.allSettled([
@@ -256,7 +258,7 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
         if ((c?.count > 0) || (v?.count > 0)) {
           try {
             const fresh = await ordersApi.list();
-            set({ orders: fresh.orders });
+            set({ orders: fresh.orders.map((o) => ({ ...o, status: (o.status || "en_attente").toLowerCase() })) });
           } catch { /* ignore */ }
         }
       }).catch(() => {});

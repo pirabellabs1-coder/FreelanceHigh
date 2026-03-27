@@ -63,7 +63,14 @@ export async function GET(
         );
       }
 
-      return NextResponse.json({ order });
+      // Normalize Prisma UPPERCASE enum values to lowercase for frontend compatibility
+      const normalizedOrder = {
+        ...order,
+        status: order.status.toLowerCase(),
+        escrowStatus: order.escrowStatus?.toLowerCase() ?? order.escrowStatus,
+      };
+
+      return NextResponse.json({ order: normalizedOrder });
     }
   } catch (error) {
     console.error("[API /orders/[id] GET]", error);
@@ -493,7 +500,14 @@ export async function PATCH(
         );
       }
 
-      return NextResponse.json({ order: updatedOrder });
+      // Normalize Prisma UPPERCASE enum values to lowercase for frontend compatibility
+      const normalizedOrder = {
+        ...updatedOrder,
+        status: typeof updatedOrder.status === "string" ? updatedOrder.status.toLowerCase() : updatedOrder.status,
+        escrowStatus: typeof updatedOrder.escrowStatus === "string" ? updatedOrder.escrowStatus.toLowerCase() : updatedOrder.escrowStatus,
+      };
+
+      return NextResponse.json({ order: normalizedOrder });
     }
   } catch (error) {
     console.error("[API /orders/[id] PATCH]", error);

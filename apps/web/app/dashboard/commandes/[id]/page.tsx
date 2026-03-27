@@ -105,7 +105,7 @@ export default function OrderDetailPage() {
     serviceTitle: localOrder.serviceTitle,
     category: localOrder.category,
     clientName: localOrder.clientName,
-    status: localOrder.status as "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule",
+    status: (localOrder.status || "en_attente").toLowerCase() as "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule",
     amount: localOrder.amount,
     packageType: localOrder.packageType,
     deadline: localOrder.deadline,
