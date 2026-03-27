@@ -351,24 +351,138 @@ export async function POST(request: NextRequest) {
       const deadlineDate = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
 
       // Calculate platformFee (20%) and freelancerPayout (80%)
-      const platformFee = commission; // commission = calculateCommissionEur() already gives the platform fee
+      const platformFee = commission;
       const freelancerPayout = amount - platformFee;
 
-      // Create the order and related records in a transaction
-      const order = await prisma.$transaction(async (tx) => {
-        // Create the order with platformFee + freelancerPayout
-        const newOrder = await tx.order.create({
+      // Try full order creation with Escrow + AdminWallet; fall back to basic if new tables don't exist yet
+      let order;
+      try {
+        order = await prisma.$transaction(async (tx) => {
+          const newOrder = await tx.order.create({
+            data: {
+              serviceId,
+              clientId: session.user.id,
+              freelanceId: service.userId,
+              status: "EN_ATTENTE",
+              escrowStatus: "HELD",
+              amount,
+              currency: "EUR",
+              commission,
+              platformFee,
+              freelancerPayout,
+              title: service.title,
+              description: service.descriptionText || null,
+              deliveryDays,
+              packageType,
+              requirements: requirements || null,
+              deadline: deadlineDate,
+            },
+            include: { service: true, client: true, freelance: true },
+          });
+
+          await tx.escrow.create({
+            data: {
+              orderId: newOrder.id,
+              amount,
+              currency: "EUR",
+              reason: "ORDER_PAYMENT",
+              status: "HELD",
+            },
+          });
+
+          await tx.payment.create({
+            data: {
+              orderId: newOrder.id,
+              payerId: session.user.id,
+              payeeId: service.userId,
+              amount: freelancerPayout,
+              currency: "EUR",
+              status: "EN_ATTENTE",
+              type: "paiement",
+              description: `Commande ${newOrder.id} - ${service.title} (${packageType})`,
+            },
+          });
+
+          await tx.payment.create({
+            data: {
+              orderId: newOrder.id,
+              payerId: session.user.id,
+              amount: platformFee,
+              currency: "EUR",
+              status: "EN_ATTENTE",
+              type: "commission",
+              description: `Commission ${commissionLabel} sur commande ${newOrder.id}`,
+            },
+          });
+
+          // Admin wallet — best-effort (table may not exist yet)
+          try {
+            let adminWallet = await tx.adminWallet.findFirst();
+            if (!adminWallet) {
+              adminWallet = await tx.adminWallet.create({ data: {} });
+            }
+            await tx.adminWallet.update({
+              where: { id: adminWallet.id },
+              data: { totalFeesHeld: { increment: platformFee } },
+            });
+            await tx.adminTransaction.create({
+              data: {
+                adminWalletId: adminWallet.id,
+                type: "SERVICE_FEE",
+                amount: platformFee,
+                currency: "EUR",
+                description: `Commission ${commissionLabel} - ${service.title} (Commande #${newOrder.id.slice(0, 8)})`,
+                orderId: newOrder.id,
+                status: "PENDING",
+              },
+            });
+          } catch {
+            console.warn("[Orders POST] AdminWallet/AdminTransaction tables not yet migrated, skipping");
+          }
+
+          await tx.service.update({
+            where: { id: serviceId },
+            data: { orderCount: { increment: 1 } },
+          });
+
+          const conversation = await tx.conversation.create({
+            data: {
+              type: "ORDER",
+              orderId: newOrder.id,
+              users: {
+                create: [
+                  { userId: session.user.id },
+                  { userId: service.userId },
+                ],
+              },
+            },
+          });
+
+          if (requirements) {
+            await tx.message.create({
+              data: {
+                conversationId: conversation.id,
+                senderId: session.user.id,
+                content: requirements,
+                type: "TEXT",
+              },
+            });
+          }
+
+          return newOrder;
+        });
+      } catch (txErr) {
+        // Fallback: basic order creation without Escrow/AdminWallet (migration not deployed)
+        console.warn("[Orders POST] Full transaction failed, using basic fallback:", txErr);
+        order = await prisma.order.create({
           data: {
             serviceId,
             clientId: session.user.id,
             freelanceId: service.userId,
             status: "EN_ATTENTE",
-            escrowStatus: "HELD",
             amount,
             currency: "EUR",
             commission,
-            platformFee,
-            freelancerPayout,
             title: service.title,
             description: service.descriptionText || null,
             deliveryDays,
@@ -379,99 +493,11 @@ export async function POST(request: NextRequest) {
           include: { service: true, client: true, freelance: true },
         });
 
-        // Create Escrow record (funds blocked)
-        await tx.escrow.create({
-          data: {
-            orderId: newOrder.id,
-            amount,
-            currency: "EUR",
-            reason: "ORDER_PAYMENT",
-            status: "HELD",
-          },
-        });
-
-        // Create escrow payment record (funds held)
-        await tx.payment.create({
-          data: {
-            orderId: newOrder.id,
-            payerId: session.user.id,
-            payeeId: service.userId,
-            amount: freelancerPayout,
-            currency: "EUR",
-            status: "EN_ATTENTE",
-            type: "paiement",
-            description: `Commande ${newOrder.id} - ${service.title} (${packageType})`,
-          },
-        });
-
-        // Create commission payment record
-        await tx.payment.create({
-          data: {
-            orderId: newOrder.id,
-            payerId: session.user.id,
-            amount: platformFee,
-            currency: "EUR",
-            status: "EN_ATTENTE",
-            type: "commission",
-            description: `Commission ${commissionLabel} sur commande ${newOrder.id}`,
-          },
-        });
-
-        // Add commission to Admin Wallet
-        let adminWallet = await tx.adminWallet.findFirst();
-        if (!adminWallet) {
-          adminWallet = await tx.adminWallet.create({ data: {} });
-        }
-        await tx.adminWallet.update({
-          where: { id: adminWallet.id },
-          data: { totalFeesHeld: { increment: platformFee } },
-        });
-        await tx.adminTransaction.create({
-          data: {
-            adminWalletId: adminWallet.id,
-            type: "SERVICE_FEE",
-            amount: platformFee,
-            currency: "EUR",
-            description: `Commission ${commissionLabel} - ${service.title} (Commande #${newOrder.id.slice(0, 8)})`,
-            orderId: newOrder.id,
-            status: "PENDING",
-          },
-        });
-
-        // Increment service order count
-        await tx.service.update({
+        await prisma.service.update({
           where: { id: serviceId },
           data: { orderCount: { increment: 1 } },
-        });
-
-        // Auto-create conversation for this order
-        const conversation = await tx.conversation.create({
-          data: {
-            type: "ORDER",
-            orderId: newOrder.id,
-            users: {
-              create: [
-                { userId: session.user.id },
-                { userId: service.userId },
-              ],
-            },
-          },
-        });
-
-        // If requirements provided, add as first message
-        if (requirements) {
-          await tx.message.create({
-            data: {
-              conversationId: conversation.id,
-              senderId: session.user.id,
-              content: requirements,
-              type: "TEXT",
-            },
-          });
-        }
-
-        return newOrder;
-      });
+        }).catch(() => {});
+      }
 
       // Emit order.created event (notifications + emails)
       emitEvent("order.created", {

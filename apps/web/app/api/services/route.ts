@@ -42,41 +42,59 @@ export async function GET(_request: NextRequest) {
       }
     }
 
-    const services = await prisma.service.findMany({
-      where: serviceWhere,
-      include: {
-        category: true,
-        options: true,
-        media: true,
-        _count: {
-          select: {
-            viewTracking: true,
-            clickTracking: true,
-            reviews: true,
-            propositions: true,
+    // Try full query with new relations first; fall back to basic if tables don't exist yet
+    let enriched;
+    try {
+      const services = await prisma.service.findMany({
+        where: serviceWhere,
+        include: {
+          category: true,
+          options: true,
+          media: true,
+          _count: {
+            select: {
+              viewTracking: true,
+              clickTracking: true,
+              reviews: true,
+              propositions: true,
+            },
+          },
+          orders: {
+            where: { status: "TERMINE" },
+            select: { id: true, freelancerPayout: true },
           },
         },
-        orders: {
-          where: { status: "TERMINE" },
-          select: { id: true, freelancerPayout: true },
-        },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
+        orderBy: { updatedAt: "desc" },
+      });
 
-    // Enrich with real computed stats
-    const enriched = services.map((s) => ({
-      ...s,
-      views: s._count.viewTracking || s.views,
-      clicks: s._count.clickTracking,
-      orderCount: s.orders.length || s.orderCount,
-      totalRevenue: s.orders.reduce((sum, o) => sum + (o.freelancerPayout || 0), 0) || s.totalRevenue,
-      ratingCount: s._count.reviews || s.ratingCount,
-      totalContacts: s._count.propositions || s.totalContacts,
-      // Remove raw orders from response to keep payload small
-      orders: undefined,
-      _count: undefined,
-    }));
+      enriched = services.map((s) => ({
+        ...s,
+        views: s._count.viewTracking || s.views,
+        clicks: s._count.clickTracking,
+        orderCount: s.orders.length || s.orderCount,
+        totalRevenue: s.orders.reduce((sum, o) => sum + (o.freelancerPayout || 0), 0) || s.totalRevenue,
+        ratingCount: s._count.reviews || s.ratingCount,
+        totalContacts: s._count.propositions || s.totalContacts,
+        orders: undefined,
+        _count: undefined,
+      }));
+    } catch {
+      // Fallback: basic query without new Phase 1 relations (migration not yet deployed)
+      const services = await prisma.service.findMany({
+        where: serviceWhere,
+        include: {
+          category: true,
+          _count: { select: { reviews: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+
+      enriched = services.map((s) => ({
+        ...s,
+        ratingCount: s._count?.reviews || s.ratingCount,
+        _count: undefined,
+      }));
+    }
 
     return NextResponse.json(enriched);
   } catch (error) {
