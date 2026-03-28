@@ -364,45 +364,73 @@ export async function GET() {
       prisma.service.count({ where: { agencyId: { not: null } } }),
     ]);
 
-    // Monthly revenue for last 12 months
+    // Monthly revenue for last 12 months — 2 batch queries instead of 24 sequential
     const now = new Date();
     const monthNames = [
       "Jan", "Fev", "Mar", "Avr", "Mai", "Jun",
       "Jul", "Aou", "Sep", "Oct", "Nov", "Dec",
     ];
-    const monthlyRevenue = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    type MonthlyOrderRow = { month: Date; revenue: number; commission: number; orders: bigint };
+    type MonthlyCommissionRow = { month: Date; commission: number };
+
+    const [monthlyOrdersRaw, monthlyCommissionsRaw] = await Promise.all([
+      prisma.$queryRaw<MonthlyOrderRow[]>`
+        SELECT
+          DATE_TRUNC('month', "completedAt") AS month,
+          SUM("amount")     AS revenue,
+          SUM("commission") AS commission,
+          COUNT(id)         AS orders
+        FROM "Order"
+        WHERE "status" = 'TERMINE'
+          AND "completedAt" >= ${startDate}
+        GROUP BY DATE_TRUNC('month', "completedAt")
+        ORDER BY month ASC
+      `,
+      prisma.$queryRaw<MonthlyCommissionRow[]>`
+        SELECT
+          DATE_TRUNC('month', "createdAt") AS month,
+          SUM("amount") AS commission
+        FROM "Payment"
+        WHERE "type" = 'commission'
+          AND "status" = 'COMPLETE'
+          AND "createdAt" >= ${startDate}
+        GROUP BY DATE_TRUNC('month', "createdAt")
+        ORDER BY month ASC
+      `,
+    ]);
+
+    // Build lookup maps keyed by "YYYY-MM"
+    const ordersByMonth = Object.fromEntries(
+      monthlyOrdersRaw.map((r) => {
+        const d = new Date(r.month);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return [key, r];
+      })
+    );
+    const commissionsByMonth = Object.fromEntries(
+      monthlyCommissionsRaw.map((r) => {
+        const d = new Date(r.month);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return [key, r];
+      })
+    );
+
+    const monthlyRevenue = Array.from({ length: 12 }, (_, idx) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 11 + idx, 1);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-
-      const [monthOrders, monthCommission] = await Promise.all([
-        prisma.order.aggregate({
-          where: {
-            status: "TERMINE",
-            completedAt: { gte: d, lt: nextMonth },
-          },
-          _sum: { amount: true, commission: true },
-          _count: { id: true },
-        }),
-        prisma.payment.aggregate({
-          where: {
-            type: "commission",
-            status: "COMPLETE",
-            createdAt: { gte: d, lt: nextMonth },
-          },
-          _sum: { amount: true },
-        }),
-      ]);
-
-      monthlyRevenue.push({
+      const orderRow = ordersByMonth[monthKey];
+      const commissionRow = commissionsByMonth[monthKey];
+      const fallbackCommission = orderRow ? Number(orderRow.commission ?? 0) : 0;
+      return {
         month: monthNames[d.getMonth()],
         monthKey,
-        revenue: Math.round((monthOrders._sum.amount ?? 0) * 100) / 100,
-        commission: Math.round((monthCommission._sum.amount ?? monthOrders._sum.commission ?? 0) * 100) / 100,
-        orders: monthOrders._count.id,
-      });
-    }
+        revenue: Math.round((orderRow ? Number(orderRow.revenue ?? 0) : 0) * 100) / 100,
+        commission: Math.round((commissionRow ? Number(commissionRow.commission ?? 0) : fallbackCommission) * 100) / 100,
+        orders: orderRow ? Number(orderRow.orders) : 0,
+      };
+    });
 
     const recentOrders = recentOrdersRaw.map((o) => ({
       id: o.id,

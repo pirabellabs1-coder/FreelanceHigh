@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useClientStore } from "@/store/client";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ function SkeletonCard() {
 }
 
 export default function ClientProjects() {
+  const router = useRouter();
   const {
     projects,
     projectFilter,
@@ -261,7 +263,10 @@ export default function ClientProjects() {
                   >
                     Voir détails
                   </Link>
-                  <button className="flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center">
+                  <button
+                    onClick={() => router.push(`/client/projets/${p.id}?edit=true`)}
+                    className="flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 sm:py-2 bg-border-dark text-slate-400 text-xs font-semibold rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-center"
+                  >
                     Modifier
                   </button>
                   <button

@@ -69,7 +69,6 @@ export default function ClientPayments() {
   const [selectedMethod, setSelectedMethod] = useState("mobile");
   const [depositMethod, setDepositMethod] = useState("card");
   const [depositAmount, setDepositAmount] = useState("");
-  const [depositLoading, setDepositLoading] = useState(false);
   const { addToast } = useToastStore();
 
   const {
@@ -374,39 +373,20 @@ export default function ClientPayments() {
               </div>
             </div>
 
-            {/* Deposit button */}
+            {/* Deposit button — disabled until payment integration is live */}
             <button
-              disabled={!depositAmount || parseFloat(depositAmount) <= 0 || depositLoading}
-              onClick={() => {
-                setDepositLoading(true);
-                // Simulate deposit
-                setTimeout(() => {
-                  setDepositLoading(false);
-                  addToast("success", `Dépôt de ${formatAmount(parseFloat(depositAmount) || 0)} initié avec succès via ${DEPOSIT_METHODS.find(m => m.id === depositMethod)?.label || "inconnu"}`);
-                  setDepositAmount("");
-                }, 1500);
-              }}
-              className="w-full bg-primary text-background-dark text-sm font-bold py-4 rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled
+              className="w-full bg-border-dark text-slate-500 text-sm font-bold py-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {depositLoading ? (
-                <>
-                  <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-                  Traitement en cours...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-lg">add_circle</span>
-                  Déposer {depositAmount ? formatAmount(parseFloat(depositAmount) || 0) : "des fonds"}
-                </>
-              )}
+              <span className="material-symbols-outlined text-lg">lock</span>
+              Bientot disponible
             </button>
 
             {/* Info */}
-            <div className="flex items-center gap-2 mt-4 p-3 bg-blue-500/5 rounded-lg border border-blue-500/10">
-              <span className="material-symbols-outlined text-blue-400 text-lg flex-shrink-0">info</span>
+            <div className="flex items-center gap-2 mt-4 p-3 bg-amber-500/5 rounded-lg border border-amber-500/10">
+              <span className="material-symbols-outlined text-amber-400 text-lg flex-shrink-0">construction</span>
               <p className="text-xs text-slate-400">
-                Les fonds déposés seront disponibles immédiatement pour les paiements par carte.
-                Les virements bancaires peuvent prendre 1 à 3 jours ouvrés.
+                Le depot de fonds sera disponible prochainement. L&apos;integration Stripe et CinetPay est en cours de configuration.
               </p>
             </div>
           </div>

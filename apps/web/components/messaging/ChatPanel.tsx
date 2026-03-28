@@ -167,7 +167,7 @@ export function ChatPanel({
 
   useEffect(() => {
     if (conversation) onMarkRead();
-  }, [conversation?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversation?.id, onMarkRead]);
 
   useEffect(() => {
     if (uploadError) {

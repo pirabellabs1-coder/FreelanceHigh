@@ -284,8 +284,8 @@ export default function AgenceClients() {
           break;
         case "lastOrderAt":
           cmp =
-            new Date(a.lastOrderAt).getTime() -
-            new Date(b.lastOrderAt).getTime();
+            new Date(a.lastOrderAt || 0).getTime() -
+            new Date(b.lastOrderAt || 0).getTime();
           break;
       }
       return sortAsc ? cmp : -cmp;

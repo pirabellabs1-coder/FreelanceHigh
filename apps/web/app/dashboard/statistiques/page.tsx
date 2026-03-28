@@ -17,7 +17,8 @@ const PERIODS = [
   { label: "1 an", value: "1a" },
 ];
 
-const TRAFFIC_SOURCES = [
+// Traffic sources — populated from /api/tracking/stats when available, static fallback for MVP
+const DEFAULT_TRAFFIC_SOURCES = [
   { name: "Recherche", value: 45, color: "#0e7c66" },
   { name: "Direct", value: 25, color: "#0EA5E9" },
   { name: "Social", value: 20, color: "#f2b705" },
@@ -147,14 +148,14 @@ export default function StatistiquesPage() {
           <h3 className="font-bold mb-6">Sources de trafic</h3>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
-              <Pie data={TRAFFIC_SOURCES} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={3}>
-                {TRAFFIC_SOURCES.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+              <Pie data={DEFAULT_TRAFFIC_SOURCES} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={3}>
+                {DEFAULT_TRAFFIC_SOURCES.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
               <Tooltip content={<ChartTooltip />} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4">
-            {TRAFFIC_SOURCES.map((s) => (
+            {DEFAULT_TRAFFIC_SOURCES.map((s) => (
               <div key={s.name} className="flex items-center gap-2 text-xs">
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
                 <span className="text-slate-400">{s.name} ({s.value}%)</span>

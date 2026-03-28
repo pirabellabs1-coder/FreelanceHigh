@@ -238,3 +238,51 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+    }
+
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "Parametre id manquant" }, { status: 400 });
+    }
+
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      const offre = offreStore.getById(id);
+      if (!offre) {
+        return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
+      }
+      if (offre.freelanceId !== session.user.id) {
+        return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+      }
+      offreStore.delete(id);
+      return NextResponse.json({ success: true });
+    }
+
+    // Prisma: verify ownership before deleting
+    const existingOffre = await prisma.offer.findUnique({
+      where: { id },
+      select: { freelanceId: true },
+    });
+    if (!existingOffre) {
+      return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
+    }
+    if (existingOffre.freelanceId !== session.user.id) {
+      return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    }
+
+    await prisma.offer.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[API /offres DELETE]", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression de l'offre" },
+      { status: 500 }
+    );
+  }
+}

@@ -87,6 +87,7 @@ export default function ProjectDetailPage() {
     syncProjects,
     acceptCandidature,
     rejectCandidature,
+    closeProject,
     deleteProject,
     loading,
   } = useClientStore();
@@ -95,12 +96,13 @@ export default function ProjectDetailPage() {
   const [candidaturesLoading, setCandidaturesLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Sync projects on mount if needed
+  // Sync projects on mount if the specific project is not yet in the store
   useEffect(() => {
-    if (projects.length === 0) {
+    const found = projects.find((p) => p.id === id);
+    if (!found) {
       syncProjects();
     }
-  }, [projects.length, syncProjects]);
+  }, [id, projects, syncProjects]);
 
   // Fetch candidatures for this project
   useEffect(() => {
@@ -446,7 +448,14 @@ export default function ProjectDetailPage() {
           Modifier le projet
         </button>
         <button
-          onClick={() => addToast("info", "Projet ferme avec succes")}
+          onClick={async () => {
+            const ok = await closeProject(id);
+            if (ok) {
+              addToast("success", "Projet ferme avec succes");
+            } else {
+              addToast("error", "Erreur lors de la fermeture du projet");
+            }
+          }}
           className="flex items-center gap-2 px-5 py-2.5 bg-border-dark text-slate-300 text-sm font-bold rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
         >
           <span className="material-symbols-outlined text-lg">block</span>

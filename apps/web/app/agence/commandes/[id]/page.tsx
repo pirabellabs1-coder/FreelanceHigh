@@ -356,7 +356,7 @@ export default function AgenceCommandeDetail() {
       {/* Countdown Timers */}
       {order.status === "en_attente" && (
         <CountdownTimer
-          deadline={order.deadline}
+          deadline={new Date(new Date(order.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString()}
           totalDurationMs={3 * 24 * 60 * 60 * 1000}
           label="Delai pour accepter la commande"
           description="L'agence doit accepter cette commande avant l'expiration du delai. Passe ce delai, la commande sera automatiquement annulee."
@@ -490,6 +490,60 @@ export default function AgenceCommandeDetail() {
                   <p className={cn("text-sm font-semibold mt-1", d.cls || "text-white")}>{d.value}</p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Chat / Messages */}
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-5 flex flex-col gap-3">
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">chat</span>Messages
+            </h3>
+            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
+              {(order.messages || []).length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-6">Aucun message pour le moment.</p>
+              ) : (
+                (order.messages || []).map((msg: { id: string; senderId?: string; senderName?: string; content: string; createdAt?: string; type?: string }) => {
+                  const isOwn = msg.senderId === order.freelanceId;
+                  return (
+                    <div key={msg.id} className={cn("flex flex-col gap-0.5", isOwn ? "items-end" : "items-start")}>
+                      {!isOwn && (
+                        <p className="text-[10px] text-slate-500 font-semibold px-1">{msg.senderName || order.clientName || "Client"}</p>
+                      )}
+                      <div className={cn(
+                        "max-w-[80%] px-3 py-2 rounded-xl text-sm",
+                        isOwn ? "bg-primary/20 text-primary-foreground text-white" : "bg-neutral-800 text-slate-200"
+                      )}>
+                        {msg.content}
+                      </div>
+                      {msg.createdAt && (
+                        <p className="text-[10px] text-slate-600 px-1">{fmtTime(msg.createdAt)}</p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="flex gap-2 mt-1">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                placeholder="Ecrire un message..."
+                disabled={sending}
+                className="flex-1 px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm outline-none focus:border-primary/50 text-white placeholder:text-slate-600 disabled:opacity-50"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={sending || !newMessage.trim()}
+                className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-1.5"
+              >
+                {sending
+                  ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                  : <span className="material-symbols-outlined text-sm">send</span>
+                }
+              </button>
             </div>
           </div>
         </div>

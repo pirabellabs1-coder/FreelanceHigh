@@ -216,7 +216,7 @@ export const authOptions: NextAuthOptions = {
             role: (user.role || "FREELANCE").toLowerCase(),
             kyc: user.kyc,
             plan: mapPlanName(((user.plan as string) || "gratuit").toLowerCase()),
-            formationsRole: user.formationsRole?.toLowerCase() as any,
+            formationsRole: user.formationsRole?.toLowerCase() as string | undefined,
           };
         } catch (err) {
           if (err instanceof Error && err.message.includes("tentatives")) throw err;
@@ -408,7 +408,7 @@ export const authOptions: NextAuthOptions = {
             user.role = dbUser.role.toLowerCase();
             user.kyc = dbUser.kyc;
             user.plan = dbUser.plan.toLowerCase();
-            user.formationsRole = dbUser.formationsRole?.toLowerCase() as any;
+            user.formationsRole = dbUser.formationsRole?.toLowerCase() as string | undefined;
           } catch (err) {
             console.error("[AUTH OAuth] Erreur DB lors du signIn OAuth:", err instanceof Error ? err.message : err);
             console.error("[AUTH OAuth] Stack:", err instanceof Error ? err.stack : "N/A");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -21,7 +21,7 @@ const AUTH_ERRORS: Record<string, string> = {
   Default: "Une erreur est survenue lors de la connexion.",
 };
 
-export default function ConnexionPage() {
+function ConnexionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -497,5 +497,13 @@ export default function ConnexionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConnexionPage() {
+  return (
+    <Suspense>
+      <ConnexionContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { feedApi, type ApiService } from "@/lib/api-client";
 import { formatServiceTitle } from "@/lib/format-service-title";
@@ -570,9 +571,12 @@ export default function ClientExplorer() {
                       >
                         Proposition
                       </button>
-                      <button className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                      <Link
+                        href={`/freelances/${f.id}`}
+                        className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all"
+                      >
                         Voir profil
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -656,9 +660,12 @@ export default function ClientExplorer() {
                       >
                         Devis
                       </button>
-                      <button className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all">
+                      <Link
+                        href={`/agences/${a.id}`}
+                        className="px-2 sm:px-3 py-1.5 bg-primary text-background-dark text-[10px] sm:text-xs font-bold rounded-lg hover:brightness-110 transition-all"
+                      >
                         Voir agence
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>

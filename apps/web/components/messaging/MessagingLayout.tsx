@@ -185,6 +185,10 @@ export function MessagingLayout({
     setMobileShowChat(false);
   }, []);
 
+  const handleMarkRead = useCallback(() => {
+    if (selectedId) markConversationRead(selectedId);
+  }, [selectedId, markConversationRead]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden">
       {showAllConversations && (
@@ -240,9 +244,7 @@ export function MessagingLayout({
             onRetryMessage={(messageId) => {
               if (selectedId) retryMessage(selectedId, messageId);
             }}
-            onMarkRead={() => {
-              if (selectedId) markConversationRead(selectedId);
-            }}
+            onMarkRead={handleMarkRead}
             showAdminActions={showAllConversations}
             onSendSystemMessage={
               showAllConversations

@@ -18,11 +18,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-const PAYMENT_METHODS = [
-  { id: "visa", label: "Visa •••• 4242", icon: "credit_card", default: true },
-  { id: "orange", label: "Orange Money +221 77 123 4567", icon: "phone_android", default: false },
-  { id: "paypal", label: "PayPal jean@email.com", icon: "account_balance_wallet", default: false },
-];
+// Payment methods loaded from API — empty until user adds methods via Stripe/CinetPay
+const PAYMENT_METHODS: { id: string; label: string; icon: string; default: boolean }[] = [];
 
 export default function ParametresPage() {
   const { profile, updateProfile, apiSaveProfile, settings, updateSettings, notificationSettings, updateNotificationSetting } = useDashboardStore();
@@ -354,6 +351,9 @@ export default function ParametresPage() {
                   </button>
                 </div>
                 <div className="space-y-3">
+                  {PAYMENT_METHODS.length === 0 && (
+                    <p className="text-sm text-slate-500 py-4 text-center">Aucune methode de paiement enregistree. Ajoutez une carte ou un compte Mobile Money.</p>
+                  )}
                   {PAYMENT_METHODS.map((method) => (
                     <div key={method.id}
                       className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-neutral-dark border border-border-dark rounded-lg hover:border-primary/30 transition-all">
@@ -392,29 +392,7 @@ export default function ParametresPage() {
                   Historique de facturation
                 </h3>
                 <div className="divide-y divide-border-dark">
-                  {[
-                    { id: "INV-2026-003", date: "01/03/2026", amount: 15, status: "en_attente" },
-                    { id: "INV-2026-002", date: "01/02/2026", amount: 15, status: "payee" },
-                    { id: "INV-2026-001", date: "01/01/2026", amount: 15, status: "payee" },
-                  ].map((inv) => (
-                    <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
-                      <div className="flex items-center justify-between sm:block">
-                        <p className="text-sm font-semibold">{inv.id}</p>
-                        <p className="text-xs text-slate-500">{inv.date}</p>
-                      </div>
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full",
-                          inv.status === "payee" ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10"
-                        )}>
-                          {inv.status === "payee" ? "Payee" : "En attente"}
-                        </span>
-                        <span className="text-sm font-bold ml-auto sm:ml-0">&euro;{inv.amount}</span>
-                        <button className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-all">
-                          <span className="material-symbols-outlined text-lg">download</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                  <p className="text-sm text-slate-500 py-4 text-center">Aucune facture pour le moment. Vos factures d&apos;abonnement apparaitront ici.</p>
                 </div>
               </div>
             </div>
