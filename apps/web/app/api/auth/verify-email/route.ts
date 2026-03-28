@@ -39,7 +39,6 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
-    recordFailedAttempt(rateLimitKey);
 
     // Rate limit: 3 req/min per email
     const rl = rateLimit(`verify-send:${email.toLowerCase()}`, 3, 60_000);

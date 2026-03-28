@@ -21,6 +21,14 @@ interface ChecklistItem {
 function getMarkdownText(content: Record<string, unknown> | null): string {
   if (!content) return "";
   if (content.type === "markdown" && typeof content.text === "string") return content.text;
+  // Handle Tiptap JSON format (type: "doc")
+  if (content.type === "doc" && Array.isArray(content.content)) {
+    return (content.content as Array<{ content?: Array<{ text?: string }> }>)
+      .map(node => (node.content || []).map(c => c.text || "").join(""))
+      .join("\n");
+  }
+  // Handle plain string stored as object
+  if (typeof content === "string") return content;
   return "";
 }
 
@@ -34,7 +42,7 @@ export function StepPublish({ role }: { role: string }) {
   const [showPreview, setShowPreview] = useState(false);
 
   const planName = normalizePlanName(rawPlan);
-  const commissionRate = COMMISSION_RATES[planName] || COMMISSION_RATES.DECOUVERTE || 0.12;
+  const commissionRate = COMMISSION_RATES[planName] ?? COMMISSION_RATES.DECOUVERTE ?? 0.12;
   const netAmount = store.basePrice >= 10
     ? Math.round(store.basePrice * (1 - commissionRate) * 100) / 100
     : 0;
@@ -47,11 +55,11 @@ export function StepPublish({ role }: { role: string }) {
     { label: "Tags ajoutés", done: store.tags.length >= 1, required: true, step: 1 },
     { label: "Prix défini", done: store.basePrice >= 10, required: true, step: 2 },
     { label: "Description complète", done: descriptionText.trim().length >= 20, required: true, step: 2 },
-    { label: "Image principale uploadée", done: !!store.mainImage, required: false, step: 6 },
+    { label: "Image principale uploadée", done: !!store.mainImage, required: false, step: 7 },
     { label: "Options supplémentaires", done: store.options.length > 0, required: false, step: 3 },
     { label: "Livraison express", done: store.expressDelivery.baseExpressEnabled, required: false, step: 4 },
     { label: "Consignes configurées", done: store.instructionsRequired ? !!store.instructionsContent : true, required: false, step: 5 },
-    { label: "Vidéo ajoutée", done: !!store.videoUrl, required: false, step: 6 },
+    { label: "Vidéo ajoutée", done: !!store.videoUrl, required: false, step: 7 },
   ];
 
   const requiredDone = checklist.filter((c) => c.required).every((c) => c.done);

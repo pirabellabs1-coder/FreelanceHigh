@@ -499,7 +499,7 @@ export const useDashboardStore = create<DashboardState>()(
           await financesApi.withdrawal({ amount, method });
           // Refresh transactions after withdrawal
           const txRes = await financesApi.transactions();
-          set({ transactions: txRes.transactions.map(mapApiTransactionToLocal) });
+          set({ transactions: (txRes?.transactions ?? []).map(mapApiTransactionToLocal) });
           return true;
         } catch (err) {
           console.error("[Withdrawal] Error:", err);

@@ -40,7 +40,6 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
-    recordFailedAttempt(rateLimitKey);
 
     const passwordHash = await bcrypt.hash(password, 12);
 

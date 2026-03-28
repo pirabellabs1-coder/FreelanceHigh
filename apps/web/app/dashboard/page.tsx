@@ -316,20 +316,30 @@ export default function DashboardPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Chiffre d&apos;affaires cible</span>
-                <span className="text-primary font-bold">75%</span>
+                <span className="text-primary font-bold">{stats.completionRate}%</span>
               </div>
               <div className="w-full bg-slate-100 dark:bg-primary/10 h-2 rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: "75%" }} />
+                <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: `${stats.completionRate}%` }} />
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Projets terminés</span>
-                <span className="text-blue-500 font-bold">4/6</span>
-              </div>
-              <div className="w-full bg-slate-100 dark:bg-primary/10 h-2 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: "66%" }} />
-              </div>
+              {(() => {
+                const completed = apiStats?.completedOrders ?? (orders ?? []).filter((o) => o.status === "termine").length;
+                const active = stats.activeOrders;
+                const total = completed + active;
+                const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                return (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">Projets terminés</span>
+                      <span className="text-blue-500 font-bold">{completed}/{total}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-primary/10 h-2 rounded-full overflow-hidden">
+                      <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%` }} />
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

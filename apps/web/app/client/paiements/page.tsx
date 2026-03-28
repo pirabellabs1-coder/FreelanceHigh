@@ -88,7 +88,7 @@ export default function ClientPayments() {
   const isLoading = loading.transactions;
   const safeTransactions = transactions || [];
 
-  const totalSpent = financeSummary?.totalEarned ?? 0;
+  const totalSpent = financeSummary?.totalSpent ?? 0;
   const pending = financeSummary?.pending ?? 0;
   const credits = financeSummary?.commissionThisMonth ?? 0;
 

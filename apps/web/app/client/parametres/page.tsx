@@ -163,7 +163,9 @@ export default function ClientSettings() {
                   <div className="flex items-center gap-5">
                     <div className="relative">
                       <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black ring-4 ring-primary/20">
-                        {profileForm.fullName.split(/\s+/).map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "??"}
+                        {profileForm.fullName?.trim()
+                          ? profileForm.fullName.trim().split(/\s+/).map((n) => n[0] || "").join("").toUpperCase().slice(0, 2)
+                          : "??"}
                       </div>
                       <button
                         onClick={() => addToast("info", "Upload photo bientôt disponible")}

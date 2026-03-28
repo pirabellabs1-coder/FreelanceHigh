@@ -200,6 +200,7 @@ export function ConversationList({
             const name = getConversationName(conv);
             const avatar = getConversationAvatar(conv);
             const typeBadge = TYPE_BADGES[conv.type];
+            if (!typeBadge) return null;
 
             return (
               <button

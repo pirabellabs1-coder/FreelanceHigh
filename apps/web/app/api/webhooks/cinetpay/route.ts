@@ -66,13 +66,14 @@ export async function POST(req: NextRequest) {
     // This is the recommended approach per CinetPay docs: never trust the
     // webhook payload alone, always verify server-to-server.
     if (!isCinetPayConfigured()) {
-      console.warn("[CinetPay Webhook] API not configured — simulating success in dev mode");
       if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+        console.warn("[CinetPay Webhook] API not configured — simulating success in dev mode");
         await handlePaymentSuccessDev(orderId, transactionId, "SIMULATED", "DEV_MODE");
-      } else {
-        await handlePaymentSuccessPrisma(orderId, transactionId, "SIMULATED", "DEV_MODE");
+        return NextResponse.json({ received: true, devMode: true });
       }
-      return NextResponse.json({ received: true, devMode: true });
+      // Production: refuse webhook if CinetPay is not configured — prevents free money
+      console.error("[CinetPay Webhook] REJECTED — CinetPay not configured in production");
+      return NextResponse.json({ error: "CinetPay non configure" }, { status: 503 });
     }
 
     const status = await checkPaymentStatus(transactionId);

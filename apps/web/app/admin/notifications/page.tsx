@@ -76,7 +76,7 @@ export default function AdminNotifications() {
               type: "info",
               targetLabel: "Utilisateurs",
               channel: h.channels?.[0] || "in-app",
-              count: h.recipientCount,
+              count: h.recipientCount ?? 0,
               failedEmails: h.failedCount,
               sentAt: h.createdAt,
             })));

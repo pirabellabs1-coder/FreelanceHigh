@@ -69,11 +69,11 @@ function deriveProgress(status: string): number {
   }
 }
 
-function derivePriority(deadline: string): Priority {
-  const now = new Date();
+function derivePriority(deadline: string | null | undefined): Priority {
+  if (!deadline) return "normal";
   const dl = new Date(deadline);
-  const diffMs = dl.getTime() - now.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  if (isNaN(dl.getTime())) return "normal";
+  const diffDays = (dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
   if (diffDays <= 3) return "urgent";
   if (diffDays <= 7) return "normal";
   return "faible";
@@ -383,7 +383,7 @@ export default function AgenceProjets() {
                           {PRIORITY_BADGES[p.priority].label}
                         </span>
                         <span className="text-[10px] text-slate-500">
-                          {new Date(p.deadline).toLocaleDateString("fr-FR")}
+                          {p.deadline ? new Date(p.deadline).toLocaleDateString("fr-FR") : "—"}
                         </span>
                       </div>
                       <p className="text-sm font-bold text-white mb-1">
@@ -459,7 +459,7 @@ export default function AgenceProjets() {
                     </p>
                     <p className="text-xs text-slate-500">
                       Deadline :{" "}
-                      {new Date(p.deadline).toLocaleDateString("fr-FR")}
+                      {p.deadline ? new Date(p.deadline).toLocaleDateString("fr-FR") : "—"}
                     </p>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-400">

@@ -20,7 +20,7 @@ export function StepPricingDescription({ role }: { role: string }) {
 
   const rawPlan = useDashboardStore((s) => s.currentPlan);
   const planName = normalizePlanName(rawPlan);
-  const commissionRate = COMMISSION_RATES[planName] || COMMISSION_RATES.DECOUVERTE || 0.12;
+  const commissionRate = COMMISSION_RATES[planName] ?? COMMISSION_RATES.DECOUVERTE ?? 0.12;
 
   const netAmount = useMemo(() => {
     if (!store.basePrice || store.basePrice < 10) return 0;

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getCommissionLabel, normalizePlanName } from "@/lib/plans";
 
 // ---------------------------------------------------------------------------
 // Plan data
@@ -9,11 +10,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 const PLAN_NAMES: Record<string, string> = {
   decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", empire: "Empire",
   free: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire",
-};
-
-const PLAN_COMMISSIONS: Record<string, string> = {
-  decouverte: "12%", ascension: "5%", sommet: "1€/vente", empire: "0%",
-  free: "12%", pro: "5%", business: "1€/vente", agence: "0%",
 };
 
 // ---------------------------------------------------------------------------
@@ -29,7 +25,7 @@ function ConfirmationContent() {
   const nextBillingParam = searchParams.get("nextBilling");
 
   const planName = PLAN_NAMES[planId] || "Ascension";
-  const commission = PLAN_COMMISSIONS[planId] || "12%";
+  const commission = getCommissionLabel(normalizePlanName(planId));
 
   // Format next billing date
   let nextBillingDate: string;

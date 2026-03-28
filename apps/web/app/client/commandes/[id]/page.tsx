@@ -408,7 +408,7 @@ export default function ClientOrderDetailPage() {
 
       {order.status === "livre" && (
         <CountdownTimer
-          deadline={new Date(new Date(order.deliveredAt || Date.now()).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()}
+          deadline={new Date((order.deliveredAt ? new Date(order.deliveredAt).getTime() : Date.now()) + 7 * 24 * 60 * 60 * 1000).toISOString()}
           totalDurationMs={7 * 24 * 60 * 60 * 1000}
           label="Delai pour valider la livraison"
           description="Vous avez 7 jours pour valider la livraison ou demander une revision. Passe ce delai, la commande sera automatiquement validee et les fonds liberes au freelance."
