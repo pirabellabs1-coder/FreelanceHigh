@@ -497,11 +497,21 @@ export default function InscriptionPage() {
         </div>
 
         {/* Social login */}
+        {!role && (
+          <p className="mb-3 text-xs font-semibold text-amber-500 text-center">
+            Choisissez d&apos;abord votre rôle pour continuer avec un réseau social.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
           <button
             type="button"
-            onClick={() => { if (role) setRoleCookie(role); signIn("google", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
-            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+            disabled={!role}
+            onClick={() => {
+              if (!role) return;
+              setRoleCookie(role);
+              signIn("google", { callbackUrl: ROLE_CALLBACKS[role] });
+            }}
+            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -513,8 +523,13 @@ export default function InscriptionPage() {
           </button>
           <button
             type="button"
-            onClick={() => { if (role) setRoleCookie(role); signIn("linkedin", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
-            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+            disabled={!role}
+            onClick={() => {
+              if (!role) return;
+              setRoleCookie(role);
+              signIn("linkedin", { callbackUrl: ROLE_CALLBACKS[role] });
+            }}
+            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="#0077b5" viewBox="0 0 24 24">
               <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />

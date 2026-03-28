@@ -468,7 +468,7 @@ export default function AgenceAbonnement() {
             >
               Annuel
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                -20%
+                -{Math.round((1 - PLAN_RULES.ASCENSION.priceAnnual / (PLAN_RULES.ASCENSION.priceMonthly * 12)) * 100)}%
               </span>
             </button>
           </div>

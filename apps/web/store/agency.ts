@@ -172,18 +172,18 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
 
       const updates: Partial<AgencyState> = { isLoading: false, lastSyncAt: new Date().toISOString() };
 
-      if (servicesRes.status === "fulfilled") updates.services = servicesRes.value;
+      if (servicesRes.status === "fulfilled") updates.services = servicesRes.value || [];
       if (ordersRes.status === "fulfilled") updates.orders = ordersRes.value?.orders || [];
       if (financeRes.status === "fulfilled") updates.financeSummary = financeRes.value;
       if (transactionsRes.status === "fulfilled") updates.transactions = transactionsRes.value?.transactions || [];
       if (reviewsRes.status === "fulfilled") {
-        updates.reviews = reviewsRes.value.reviews;
-        updates.reviewSummary = reviewsRes.value.summary;
+        updates.reviews = reviewsRes.value?.reviews || [];
+        updates.reviewSummary = reviewsRes.value?.summary || null;
       }
       if (statsRes.status === "fulfilled") updates.stats = statsRes.value;
       if (notifRes.status === "fulfilled") {
-        updates.notifications = notifRes.value.notifications;
-        updates.unreadCount = notifRes.value.unreadCount;
+        updates.notifications = notifRes.value?.notifications || [];
+        updates.unreadCount = notifRes.value?.unreadCount || 0;
       }
       if (membersRes.status === "fulfilled") {
         updates.members = (membersRes.value.members || []).map((m: ApiAgencyTeamMember) => ({
@@ -272,7 +272,7 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
   syncServices: async () => {
     try {
       const services = await servicesApi.list();
-      set({ services });
+      set({ services: services || [] });
     } catch { /* silently fail */ }
   },
 
@@ -307,14 +307,14 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
         financesApi.transactions(),
       ]);
       if (summaryRes.status === "fulfilled") set({ financeSummary: summaryRes.value });
-      if (txRes.status === "fulfilled") set({ transactions: txRes.value.transactions });
+      if (txRes.status === "fulfilled") set({ transactions: txRes.value?.transactions || [] });
     } catch { /* silently fail */ }
   },
 
   syncReviews: async () => {
     try {
-      const { reviews, summary } = await reviewsApi.getByFreelance();
-      set({ reviews, reviewSummary: summary });
+      const res = await reviewsApi.getByFreelance();
+      set({ reviews: res?.reviews || [], reviewSummary: res?.summary || null });
     } catch { /* silently fail */ }
   },
 
@@ -327,8 +327,8 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
 
   syncNotifications: async () => {
     try {
-      const { notifications, unreadCount } = await notificationsApi.list();
-      set({ notifications, unreadCount });
+      const res = await notificationsApi.list();
+      set({ notifications: res?.notifications || [], unreadCount: res?.unreadCount || 0 });
     } catch { /* silently fail */ }
   },
 

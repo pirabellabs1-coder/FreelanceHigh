@@ -105,7 +105,7 @@ interface MessagingState {
   // API-first messaging
   syncFromApi: () => Promise<void>;
   loadMessages: (convId: string) => Promise<void>;
-  sendMessage: (convId: string, content: string, type?: MessageContentType, fileName?: string, fileSize?: string, audioUrl?: string, audioDuration?: number, fileUrl?: string, fileType?: string, storagePath?: string) => Promise<void>;
+  sendMessage: (convId: string, content: string, type?: MessageContentType, fileName?: string, fileSize?: string, audioUrl?: string, audioDuration?: number, fileUrl?: string, fileType?: string, storagePath?: string, _retryDepth?: number) => Promise<void>;
   markConversationRead: (convId: string) => Promise<void>;
   editMessage: (convId: string, messageId: string, newContent: string) => Promise<boolean>;
   deleteMessage: (convId: string, messageId: string) => Promise<boolean>;
@@ -319,7 +319,7 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
   },
 
   // ── Send message with optimistic update ──
-  sendMessage: async (convId, content, type = "text", fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath) => {
+  sendMessage: async (convId, content, type = "text", fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath, _retryDepth = 0) => {
     const { currentUserId, currentUserRole } = get();
     const tempId = genTempId();
 
@@ -453,15 +453,30 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
       }));
 
       // Auto-retry after 2s (max 2 retries)
-      const retryCount = newMessage._retryCount || 0;
-      if (retryCount < 2) {
+      // Use _retryDepth from closure — not message state — to avoid infinite retry loop
+      const MAX_RETRIES = 3;
+      if (_retryDepth < MAX_RETRIES - 1) {
+        // Increment _retryCount on the failed message so the UI can reflect retry attempts
+        set((s) => ({
+          conversations: s.conversations.map((c) =>
+            c.id === convId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === tempId ? { ...m, _retryCount: (_retryDepth + 1) } : m
+                  ),
+                }
+              : c
+          ),
+        }));
+
         setTimeout(() => {
           const state = get();
           const msg = state.conversations
             .find((c) => c.id === convId)
             ?.messages.find((m) => m.id === tempId);
           if (msg && msg.status === "failed") {
-            // Remove failed message and resend
+            // Remove failed message and resend with incremented depth
             set((s) => ({
               conversations: s.conversations.map((c) =>
                 c.id === convId
@@ -469,9 +484,12 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
                   : c
               ),
             }));
-            get().sendMessage(convId, content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath);
+            get().sendMessage(convId, content, type, fileName, fileSize, audioUrl, audioDuration, fileUrl, fileType, storagePath, _retryDepth + 1);
           }
-        }, retryCount === 0 ? 2000 : 5000);
+        }, _retryDepth === 0 ? 2000 : 5000);
+      } else {
+        // Max retries reached — notify the user
+        showToast("error", "Impossible d'envoyer le message apres plusieurs tentatives.");
       }
     }
   },
@@ -722,6 +740,9 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
       set((s) => {
         const conv = s.conversations.find((c) => c.id === data.conversationId);
         if (!conv) return s;
+
+        // Dedup: skip if a message with this ID already exists
+        if (conv.messages.some((m) => m.id === msg.id)) return s;
 
         const isSelected = data.conversationId === selectedConversationId;
 

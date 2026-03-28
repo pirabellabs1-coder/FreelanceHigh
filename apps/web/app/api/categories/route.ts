@@ -222,25 +222,49 @@ const CATEGORIES = [
   },
 ];
 
+// Normalise Prisma Category rows into the same shape as the hardcoded list
+function normalisePrismaRow(row: {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+}) {
+  return { id: row.id, name: row.name, slug: row.slug, icon: row.icon ?? "category" };
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const parentId = searchParams.get("parentId");
   const withTags = searchParams.get("withTags") === "true";
   const categoryId = searchParams.get("categoryId");
 
-  // Get tags for a specific category
+  // Get tags for a specific category (hardcoded list only — tags not in DB yet)
   if (categoryId && withTags) {
     const category = CATEGORIES.find((c) => c.id === categoryId);
     return NextResponse.json({ tags: category?.tags || [] });
   }
 
-  // Get subcategories for a parent
+  // Get subcategories for a parent (hardcoded list only — subcategories not in DB yet)
   if (parentId) {
     const parent = CATEGORIES.find((c) => c.id === parentId);
     return NextResponse.json({ subcategories: parent?.children || [] });
   }
 
-  // Return all top-level categories
+  // Return all top-level categories: try Prisma first, fall back to hardcoded list
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const rows = await prisma.category
+      .findMany({ orderBy: { order: "asc" } })
+      .catch(() => [] as typeof rows);
+
+    if (rows.length > 0) {
+      return NextResponse.json({ categories: rows.map(normalisePrismaRow) });
+    }
+    // Prisma returned an empty table — fall through to static fallback
+  } catch {
+    // Prisma unavailable (e.g. Category model not yet migrated) — fall through
+  }
+
   return NextResponse.json({
     categories: CATEGORIES.map(({ children, tags, ...cat }) => cat),
   });

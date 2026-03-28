@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
-// In-memory store — will be replaced by DB in production
-const tickets: Array<{
+// In-memory store (dev only) — will be replaced by DB in production
+const devTickets: Array<{
   id: string;
   userId: string;
   subject: string;
@@ -39,8 +40,14 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  const userTickets = tickets.filter((t) => t.userId === userId);
-  return NextResponse.json({ tickets: userTickets });
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const userTickets = devTickets.filter((t) => t.userId === userId);
+    return NextResponse.json({ tickets: userTickets });
+  }
+
+  // Production: no SupportTicket model in schema yet — return empty list
+  // TODO: add SupportTicket model to schema (subject, category, message, priority, status, responses)
+  return NextResponse.json({ tickets: [] });
 }
 
 export async function POST(req: NextRequest) {
@@ -53,32 +60,38 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
 
-  if (action === "reply") {
-    const ticket = tickets.find((t) => t.id === body.ticketId && t.userId === userId);
-    if (!ticket) return NextResponse.json({ error: "Ticket introuvable" }, { status: 404 });
-    ticket.responses.push({
-      id: `resp-${Date.now()}`,
-      from: "user",
-      message: body.message,
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    if (action === "reply") {
+      const ticket = devTickets.find((t) => t.id === body.ticketId && t.userId === userId);
+      if (!ticket) return NextResponse.json({ error: "Ticket introuvable" }, { status: 404 });
+      ticket.responses.push({
+        id: `resp-${Date.now()}`,
+        from: "user",
+        message: body.message,
+        createdAt: new Date().toISOString(),
+      });
+      ticket.updatedAt = new Date().toISOString();
+      return NextResponse.json({ success: true, ticket });
+    }
+
+    // Create new ticket
+    const ticket = {
+      id: `ticket-${Date.now()}`,
+      userId,
+      subject: body.subject || "",
+      category: body.category || "general",
+      message: body.message || "",
+      priority: body.priority || "normale",
+      status: "ouvert" as const,
+      responses: [],
       createdAt: new Date().toISOString(),
-    });
-    ticket.updatedAt = new Date().toISOString();
+      updatedAt: new Date().toISOString(),
+    };
+    devTickets.push(ticket);
     return NextResponse.json({ success: true, ticket });
   }
 
-  // Create new ticket
-  const ticket = {
-    id: `ticket-${Date.now()}`,
-    userId,
-    subject: body.subject || "",
-    category: body.category || "general",
-    message: body.message || "",
-    priority: body.priority || "normale",
-    status: "ouvert" as const,
-    responses: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  tickets.push(ticket);
-  return NextResponse.json({ success: true, ticket });
+  // Production: no SupportTicket model in schema yet
+  // TODO: add SupportTicket model to schema for persistent ticket tracking
+  return NextResponse.json({ error: "Fonctionnalite non disponible en production pour le moment" }, { status: 501 });
 }

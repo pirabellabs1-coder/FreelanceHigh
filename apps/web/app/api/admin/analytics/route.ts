@@ -15,14 +15,35 @@ import { devStore } from "@/lib/dev/dev-store";
 import { trackingStore } from "@/lib/tracking/tracking-store";
 
 // GET /api/admin/analytics — Platform analytics
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get("period") ?? "30d";
+
+    // Determine date range from period param
     const now = new Date();
+    let periodStart: Date;
+    let monthsBack: number;
+    if (period === "7d") {
+      periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      monthsBack = 1;
+    } else if (period === "90d") {
+      periodStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      monthsBack = 3;
+    } else if (period === "12m") {
+      periodStart = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+      monthsBack = 12;
+    } else {
+      // default: 30d
+      periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      monthsBack = 1;
+    }
+
     const currentYear = now.getFullYear();
     const monthNames = [
       "Jan", "Fev", "Mar", "Avr", "Mai", "Jun",
@@ -41,7 +62,7 @@ export async function GET() {
 
       const revenueByCategory: Record<string, { revenue: number; orders: number }> = {};
       for (const order of orders) {
-        if (order.status === "termine" || order.status === "livre") {
+        if ((order.status === "termine" || order.status === "livre") && (!order.completedAt || new Date(order.completedAt) >= periodStart)) {
           const cat = order.category || "Non categorise";
           if (!revenueByCategory[cat]) revenueByCategory[cat] = { revenue: 0, orders: 0 };
           revenueByCategory[cat].revenue += order.amount;
@@ -74,8 +95,8 @@ export async function GET() {
       const usersWithReviews = new Set(reviews.map((r) => r.clientId)).size;
       const profileCompleted = Math.round(totalRegistrations * 0.7);
 
-      const revenueTrends = Array.from({ length: 12 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+      const revenueTrends = Array.from({ length: monthsBack }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1);
         const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         const mo = orders.filter((o) => o.status === "termine" && o.completedAt?.startsWith(monthKey));
         return { month: monthNames[d.getMonth()], monthKey, revenue: Math.round(mo.reduce((s, o) => s + o.amount, 0) * 100) / 100, commission: Math.round(mo.reduce((s, o) => s + o.commission, 0) * 100) / 100, orders: mo.length };
@@ -101,7 +122,7 @@ export async function GET() {
       const paymentMethods: Record<string, number> = {};
       for (const tx of transactions) { const m = tx.method ?? "carte_bancaire"; paymentMethods[m] = (paymentMethods[m] ?? 0) + 1; }
 
-      const trafficStats30d = trackingStore.getStats({ period: "30d" });
+      const trafficStats30d = trackingStore.getStats({ period: period as "7d" | "30d" | "90d" | "12m" });
 
       return NextResponse.json({
         revenueByCategory: Object.entries(revenueByCategory).map(([category, data]) => ({ category, revenue: Math.round(data.revenue * 100) / 100, orders: data.orders })).sort((a, b) => b.revenue - a.revenue),
@@ -153,7 +174,7 @@ export async function GET() {
 
     // ── Revenue by Category ──
     const categoryRevenue = await prisma.order.findMany({
-      where: { status: { in: ["TERMINE", "LIVRE"] } },
+      where: { status: { in: ["TERMINE", "LIVRE"] }, completedAt: { gte: periodStart } },
       include: { service: { include: { category: { select: { name: true } } } } },
     });
     const revByCat: Record<string, { revenue: number; orders: number }> = {};
@@ -179,7 +200,7 @@ export async function GET() {
     }
 
     const ordersWithCountry = await prisma.order.findMany({
-      where: { status: "TERMINE" },
+      where: { status: "TERMINE", completedAt: { gte: periodStart } },
       include: { client: { select: { country: true } } },
     });
     const ordersByCountry: Record<string, { orders: number; revenue: number }> = {};
@@ -201,9 +222,9 @@ export async function GET() {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
 
-    // ── Revenue Trends (12 months) ──
+    // ── Revenue Trends (period-aware) ──
     const revenueTrends = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthsBack - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -312,8 +333,8 @@ export async function GET() {
       if (p.method) paymentMethods[p.method] = p._count.id;
     }
 
-    // ── Traffic Analytics (still from tracking store) ──
-    const trafficStats30d = trackingStore.getStats({ period: "30d" });
+    // ── Traffic Analytics (from tracking store, period-aware) ──
+    const trafficStatsPeriod = trackingStore.getStats({ period: period as "7d" | "30d" | "90d" | "12m" });
 
     return NextResponse.json({
       revenueByCategory,
@@ -326,16 +347,16 @@ export async function GET() {
       reviewStats,
       paymentMethods,
       trafficAnalytics: {
-        pageViewsTrend: trafficStats30d.pageViewsTrend,
-        sessionsTrend: trafficStats30d.sessionsTrend,
-        topReferrers: trafficStats30d.topReferrers,
-        utmBreakdown: trafficStats30d.utmBreakdown,
-        deviceBreakdown: trafficStats30d.deviceBreakdown,
-        bounceRate: trafficStats30d.bounceRate,
-        avgSessionDuration: trafficStats30d.avgSessionDuration,
-        totalPageViews: trafficStats30d.totalPageViews,
-        uniqueVisitors: trafficStats30d.uniqueVisitors,
-        totalSessions: trafficStats30d.totalSessions,
+        pageViewsTrend: trafficStatsPeriod.pageViewsTrend,
+        sessionsTrend: trafficStatsPeriod.sessionsTrend,
+        topReferrers: trafficStatsPeriod.topReferrers,
+        utmBreakdown: trafficStatsPeriod.utmBreakdown,
+        deviceBreakdown: trafficStatsPeriod.deviceBreakdown,
+        bounceRate: trafficStatsPeriod.bounceRate,
+        avgSessionDuration: trafficStatsPeriod.avgSessionDuration,
+        totalPageViews: trafficStatsPeriod.totalPageViews,
+        uniqueVisitors: trafficStatsPeriod.uniqueVisitors,
+        totalSessions: trafficStatsPeriod.totalSessions,
       },
     });
   } catch (error) {

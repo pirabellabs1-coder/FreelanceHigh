@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -78,6 +79,8 @@ export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
+  const { data: session } = useSession();
+  const sessionRole = (session?.user as Record<string, unknown>)?.role as string | undefined;
   const { orders, isLoading, syncFromApi, updateOrderStatus, addOrderMessage, addOrderFile, apiAcceptOrder, apiDeliverOrder, apiSendOrderMessage } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -680,8 +683,8 @@ export default function OrderDetailPage() {
         ))}
       </div>
 
-      {/* Review Section — shown when order is completed */}
-      {order.status === "termine" && !hasExistingReview && !reviewSubmitted && (
+      {/* Review Section — only shown to clients on completed orders */}
+      {order.status === "termine" && !hasExistingReview && !reviewSubmitted && sessionRole === "client" && (
         <div className="bg-background-dark/50 border border-primary/30 rounded-xl p-6 space-y-5">
           <h3 className="font-bold text-lg flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">rate_review</span>
@@ -757,7 +760,7 @@ export default function OrderDetailPage() {
       )}
 
       {/* Review submitted confirmation */}
-      {(reviewSubmitted || hasExistingReview) && order.status === "termine" && (
+      {(reviewSubmitted || hasExistingReview) && order.status === "termine" && sessionRole === "client" && (
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 flex items-center gap-4">
           <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
           <div>

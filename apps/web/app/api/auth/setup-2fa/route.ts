@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { generateSecret, generateURI, verifySync } from "otplib";
-
-const IS_DEV_MODE = process.env.DEV_MODE === "true";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 // POST: Generer un nouveau secret 2FA + QR code URL
 export async function POST() {
@@ -20,22 +19,27 @@ export async function POST() {
     });
 
     // Stocker le secret temporairement (non encore confirme)
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       devStore.update(session.user.id, {
         twoFactorSecret: secret,
         twoFactorEnabled: false,
       } as Record<string, unknown>);
-    } else {
-      try {
-        const { prisma } = await import("@freelancehigh/db");
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { twoFactorSecret: secret, twoFactorEnabled: false },
-        });
-      } catch {
-        // DB non connectee — on continue quand meme avec le secret
-      }
+      return NextResponse.json({
+        otpauthUrl,
+        secret, // Pour saisie manuelle dans l'app authenticator
+      });
+    }
+
+    // Production: Prisma
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { twoFactorSecret: secret, twoFactorEnabled: false },
+      });
+    } catch {
+      // DB non connectee — on continue quand meme avec le secret
     }
 
     return NextResponse.json({
@@ -66,7 +70,7 @@ export async function PUT(request: Request) {
     // Recuperer le secret stocke
     let storedSecret: string | null = null;
 
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       const user = devStore.findById(session.user.id);
       storedSecret =
@@ -75,7 +79,7 @@ export async function PUT(request: Request) {
           | null;
     } else {
       try {
-        const { prisma } = await import("@freelancehigh/db");
+        const { prisma } = await import("@/lib/prisma");
         const user = await prisma.user.findUnique({
           where: { id: session.user.id },
           select: { twoFactorSecret: true },
@@ -110,21 +114,26 @@ export async function PUT(request: Request) {
     }
 
     // Activer la 2FA
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       devStore.update(session.user.id, {
         twoFactorEnabled: true,
       } as Record<string, unknown>);
-    } else {
-      try {
-        const { prisma } = await import("@freelancehigh/db");
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { twoFactorEnabled: true },
-        });
-      } catch {
-        // DB non connectee
-      }
+      return NextResponse.json({
+        success: true,
+        message: "2FA active avec succes",
+      });
+    }
+
+    // Production: Prisma
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { twoFactorEnabled: true },
+      });
+    } catch {
+      // DB non connectee
     }
 
     return NextResponse.json({
@@ -144,22 +153,27 @@ export async function DELETE() {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       devStore.update(session.user.id, {
         twoFactorEnabled: false,
         twoFactorSecret: null,
       } as Record<string, unknown>);
-    } else {
-      try {
-        const { prisma } = await import("@freelancehigh/db");
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { twoFactorEnabled: false, twoFactorSecret: null },
-        });
-      } catch {
-        // DB non connectee
-      }
+      return NextResponse.json({
+        success: true,
+        message: "2FA desactivee",
+      });
+    }
+
+    // Production: Prisma
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { twoFactorEnabled: false, twoFactorSecret: null },
+      });
+    } catch {
+      // DB non connectee
     }
 
     return NextResponse.json({

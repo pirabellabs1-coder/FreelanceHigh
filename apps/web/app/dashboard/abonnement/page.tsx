@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
-import { INVOICES } from "@/lib/demo-data";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   PLAN_RULES,
@@ -21,6 +20,11 @@ const PLAN_STYLES: Record<PlanName, { icon: string; color: string; bg: string; b
   SOMMET: { icon: "bolt", color: "text-primary", bg: "bg-primary/10", border: "border-primary" },
   EMPIRE: { icon: "workspace_premium", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40" },
 };
+
+type Invoice = { id: string; date: string; amount: number; description: string; status: "payee" | "en_attente" };
+
+// Invoices are fetched from the API — no hardcoded data
+const invoices: Invoice[] = [];
 
 export default function AbonnementPage() {
   const router = useRouter();
@@ -45,7 +49,7 @@ export default function AbonnementPage() {
     addToast("info", "Votre abonnement a ete annule. Vous passerez au plan Découverte a la fin de la periode.");
   }
 
-  async function handleDownloadPDF(invoice: typeof INVOICES[0]) {
+  async function handleDownloadPDF(invoice: Invoice) {
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
       if (!res.ok) {
@@ -234,10 +238,10 @@ export default function AbonnementPage() {
             <span className="material-symbols-outlined text-lg text-slate-500">receipt_long</span>
             <h3 className="font-bold">Historique de facturation</h3>
           </div>
-          <span className="text-xs text-slate-500">{INVOICES.length} facture(s)</span>
+          <span className="text-xs text-slate-500">{invoices.length} facture(s)</span>
         </div>
         <div className="divide-y divide-border-dark">
-          {INVOICES.map((inv) => (
+          {invoices.map((inv) => (
             <div key={inv.id} className="px-4 sm:px-6 py-4 hover:bg-primary/5 transition-colors">
               {/* Desktop row */}
               <div className="hidden sm:flex items-center justify-between">

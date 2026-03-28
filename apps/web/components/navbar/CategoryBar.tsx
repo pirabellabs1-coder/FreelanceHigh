@@ -1,14 +1,41 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { CATEGORIES } from "@/lib/dev/mock-data";
+import { CATEGORIES as STATIC_CATEGORIES } from "@/lib/dev/mock-data";
+
+type Category = { slug: string; label: string; icon: string };
 
 function CategoryBarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get("categorie");
+
+  const [categories, setCategories] = useState<Category[]>(
+    STATIC_CATEGORIES.map((c) => ({ slug: c.slug, label: c.label, icon: c.icon }))
+  );
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          const normalized: Category[] = data.categories.map(
+            (c: { slug: string; name?: string; label?: string; icon: string }) => ({
+              slug: c.slug,
+              label: c.label ?? c.name ?? c.slug,
+              icon: c.icon,
+            })
+          );
+          setCategories(normalized);
+        }
+        // else: keep static fallback already in state
+      })
+      .catch(() => {
+        // keep static fallback already in state
+      });
+  }, []);
 
   function selectCategory(slug: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,7 +72,7 @@ function CategoryBarInner() {
         </button>
 
         {/* Catégories */}
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const active = activeCategory === cat.slug;
           return (
             <button

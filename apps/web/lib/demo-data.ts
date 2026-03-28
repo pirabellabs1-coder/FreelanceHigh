@@ -232,27 +232,11 @@ export const DEMO_PROFILE: FreelancerProfile = {
   completionPercent: 0,
 };
 
-export const DEMO_AVAILABILITY: AvailabilitySlot[] = [
-  { day: 0, dayName: "Lundi", available: true, startTime: "09:00", endTime: "18:00" },
-  { day: 1, dayName: "Mardi", available: true, startTime: "09:00", endTime: "18:00" },
-  { day: 2, dayName: "Mercredi", available: true, startTime: "09:00", endTime: "18:00" },
-  { day: 3, dayName: "Jeudi", available: true, startTime: "09:00", endTime: "18:00" },
-  { day: 4, dayName: "Vendredi", available: true, startTime: "09:00", endTime: "16:00" },
-  { day: 5, dayName: "Samedi", available: false, startTime: "10:00", endTime: "13:00" },
-  { day: 6, dayName: "Dimanche", available: false, startTime: "10:00", endTime: "13:00" },
-];
+/** @deprecated Availability is loaded from the API via syncFromApi(). Initial state is []. */
+export const DEMO_AVAILABILITY: AvailabilitySlot[] = [];
 
-export const DEMO_NOTIFICATION_SETTINGS: NotificationSetting[] = [
-  { id: "n1", label: "Nouvelle commande", category: "Commandes", email: true, push: true, sms: false },
-  { id: "n2", label: "Commande livree", category: "Commandes", email: true, push: true, sms: false },
-  { id: "n3", label: "Revision demandee", category: "Commandes", email: true, push: true, sms: true },
-  { id: "n4", label: "Nouveau message", category: "Messages", email: false, push: true, sms: false },
-  { id: "n5", label: "Paiement recu", category: "Finances", email: true, push: true, sms: true },
-  { id: "n6", label: "Retrait traite", category: "Finances", email: true, push: false, sms: false },
-  { id: "n7", label: "Nouvelle candidature", category: "Candidatures", email: true, push: true, sms: false },
-  { id: "n8", label: "Avis recu", category: "Avis", email: true, push: true, sms: false },
-  { id: "n9", label: "Rappel de delai", category: "Commandes", email: true, push: true, sms: true },
-];
+/** @deprecated Notification settings are loaded from the API. Initial state is []. */
+export const DEMO_NOTIFICATION_SETTINGS: NotificationSetting[] = [];
 
 export const DEMO_PLANS: SubscriptionPlan[] = [
   {

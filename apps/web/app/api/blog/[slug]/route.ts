@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 const IS_DEV_MODE = process.env.DEV_MODE === "true";
+
+const BLOG_FILE = path.join(process.cwd(), "lib", "dev", "blog-articles.json");
+
+interface DevArticle {
+  id: string;
+  title: string;
+  slug: string;
+  content?: string;
+  excerpt: string | null;
+  author: string;
+  authorName?: string;
+  category: string | null;
+  tags: string[];
+  status: string;
+  publishedAt: string | null;
+  featuredImage?: string;
+  coverImage?: string | null;
+  views: number;
+  createdAt: string;
+}
+
+function readDevArticles(): DevArticle[] {
+  try {
+    if (fs.existsSync(BLOG_FILE)) {
+      return JSON.parse(fs.readFileSync(BLOG_FILE, "utf-8"));
+    }
+  } catch {}
+  return [];
+}
 
 // GET /api/blog/[slug] — Public single article by slug
 export async function GET(
@@ -11,35 +42,30 @@ export async function GET(
     const { slug } = await params;
 
     if (IS_DEV_MODE) {
-      // Fetch from admin API to get in-memory data
-      const adminRes = await fetch(
-        new URL("/api/admin/blog", request.nextUrl.origin),
-        { headers: { cookie: request.headers.get("cookie") || "" } }
+      // Read directly from the shared JSON file — no admin auth required
+      const allArticles = readDevArticles();
+      const raw = allArticles.find(
+        (a) => a.slug === slug && (a.status === "publie" || a.status === "PUBLIE")
       );
-      const adminData = await adminRes.json();
-      const allArticles = (adminData.articles || []) as Array<{
-        id: string;
-        title: string;
-        slug: string;
-        content?: string;
-        excerpt: string;
-        author: string;
-        category: string;
-        tags: string[];
-        status: string;
-        publishedAt: string | null;
-        featuredImage: string;
-        views: number;
-        createdAt: string;
-      }>;
-
-      const article = allArticles.find(a => a.slug === slug && a.status === "publie");
-      if (!article) {
+      if (!raw) {
         return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
       }
 
-      // Note: admin API doesn't return content in list view, so for dev we need full article
-      // In dev, fetch again from admin or just return what we have
+      const article = {
+        id: raw.id,
+        title: raw.title,
+        slug: raw.slug,
+        content: raw.content ?? "",
+        excerpt: raw.excerpt ?? "",
+        author: raw.authorName || raw.author || "FreelanceHigh",
+        category: raw.category ?? "",
+        tags: raw.tags ?? [],
+        status: "publie",
+        publishedAt: raw.publishedAt,
+        featuredImage: raw.featuredImage ?? raw.coverImage ?? "",
+        views: raw.views ?? 0,
+        createdAt: raw.createdAt,
+      };
       return NextResponse.json({ article });
     }
 

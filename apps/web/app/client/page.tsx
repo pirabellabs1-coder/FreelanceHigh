@@ -109,7 +109,7 @@ export default function ClientDashboard() {
 
   // KPI values
   const activeProjectsCount = store.stats?.activeOrders || (store.projects || []).filter((p) => p.status === "actif").length;
-  const totalSpent = store.stats?.summary?.totalEarned || 0;
+  const totalSpent = store.stats?.summary?.totalSpent ?? store.financeSummary?.totalSpent ?? 0;
   const activeOrdersCount = store.stats?.activeOrders || 0;
   const completedOrders = store.stats?.completedOrders || 0;
 

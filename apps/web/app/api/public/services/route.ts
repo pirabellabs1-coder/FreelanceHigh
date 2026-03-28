@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       ];
     }
     if (category) {
-      where.categoryId = category;
+      where.category = { slug: category };
     }
     if (minPrice > 0) where.basePrice = { ...where.basePrice, gte: minPrice };
     if (maxPrice < Infinity) where.basePrice = { ...where.basePrice, lte: maxPrice };

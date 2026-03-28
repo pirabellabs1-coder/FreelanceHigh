@@ -334,11 +334,83 @@ export async function PATCH(
         );
       }
 
+      // ─── Status transition validation ────────────────────────────────────
+      // Determine the target status (delivery path uses LIVRE implicitly)
+      const isDeliveryAction = deliveryMessage !== undefined && deliveryFiles !== undefined;
+      const targetStatus = isDeliveryAction ? "LIVRE" : (status ? (STATUS_MAP[status] || status.toUpperCase()) : undefined);
+      const currentStatus = order.status as string;
+
+      const VALID_TRANSITIONS: Record<string, string[]> = {
+        EN_ATTENTE: ["EN_COURS", "ANNULE"],
+        EN_COURS:   ["LIVRE", "ANNULE", "LITIGE"],
+        LIVRE:      ["TERMINE", "REVISION", "LITIGE"],
+        REVISION:   ["EN_COURS", "ANNULE", "LITIGE"],
+        LITIGE:     [],   // Only admin can resolve from LITIGE
+        TERMINE:    [],   // Terminal state
+        ANNULE:     [],   // Terminal state
+      };
+
+      if (targetStatus) {
+        const allowed = VALID_TRANSITIONS[currentStatus];
+        if (allowed === undefined) {
+          return NextResponse.json(
+            { error: "Statut actuel de la commande inconnu" },
+            { status: 400 }
+          );
+        }
+        if (!allowed.includes(targetStatus)) {
+          return NextResponse.json(
+            {
+              error: `Transition invalide : ${currentStatus.toLowerCase()} → ${targetStatus.toLowerCase()}`,
+            },
+            { status: 400 }
+          );
+        }
+
+        // ─── Per-transition authorization ────────────────────────────────
+        // Only freelance (or agency) can accept (EN_COURS) and deliver (LIVRE)
+        const isFreelanceSide = userId === order.freelanceId || isAgencyOwner;
+        const isClientSide = userId === order.clientId;
+
+        if (targetStatus === "EN_COURS" && !isFreelanceSide) {
+          return NextResponse.json(
+            { error: "Seul le freelance peut accepter la commande" },
+            { status: 403 }
+          );
+        }
+        if (targetStatus === "LIVRE" && !isFreelanceSide) {
+          return NextResponse.json(
+            { error: "Seul le freelance peut livrer la commande" },
+            { status: 403 }
+          );
+        }
+        if (targetStatus === "TERMINE" && !isClientSide) {
+          return NextResponse.json(
+            { error: "Seul le client peut valider la livraison" },
+            { status: 403 }
+          );
+        }
+        if (targetStatus === "REVISION" && !isClientSide) {
+          return NextResponse.json(
+            { error: "Seul le client peut demander une revision" },
+            { status: 403 }
+          );
+        }
+        if (targetStatus === "LITIGE" && !isClientSide) {
+          return NextResponse.json(
+            { error: "Seul le client peut ouvrir un litige" },
+            { status: 403 }
+          );
+        }
+        // ANNULE: both parties can cancel (no extra restriction needed here)
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       let updatedOrder;
 
       // Handle delivery (status change to "LIVRE" with message and files)
       const serviceTitle = order.service?.title || "votre commande";
-      if (deliveryMessage !== undefined && deliveryFiles !== undefined) {
+      if (isDeliveryAction) {
         updatedOrder = await prisma.$transaction(async (tx) => {
           const updated = await tx.order.update({
             where: { id },
@@ -404,17 +476,23 @@ export async function PATCH(
           }).catch(() => {});
         }
       }
-      // Handle accepting an order (status changes to "EN_COURS")
+      // Handle accepting an order (EN_ATTENTE → EN_COURS) or resuming after revision (REVISION → EN_COURS)
       else if (status === "en_cours") {
+        const isRework = currentStatus === "REVISION";
         updatedOrder = await prisma.$transaction(async (tx) => {
+          const updateData: Record<string, unknown> = {
+            status: "EN_COURS",
+            progress: 10,
+          };
+          // Only stamp acceptedAt/startedAt on first acceptance, not on re-work
+          if (!isRework) {
+            updateData.acceptedAt = new Date();
+            updateData.startedAt = new Date();
+          }
+
           const updated = await tx.order.update({
             where: { id },
-            data: {
-              status: "EN_COURS",
-              progress: 10,
-              acceptedAt: new Date(),
-              startedAt: new Date(),
-            },
+            data: updateData,
             include: { service: true, client: true, freelance: true },
           });
 
@@ -422,8 +500,10 @@ export async function PATCH(
           await tx.notification.create({
             data: {
               userId: order.clientId,
-              title: "Commande acceptee",
-              message: `Votre commande ${serviceTitle} a ete acceptee`,
+              title: isRework ? "Revision en cours" : "Commande acceptee",
+              message: isRework
+                ? `Le freelance a repris le travail sur ${serviceTitle}`
+                : `Votre commande ${serviceTitle} a ete acceptee`,
               type: "ORDER",
               read: false,
               link: `/client/commandes/${id}`,

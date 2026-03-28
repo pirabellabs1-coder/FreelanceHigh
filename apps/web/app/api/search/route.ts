@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { IS_DEV } from "@/lib/env";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 // Semantic search API — In production: Postgres text search
 // In dev: uses keyword matching against dev store data
@@ -145,155 +144,214 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // ── Dev store path ──
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const queryLower = q.toLowerCase();
+    const queryWords = queryLower.split(/\s+/).filter(Boolean);
+
+    // Extract entities from the natural language query
+    const extractedSkills: string[] = [];
+    const allKnownSkills = [
+      "react", "node.js", "typescript", "figma", "python", "aws", "docker",
+      "wordpress", "seo", "ui", "ux", "flutter", "next.js", "postgresql",
+      "devops", "cloud", "mobile", "web", "redaction", "copywriting",
+      "javascript", "vue", "angular", "java", "php", "laravel", "django",
+      "ruby", "go", "rust", "swift", "kotlin", "tailwind", "graphql",
+    ];
+    for (const skill of allKnownSkills) {
+      if (queryLower.includes(skill)) extractedSkills.push(skill);
+    }
+    // Merge with explicit skills param
+    const allSearchSkills = [
+      ...new Set([
+        ...extractedSkills,
+        ...skills.map((s) => s.toLowerCase()),
+      ]),
+    ];
+
+    let budgetExtracted: number | null = null;
+    const budgetMatch = queryLower.match(/(\d+)\s*(?:€|eur|euro)/);
+    if (budgetMatch) budgetExtracted = parseInt(budgetMatch[1]);
+    if (budget) budgetExtracted = parseInt(budget);
+
+    // Build results from real data
+    const searchDB = buildSearchResults();
+
+    // Score each result
+    let results = searchDB.map((s) => {
+      let score = 0;
+
+      // Name match
+      if (queryWords.some((w) => s.name.toLowerCase().includes(w))) score += 20;
+
+      // Title match
+      if (queryWords.some((w) => s.title.toLowerCase().includes(w))) score += 25;
+
+      // Bio match
+      const bioWords = queryWords.filter((w) =>
+        s.bio.toLowerCase().includes(w)
+      );
+      score += bioWords.length * 10;
+
+      // Skills match
+      const matchedSkills = allSearchSkills.filter((sk) =>
+        s.skills.some((ss) => ss.toLowerCase().includes(sk))
+      );
+      score += matchedSkills.length * 15;
+
+      // Budget filter
+      if (budgetExtracted && s.hourlyRate > budgetExtracted) score -= 20;
+
+      // Type filter
+      if (type && s.type !== type) score -= 50;
+
+      // Base rating bonus
+      score += s.rating * 5;
+
+      return { ...s, matchScore: Math.max(0, Math.min(100, score)) };
+    });
+
+    // Filter out zero-score results unless no query
+    if (q) {
+      results = results.filter((r) => r.matchScore > 10);
+    }
+
+    // Sort by match score
+    results.sort((a, b) => b.matchScore - a.matchScore);
+
+    return NextResponse.json({
+      results,
+      entities: {
+        skills: allSearchSkills,
+        budget: budgetExtracted,
+        type: type || null,
+      },
+    });
+  }
+
   // ── Production: Prisma text search ──
-  if (!IS_DEV) {
-    try {
-      const queryWords = q.toLowerCase().split(/\s+/).filter(Boolean);
-      const searchTerm = queryWords.join(" & ");
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const queryWords = q.toLowerCase().split(/\s+/).filter(Boolean);
 
-      // Search services by title and description
-      const services = await prisma.service.findMany({
-        where: {
-          status: "ACTIF",
-          OR: [
-            { title: { contains: q, mode: "insensitive" } },
-            { descriptionText: { contains: q, mode: "insensitive" } },
-            { tags: { hasSome: queryWords } },
-          ],
+    // Search users (freelancers / agencies) by name and email
+    const users = await prisma.user.findMany({
+      where: {
+        status: "ACTIF",
+        role:
+          type === "agence"
+            ? "AGENCE"
+            : type === "freelance"
+            ? "FREELANCE"
+            : { in: ["FREELANCE", "AGENCE"] },
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { email: { contains: q, mode: "insensitive" } },
+          {
+            freelancerProfile: {
+              title: { contains: q, mode: "insensitive" },
+            },
+          },
+          {
+            freelancerProfile: { skills: { hasSome: queryWords } },
+          },
+        ],
+      },
+      include: {
+        freelancerProfile: {
+          select: { title: true, bio: true, skills: true, hourlyRate: true },
         },
-        include: {
-          user: { select: { id: true, name: true, country: true, role: true } },
-          category: { select: { name: true } },
-        },
-        take: 20,
-        orderBy: { orderCount: "desc" },
-      });
+        agencyProfile: { select: { agencyName: true, description: true } },
+        _count: { select: { reviewsReceived: true, ordersAsFreelance: true } },
+      },
+      take: 20,
+    });
 
-      // Search freelancers/agencies
-      const users = await prisma.user.findMany({
-        where: {
-          status: "ACTIF",
-          role: type === "agence" ? "AGENCE" : type === "freelance" ? "FREELANCE" : { in: ["FREELANCE", "AGENCE"] },
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { freelancerProfile: { title: { contains: q, mode: "insensitive" } } },
-            { freelancerProfile: { skills: { hasSome: queryWords } } },
-          ],
+    // Search services by title and description
+    const services = await prisma.service.findMany({
+      where: {
+        status: "ACTIF",
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, country: true, role: true, avatar: true },
         },
-        include: {
-          freelancerProfile: { select: { title: true, bio: true, skills: true, hourlyRate: true } },
-          agencyProfile: { select: { agencyName: true, description: true } },
-          _count: { select: { reviewsReceived: true, ordersAsFreelance: true } },
-        },
-        take: 20,
-      });
+        category: { select: { name: true } },
+      },
+      take: 20,
+      orderBy: { orderCount: "desc" },
+    });
 
-      const results = users.map((u) => ({
-        id: u.id,
-        name: u.role === "AGENCE" ? u.agencyProfile?.agencyName || u.name : u.name,
-        avatar: u.avatar || "",
-        title: u.freelancerProfile?.title || u.agencyProfile?.description?.slice(0, 60) || "",
+    // Build user results
+    const userResults: SearchResult[] = users.map((u) => ({
+      id: u.id,
+      name:
+        u.role === "AGENCE"
+          ? u.agencyProfile?.agencyName || u.name
+          : u.name,
+      avatar: u.avatar || "",
+      title:
+        u.freelancerProfile?.title ||
+        u.agencyProfile?.description?.slice(0, 60) ||
+        "",
+      rating: 0,
+      reviews: u._count.reviewsReceived,
+      hourlyRate: u.freelancerProfile?.hourlyRate || 0,
+      location: u.country || "",
+      skills: (u.freelancerProfile?.skills as string[]) || [],
+      bio:
+        u.freelancerProfile?.bio ||
+        u.agencyProfile?.description ||
+        "",
+      completionRate: 0,
+      responseTime: "< 2h",
+      matchScore: 50,
+      type: u.role === "AGENCE" ? ("agence" as const) : ("freelance" as const),
+    }));
+
+    // Merge service-owner profiles not already present
+    const seenIds = new Set(userResults.map((r) => r.id));
+    for (const svc of services) {
+      if (seenIds.has(svc.user.id)) continue;
+      seenIds.add(svc.user.id);
+      userResults.push({
+        id: svc.user.id,
+        name: svc.user.name,
+        avatar: svc.user.avatar || "",
+        title: svc.category?.name || "",
         rating: 0,
-        reviews: u._count.reviewsReceived,
-        hourlyRate: u.freelancerProfile?.hourlyRate || 0,
-        location: u.country || "",
-        skills: u.freelancerProfile?.skills || [],
-        bio: u.freelancerProfile?.bio || u.agencyProfile?.description || "",
+        reviews: 0,
+        hourlyRate: 0,
+        location: svc.user.country || "",
+        skills: [],
+        bio: "",
         completionRate: 0,
         responseTime: "< 2h",
-        matchScore: 50,
-        type: u.role === "AGENCE" ? "agence" as const : "freelance" as const,
-      }));
-
-      return NextResponse.json({
-        results,
-        entities: { skills: queryWords, budget: budget ? parseInt(budget) : null, type: type || null },
+        matchScore: 40,
+        type:
+          svc.user.role === "AGENCE"
+            ? ("agence" as const)
+            : ("freelance" as const),
       });
-    } catch (error) {
-      console.error("[API /search GET] Prisma error:", error);
-      return NextResponse.json({ results: [], entities: { skills: [], budget: null, type: null } });
     }
+
+    return NextResponse.json({
+      results: userResults,
+      entities: {
+        skills: queryWords,
+        budget: budget ? parseInt(budget) : null,
+        type: type || null,
+      },
+    });
+  } catch (error) {
+    console.error("[API /search GET] Prisma error:", error);
+    return NextResponse.json({
+      results: [],
+      entities: { skills: [], budget: null, type: null },
+    });
   }
-
-  const queryLower = q.toLowerCase();
-  const queryWords = queryLower.split(/\s+/).filter(Boolean);
-
-  // Extract entities from the natural language query
-  const extractedSkills: string[] = [];
-  const allKnownSkills = [
-    "react", "node.js", "typescript", "figma", "python", "aws", "docker",
-    "wordpress", "seo", "ui", "ux", "flutter", "next.js", "postgresql",
-    "devops", "cloud", "mobile", "web", "redaction", "copywriting",
-    "javascript", "vue", "angular", "java", "php", "laravel", "django",
-    "ruby", "go", "rust", "swift", "kotlin", "tailwind", "graphql",
-  ];
-  for (const skill of allKnownSkills) {
-    if (queryLower.includes(skill)) extractedSkills.push(skill);
-  }
-  // Merge with explicit skills param
-  const allSearchSkills = [
-    ...new Set([
-      ...extractedSkills,
-      ...skills.map((s) => s.toLowerCase()),
-    ]),
-  ];
-
-  let budgetExtracted: number | null = null;
-  const budgetMatch = queryLower.match(/(\d+)\s*(?:€|eur|euro)/);
-  if (budgetMatch) budgetExtracted = parseInt(budgetMatch[1]);
-  if (budget) budgetExtracted = parseInt(budget);
-
-  // Build results from real data
-  const searchDB = buildSearchResults();
-
-  // Score each result
-  let results = searchDB.map((s) => {
-    let score = 0;
-
-    // Name match
-    if (queryWords.some((w) => s.name.toLowerCase().includes(w))) score += 20;
-
-    // Title match
-    if (queryWords.some((w) => s.title.toLowerCase().includes(w))) score += 25;
-
-    // Bio match
-    const bioWords = queryWords.filter((w) =>
-      s.bio.toLowerCase().includes(w)
-    );
-    score += bioWords.length * 10;
-
-    // Skills match
-    const matchedSkills = allSearchSkills.filter((sk) =>
-      s.skills.some((ss) => ss.toLowerCase().includes(sk))
-    );
-    score += matchedSkills.length * 15;
-
-    // Budget filter
-    if (budgetExtracted && s.hourlyRate > budgetExtracted) score -= 20;
-
-    // Type filter
-    if (type && s.type !== type) score -= 50;
-
-    // Base rating bonus
-    score += s.rating * 5;
-
-    return { ...s, matchScore: Math.max(0, Math.min(100, score)) };
-  });
-
-  // Filter out zero-score results unless no query
-  if (q) {
-    results = results.filter((r) => r.matchScore > 10);
-  }
-
-  // Sort by match score
-  results.sort((a, b) => b.matchScore - a.matchScore);
-
-  return NextResponse.json({
-    results,
-    entities: {
-      skills: allSearchSkills,
-      budget: budgetExtracted,
-      type: type || null,
-    },
-  });
 }

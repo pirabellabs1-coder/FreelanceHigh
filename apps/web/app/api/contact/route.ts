@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { contactStore } from "@/lib/dev/data-store";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { Resend } from "resend";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
 
@@ -38,32 +38,75 @@ export async function POST(request: NextRequest) {
     }
     recordFailedAttempt(rateLimitKey);
 
-    // Save to dev-store (always, for backup/dev)
-    const msg = contactStore.create({ name, email, subject, message });
+    // --- DEV mode: save to in-memory store ---
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      const { contactStore } = await import("@/lib/dev/data-store");
 
-    // Send email via Resend if configured
-    if (resend) {
-      try {
-        await resend.emails.send({
-          from: FROM,
-          to: CONTACT_EMAIL,
-          replyTo: email,
-          subject: `[Contact] ${subject}`,
-          html: `
-            <h2>Nouveau message de contact</h2>
-            <p><strong>Nom :</strong> ${name}</p>
-            <p><strong>Email :</strong> ${email}</p>
-            <p><strong>Sujet :</strong> ${subject}</p>
-            <hr/>
-            <p>${message.replace(/\n/g, "<br/>")}</p>
-          `,
-        });
-      } catch (emailError) {
-        console.error("[API /contact] Erreur envoi email:", emailError);
+      // Save to dev-store (always, for backup/dev)
+      const msg = contactStore.create({ name, email, subject, message });
+
+      // Send email via Resend if configured
+      if (resend) {
+        try {
+          await resend.emails.send({
+            from: FROM,
+            to: CONTACT_EMAIL,
+            replyTo: email,
+            subject: `[Contact] ${subject}`,
+            html: `
+              <h2>Nouveau message de contact</h2>
+              <p><strong>Nom :</strong> ${name}</p>
+              <p><strong>Email :</strong> ${email}</p>
+              <p><strong>Sujet :</strong> ${subject}</p>
+              <hr/>
+              <p>${message.replace(/\n/g, "<br/>")}</p>
+            `,
+          });
+        } catch (emailError) {
+          console.error("[API /contact] Erreur envoi email:", emailError);
+        }
       }
+
+      return NextResponse.json({ success: true, id: msg.id }, { status: 201 });
     }
 
-    return NextResponse.json({ success: true, id: msg.id }, { status: 201 });
+    // --- Production: no ContactSubmission table — log and send email ---
+    try {
+      console.info("[API /contact] Contact form submission:", {
+        name,
+        email,
+        subject,
+        messageLength: message.length,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Send email via Resend if configured
+      if (resend) {
+        try {
+          await resend.emails.send({
+            from: FROM,
+            to: CONTACT_EMAIL,
+            replyTo: email,
+            subject: `[Contact] ${subject}`,
+            html: `
+              <h2>Nouveau message de contact</h2>
+              <p><strong>Nom :</strong> ${name}</p>
+              <p><strong>Email :</strong> ${email}</p>
+              <p><strong>Sujet :</strong> ${subject}</p>
+              <hr/>
+              <p>${message.replace(/\n/g, "<br/>")}</p>
+            `,
+          });
+        } catch (emailError) {
+          console.error("[API /contact] Erreur envoi email:", emailError);
+        }
+      }
+
+      return NextResponse.json({ success: true, id: `contact_${Date.now()}` }, { status: 201 });
+    } catch (prismaError) {
+      console.error("[API /contact POST] error:", prismaError);
+      return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    }
   } catch (error) {
     console.error("[API /contact POST]", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

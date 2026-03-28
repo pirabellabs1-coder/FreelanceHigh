@@ -11,6 +11,7 @@ import {
 } from "@/lib/cinetpay";
 import { orderStore } from "@/lib/dev/data-store";
 import { rateLimit } from "@/lib/api-rate-limit";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,100 +64,220 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Verify order exists and belongs to user ─────────────────────────
-    const order = orderStore.getById(orderId);
-    if (!order) {
-      return NextResponse.json(
-        { error: "Commande introuvable" },
-        { status: 404 }
-      );
-    }
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      // ── DEV: Verify order exists and belongs to user ──────────────────
+      const order = orderStore.getById(orderId);
+      if (!order) {
+        return NextResponse.json(
+          { error: "Commande introuvable" },
+          { status: 404 }
+        );
+      }
 
-    if (order.clientId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Acces refuse a cette commande" },
-        { status: 403 }
-      );
-    }
+      if (order.clientId !== session.user.id) {
+        return NextResponse.json(
+          { error: "Acces refuse a cette commande" },
+          { status: 403 }
+        );
+      }
 
-    // ── Check CinetPay configuration ────────────────────────────────────
-    if (!isCinetPayConfigured()) {
-      // Dev mode fallback: return a simulated payment URL
-      console.warn("[CinetPay] API not configured — returning dev mode response");
+      // ── Check CinetPay configuration ──────────────────────────────────
+      if (!isCinetPayConfigured()) {
+        // Dev mode fallback: return a simulated payment URL
+        console.warn("[CinetPay] API not configured — returning dev mode response");
+        return NextResponse.json({
+          success: true,
+          devMode: true,
+          paymentUrl: null,
+          message: "CinetPay non configure — mode developpement",
+          transactionId: generateTransactionId(orderId),
+        });
+      }
+
+      // ── Build URLs ────────────────────────────────────────────────────
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+      const transactionId = generateTransactionId(orderId);
+
+      const result = await initPayment({
+        amount,
+        currency: paymentCurrency,
+        transactionId,
+        description: `Commande ${orderId} — ${order.serviceTitle}`,
+        returnUrl: `${baseUrl}/dashboard/commandes/${orderId}?payment=cinetpay&status=return`,
+        notifyUrl: `${baseUrl}/api/webhooks/cinetpay`,
+        customerName: customerName || session.user.name || "",
+        customerEmail: customerEmail || session.user.email || "",
+        customerPhone: customerPhone || "",
+        channels: "ALL",
+        metadata: JSON.stringify({ orderId, userId: session.user.id }),
+        lang: "fr",
+      });
+
+      // ── Handle CinetPay response ────────────────────────────────────────
+      if (!result) {
+        return NextResponse.json(
+          { error: "Erreur lors de la communication avec CinetPay" },
+          { status: 502 }
+        );
+      }
+
+      if (result.code !== "201") {
+        console.error(
+          `[CinetPay] Payment init failed: code=${result.code}, message=${result.message}`
+        );
+        return NextResponse.json(
+          {
+            error: "Echec de l'initialisation du paiement CinetPay",
+            details: result.message,
+          },
+          { status: 400 }
+        );
+      }
+
+      // ── Update order with CinetPay transaction ID ─────────────────────
+      orderStore.update(orderId, {
+        status: "en_attente",
+      });
+
+      // Add system message to order timeline
+      orderStore.addMessage(orderId, {
+        sender: "client",
+        senderName: "Systeme",
+        content: `Paiement Mobile Money initie (ref: ${transactionId})`,
+        timestamp: new Date().toISOString(),
+        type: "system",
+      });
+
+      console.log(
+        `[CinetPay] Payment initiated: orderId=${orderId}, txId=${transactionId}, amount=${amount} ${paymentCurrency}`
+      );
+
       return NextResponse.json({
         success: true,
-        devMode: true,
-        paymentUrl: null,
-        message: "CinetPay non configure — mode developpement",
-        transactionId: generateTransactionId(orderId),
+        paymentUrl: result.data.payment_url,
+        paymentToken: result.data.payment_token,
+        transactionId,
       });
     }
 
-    // ── Build URLs ──────────────────────────────────────────────────────
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
-    const transactionId = generateTransactionId(orderId);
+    // ── Production: Prisma ───────────────────────────────────────────────
+    try {
+      const { prisma } = await import("@/lib/prisma");
 
-    const result = await initPayment({
-      amount,
-      currency: paymentCurrency,
-      transactionId,
-      description: `Commande ${orderId} — ${order.serviceTitle}`,
-      returnUrl: `${baseUrl}/dashboard/commandes/${orderId}?payment=cinetpay&status=return`,
-      notifyUrl: `${baseUrl}/api/webhooks/cinetpay`,
-      customerName: customerName || session.user.name || "",
-      customerEmail: customerEmail || session.user.email || "",
-      customerPhone: customerPhone || "",
-      channels: "ALL",
-      metadata: JSON.stringify({ orderId, userId: session.user.id }),
-      lang: "fr",
-    });
+      // Verify order exists and belongs to the authenticated user
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { service: true },
+      });
 
-    // ── Handle CinetPay response ────────────────────────────────────────
-    if (!result) {
-      return NextResponse.json(
-        { error: "Erreur lors de la communication avec CinetPay" },
-        { status: 502 }
-      );
-    }
+      if (!order) {
+        return NextResponse.json(
+          { error: "Commande introuvable" },
+          { status: 404 }
+        );
+      }
 
-    // CinetPay returns "201" for successful initialization
-    if (result.code !== "201") {
-      console.error(
-        `[CinetPay] Payment init failed: code=${result.code}, message=${result.message}`
-      );
-      return NextResponse.json(
-        {
-          error: "Echec de l'initialisation du paiement CinetPay",
-          details: result.message,
+      if (order.clientId !== session.user.id) {
+        return NextResponse.json(
+          { error: "Acces refuse a cette commande" },
+          { status: 403 }
+        );
+      }
+
+      // Reject orders that are already paid / active / completed
+      const nonPayableStatuses = ["EN_COURS", "LIVRE", "REVISION", "TERMINE"];
+      if (nonPayableStatuses.includes(order.status)) {
+        return NextResponse.json(
+          { error: "Cette commande est deja payee ou en cours" },
+          { status: 400 }
+        );
+      }
+
+      // ── Check CinetPay configuration ──────────────────────────────────
+      if (!isCinetPayConfigured()) {
+        console.warn("[CinetPay] API not configured — returning dev mode response");
+        return NextResponse.json({
+          success: true,
+          devMode: true,
+          paymentUrl: null,
+          message: "CinetPay non configure — mode developpement",
+          transactionId: generateTransactionId(orderId),
+        });
+      }
+
+      // ── Build URLs ────────────────────────────────────────────────────
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+      const transactionId = generateTransactionId(orderId);
+      const serviceTitle = order.title || order.service?.title || `Commande ${orderId}`;
+
+      const result = await initPayment({
+        amount,
+        currency: paymentCurrency,
+        transactionId,
+        description: `Commande ${orderId} — ${serviceTitle}`,
+        returnUrl: `${baseUrl}/dashboard/commandes/${orderId}?payment=cinetpay&status=return`,
+        notifyUrl: `${baseUrl}/api/webhooks/cinetpay`,
+        customerName: customerName || session.user.name || "",
+        customerEmail: customerEmail || session.user.email || "",
+        customerPhone: customerPhone || "",
+        channels: "ALL",
+        metadata: JSON.stringify({ orderId, userId: session.user.id }),
+        lang: "fr",
+      });
+
+      // ── Handle CinetPay response ────────────────────────────────────────
+      if (!result) {
+        return NextResponse.json(
+          { error: "Erreur lors de la communication avec CinetPay" },
+          { status: 502 }
+        );
+      }
+
+      if (result.code !== "201") {
+        console.error(
+          `[CinetPay] Payment init failed: code=${result.code}, message=${result.message}`
+        );
+        return NextResponse.json(
+          {
+            error: "Echec de l'initialisation du paiement CinetPay",
+            details: result.message,
+          },
+          { status: 400 }
+        );
+      }
+
+      // ── Record pending payment and keep order in EN_ATTENTE ───────────
+      await prisma.payment.create({
+        data: {
+          orderId,
+          payerId: session.user.id,
+          payeeId: order.freelanceId,
+          amount,
+          currency: paymentCurrency,
+          status: "EN_ATTENTE",
+          method: "MOBILE_MONEY",
+          description: `Paiement Mobile Money initie (ref: ${transactionId})`,
+          type: "paiement",
         },
-        { status: 400 }
+      });
+
+      console.log(
+        `[CinetPay] Payment initiated: orderId=${orderId}, txId=${transactionId}, amount=${amount} ${paymentCurrency}`
+      );
+
+      return NextResponse.json({
+        success: true,
+        paymentUrl: result.data.payment_url,
+        paymentToken: result.data.payment_token,
+        transactionId,
+      });
+    } catch (prismaError) {
+      console.error("[API /payments/cinetpay POST] Prisma error:", prismaError);
+      return NextResponse.json(
+        { error: "Erreur lors de la verification de la commande" },
+        { status: 500 }
       );
     }
-
-    // ── Update order with CinetPay transaction ID ───────────────────────
-    orderStore.update(orderId, {
-      status: "en_attente",
-    });
-
-    // Add system message to order timeline
-    orderStore.addMessage(orderId, {
-      sender: "client",
-      senderName: "Systeme",
-      content: `Paiement Mobile Money initie (ref: ${transactionId})`,
-      timestamp: new Date().toISOString(),
-      type: "system",
-    });
-
-    console.log(
-      `[CinetPay] Payment initiated: orderId=${orderId}, txId=${transactionId}, amount=${amount} ${paymentCurrency}`
-    );
-
-    return NextResponse.json({
-      success: true,
-      paymentUrl: result.data.payment_url,
-      paymentToken: result.data.payment_token,
-      transactionId,
-    });
   } catch (error) {
     console.error("[API /payments/cinetpay POST]", error);
     return NextResponse.json(

@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { verifySync } from "otplib";
 import crypto from "crypto";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limiter";
-
-const IS_DEV_MODE = process.env.DEV_MODE === "true";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 function getAuthSecret(): string {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
     // Recuperer le secret 2FA de l'utilisateur
     let storedSecret: string | null = null;
 
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       const user = devStore.findByEmail(email);
       storedSecret =
@@ -59,8 +58,9 @@ export async function POST(request: Request) {
           | string
           | null;
     } else {
+      // Production: Prisma
       try {
-        const { prisma } = await import("@freelancehigh/db");
+        const { prisma } = await import("@/lib/prisma");
         const user = await prisma.user.findUnique({
           where: { email },
           select: { twoFactorSecret: true, twoFactorEnabled: true },

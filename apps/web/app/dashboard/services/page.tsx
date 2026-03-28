@@ -64,14 +64,6 @@ export default function ServicesPage() {
       { views: 0, clicks: 0, revenue: 0, orders: 0 }
     ), [safeServices]);
 
-  // Stats pour tendances (simule un delta)
-  const trends = useMemo(() => {
-    const totalViews = safeServices.reduce((s, sv) => s + (sv.views ?? 0), 0);
-    const totalOrders = safeServices.reduce((s, sv) => s + (sv.orders ?? 0), 0);
-    const totalRevenue = safeServices.reduce((s, sv) => s + (sv.revenue ?? 0), 0);
-    return { views: totalViews, clicks: totalOrders, revenue: totalRevenue };
-  }, [safeServices]);
-
   async function handleToggle(id: string) {
     const svc = safeServices.find((s) => s.id === id);
     const success = await apiToggleService(id);
@@ -272,9 +264,6 @@ export default function ServicesPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <AnimatedCounter value={totals.views} className="text-2xl sm:text-3xl font-black block" />
-            <p className="text-primary text-sm font-bold flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-sm">trending_up</span> {trends.views}%
-            </p>
           </div>
         </div>
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
@@ -284,9 +273,6 @@ export default function ServicesPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <AnimatedCounter value={totals.clicks} className="text-2xl sm:text-3xl font-black block" />
-            <p className="text-primary text-sm font-bold flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-sm">trending_up</span> {trends.clicks}%
-            </p>
           </div>
         </div>
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6">
@@ -305,15 +291,6 @@ export default function ServicesPage() {
           </div>
           <div className="flex items-baseline gap-2">
             <AnimatedCounter value={totals.revenue} suffix=" €" className="text-2xl sm:text-3xl font-black block" />
-            {trends.revenue > 0 ? (
-              <p className="text-primary text-sm font-bold flex items-center gap-0.5">
-                <span className="material-symbols-outlined text-sm">trending_up</span> {trends.revenue}%
-              </p>
-            ) : (
-              <p className="text-amber-500 text-sm font-bold flex items-center gap-0.5">
-                <span className="material-symbols-outlined text-sm">trending_flat</span> 0%
-              </p>
-            )}
           </div>
         </div>
       </div>

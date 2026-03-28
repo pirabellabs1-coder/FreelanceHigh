@@ -14,6 +14,7 @@ import {
 } from "@/lib/cinetpay";
 import { orderStore, transactionStore } from "@/lib/dev/data-store";
 import { emitEvent } from "@/lib/events/dispatcher";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,7 +67,11 @@ export async function POST(req: NextRequest) {
     // webhook payload alone, always verify server-to-server.
     if (!isCinetPayConfigured()) {
       console.warn("[CinetPay Webhook] API not configured — simulating success in dev mode");
-      await handlePaymentSuccess(orderId, transactionId, "SIMULATED", "DEV_MODE");
+      if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+        await handlePaymentSuccessDev(orderId, transactionId, "SIMULATED", "DEV_MODE");
+      } else {
+        await handlePaymentSuccessPrisma(orderId, transactionId, "SIMULATED", "DEV_MODE");
+      }
       return NextResponse.json({ received: true, devMode: true });
     }
 
@@ -84,37 +89,72 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Process based on verified status ────────────────────────────────
-    if (isPaymentSuccessful(status)) {
-      await handlePaymentSuccess(
-        orderId,
-        transactionId,
-        status.data.payment_method,
-        status.data.amount
-      );
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      // ── DEV: Process based on verified status ──────────────────────────
+      if (isPaymentSuccessful(status)) {
+        await handlePaymentSuccessDev(
+          orderId,
+          transactionId,
+          status.data.payment_method,
+          status.data.amount
+        );
 
-      console.log(
-        `[CinetPay Webhook] Payment ACCEPTED: orderId=${orderId}, txId=${transactionId}, ` +
-          `method=${status.data.payment_method}, amount=${status.data.amount} ${status.data.currency}`
-      );
-    } else if (isPaymentFailed(status)) {
-      await handlePaymentFailure(
-        orderId,
-        transactionId,
-        status.data.status,
-        status.message
-      );
+        console.log(
+          `[CinetPay Webhook] Payment ACCEPTED (dev): orderId=${orderId}, txId=${transactionId}, ` +
+            `method=${status.data.payment_method}, amount=${status.data.amount} ${status.data.currency}`
+        );
+      } else if (isPaymentFailed(status)) {
+        await handlePaymentFailureDev(
+          orderId,
+          transactionId,
+          status.data.status,
+          status.message
+        );
 
-      console.log(
-        `[CinetPay Webhook] Payment REFUSED/CANCELLED: orderId=${orderId}, txId=${transactionId}, ` +
-          `status=${status.data.status}, reason=${status.message}`
-      );
+        console.log(
+          `[CinetPay Webhook] Payment REFUSED/CANCELLED (dev): orderId=${orderId}, txId=${transactionId}, ` +
+            `status=${status.data.status}, reason=${status.message}`
+        );
+      } else {
+        // Payment is still pending (WAITING_FOR_CUSTOMER, etc.)
+        console.log(
+          `[CinetPay Webhook] Payment pending (dev): orderId=${orderId}, txId=${transactionId}, ` +
+            `status=${status.data.status}`
+        );
+      }
     } else {
-      // Payment is still pending (WAITING_FOR_CUSTOMER, etc.)
-      console.log(
-        `[CinetPay Webhook] Payment pending: orderId=${orderId}, txId=${transactionId}, ` +
-          `status=${status.data.status}`
-      );
+      // ── Production: Process based on verified status ───────────────────
+      if (isPaymentSuccessful(status)) {
+        await handlePaymentSuccessPrisma(
+          orderId,
+          transactionId,
+          status.data.payment_method,
+          status.data.amount
+        );
+
+        console.log(
+          `[CinetPay Webhook] Payment ACCEPTED: orderId=${orderId}, txId=${transactionId}, ` +
+            `method=${status.data.payment_method}, amount=${status.data.amount} ${status.data.currency}`
+        );
+      } else if (isPaymentFailed(status)) {
+        await handlePaymentFailurePrisma(
+          orderId,
+          transactionId,
+          status.data.status,
+          status.message
+        );
+
+        console.log(
+          `[CinetPay Webhook] Payment REFUSED/CANCELLED: orderId=${orderId}, txId=${transactionId}, ` +
+            `status=${status.data.status}, reason=${status.message}`
+        );
+      } else {
+        // Payment is still pending (WAITING_FOR_CUSTOMER, etc.)
+        console.log(
+          `[CinetPay Webhook] Payment pending: orderId=${orderId}, txId=${transactionId}, ` +
+            `status=${status.data.status}`
+        );
+      }
     }
 
     // Always return 200 to CinetPay to acknowledge receipt
@@ -126,9 +166,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── Handlers ────────────────────────────────────────────────────────────────
+// ── Dev-store Handlers ────────────────────────────────────────────────────────
 
-async function handlePaymentSuccess(
+async function handlePaymentSuccessDev(
   orderId: string,
   transactionId: string,
   paymentMethod: string,
@@ -187,7 +227,7 @@ async function handlePaymentSuccess(
   }).catch(() => {});
 }
 
-async function handlePaymentFailure(
+async function handlePaymentFailureDev(
   orderId: string,
   transactionId: string,
   status: string,
@@ -238,6 +278,198 @@ async function handlePaymentFailure(
     orderId,
     reason,
   }).catch(() => {});
+}
+
+// ── Prisma (Production) Handlers ──────────────────────────────────────────────
+
+async function handlePaymentSuccessPrisma(
+  orderId: string,
+  transactionId: string,
+  paymentMethod: string,
+  amount: string
+): Promise<void> {
+  try {
+    const { prisma } = await import("@/lib/prisma");
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { service: true, freelance: true, client: true },
+    });
+
+    if (!order) {
+      console.error(`[CinetPay Webhook] Order not found in DB: ${orderId}`);
+      return;
+    }
+
+    // Idempotency: skip if order is already paid/in progress
+    if (order.status === "EN_COURS" || order.status === "TERMINE" || order.status === "LIVRE") {
+      console.log(
+        `[CinetPay Webhook] Order ${orderId} already processed (status=${order.status}), skipping`
+      );
+      return;
+    }
+
+    const serviceTitle = order.title || order.service?.title || `Commande ${orderId}`;
+
+    await prisma.$transaction(async (tx) => {
+      // Update order status to active and escrow to held (funds confirmed)
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: "EN_COURS",
+          progress: 10,
+          startedAt: new Date(),
+          acceptedAt: new Date(),
+        },
+      });
+
+      // Update escrow record to confirmed held state
+      await tx.escrow.updateMany({
+        where: { orderId },
+        data: { status: "HELD" },
+      });
+
+      // Mark the pending payment record as complete
+      await tx.payment.updateMany({
+        where: {
+          orderId,
+          status: "EN_ATTENTE",
+          method: "MOBILE_MONEY",
+        },
+        data: {
+          status: "COMPLETE",
+          description: `Paiement confirme via ${formatPaymentMethod(paymentMethod)} (ref: ${transactionId})`,
+        },
+      });
+
+      // Create escrow-held payment record for the freelancer payout
+      // (will be released when delivery is validated)
+      await tx.payment.create({
+        data: {
+          orderId,
+          payerId: order.clientId,
+          payeeId: order.freelanceId,
+          amount: order.freelancerPayout,
+          currency: order.currency,
+          status: "EN_ATTENTE", // Escrow: held until delivery validated
+          method: "MOBILE_MONEY",
+          description: `Paiement Mobile Money — ${serviceTitle} (ref: ${transactionId})`,
+          type: "vente",
+        },
+      });
+
+      // Best-effort: update admin wallet fees held
+      try {
+        let adminWallet = await tx.adminWallet.findFirst();
+        if (!adminWallet) {
+          adminWallet = await tx.adminWallet.create({ data: {} });
+        }
+        await tx.adminWallet.update({
+          where: { id: adminWallet.id },
+          data: { totalFeesHeld: { increment: order.platformFee } },
+        });
+        await tx.adminTransaction.create({
+          data: {
+            adminWalletId: adminWallet.id,
+            type: "SERVICE_FEE",
+            amount: order.platformFee,
+            currency: order.currency,
+            description: `Commission CinetPay — ${serviceTitle} (ref: ${transactionId})`,
+            orderId,
+            status: "PENDING",
+          },
+        });
+      } catch {
+        console.warn("[CinetPay Webhook] AdminWallet tables not yet migrated, skipping");
+      }
+    });
+
+    // Emit payment.success event (notifications + emails)
+    emitEvent("payment.success", {
+      userId: order.freelanceId,
+      userName: order.freelance?.name || "",
+      userEmail: order.freelance?.email || "",
+      amount: order.amount,
+      serviceTitle,
+      orderId,
+      method: `CinetPay (${formatPaymentMethod(paymentMethod)})`,
+    }).catch(() => {});
+  } catch (err) {
+    console.error(`[CinetPay Webhook] handlePaymentSuccessPrisma error for orderId=${orderId}:`, err);
+  }
+}
+
+async function handlePaymentFailurePrisma(
+  orderId: string,
+  transactionId: string,
+  status: string,
+  reason: string
+): Promise<void> {
+  try {
+    const { prisma } = await import("@/lib/prisma");
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { service: true, client: true },
+    });
+
+    if (!order) {
+      console.error(`[CinetPay Webhook] Order not found in DB: ${orderId}`);
+      return;
+    }
+
+    // Don't revert orders that are already in progress or completed
+    if (order.status === "EN_COURS" || order.status === "TERMINE" || order.status === "LIVRE") {
+      console.log(
+        `[CinetPay Webhook] Order ${orderId} already active (status=${order.status}), not reverting`
+      );
+      return;
+    }
+
+    const serviceTitle = order.title || order.service?.title || `Commande ${orderId}`;
+
+    await prisma.$transaction(async (tx) => {
+      // Mark the pending payment as failed
+      await tx.payment.updateMany({
+        where: {
+          orderId,
+          status: "EN_ATTENTE",
+          method: "MOBILE_MONEY",
+        },
+        data: {
+          status: "ECHOUE",
+          description: `Paiement echoue (${status}): ${reason}`,
+        },
+      });
+
+      // Record the failed payment attempt for audit trail
+      await tx.payment.create({
+        data: {
+          orderId,
+          payerId: order.clientId,
+          amount: order.amount,
+          currency: order.currency,
+          status: "ECHOUE",
+          method: "MOBILE_MONEY",
+          description: `Paiement Mobile Money echoue — ${serviceTitle} (ref: ${transactionId})`,
+          type: "paiement",
+        },
+      });
+    });
+
+    // Emit payment.failed event
+    emitEvent("payment.failed", {
+      userId: order.clientId,
+      userName: order.client?.name || "",
+      userEmail: order.client?.email || "",
+      amount: order.amount,
+      serviceTitle,
+      orderId,
+      reason,
+    }).catch(() => {});
+  } catch (err) {
+    console.error(`[CinetPay Webhook] handlePaymentFailurePrisma error for orderId=${orderId}:`, err);
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

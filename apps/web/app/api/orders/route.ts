@@ -484,6 +484,7 @@ export async function POST(request: NextRequest) {
             freelanceId: service.userId,
             agencyId: service.agencyId || undefined,
             status: "EN_ATTENTE",
+            escrowStatus: "HELD",
             amount,
             currency: "EUR",
             commission,

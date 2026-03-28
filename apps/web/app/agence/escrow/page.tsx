@@ -12,7 +12,7 @@ function getEscrowStatus(orderStatus: string | null | undefined): {
   label: string;
   color: string;
   icon: string;
-  category: "escrow" | "validation" | "libere" | "litige" | "all";
+  category: "escrow" | "validation" | "libere" | "rembourse" | "litige" | "all";
 } {
   const s = (orderStatus || "").toLowerCase();
   switch (s) {
@@ -27,9 +27,9 @@ function getEscrowStatus(orderStatus: string | null | undefined): {
     case "termine":
       return { label: "Fonds liberes", color: "text-emerald-400 bg-emerald-500/10", icon: "check_circle", category: "libere" };
     case "annule":
-      return { label: "Rembourse", color: "text-slate-400 bg-slate-500/10", icon: "undo", category: "libere" };
+      return { label: "Rembourse", color: "text-slate-400 bg-slate-500/10", icon: "undo", category: "rembourse" };
     case "rembourse_partiel":
-      return { label: "Remboursement partiel", color: "text-orange-400 bg-orange-500/10", icon: "undo", category: "libere" };
+      return { label: "Remboursement partiel", color: "text-orange-400 bg-orange-500/10", icon: "undo", category: "rembourse" };
     case "litige":
     case "en_mediation":
       return { label: "Fonds geles", color: "text-red-400 bg-red-500/10", icon: "gavel", category: "litige" };
@@ -70,7 +70,7 @@ function getOrderEscrowSteps(orderStatus: string, amount: number | null | undefi
   return steps;
 }
 
-type FilterTab = "all" | "escrow" | "validation" | "libere" | "litige";
+type FilterTab = "all" | "escrow" | "validation" | "libere" | "rembourse" | "litige";
 
 export default function AgenceEscrowPage() {
   const { orders, syncOrders } = useAgencyStore();
@@ -101,7 +101,7 @@ export default function AgenceEscrowPage() {
       const amt = o.amount ?? 0;
       const s = (o.status || "").toLowerCase();
       if (["en_attente", "en_cours"].includes(s)) inEscrow += amt;
-      else if (["termine", "annule", "rembourse_partiel"].includes(s)) released += amt;
+      else if (s === "termine") released += amt;
       else if (["litige", "en_mediation"].includes(s)) inDispute += amt;
     }
     return { inEscrow, released, inDispute, total: inEscrow + released + inDispute };
@@ -116,6 +116,7 @@ export default function AgenceEscrowPage() {
     { key: "escrow", label: "En escrow", count: allOrders.filter((o) => o.escrow.category === "escrow").length },
     { key: "validation", label: "En validation", count: allOrders.filter((o) => o.escrow.category === "validation").length },
     { key: "libere", label: "Liberes", count: allOrders.filter((o) => o.escrow.category === "libere").length },
+    { key: "rembourse", label: "Rembourses", count: allOrders.filter((o) => o.escrow.category === "rembourse").length },
     { key: "litige", label: "Litiges", count: allOrders.filter((o) => o.escrow.category === "litige").length },
   ];
 

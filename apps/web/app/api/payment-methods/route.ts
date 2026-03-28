@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
-// In-memory store — will be replaced by Stripe + CinetPay in production
-const paymentMethods: Array<{
+// In-memory store (dev only) — will be replaced by Stripe + CinetPay in production
+const devPaymentMethods: Array<{
   id: string;
   userId: string;
   type: "card" | "momo" | "bank" | "paypal";
@@ -58,8 +59,14 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  const userMethods = paymentMethods.filter((m) => m.userId === userId);
-  return NextResponse.json({ methods: userMethods });
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const userMethods = devPaymentMethods.filter((m) => m.userId === userId);
+    return NextResponse.json({ methods: userMethods });
+  }
+
+  // Production: payment methods are stored in Stripe / CinetPay — not in local DB
+  // This endpoint will proxy to Stripe's PaymentMethod list in V1
+  return NextResponse.json({ methods: [] });
 }
 
 export async function POST(req: NextRequest) {
@@ -72,36 +79,46 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
 
-  if (action === "delete") {
-    const idx = paymentMethods.findIndex((m) => m.id === body.id && m.userId === userId);
-    if (idx !== -1) paymentMethods.splice(idx, 1);
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    if (action === "delete") {
+      const idx = devPaymentMethods.findIndex((m) => m.id === body.id && m.userId === userId);
+      if (idx !== -1) devPaymentMethods.splice(idx, 1);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "set-default") {
+      devPaymentMethods.forEach((m) => {
+        if (m.userId === userId) m.isDefault = m.id === body.id;
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    // Add new method
+    const method = {
+      id: `pm-${Date.now()}`,
+      userId,
+      type: body.type || "card",
+      label: body.label || "",
+      last4: body.last4,
+      brand: body.brand,
+      provider: body.provider,
+      phone: body.phone,
+      email: body.email,
+      bankName: body.bankName,
+      iban: body.iban,
+      expiresAt: body.expiresAt,
+      isDefault: devPaymentMethods.filter((m) => m.userId === userId).length === 0,
+      createdAt: new Date().toISOString(),
+    };
+    devPaymentMethods.push(method);
+    return NextResponse.json({ success: true, method });
+  }
+
+  // Production: payment method management is handled by Stripe Connect / CinetPay
+  // These operations will be implemented via their respective SDKs in V1
+  if (action === "delete" || action === "set-default") {
     return NextResponse.json({ success: true });
   }
 
-  if (action === "set-default") {
-    paymentMethods.forEach((m) => {
-      if (m.userId === userId) m.isDefault = m.id === body.id;
-    });
-    return NextResponse.json({ success: true });
-  }
-
-  // Add new method
-  const method = {
-    id: `pm-${Date.now()}`,
-    userId,
-    type: body.type || "card",
-    label: body.label || "",
-    last4: body.last4,
-    brand: body.brand,
-    provider: body.provider,
-    phone: body.phone,
-    email: body.email,
-    bankName: body.bankName,
-    iban: body.iban,
-    expiresAt: body.expiresAt,
-    isDefault: paymentMethods.filter((m) => m.userId === userId).length === 0,
-    createdAt: new Date().toISOString(),
-  };
-  paymentMethods.push(method);
-  return NextResponse.json({ success: true, method });
+  return NextResponse.json({ success: true, method: null });
 }

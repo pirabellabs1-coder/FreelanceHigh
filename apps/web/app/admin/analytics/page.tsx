@@ -61,28 +61,38 @@ export default function AdminAnalytics() {
   const [traffic, setTraffic] = useState<TrafficStats | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleManualRefresh = useCallback(() => {
-    syncAnalytics();
-    fetch("/api/tracking/stats?period=30d")
+  // Map UI period labels to API query param values
+  const periodMap: Record<string, string> = { "7j": "7d", "30j": "30d", "90j": "90d", "12m": "12m" };
+
+  const fetchTrafficStats = useCallback((p: string) => {
+    const apiPeriod = periodMap[p] ?? "30d";
+    fetch(`/api/tracking/stats?period=${apiPeriod}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data) setTraffic(data); })
       .catch(() => {});
-  }, [syncAnalytics]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleManualRefresh = useCallback(() => {
+    syncAnalytics(periodMap[period] ?? "30d");
+    fetchTrafficStats(period);
+  }, [syncAnalytics, fetchTrafficStats, period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    syncAnalytics();
-    // Load tracking stats
-    fetch("/api/tracking/stats?period=30d")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data) setTraffic(data); })
-      .catch(() => {});
-  }, [syncAnalytics]);
+    syncAnalytics(periodMap[period] ?? "30d");
+    fetchTrafficStats(period);
+  }, [syncAnalytics, fetchTrafficStats]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch when period changes
+  useEffect(() => {
+    syncAnalytics(periodMap[period] ?? "30d");
+    fetchTrafficStats(period);
+  }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-refresh every refreshInterval ms (default 30s)
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      syncAnalytics();
+      syncAnalytics(periodMap[period] ?? "30d");
     }, refreshInterval);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);

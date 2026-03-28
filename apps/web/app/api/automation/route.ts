@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import fs from "fs";
 import path from "path";
 
-const IS_DEV = process.env.DEV_MODE === "true";
-
-// ── Persistence ──
+// ── Persistence (dev-only) ──
 const DEV_DIR = path.join(process.cwd(), "lib", "dev");
 const AUTOMATIONS_FILE = path.join(DEV_DIR, "automations.json");
 const HISTORY_FILE = path.join(DEV_DIR, "automation-history.json");
@@ -84,22 +83,52 @@ const ACTIONS = [
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id && !IS_DEV) {
+  if (!session?.user?.id && !(IS_DEV && !USE_PRISMA_FOR_DATA)) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  const scenarios = readScenarios();
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const scenarios = readScenarios();
+    return NextResponse.json({
+      triggers: TRIGGERS,
+      conditions: CONDITIONS,
+      actions: ACTIONS,
+      scenarios,
+    });
+  }
+
+  // Production: Prisma
+  const { prisma } = await import("@/lib/prisma");
+  const userId = session!.user!.id;
+  const dbScenarios = await prisma.automationScenario.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const scenarios = dbScenarios.map((s) => ({
+    id: s.id,
+    name: s.name,
+    trigger: s.trigger,
+    conditions: s.conditions,
+    actions: s.actions,
+    active: s.status === "ACTIF",
+    triggerCount: s.executionCount,
+    lastTriggered: s.lastExecutedAt?.toISOString() ?? null,
+    createdAt: s.createdAt.toISOString().slice(0, 10),
+  }));
+
   return NextResponse.json({
     triggers: TRIGGERS,
     conditions: CONDITIONS,
     actions: ACTIONS,
     scenarios,
+    history: [],
   });
 }
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id && !IS_DEV) {
+  if (!session?.user?.id && !(IS_DEV && !USE_PRISMA_FOR_DATA)) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
@@ -111,84 +140,172 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      if (body.action === "create") {
+        if (!body.scenario || typeof body.scenario !== "object") {
+          return NextResponse.json({ error: "Donnees du scenario manquantes" }, { status: 400 });
+        }
+        const scenarios = readScenarios() as Record<string, unknown>[];
+        const scenario = body.scenario as Record<string, unknown>;
+        const newScenario = {
+          id: "sc" + Date.now(),
+          ...scenario,
+          triggerCount: 0,
+          createdAt: new Date().toISOString().slice(0, 10),
+        };
+        scenarios.push(newScenario);
+        writeScenarios(scenarios);
+        addHistoryEntry(String(scenario.name || "Scenario"), "Scenario cree");
+        return NextResponse.json({ scenario: newScenario });
+      }
+
+      if (body.action === "update") {
+        const scenarios = readScenarios() as Record<string, unknown>[];
+        const idx = scenarios.findIndex((s) => s.id === body.id);
+        if (idx < 0) return NextResponse.json({ error: "Scenario introuvable" }, { status: 404 });
+        const existing = scenarios[idx];
+        const updated = {
+          ...existing,
+          ...(body.scenario as Record<string, unknown>),
+          id: body.id,
+          triggerCount: existing.triggerCount,
+          lastTriggered: existing.lastTriggered,
+          createdAt: existing.createdAt,
+        };
+        scenarios[idx] = updated;
+        writeScenarios(scenarios);
+        addHistoryEntry(String((body.scenario as Record<string, unknown>)?.name || "Scenario"), "Scenario modifie");
+        return NextResponse.json({ scenario: updated });
+      }
+
+      if (body.action === "duplicate") {
+        const scenarios = readScenarios() as Record<string, unknown>[];
+        const original = scenarios.find((s) => s.id === body.id) as Record<string, unknown> | undefined;
+        if (!original) return NextResponse.json({ error: "Scenario introuvable" }, { status: 404 });
+        const cloned = {
+          ...original,
+          id: "sc" + Date.now(),
+          name: String(original.name || "Scenario") + " (copie)",
+          triggerCount: 0,
+          active: false,
+          createdAt: new Date().toISOString().slice(0, 10),
+        };
+        scenarios.push(cloned);
+        writeScenarios(scenarios);
+        addHistoryEntry(String(cloned.name), "Scenario duplique");
+        return NextResponse.json({ scenario: cloned });
+      }
+
+      if (body.action === "toggle") {
+        const scenarios = readScenarios() as Record<string, unknown>[];
+        const idx = scenarios.findIndex((s) => s.id === body.id);
+        if (idx >= 0) {
+          scenarios[idx].active = body.active;
+          writeScenarios(scenarios);
+          addHistoryEntry(String(scenarios[idx].name || "Scenario"), body.active ? "Scenario active" : "Scenario desactive");
+        }
+        return NextResponse.json({ success: true, id: body.id, active: body.active });
+      }
+
+      if (body.action === "delete") {
+        const scenarios = readScenarios() as Record<string, unknown>[];
+        const target = scenarios.find((s) => s.id === body.id) as Record<string, unknown> | undefined;
+        const filtered = scenarios.filter((s) => s.id !== body.id);
+        writeScenarios(filtered);
+        if (target) addHistoryEntry(String(target.name || "Scenario"), "Scenario supprime");
+        return NextResponse.json({ success: true, id: body.id });
+      }
+
+      if (body.action === "history") {
+        const history = readHistory();
+        return NextResponse.json({ history });
+      }
+
+      return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
+    }
+
+    // Production: Prisma
+    const { prisma } = await import("@/lib/prisma");
+    const userId = session!.user!.id;
+
     if (body.action === "create") {
       if (!body.scenario || typeof body.scenario !== "object") {
         return NextResponse.json({ error: "Donnees du scenario manquantes" }, { status: 400 });
       }
-      const scenarios = readScenarios() as Record<string, unknown>[];
-      const scenario = body.scenario as Record<string, unknown>;
-      const newScenario = {
-        id: "sc" + Date.now(),
-        ...scenario,
-        triggerCount: 0,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      scenarios.push(newScenario);
-      writeScenarios(scenarios);
-      addHistoryEntry(String(scenario.name || "Scenario"), "Scenario cree");
-      return NextResponse.json({ scenario: newScenario });
+      const sc = body.scenario as Record<string, unknown>;
+      const newScenario = await prisma.automationScenario.create({
+        data: {
+          userId,
+          name: String(sc.name || "Scenario"),
+          trigger: String(sc.trigger || "order_accepted"),
+          conditions: (sc.conditions as object) ?? undefined,
+          actions: (sc.actions as object) ?? [],
+          status: "BROUILLON",
+        },
+      });
+      return NextResponse.json({
+        scenario: {
+          id: newScenario.id,
+          name: newScenario.name,
+          trigger: newScenario.trigger,
+          active: newScenario.status === "ACTIF",
+          triggerCount: newScenario.executionCount,
+          createdAt: newScenario.createdAt.toISOString().slice(0, 10),
+        },
+      });
     }
 
     if (body.action === "update") {
-      const scenarios = readScenarios() as Record<string, unknown>[];
-      const idx = scenarios.findIndex((s) => s.id === body.id);
-      if (idx < 0) return NextResponse.json({ error: "Scenario introuvable" }, { status: 404 });
-      const existing = scenarios[idx];
-      const updated = {
-        ...existing,
-        ...(body.scenario as Record<string, unknown>),
-        id: body.id,
-        triggerCount: existing.triggerCount,
-        lastTriggered: existing.lastTriggered,
-        createdAt: existing.createdAt,
-      };
-      scenarios[idx] = updated;
-      writeScenarios(scenarios);
-      addHistoryEntry(String((body.scenario as Record<string, unknown>)?.name || "Scenario"), "Scenario modifie");
-      return NextResponse.json({ scenario: updated });
-    }
-
-    if (body.action === "duplicate") {
-      const scenarios = readScenarios() as Record<string, unknown>[];
-      const original = scenarios.find((s) => s.id === body.id) as Record<string, unknown> | undefined;
-      if (!original) return NextResponse.json({ error: "Scenario introuvable" }, { status: 404 });
-      const cloned = {
-        ...original,
-        id: "sc" + Date.now(),
-        name: String(original.name || "Scenario") + " (copie)",
-        triggerCount: 0,
-        active: false,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      scenarios.push(cloned);
-      writeScenarios(scenarios);
-      addHistoryEntry(String(cloned.name), "Scenario duplique");
-      return NextResponse.json({ scenario: cloned });
+      const sc = body.scenario as Record<string, unknown>;
+      const updated = await prisma.automationScenario.update({
+        where: { id: String(body.id), userId },
+        data: {
+          name: sc.name ? String(sc.name) : undefined,
+          trigger: sc.trigger ? String(sc.trigger) : undefined,
+          conditions: (sc.conditions as object) ?? undefined,
+          actions: (sc.actions as object) ?? undefined,
+        },
+      });
+      return NextResponse.json({
+        scenario: { id: updated.id, name: updated.name, active: updated.status === "ACTIF" },
+      });
     }
 
     if (body.action === "toggle") {
-      const scenarios = readScenarios() as Record<string, unknown>[];
-      const idx = scenarios.findIndex((s) => s.id === body.id);
-      if (idx >= 0) {
-        scenarios[idx].active = body.active;
-        writeScenarios(scenarios);
-        addHistoryEntry(String(scenarios[idx].name || "Scenario"), body.active ? "Scenario active" : "Scenario desactive");
-      }
-      return NextResponse.json({ success: true, id: body.id, active: body.active });
+      const updated = await prisma.automationScenario.update({
+        where: { id: String(body.id), userId },
+        data: { status: body.active ? "ACTIF" : "PAUSE" },
+      });
+      return NextResponse.json({ success: true, id: updated.id, active: updated.status === "ACTIF" });
     }
 
     if (body.action === "delete") {
-      const scenarios = readScenarios() as Record<string, unknown>[];
-      const target = scenarios.find((s) => s.id === body.id) as Record<string, unknown> | undefined;
-      const filtered = scenarios.filter((s) => s.id !== body.id);
-      writeScenarios(filtered);
-      if (target) addHistoryEntry(String(target.name || "Scenario"), "Scenario supprime");
+      await prisma.automationScenario.delete({ where: { id: String(body.id), userId } });
       return NextResponse.json({ success: true, id: body.id });
     }
 
     if (body.action === "history") {
-      const history = readHistory();
-      return NextResponse.json({ history });
+      return NextResponse.json({ history: [] });
+    }
+
+    if (body.action === "duplicate") {
+      const original = await prisma.automationScenario.findFirst({
+        where: { id: String(body.id), userId },
+      });
+      if (!original) return NextResponse.json({ error: "Scenario introuvable" }, { status: 404 });
+      const cloned = await prisma.automationScenario.create({
+        data: {
+          userId,
+          name: original.name + " (copie)",
+          trigger: original.trigger,
+          conditions: (original.conditions as object) ?? undefined,
+          actions: original.actions as object,
+          status: "BROUILLON",
+        },
+      });
+      return NextResponse.json({
+        scenario: { id: cloned.id, name: cloned.name, active: false, triggerCount: 0 },
+      });
     }
 
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });

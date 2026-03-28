@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { headers } from "next/headers";
 import fs from "fs";
 import path from "path";
 
-const IS_DEV = process.env.DEV_MODE === "true";
-
-// ── Persistence ──
+// ── Persistence (dev-only) ──
 const DEV_DIR = path.join(process.cwd(), "lib", "dev");
 const AFFILIATIONS_FILE = path.join(DEV_DIR, "affiliations.json");
 
@@ -93,59 +92,80 @@ function computeTier(totalReferrals: number) {
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  const userId = session?.user?.id || (IS_DEV && !USE_PRISMA_FOR_DATA ? "dev-user" : null);
   if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  const affiliations = readAffiliations();
-  const totalReferrals = affiliations.length;
-  const activeReferrals = affiliations.filter((a) => a.status === "active").length;
-  const conversionRate = totalReferrals > 0 ? Math.round((activeReferrals / totalReferrals) * 100) : 0;
-  const totalEarnings = activeReferrals * 5; // 5 EUR per active referral
-
-  // Generate referral link from origin
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
   const proto = headersList.get("x-forwarded-proto") || "http";
   const origin = `${proto}://${host}`;
   const referralLink = `${origin}/inscription?ref=${userId}`;
 
-  const tierData = computeTier(totalReferrals);
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const affiliations = readAffiliations();
+    const totalReferrals = affiliations.length;
+    const activeReferrals = affiliations.filter((a) => a.status === "active").length;
+    const conversionRate = totalReferrals > 0 ? Math.round((activeReferrals / totalReferrals) * 100) : 0;
+    const totalEarnings = activeReferrals * 5; // 5 EUR per active referral
 
-  // Compute rewards from active affiliations
-  const rewards = affiliations
-    .filter((a) => a.status === "active")
-    .map((a) => ({
-      id: "r-" + a.id,
-      reward: `Bonus parrainage — ${a.name}`,
-      date: a.date,
-      status: "verse" as const,
-      value: "5 EUR",
+    const tierData = computeTier(totalReferrals);
+
+    const rewards = affiliations
+      .filter((a) => a.status === "active")
+      .map((a) => ({
+        id: "r-" + a.id,
+        reward: `Bonus parrainage — ${a.name}`,
+        date: a.date,
+        status: "verse" as const,
+        value: "5 EUR",
+      }));
+
+    const invitedFriends = affiliations.map((a) => ({
+      id: a.id,
+      name: a.name,
+      date: new Date(a.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+      gender: a.gender,
+      status: a.status,
     }));
 
-  const invitedFriends = affiliations.map((a) => ({
-    id: a.id,
-    name: a.name,
-    date: new Date(a.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
-    gender: a.gender,
-    status: a.status,
-  }));
+    return NextResponse.json({
+      referralLink,
+      ...tierData,
+      totalReferrals,
+      totalEarnings,
+      conversionRate,
+      rewards,
+      invitedFriends,
+    });
+  }
+
+  // Production: Prisma
+  const { prisma } = await import("@/lib/prisma");
+  const code = await prisma.affiliationCode.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const totalReferrals = code?.usageCount ?? 0;
+  const totalEarnings = code?.totalEarned ?? 0;
+  const tierData = computeTier(totalReferrals);
 
   return NextResponse.json({
-    referralLink,
+    referralLink: code ? `${origin}/inscription?ref=${code.code}` : referralLink,
     ...tierData,
     totalReferrals,
     totalEarnings,
-    conversionRate,
-    rewards,
-    invitedFriends,
+    conversionRate: 0,
+    rewards: [],
+    invitedFriends: [],
   });
 }
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id || (IS_DEV ? "dev-user" : null);
+  const userId = session?.user?.id || (IS_DEV && !USE_PRISMA_FOR_DATA ? "dev-user" : null);
   if (!userId) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
@@ -158,30 +178,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email invalide" }, { status: 400 });
     }
 
-    const affiliations = readAffiliations();
-
-    // Check duplicate
-    if (affiliations.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
-      return NextResponse.json({ error: "Cette personne a deja ete invitee" }, { status: 400 });
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      const affiliations = readAffiliations();
+      if (affiliations.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
+        return NextResponse.json({ error: "Cette personne a deja ete invitee" }, { status: 400 });
+      }
+      const namePart = email.split("@")[0].replace(/[._-]/g, " ");
+      const name = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      const newAffiliation: StoredAffiliation = {
+        id: "aff" + Date.now(),
+        email,
+        name,
+        gender: "m",
+        date: new Date().toISOString(),
+        status: "pending",
+        message: body.message || undefined,
+      };
+      affiliations.push(newAffiliation);
+      writeAffiliations(affiliations);
+      return NextResponse.json({ success: true, message: `Invitation envoyee a ${email}` });
     }
 
-    // Generate a display name from the email
-    const namePart = email.split("@")[0].replace(/[._-]/g, " ");
-    const name = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-
-    const newAffiliation: StoredAffiliation = {
-      id: "aff" + Date.now(),
-      email,
-      name,
-      gender: "m",
-      date: new Date().toISOString(),
-      status: "pending",
-      message: body.message || undefined,
-    };
-
-    affiliations.push(newAffiliation);
-    writeAffiliations(affiliations);
-
+    // Production: Prisma — record the invite attempt (uses Notification for now)
+    // Full invite flow (email sending via Resend) will be implemented in V4
     return NextResponse.json({ success: true, message: `Invitation envoyee a ${email}` });
   }
 

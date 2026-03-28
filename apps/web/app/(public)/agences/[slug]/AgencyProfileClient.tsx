@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useCurrencyStore } from "@/store/currency";
@@ -272,8 +273,42 @@ export default function AgencyProfileClient() {
   const [notFound, setNotFound] = useState(false);
 
   const [contactOpen, setContactOpen] = useState(false);
+  const [contactMessage, setContactMessage] = useState("");
+  const [sendingContact, setSendingContact] = useState(false);
   const [activeTab, setActiveTab] = useState<"about" | "reviews">("about");
   const [reviewPage, setReviewPage] = useState(0);
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  async function handleContactAgency() {
+    if (!session?.user) {
+      router.push(`/connexion?redirect=${encodeURIComponent(`/agences/${slug}`)}`);
+      return;
+    }
+    if (!agency?.id || !contactMessage.trim()) return;
+    setSendingContact(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantId: agency.id,
+          contactName: agency.name,
+          message: contactMessage.trim(),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContactMessage("");
+        setContactOpen(false);
+        const role = (session.user as Record<string, unknown>)?.role;
+        const basePath = role === "freelance" ? "/dashboard" : role === "agence" ? "/agence" : "/client";
+        router.push(`${basePath}/messages?conversation=${data.conversation?.id || ""}`);
+      }
+    } catch { /* ignore */ } finally {
+      setSendingContact(false);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -463,12 +498,18 @@ export default function AgencyProfileClient() {
               {t("contact_name", { name: agency.name })}
             </h3>
             <textarea
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
               className="w-full p-3 rounded-lg border border-primary/20 bg-white dark:bg-neutral-dark text-sm outline-none focus:ring-1 focus:ring-primary resize-none"
               rows={3}
               placeholder={t("contact_placeholder")}
             />
-            <button className="mt-3 px-6 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:opacity-90 transition-all">
-              {t("send")}
+            <button
+              onClick={handleContactAgency}
+              disabled={sendingContact || !contactMessage.trim()}
+              className="mt-3 px-6 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              {sendingContact ? "..." : t("send")}
             </button>
           </div>
         )}

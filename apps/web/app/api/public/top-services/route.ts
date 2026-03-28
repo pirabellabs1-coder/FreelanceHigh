@@ -1,10 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
+import { serviceStore, reviewStore } from "@/lib/dev/data-store";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const limit = Math.min(parseInt(searchParams.get("limit") || "6", 10), 20);
+
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+      const allServices = serviceStore.getAll().filter((s) => s.status === "actif");
+      const allReviews = reviewStore.getAll();
+
+      const scored = allServices.map((s) => {
+        const serviceReviews = allReviews.filter((r) => r.serviceId === s.id);
+        const reviewCount = serviceReviews.length || s.ratingCount || 0;
+        return {
+          service: s,
+          reviewCount,
+          score:
+            (s.rating / 5) * 0.35 +
+            Math.min(s.orderCount / 100, 1) * 0.25 +
+            Math.min(reviewCount / 50, 1) * 0.2 +
+            Math.min(s.views / 500, 1) * 0.1 +
+            (s.isBoosted ? 0.1 : 0),
+        };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+
+      const top = scored.slice(0, limit).map(({ service: s, reviewCount }) => ({
+        id: s.id,
+        slug: s.slug,
+        title: s.title,
+        category: s.categoryName,
+        priceEur: s.basePrice,
+        rating: s.rating,
+        reviews: reviewCount,
+        orderCount: s.orderCount,
+        image: s.images?.[0] ?? s.mainImage ?? "",
+        freelancer: s.vendorName,
+        freelancerAvatar: s.vendorAvatar ?? "",
+        vendorBadges: s.vendorBadges ?? [],
+      }));
+
+      return NextResponse.json({ services: top });
+    }
 
     const services = await prisma.service.findMany({
       where: { status: "ACTIF" },

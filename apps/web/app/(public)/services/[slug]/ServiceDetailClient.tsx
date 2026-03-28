@@ -208,6 +208,39 @@ function ServiceMiniCard({
 }
 
 // ============================================================
+// ReviewAvatar — safe fallback without innerHTML
+// ============================================================
+
+function ReviewAvatar({ name, avatar }: { name: string; avatar: string }) {
+  const [imgError, setImgError] = useState(false);
+  const initials = (name || "")
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (avatar && avatar.length >= 5 && !imgError) {
+    return (
+      <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 border border-primary/20 flex-shrink-0">
+        <img
+          src={avatar}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
+// ============================================================
 // Loading skeleton
 // ============================================================
 
@@ -1043,25 +1076,7 @@ export default function ServiceDetailClient() {
                     {paginatedReviews.map((review) => (
                       <div key={review.id} className="bg-neutral-dark border border-border-dark rounded-xl p-5">
                         <div className="flex items-start gap-4">
-                          {review.clientAvatar && review.clientAvatar.length >= 5 ? (
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 border border-primary/20 flex-shrink-0">
-                              <img
-                                src={review.clientAvatar}
-                                alt={review.clientName}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="flex items-center justify-center w-full h-full text-primary font-bold text-sm">${(review.clientName || "").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</span>`; }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                              {(review.clientName || "")
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                          )}
+                          <ReviewAvatar name={review.clientName} avatar={review.clientAvatar} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
                               <div className="flex items-center gap-2">

@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   INITIAL_SERVICES, INITIAL_ORDERS, INITIAL_TRANSACTIONS, INITIAL_CONVERSATIONS,
-  INITIAL_PORTFOLIO, DEMO_PROFILE, DEMO_AVAILABILITY, DEMO_NOTIFICATION_SETTINGS,
+  INITIAL_PORTFOLIO, DEMO_PROFILE,
   type Service, type Order, type Transaction, type Conversation, type ChatMessage,
   type PortfolioProject, type FreelancerProfile, type AvailabilitySlot,
   type NotificationSetting, type OrderMessage, type OrderFile,
@@ -645,7 +645,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Availability
-      availability: DEMO_AVAILABILITY,
+      availability: [],
       vacationMode: false,
       updateAvailability: (day, updates) =>
         set((s) => ({
@@ -680,7 +680,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Notifications
-      notificationSettings: DEMO_NOTIFICATION_SETTINGS,
+      notificationSettings: [],
       updateNotificationSetting: (id, updates) =>
         set((s) => ({
           notificationSettings: s.notificationSettings.map((n) =>

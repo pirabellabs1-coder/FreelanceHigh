@@ -281,6 +281,7 @@ export async function GET() {
         include: {
           service: { select: { title: true } },
           client: { select: { name: true } },
+          freelance: { select: { name: true } },
         },
       }),
       prisma.user.findMany({
@@ -407,19 +408,20 @@ export async function GET() {
       id: o.id,
       serviceTitle: o.service?.title ?? "",
       clientName: o.client?.name ?? "",
+      freelanceName: o.freelance?.name ?? "",
       amount: o.amount,
-      status: o.status,
-      createdAt: o.createdAt,
+      status: o.status.toLowerCase(),
+      createdAt: o.createdAt.toISOString(),
     }));
 
     const recentUsers = recentUsersRaw.map((u) => ({
       id: u.id,
       name: u.name,
       email: u.email,
-      role: u.role,
-      plan: u.plan,
-      status: u.status,
-      createdAt: u.createdAt,
+      role: u.role.toLowerCase(),
+      plan: u.plan?.toLowerCase() ?? "",
+      status: u.status.toLowerCase(),
+      createdAt: u.createdAt.toISOString(),
     }));
 
     return NextResponse.json({

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePlatformDataStore, type UserNotification } from "@/store/platform-data";
+import { notificationsApi, type ApiNotification } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
@@ -38,13 +38,39 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ userId, notificationsHref = "/dashboard/parametres" }: NotificationBellProps) {
-  const { getUserNotifications, markUserNotificationRead } = usePlatformDataStore();
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const hasFetched = useRef(false);
 
-  const notifications = getUserNotifications(userId) ?? [];
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const data = await notificationsApi.list();
+      setNotifications((data?.notifications ?? []) as ApiNotification[]);
+      setUnreadCount(data?.unreadCount ?? 0);
+    } catch (err) {
+      console.error("[NotificationBell] fetch error:", err);
+    }
+  }, [userId]);
 
+  // Fetch on first mount
+  useEffect(() => {
+    if (!hasFetched.current && userId) {
+      hasFetched.current = true;
+      fetchNotifications();
+    }
+  }, [userId, fetchNotifications]);
+
+  // Re-fetch when dropdown opens to keep data fresh
+  useEffect(() => {
+    if (open && userId) {
+      fetchNotifications();
+    }
+  }, [open, userId, fetchNotifications]);
+
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -55,9 +81,27 @@ export function NotificationBell({ userId, notificationsHref = "/dashboard/param
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function handleNotificationClick(notif: UserNotification) {
+  async function handleNotificationClick(notif: ApiNotification) {
     if (!notif.read) {
-      markUserNotificationRead(notif.id);
+      try {
+        await notificationsApi.markRead(notif.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (err) {
+        console.error("[NotificationBell] markRead error:", err);
+      }
+    }
+  }
+
+  async function handleMarkAllRead() {
+    try {
+      await notificationsApi.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("[NotificationBell] markAllRead error:", err);
     }
   }
 
@@ -80,11 +124,22 @@ export function NotificationBell({ userId, notificationsHref = "/dashboard/param
         <div className="absolute right-0 top-full mt-2 w-80 bg-neutral-dark border border-border-dark rounded-xl shadow-2xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-dark">
             <h3 className="text-sm font-bold text-white">Notifications</h3>
-            {unreadCount > 0 && (
-              <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
+                  </span>
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[10px] font-semibold text-slate-400 hover:text-primary transition-colors"
+                    title="Tout marquer comme lu"
+                  >
+                    <span className="material-symbols-outlined text-sm">done_all</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="max-h-80 overflow-y-auto">

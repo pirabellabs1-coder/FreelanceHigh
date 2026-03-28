@@ -85,10 +85,11 @@ export default function AdminConfiguration() {
     syncConfig();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync draft from store when config loads / changes
+  // Sync draft from store when config loads / changes — use structuredClone to avoid
+  // mutating nested objects (commissions, plans, announcementBanner) in the Zustand store.
   useEffect(() => {
     if (config) {
-      setDraft({ ...config });
+      setDraft(structuredClone(config));
     }
   }, [config]);
 

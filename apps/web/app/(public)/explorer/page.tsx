@@ -817,10 +817,9 @@ export default function ExplorerPage() {
         params.set("q", currentFilters.search.trim());
       }
 
-      // Single category filter
+      // Single category filter — send the slug so the API can look up by category.slug
       if (currentFilters.category) {
-        const cat = CATEGORIES.find((c) => c.slug === currentFilters.category);
-        if (cat) params.set("category", t(`cat.${cat.slug}`));
+        params.set("category", currentFilters.category);
       }
 
       if (currentFilters.priceMin !== "") {

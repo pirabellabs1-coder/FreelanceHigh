@@ -443,7 +443,9 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncReviews: async () => {
     set({ loading: { ...get().loading, reviews: true } });
     try {
-      const { reviews, summary } = await reviewsApi.getByClient();
+      const res = await reviewsApi.getByClient();
+      const reviews = res?.reviews || [];
+      const summary = res?.summary || null;
       set({ reviews, reviewSummary: summary, loading: { ...get().loading, reviews: false }, error: { ...get().error, reviews: null } });
     } catch {
       set({ loading: { ...get().loading, reviews: false } });
@@ -498,7 +500,9 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncNotifications: async () => {
     set({ loading: { ...get().loading, notifications: true } });
     try {
-      const { notifications, unreadCount } = await notificationsApi.list();
+      const res = await notificationsApi.list();
+      const notifications = res?.notifications || [];
+      const unreadCount = res?.unreadCount || 0;
       set({ notifications, unreadCount, loading: { ...get().loading, notifications: false }, error: { ...get().error, notifications: null } });
     } catch {
       set({ loading: { ...get().loading, notifications: false } });
@@ -508,7 +512,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncTransactions: async () => {
     set({ loading: { ...get().loading, transactions: true } });
     try {
-      const { transactions } = await financesApi.transactions();
+      const res = await financesApi.transactions();
+      const transactions = res?.transactions || [];
       set({ transactions, loading: { ...get().loading, transactions: false }, error: { ...get().error, transactions: null } });
     } catch {
       set({ loading: { ...get().loading, transactions: false } });
@@ -556,7 +561,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncPaymentMethods: async () => {
     set({ loading: { ...get().loading, paymentMethods: true } });
     try {
-      const { methods } = await paymentMethodsApi.list();
+      const res = await paymentMethodsApi.list();
+      const methods = res?.methods || [];
       set({ paymentMethods: methods, loading: { ...get().loading, paymentMethods: false }, error: { ...get().error, paymentMethods: null } });
     } catch {
       set({ loading: { ...get().loading, paymentMethods: false } });
@@ -566,7 +572,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncSupportTickets: async () => {
     set({ loading: { ...get().loading, supportTickets: true } });
     try {
-      const { tickets } = await supportTicketsApi.list();
+      const res = await supportTicketsApi.list();
+      const tickets = res?.tickets || [];
       set({ supportTickets: tickets, loading: { ...get().loading, supportTickets: false }, error: { ...get().error, supportTickets: null } });
     } catch {
       set({ loading: { ...get().loading, supportTickets: false } });
@@ -576,7 +583,8 @@ export const useClientStore = create<ClientState>()((set, get) => ({
   syncSessions: async () => {
     set({ loading: { ...get().loading, sessions: true } });
     try {
-      const { sessions } = await sessionsApi.list();
+      const res = await sessionsApi.list();
+      const sessions = res?.sessions || [];
       set({ sessions, loading: { ...get().loading, sessions: false }, error: { ...get().error, sessions: null } });
     } catch {
       set({ loading: { ...get().loading, sessions: false } });

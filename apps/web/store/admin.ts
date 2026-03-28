@@ -312,7 +312,7 @@ interface AdminState {
   syncBlog: () => Promise<void>;
   syncCategories: () => Promise<void>;
   syncConfig: () => Promise<void>;
-  syncAnalytics: () => Promise<void>;
+  syncAnalytics: (period?: string) => Promise<void>;
   syncAuditLog: () => Promise<void>;
   syncTeam: () => Promise<void>;
 
@@ -417,7 +417,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, users: true } });
     try {
       const { users } = await fetchAdmin<{ users: AdminUser[] }>("/api/admin/users");
-      set({ users, loading: { ...get().loading, users: false }, error: { ...get().error, users: null } });
+      set({ users: users || [], loading: { ...get().loading, users: false }, error: { ...get().error, users: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, users: false }, error: { ...get().error, users: (e as Error).message } });
     }
@@ -427,7 +427,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, orders: true } });
     try {
       const { orders } = await fetchAdmin<{ orders: AdminOrder[] }>("/api/admin/orders");
-      set({ orders, loading: { ...get().loading, orders: false }, error: { ...get().error, orders: null } });
+      set({ orders: orders || [], loading: { ...get().loading, orders: false }, error: { ...get().error, orders: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, orders: false }, error: { ...get().error, orders: (e as Error).message } });
     }
@@ -447,7 +447,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, services: true } });
     try {
       const data = await fetchAdmin<{ services: AdminService[] }>("/api/admin/services");
-      set({ services: data.services, loading: { ...get().loading, services: false }, error: { ...get().error, services: null } });
+      set({ services: data.services || [], loading: { ...get().loading, services: false }, error: { ...get().error, services: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, services: false }, error: { ...get().error, services: (e as Error).message } });
     }
@@ -468,8 +468,8 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
       };
 
       if (finData.status === "fulfilled") {
-        updates.transactions = finData.value.transactions;
-        updates.financeSummary = finData.value.summary;
+        updates.transactions = finData.value.transactions || [];
+        updates.financeSummary = finData.value.summary || null;
       }
       if (walletData.status === "fulfilled") {
         updates.adminWallet = walletData.value.wallet;
@@ -536,7 +536,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, disputes: true } });
     try {
       const data = await fetchAdmin<{ disputes: AdminDispute[]; summary: { total: number; resolved: number; totalAmountInDispute: number } }>("/api/admin/disputes");
-      set({ disputes: data.disputes, disputeSummary: data.summary, loading: { ...get().loading, disputes: false }, error: { ...get().error, disputes: null } });
+      set({ disputes: data.disputes || [], disputeSummary: data.summary || null, loading: { ...get().loading, disputes: false }, error: { ...get().error, disputes: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, disputes: false }, error: { ...get().error, disputes: (e as Error).message } });
     }
@@ -546,7 +546,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, blog: true } });
     try {
       const data = await fetchAdmin<{ articles: AdminBlogArticle[] }>("/api/admin/blog");
-      set({ blogArticles: data.articles, loading: { ...get().loading, blog: false }, error: { ...get().error, blog: null } });
+      set({ blogArticles: data.articles || [], loading: { ...get().loading, blog: false }, error: { ...get().error, blog: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, blog: false }, error: { ...get().error, blog: (e as Error).message } });
     }
@@ -556,7 +556,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, categories: true } });
     try {
       const { categories } = await fetchAdmin<{ categories: AdminCategory[] }>("/api/admin/categories");
-      set({ categories, loading: { ...get().loading, categories: false }, error: { ...get().error, categories: null } });
+      set({ categories: categories || [], loading: { ...get().loading, categories: false }, error: { ...get().error, categories: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, categories: false }, error: { ...get().error, categories: (e as Error).message } });
     }
@@ -572,10 +572,11 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     }
   },
 
-  syncAnalytics: async () => {
+  syncAnalytics: async (period?: string) => {
     set({ loading: { ...get().loading, analytics: true } });
     try {
-      const analytics = await fetchAdmin<AdminAnalytics>("/api/admin/analytics");
+      const url = period ? `/api/admin/analytics?period=${period}` : "/api/admin/analytics";
+      const analytics = await fetchAdmin<AdminAnalytics>(url);
       set({
         analytics,
         loading: { ...get().loading, analytics: false },
@@ -591,7 +592,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, auditLog: true } });
     try {
       const { entries } = await fetchAdmin<{ entries: AdminAuditEntry[] }>("/api/admin/audit-log");
-      set({ auditLog: entries, loading: { ...get().loading, auditLog: false }, error: { ...get().error, auditLog: null } });
+      set({ auditLog: entries || [], loading: { ...get().loading, auditLog: false }, error: { ...get().error, auditLog: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, auditLog: false }, error: { ...get().error, auditLog: (e as Error).message } });
     }
@@ -601,7 +602,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, team: true } });
     try {
       const { members } = await fetchAdmin<{ members: AdminTeamMember[] }>("/api/admin/team");
-      set({ teamMembers: members, loading: { ...get().loading, team: false }, error: { ...get().error, team: null } });
+      set({ teamMembers: members || [], loading: { ...get().loading, team: false }, error: { ...get().error, team: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, team: false }, error: { ...get().error, team: (e as Error).message } });
     }

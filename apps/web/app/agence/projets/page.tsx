@@ -181,19 +181,42 @@ export default function AgenceProjets() {
     return Math.min(Math.round((activeOrders / maxCapacity) * 100), 100);
   }, [orders, activeMembers]);
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!newTitle.trim()) {
       addToast("error", "Veuillez saisir un titre pour le projet.");
       return;
     }
-    addToast("success", "Projet créé !");
-    setShowNew(false);
-    setNewTitle("");
-    setNewClient("");
-    setNewDescription("");
-    setNewDeadline("");
-    setNewBudget("");
-    setNewPriority("normal");
+    try {
+      const res = await fetch("/api/agence/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          client: newClient,
+          description: newDescription,
+          deadline: newDeadline || undefined,
+          budget: newBudget ? Number(newBudget) : undefined,
+          priority: newPriority,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        addToast("error", err.error ?? "Erreur lors de la création du projet.");
+        return;
+      }
+      addToast("success", "Projet créé !");
+      setShowNew(false);
+      setNewTitle("");
+      setNewClient("");
+      setNewDescription("");
+      setNewDeadline("");
+      setNewBudget("");
+      setNewPriority("normal");
+      // Refresh orders list to show the new project
+      syncAll();
+    } catch {
+      addToast("error", "Erreur réseau lors de la création du projet.");
+    }
   };
 
   return (

@@ -123,6 +123,25 @@ export default function ClientInvoices() {
     addToast("success", "Export CSV téléchargé");
   }
 
+  async function handleDownloadPDF(pdfUrl: string, invoiceId: string) {
+    try {
+      const res = await fetch(pdfUrl);
+      if (!res.ok) {
+        addToast("error", "Impossible de télécharger la facture PDF. Veuillez réessayer.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `facture_${invoiceId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      addToast("error", "Impossible de télécharger la facture PDF. Veuillez réessayer.");
+    }
+  }
+
   async function handleSendEmail(invoiceId: string) {
     const success = await sendInvoiceByEmail(invoiceId);
     if (success) {
@@ -296,15 +315,13 @@ export default function ClientInvoices() {
                     </td>
                     <td className="px-3 sm:px-5 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <a
-                          href={inv.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => handleDownloadPDF(inv.pdfUrl, inv.id)}
                           className="p-1 text-slate-500 hover:text-primary transition-colors"
                           title="Télécharger PDF"
                         >
                           <span className="material-symbols-outlined text-base sm:text-lg">download</span>
-                        </a>
+                        </button>
                         <button
                           onClick={() => handleSendEmail(inv.id)}
                           className="p-1 text-slate-500 hover:text-primary transition-colors"
@@ -338,9 +355,9 @@ export default function ClientInvoices() {
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-white">{(inv.amount ?? 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;</p>
                     <div className="flex gap-1">
-                      <a href={inv.pdfUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-500 hover:text-primary rounded-lg bg-border-dark/50">
+                      <button onClick={() => handleDownloadPDF(inv.pdfUrl, inv.id)} className="p-1.5 text-slate-500 hover:text-primary rounded-lg bg-border-dark/50">
                         <span className="material-symbols-outlined text-base">download</span>
-                      </a>
+                      </button>
                       <button onClick={() => handleSendEmail(inv.id)} className="p-1.5 text-slate-500 hover:text-primary rounded-lg bg-border-dark/50">
                         <span className="material-symbols-outlined text-base">mail</span>
                       </button>

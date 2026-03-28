@@ -8,6 +8,8 @@ import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { cn } from "@/lib/utils";
 import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
+import { normalizePlanName, calculateCommissionEur } from "@/lib/plans";
+import { useSession } from "next-auth/react";
 
 // ── Constants ──
 
@@ -34,8 +36,6 @@ const TX_STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 
 const MIN_WITHDRAWAL = 20;
-// Agence plan: 1 EUR flat commission per sale (from PLAN_RULES.AGENCE)
-const COMMISSION_FLAT = 1; // EUR per transaction
 
 // ── Helpers ──
 
@@ -58,6 +58,9 @@ function fmtDate(dateStr: string): string {
 // ── Component ──
 
 export default function AgenceFinances() {
+  const { data: session } = useSession();
+  const userPlan = normalizePlanName((session?.user as Record<string, unknown>)?.plan as string | undefined);
+
   const {
     financeSummary,
     transactions,
@@ -133,11 +136,12 @@ export default function AgenceFinances() {
       addToast("info", "Aucune transaction à exporter");
       return;
     }
-    const header = "Date,Type,Description,Montant,Commission (1 EUR),Net,Statut";
+    const header = "Date,Type,Description,Montant,Commission,Net,Statut";
     const rows = sortedTransactions.map((t) => {
       const amt = t.amount ?? 0;
-      const commission = COMMISSION_FLAT;
-      const net = Math.abs(amt) - commission;
+      const absAmt = Math.abs(amt);
+      const commission = t.type === "vente" ? calculateCommissionEur(userPlan, absAmt) : 0;
+      const net = absAmt - commission;
       const desc = (t.description ?? "").replace(/"/g, '""');
       return `${t.date ?? ""},${t.type ?? ""},"${desc}",${amt},${commission.toFixed(2)},${net.toFixed(2)},${t.status ?? ""}`;
     });
@@ -328,7 +332,7 @@ export default function AgenceFinances() {
                 const statusMeta = TX_STATUS_META[tx.status];
                 const amt = tx.amount ?? 0;
                 const absAmount = Math.abs(amt);
-                const commission = COMMISSION_FLAT;
+                const commission = tx.type === "vente" ? calculateCommissionEur(userPlan, absAmount) : 0;
                 const net = absAmount - commission;
 
                 return (
@@ -374,7 +378,7 @@ export default function AgenceFinances() {
                     <th className="px-5 py-3 text-left font-semibold">Type</th>
                     <th className="px-5 py-3 text-left font-semibold">Description</th>
                     <th className="px-5 py-3 text-right font-semibold">Montant</th>
-                    <th className="px-5 py-3 text-right font-semibold">Commission (10%)</th>
+                    <th className="px-5 py-3 text-right font-semibold">Commission</th>
                     <th className="px-5 py-3 text-right font-semibold">Net</th>
                     <th className="px-5 py-3 text-left font-semibold">Date</th>
                     <th className="px-5 py-3 text-left font-semibold">Statut</th>
@@ -386,7 +390,7 @@ export default function AgenceFinances() {
                     const statusMeta = TX_STATUS_META[tx.status];
                     const amt = tx.amount ?? 0;
                     const absAmount = Math.abs(amt);
-                    const commission = COMMISSION_FLAT;
+                    const commission = tx.type === "vente" ? calculateCommissionEur(userPlan, absAmount) : 0;
                     const net = absAmount - commission;
 
                     return (

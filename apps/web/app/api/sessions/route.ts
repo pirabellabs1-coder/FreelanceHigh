@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
-// In-memory store — will be replaced by Supabase Auth sessions in production
-const sessions: Array<{
+// In-memory store (dev only) — replaced by Supabase Auth sessions in production
+const devSessions: Array<{
   id: string;
   userId: string;
   device: string;
@@ -48,8 +49,32 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  const userSessions = sessions.filter((s) => s.userId === userId);
-  return NextResponse.json({ sessions: userSessions });
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    const userSessions = devSessions.filter((s) => s.userId === userId);
+    return NextResponse.json({ sessions: userSessions });
+  }
+
+  // Production: Prisma — query the Session table for non-expired sessions
+  const { prisma } = await import("@/lib/prisma");
+  const dbSessions = await prisma.session.findMany({
+    where: { userId, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const mapped = dbSessions.map((s, idx) => ({
+    id: s.id,
+    userId: s.userId,
+    device: s.userAgent?.includes("Mobile") ? "Mobile" : "Desktop",
+    browser: s.userAgent ?? "Unknown",
+    os: "Unknown",
+    ip: s.ipAddress ?? "Unknown",
+    location: "Unknown",
+    isCurrent: idx === 0, // most recent session treated as current
+    lastActive: s.createdAt.toISOString(),
+    createdAt: s.createdAt.toISOString(),
+  }));
+
+  return NextResponse.json({ sessions: mapped });
 }
 
 export async function POST(req: NextRequest) {
@@ -61,21 +86,41 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  if (body.action === "revoke") {
-    const idx = sessions.findIndex((s) => s.id === body.sessionId && s.userId === userId && !s.isCurrent);
-    if (idx !== -1) {
-      sessions.splice(idx, 1);
+  if (IS_DEV && !USE_PRISMA_FOR_DATA) {
+    if (body.action === "revoke") {
+      const idx = devSessions.findIndex((s) => s.id === body.sessionId && s.userId === userId && !s.isCurrent);
+      if (idx !== -1) {
+        devSessions.splice(idx, 1);
+        return NextResponse.json({ success: true });
+      }
+      return NextResponse.json({ error: "Impossible de revoquer cette session" }, { status: 400 });
+    }
+
+    if (body.action === "revoke-all") {
+      const toRemove = devSessions.filter((s) => s.userId === userId && !s.isCurrent);
+      toRemove.forEach((s) => {
+        const idx = devSessions.indexOf(s);
+        if (idx !== -1) devSessions.splice(idx, 1);
+      });
       return NextResponse.json({ success: true });
     }
-    return NextResponse.json({ error: "Impossible de revoquer cette session" }, { status: 400 });
+
+    return NextResponse.json({ error: "Action non reconnue" }, { status: 400 });
+  }
+
+  // Production: Prisma
+  const { prisma } = await import("@/lib/prisma");
+
+  if (body.action === "revoke") {
+    await prisma.session.deleteMany({
+      where: { id: String(body.sessionId), userId },
+    });
+    return NextResponse.json({ success: true });
   }
 
   if (body.action === "revoke-all") {
-    const toRemove = sessions.filter((s) => s.userId === userId && !s.isCurrent);
-    toRemove.forEach((s) => {
-      const idx = sessions.indexOf(s);
-      if (idx !== -1) sessions.splice(idx, 1);
-    });
+    // Delete all sessions except the one matching the current token (not stored here — delete all for now)
+    await prisma.session.deleteMany({ where: { userId } });
     return NextResponse.json({ success: true });
   }
 

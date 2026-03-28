@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { z } from "zod";
+import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
 const schema = z.object({
   formationsRole: z.enum(["apprenant", "instructeur"]),
 });
-
-const IS_DEV_MODE = process.env.DEV_MODE === "true";
 
 export async function POST(request: Request) {
   try {
@@ -24,15 +23,22 @@ export async function POST(request: Request) {
 
     const { formationsRole } = parsed.data;
 
-    if (IS_DEV_MODE) {
+    if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const { devStore } = await import("@/lib/dev/dev-store");
       devStore.update(session.user.id, { formationsRole } as Record<string, unknown>);
-    } else {
-      const { prisma } = await import("@freelancehigh/db");
+      return NextResponse.json({ success: true, formationsRole });
+    }
+
+    // Production: Prisma
+    try {
+      const { prisma } = await import("@/lib/prisma");
       await prisma.user.update({
         where: { id: session.user.id },
         data: { formationsRole },
       });
+    } catch (err) {
+      console.error("[UPDATE_FORMATIONS_ROLE] Prisma error:", err);
+      return NextResponse.json({ error: "Erreur base de donnees" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, formationsRole });
