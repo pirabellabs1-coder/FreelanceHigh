@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest) {
           clientAvatar: "",
           clientCountry: "",
           freelanceId: offre.freelanceId,
-          freelanceName: offre.freelanceName || "Freelance",
+          freelanceName: (offre as unknown as Record<string, unknown>).freelanceName as string || "Freelance",
           status: "en_attente",
           amount: offre.amount || 0,
           commission: (offre.amount || 0) * 0.2,

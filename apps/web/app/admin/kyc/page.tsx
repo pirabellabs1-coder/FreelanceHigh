@@ -42,6 +42,7 @@ function KycSkeleton() {
 
 // eslint-disable-next-line @next/next/no-img-element, @typescript-eslint/no-explicit-any
 function DocumentImage({ url, label }: { url: string; label: string }) {
+  if (!url || typeof url !== "string") return null;
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || url.startsWith("data:image") || url.includes("/uploads/");
   if (!isImage) {
     return (
@@ -55,7 +56,7 @@ function DocumentImage({ url, label }: { url: string; label: string }) {
     <a href={url} target="_blank" rel="noopener noreferrer" className="block group">
       <div className="border border-border-dark rounded-lg overflow-hidden hover:border-primary/30 transition-colors">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={label} className="w-full h-40 object-cover group-hover:scale-105 transition-transform" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-40 flex flex-col items-center justify-center bg-background-dark"><span class="material-symbols-outlined text-3xl text-slate-500">broken_image</span><p class="text-xs text-slate-500 mt-1">Image non disponible</p></div>`; }} />
+        <img src={url} alt={label} className="w-full h-28 sm:h-40 object-cover group-hover:scale-105 transition-transform" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<div class="w-full h-28 sm:h-40 flex flex-col items-center justify-center bg-background-dark"><span class="material-symbols-outlined text-3xl text-slate-500">broken_image</span><p class="text-xs text-slate-500 mt-1">Image non disponible</p></div>`; }} />
         <p className="text-xs text-center text-slate-400 py-1.5 bg-background-dark">{label}</p>
       </div>
     </a>
@@ -64,6 +65,7 @@ function DocumentImage({ url, label }: { url: string; label: string }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function KycRequestDetails({ request }: { request: any }) {
+  if (!request || typeof request !== "object") return null;
   // Check if request has extended fields (from new structured submission)
   const hasType = !!request.type || !!request.documentFrontUrl || !!request.agencyName;
   const isAgency = request.type === "agency" || !!request.agencyName;
@@ -180,14 +182,18 @@ export default function AdminKYC() {
   async function handleApprove(userId: string, nextLevel: number) {
     const req = kycRequests.find(r => r.userId === userId);
     setActionLoading(userId);
-    const ok = await approveKyc(userId, nextLevel, req?.requestId);
-    setActionLoading(null);
-    if (ok) {
-      addToast("success", `KYC de ${req?.name} approuvé — niveau ${nextLevel} activé`);
-      // Also refresh details
-      fetchKycDetails();
-    } else {
-      addToast("error", "Erreur lors de l'approbation du KYC");
+    try {
+      const ok = await approveKyc(userId, nextLevel, req?.requestId);
+      if (ok) {
+        addToast("success", `KYC de ${req?.name || "l'utilisateur"} approuvé — niveau ${nextLevel} activé`);
+        fetchKycDetails();
+      } else {
+        addToast("error", "Erreur lors de l'approbation du KYC");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors de l'approbation du KYC");
+    } finally {
+      setActionLoading(null);
     }
   }
 
@@ -198,15 +204,20 @@ export default function AdminKYC() {
     }
     const req = kycRequests.find(r => r.userId === rejectUserId);
     setActionLoading(rejectUserId);
-    const ok = await refuseKyc(rejectUserId, rejectReason, req?.requestId);
-    setActionLoading(null);
-    if (ok) {
-      addToast("success", `KYC de ${req?.name} refusé`);
-    } else {
-      addToast("error", "Erreur lors du refus du KYC");
+    try {
+      const ok = await refuseKyc(rejectUserId, rejectReason, req?.requestId);
+      if (ok) {
+        addToast("success", `KYC de ${req?.name || "l'utilisateur"} refusé`);
+      } else {
+        addToast("error", "Erreur lors du refus du KYC");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors du refus du KYC");
+    } finally {
+      setActionLoading(null);
+      setRejectUserId(null);
+      setRejectReason("");
     }
-    setRejectUserId(null);
-    setRejectReason("");
   }
 
   if (loading.kyc) {
@@ -272,44 +283,47 @@ export default function AdminKYC() {
           const levelInfo = LEVEL_MAP[r.nextLevel];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const details = kycDetails[r.userId] as any;
+          // Fallback: use metadata from store if details API didn't return data for this user
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const detailsOrMeta = details ?? (r.metadata ? { ...r.metadata, type: r.submissionType, documentType: r.documentType } : null);
 
           return (
             <div key={r.userId} className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 text-sm sm:text-base">
                     {(r.name || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-bold text-white">{r.name}</h3>
+                      <h3 className="font-bold text-white text-sm sm:text-base truncate">{r.name || "Utilisateur inconnu"}</h3>
                       <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", levelInfo?.color === "text-blue-400" ? "bg-blue-500/20 text-blue-400" : levelInfo?.color === "text-amber-400" ? "bg-amber-500/20 text-amber-400" : levelInfo?.color === "text-emerald-400" ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-500/20 text-slate-400")}>
-                        {levelInfo?.label}
+                        {levelInfo?.label ?? `Niveau ${r.nextLevel}`}
                       </span>
-                      <span className="text-xs bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{r.role}</span>
+                      <span className="text-xs bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{r.role || "N/A"}</span>
                     </div>
-                    <p className="text-sm text-slate-400">{r.email}</p>
-                    <p className="text-sm text-slate-400 mt-0.5">Niveau actuel : <b className="text-white">{r.currentLevel}</b> → Demande : <b className="text-white">{r.nextLevel}</b></p>
+                    <p className="text-sm text-slate-400 truncate">{r.email || "Email non renseigné"}</p>
+                    <p className="text-sm text-slate-400 mt-0.5">Niveau actuel : <b className="text-white">{r.currentLevel ?? 0}</b> → Demande : <b className="text-white">{r.nextLevel ?? "?"}</b></p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="text-xs text-slate-500">Soumis le {new Date(r.createdAt).toLocaleDateString("fr-FR")}</span>
+                      <span className="text-xs text-slate-500">Soumis le {r.createdAt ? new Date(r.createdAt).toLocaleDateString("fr-FR") : "N/A"}</span>
                     </div>
 
-                    {/* Show KYC details if available */}
-                    {details && <KycRequestDetails request={details} />}
+                    {/* Show KYC details if available (from details API or store metadata fallback) */}
+                    {detailsOrMeta != null && <KycRequestDetails request={detailsOrMeta} />}
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 shrink-0 self-end sm:self-start">
                   <button
                     onClick={() => handleApprove(r.userId, r.nextLevel)}
                     disabled={actionLoading === r.userId}
-                    className="px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 sm:px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {actionLoading === r.userId ? "..." : "Approuver"}
                   </button>
                   <button
                     onClick={() => setRejectUserId(r.userId)}
                     disabled={actionLoading === r.userId}
-                    className="px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 sm:px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Refuser
                   </button>
@@ -359,7 +373,7 @@ export default function AdminKYC() {
             <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} rows={3} placeholder="Expliquez le motif du refus ou sélectionnez un motif ci-dessus..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />
             <div className="flex gap-3">
               <button onClick={() => setRejectUserId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={handleRefuse} disabled={actionLoading !== null} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">Confirmer le refus</button>
+              <button onClick={handleRefuse} disabled={actionLoading !== null} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">{actionLoading === rejectUserId ? "Traitement..." : "Confirmer le refus"}</button>
             </div>
           </div>
         </div>

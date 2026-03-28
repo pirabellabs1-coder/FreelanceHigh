@@ -21,12 +21,12 @@ export function TrustSection() {
 
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {TRUST_ICONS.map((icon) => (
-            <div key={icon} className="text-center space-y-4">
-              <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
-                <span className="material-symbols-outlined text-3xl">{icon}</span>
+            <div key={icon} className="text-center space-y-2 sm:space-y-4">
+              <div className="size-12 sm:size-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
+                <span className="material-symbols-outlined text-2xl sm:text-3xl">{icon}</span>
               </div>
-              <h4 className="font-bold text-lg">{t(`items.${icon}.title`)}</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{t(`items.${icon}.description`)}</p>
+              <h4 className="font-bold text-sm sm:text-lg">{t(`items.${icon}.title`)}</h4>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{t(`items.${icon}.description`)}</p>
             </div>
           ))}
         </div>

@@ -30,11 +30,9 @@ export default function AgencyDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      syncAll();
-    } catch {
+    syncAll().catch(() => {
       setError("Impossible de charger les données du dashboard agence.");
-    }
+    });
   }, [syncAll]);
 
   // Auto-refresh stats every 60 seconds
@@ -46,9 +44,12 @@ export default function AgencyDashboard() {
   }, []);
 
   // Computed stats from real data
+  const safeMembers = members || [];
+  const safeServices = services || [];
+  const safeActivities = activities || [];
   const totalCA = financeSummary?.totalEarned ?? 0;
   const activeOrders = stats?.activeOrders ?? 0;
-  const memberCount = members.length || 1; // At least the owner
+  const memberCount = safeMembers.length || 1; // At least the owner
   const avgRating = reviewSummary?.avgRating ?? 0;
   const activeServices = stats?.servicesCount?.active ?? 0;
   const conversionRate = stats?.conversionRate ?? 0;
@@ -75,12 +76,12 @@ export default function AgencyDashboard() {
   // Service category distribution for PieChart
   const categoryDistribution = useMemo(() => {
     const cats = new Map<string, number>();
-    services.forEach((s) => {
+    (safeServices).forEach((s) => {
       const cat = s.categoryName || "Autre";
       cats.set(cat, (cats.get(cat) ?? 0) + 1);
     });
     return Array.from(cats.entries()).map(([name, value]) => ({ name, value }));
-  }, [services]);
+  }, [safeServices]);
 
   // Profile views for AreaChart
   const profileViews = useMemo(() => {
@@ -281,9 +282,9 @@ export default function AgencyDashboard() {
       {/* Activity Feed */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
         <h2 className="font-bold text-white mb-4">Activité récente</h2>
-        {activities.length > 0 ? (
+        {safeActivities.length > 0 ? (
           <div className="space-y-4">
-            {activities.map((a) => (
+            {safeActivities.map((a) => (
               <Link key={a.id} href={a.link} className="flex items-start gap-3 hover:bg-white/5 rounded-lg p-2 -m-2 transition-colors">
                 <span className={cn("material-symbols-outlined text-lg mt-0.5", a.color)}>{a.icon}</span>
                 <div className="flex-1">

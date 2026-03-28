@@ -578,7 +578,7 @@ function ProjectCard({
 
       {/* Skills */}
       <div className="flex flex-wrap gap-1.5 mb-4">
-        {project.skills.slice(0, 4).map((skill) => (
+        {(project.skills || []).slice(0, 4).map((skill) => (
           <span
             key={skill}
             className={cn(
@@ -591,7 +591,7 @@ function ProjectCard({
             {skill}
           </span>
         ))}
-        {project.skills.length > 4 && (
+        {(project.skills || []).length > 4 && (
           <span className="px-2 py-0.5 text-xs font-semibold text-slate-400 dark:text-slate-500">
             +{project.skills.length - 4}
           </span>
@@ -909,7 +909,7 @@ function ProjectDetailPanel({
               {t("detail_skills")}
             </h4>
             <div className="flex flex-wrap gap-2">
-              {project.skills.map((skill) => (
+              {(project.skills || []).map((skill) => (
                 <span
                   key={skill}
                   className={cn(
@@ -1275,7 +1275,7 @@ export default function OffresProjectsPage() {
 
   return (
     <>
-      <section className="px-6 lg:px-8 pt-10 pb-20">
+      <section className="px-4 sm:px-6 lg:px-8 pt-10 pb-20">
         <div className="max-w-[1440px] mx-auto space-y-8">
           {/* ---------------------------------------------------------------- */}
           {/* Header                                                           */}

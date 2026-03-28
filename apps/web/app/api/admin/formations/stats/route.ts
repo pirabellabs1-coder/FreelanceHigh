@@ -3,13 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import prisma from "@freelancehigh/db";
+import { prisma } from "@/lib/prisma";
 import { PLATFORM_COMMISSION } from "@/lib/formations/config";
 
 export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

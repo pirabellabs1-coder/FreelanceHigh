@@ -76,7 +76,7 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
         <div key={label} className="flex items-center flex-1 last:flex-none">
           <div className="flex flex-col items-center gap-1.5">
             <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 i < step
                   ? "bg-primary text-white"
                   : i === step
@@ -100,7 +100,7 @@ function StepIndicator({ step, labels }: { step: number; labels: string[] }) {
           </div>
           {i < labels.length - 1 && (
             <div
-              className={`h-0.5 flex-1 mx-2 -mt-5 sm:-mt-3 min-w-[20px] ${
+              className={`h-0.5 flex-1 mx-1.5 sm:mx-2 min-w-[16px] sm:min-w-[20px] ${
                 i < step ? "bg-primary" : "bg-primary/20"
               }`}
             />
@@ -204,9 +204,9 @@ function LeftPanel({ step }: { step: number }) {
 
 // ─── Input classes ──────────────────────────────────────────────────────
 const INPUT =
-  "w-full px-4 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400";
+  "w-full px-4 py-3 min-h-[44px] bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400";
 const INPUT_ICON =
-  "w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400";
+  "w-full pl-10 pr-4 py-3 min-h-[44px] bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400";
 const LABEL = "block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2";
 
 // ─── Main component ─────────────────────────────────────────────────────
@@ -497,13 +497,13 @@ export default function InscriptionPage() {
         </div>
 
         {/* Social login */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
           <button
             type="button"
             onClick={() => { if (role) setRoleCookie(role); signIn("google", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
-            className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
@@ -514,9 +514,9 @@ export default function InscriptionPage() {
           <button
             type="button"
             onClick={() => { if (role) setRoleCookie(role); signIn("linkedin", { callbackUrl: ROLE_CALLBACKS[role || "freelance"] }); }}
-            className="flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
+            className="flex items-center justify-center gap-3 px-4 min-h-[44px] py-3 border border-slate-200 dark:border-primary/20 rounded-xl hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
           >
-            <svg className="w-5 h-5" fill="#0077b5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 flex-shrink-0" fill="#0077b5" viewBox="0 0 24 24">
               <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
             </svg>
             <span className="text-sm font-semibold">LinkedIn</span>
@@ -584,9 +584,9 @@ export default function InscriptionPage() {
                 value={d.password}
                 onChange={handleChange}
                 placeholder="Minimum 8 caractères"
-                className="w-full pl-10 pr-12 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                className="w-full pl-10 pr-12 py-3 min-h-[44px] bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
               />
-              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+              <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary">
                 <span className="material-symbols-outlined text-xl">{showPassword ? "visibility_off" : "visibility"}</span>
               </button>
             </div>
@@ -619,7 +619,7 @@ export default function InscriptionPage() {
                 value={d.confirmPassword}
                 onChange={handleChange}
                 placeholder="Retapez votre mot de passe"
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-white dark:bg-neutral-dark border border-slate-200 dark:border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
               />
             </div>
             {d.confirmPassword && d.password !== d.confirmPassword && (
@@ -1091,7 +1091,7 @@ export default function InscriptionPage() {
                 </p>
               </div>
 
-              <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+              <div className="flex justify-center gap-2 sm:gap-3" onPaste={handleOtpPaste}>
                 {otpCode.map((digit, i) => (
                   <input
                     key={i}
@@ -1102,7 +1102,7 @@ export default function InscriptionPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-white dark:bg-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
+                    className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 bg-white dark:bg-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary transition-all ${
                       otpError ? "border-red-500" : digit ? "border-primary" : "border-slate-200 dark:border-primary/20"
                     } text-slate-900 dark:text-white`}
                   />

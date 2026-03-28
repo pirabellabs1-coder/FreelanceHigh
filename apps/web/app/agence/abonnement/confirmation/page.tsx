@@ -7,17 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 // Plan data
 // ---------------------------------------------------------------------------
 const PLAN_NAMES: Record<string, string> = {
-  free: "Gratuit",
-  pro: "Pro",
-  business: "Business",
-  agence: "Agence",
+  decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", empire: "Empire",
+  free: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire",
 };
 
 const PLAN_COMMISSIONS: Record<string, string> = {
-  free: "20%",
-  pro: "15%",
-  business: "10%",
-  agence: "8%",
+  decouverte: "12%", ascension: "5%", sommet: "1€/vente", empire: "0%",
+  free: "12%", pro: "5%", business: "1€/vente", agence: "0%",
 };
 
 // ---------------------------------------------------------------------------
@@ -27,13 +23,13 @@ function ConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const planId = searchParams.get("plan") || "agence";
+  const planId = searchParams.get("plan") || "empire";
   const billing = searchParams.get("billing") || "monthly";
   const amount = searchParams.get("amount") || "0";
   const nextBillingParam = searchParams.get("nextBilling");
 
-  const planName = PLAN_NAMES[planId] || "Agence";
-  const commission = PLAN_COMMISSIONS[planId] || "8%";
+  const planName = PLAN_NAMES[planId] || "Empire";
+  const commission = PLAN_COMMISSIONS[planId] || "0%";
 
   // Format next billing date
   let nextBillingDate: string;

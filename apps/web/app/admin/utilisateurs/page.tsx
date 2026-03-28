@@ -20,16 +20,29 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
 };
 
 const PLAN_MAP: Record<string, { label: string; cls: string }> = {
-  gratuit: { label: "Gratuit", cls: "bg-slate-500/20 text-slate-400" },
-  pro: { label: "Pro", cls: "bg-blue-500/20 text-blue-400" },
-  business: { label: "Business", cls: "bg-amber-500/20 text-amber-400" },
-  agence: { label: "Agence", cls: "bg-purple-500/20 text-purple-400" },
+  decouverte: { label: "Découverte", cls: "bg-slate-500/20 text-slate-400" },
+  ascension: { label: "Ascension", cls: "bg-amber-500/20 text-amber-400" },
+  sommet: { label: "Sommet", cls: "bg-primary/20 text-primary" },
+  empire: { label: "Empire", cls: "bg-emerald-500/20 text-emerald-400" },
+  // Legacy fallbacks
+  gratuit: { label: "Découverte", cls: "bg-slate-500/20 text-slate-400" },
+  pro: { label: "Ascension", cls: "bg-amber-500/20 text-amber-400" },
+  business: { label: "Sommet", cls: "bg-primary/20 text-primary" },
+  agence: { label: "Empire", cls: "bg-emerald-500/20 text-emerald-400" },
 };
 
 type ModalAction = null | "suspend" | "ban" | "role" | "plan" | "kyc";
 
+/** Normalize legacy plan names to new plan names for consistent filtering */
+function normalizePlan(plan: string | undefined | null): string {
+  const p = (plan ?? "").toLowerCase();
+  const map: Record<string, string> = { gratuit: "decouverte", pro: "ascension", business: "sommet", agence: "empire" };
+  return map[p] ?? p;
+}
+
 function getInitials(name: string): string {
-  return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  if (!name) return "??";
+  return name.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase() || "??";
 }
 
 function SkeletonRow() {
@@ -71,7 +84,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [suspendReason, setSuspendReason] = useState("");
   const [newRole, setNewRole] = useState("freelance");
-  const [newPlan, setNewPlan] = useState("gratuit");
+  const [newPlan, setNewPlan] = useState("decouverte");
   const [newKyc, setNewKyc] = useState(1);
 
   useEffect(() => {
@@ -85,7 +98,7 @@ export default function AdminUsers() {
       if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
       if (roleFilter && u.role?.toLowerCase() !== roleFilter.toLowerCase()) return false;
       if (statusFilter && u.status?.toLowerCase() !== statusFilter.toLowerCase()) return false;
-      if (planFilter && u.plan?.toLowerCase() !== planFilter.toLowerCase()) return false;
+      if (planFilter && normalizePlan(u.plan) !== planFilter.toLowerCase()) return false;
       return true;
     });
   }, [search, roleFilter, statusFilter, planFilter, users]);
@@ -94,9 +107,9 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setModalAction(action);
     setSuspendReason("");
-    setNewRole(user.role);
-    setNewPlan(user.plan);
-    setNewKyc(user.kycLevel);
+    setNewRole(user.role ?? "freelance");
+    setNewPlan(normalizePlan(user.plan));
+    setNewKyc(user.kycLevel ?? 0);
   }
 
   async function handleSuspend() {
@@ -200,10 +213,10 @@ export default function AdminUsers() {
         </select>
         <select value={planFilter} onChange={e => setPlanFilter(e.target.value)} className="px-4 py-2.5 rounded-xl border border-border-dark bg-neutral-dark text-sm text-white outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
           <option value="">Tous les plans</option>
-          <option value="gratuit">Gratuit</option>
-          <option value="pro">Pro</option>
-          <option value="business">Business</option>
-          <option value="agence">Agence</option>
+          <option value="decouverte">Découverte</option>
+          <option value="ascension">Ascension</option>
+          <option value="sommet">Sommet</option>
+          <option value="empire">Empire</option>
         </select>
       </div>
 
@@ -306,8 +319,8 @@ export default function AdminUsers() {
 
       {/* Modal Suspendre */}
       {modalAction === "suspend" && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalAction(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-md border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-white mb-2">Suspendre {selectedUser.name}</h3>
             <p className="text-sm text-slate-400 mb-4">L&apos;utilisateur ne pourra plus acceder a la plateforme. Ses services seront mis en pause.</p>
             <textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)} rows={3} placeholder="Motif de la suspension (obligatoire)..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />
@@ -321,8 +334,8 @@ export default function AdminUsers() {
 
       {/* Modal Bannir */}
       {modalAction === "ban" && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalAction(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-md border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center"><span className="material-symbols-outlined text-red-400">warning</span></div>
               <h3 className="font-bold text-lg text-white">Bannir {selectedUser.name} ?</h3>
@@ -338,8 +351,8 @@ export default function AdminUsers() {
 
       {/* Modal Changer Role */}
       {modalAction === "role" && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalAction(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-md border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-white mb-4">Changer le role de {selectedUser.name}</h3>
             <div className="grid grid-cols-2 gap-2 mb-6">
               {(["freelance", "client", "agence", "admin"] as const).map(r => (
@@ -358,13 +371,13 @@ export default function AdminUsers() {
 
       {/* Modal Changer Plan */}
       {modalAction === "plan" && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalAction(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-md border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-white mb-4">Changer le plan de {selectedUser.name}</h3>
             <div className="grid grid-cols-2 gap-2 mb-6">
-              {(["gratuit", "pro", "business", "agence"] as const).map(p => (
+              {(["decouverte", "ascension", "sommet", "empire"] as const).map(p => (
                 <button key={p} onClick={() => setNewPlan(p)} className={cn("py-3 rounded-xl text-sm font-bold border-2 transition-all", newPlan === p ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:border-slate-500")}>
-                  {PLAN_MAP[p]?.label} {p !== "gratuit" && <span className="block text-xs font-normal text-slate-500">({p === "pro" ? "15EUR" : p === "business" ? "45EUR" : "99EUR"}/mois)</span>}
+                  {PLAN_MAP[p]?.label} {p !== "decouverte" && <span className="block text-xs font-normal text-slate-500">({p === "ascension" ? "15€" : p === "sommet" ? "29,99€" : "65€"}/mois)</span>}
                 </button>
               ))}
             </div>
@@ -378,8 +391,8 @@ export default function AdminUsers() {
 
       {/* Modal Changer KYC */}
       {modalAction === "kyc" && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModalAction(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalAction(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-md border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-white mb-4">KYC de {selectedUser.name}</h3>
             <p className="text-sm text-slate-400 mb-4">Niveau actuel : <span className="font-bold text-white">Niveau {selectedUser.kycLevel}</span></p>
             <div className="grid grid-cols-4 gap-2 mb-6">

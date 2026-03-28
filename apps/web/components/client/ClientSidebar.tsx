@@ -74,8 +74,8 @@ export function ClientSidebar({ collapsed = false, onToggle, onClose }: ClientSi
   // Badge counts from client and messaging stores
   const activeOrders = useClientStore((s) => s.activeOrdersCount());
   const unreadNotifications = useClientStore((s) => s.unreadNotificationsCount());
-  const conversations = useMessagingStore((s) => s.conversations);
-  const unreadMessages = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+  const conversations = useMessagingStore((s) => s.conversations) ?? [];
+  const unreadMessages = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
 
   const badgeCounts: Record<string, number> = {
     orders: activeOrders,

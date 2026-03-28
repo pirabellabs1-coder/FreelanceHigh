@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
 import { ordersApi } from "@/lib/api-client";
-import { OrderPhasePipeline } from "@/components/ui/order-phase-pipeline";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
 
@@ -21,9 +20,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
   litige: { label: "En litige", color: "bg-red-500/20 text-red-400", icon: "gavel" },
 };
 
-const fmtDate = (ts: string) => new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-const fmtTime = (ts: string) => new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-const initials = (name: string) => (name || "??").split(" ").map((n) => n[0]).join("").toUpperCase();
+const fmtDate = (ts: string) => {
+  try { return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); }
+  catch { return ts || "—"; }
+};
+const fmtTime = (ts: string) => {
+  try { return new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); }
+  catch { return ts || "—"; }
+};
+const initials = (name: string) => {
+  const safe = (name || "").trim();
+  if (!safe) return "??";
+  return safe.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+};
 
 export default function AgenceCommandeDetail() {
   const { id } = useParams();
@@ -49,11 +58,14 @@ export default function AgenceCommandeDetail() {
   useEffect(() => { syncAll(); }, [syncAll]);
   useEffect(() => {
     if (order && members.length > 0 && !assignee) {
-      const found = members.find((m) => m.id === order.freelanceId);
+      // Check metadata for previous assignment, fallback to freelanceId
+      const meta = (order as Record<string, unknown>).metadata as Record<string, unknown> | undefined;
+      const assignedTo = meta?.assignedTo as string | undefined;
+      const found = members.find((m) => m.id === (assignedTo || order.freelanceId));
       setAssignee(found?.id || members[0]?.id || "");
     }
   }, [order, members, assignee]);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [order?.messages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [order?.messages?.length]);
 
   if (!order) {
     return (
@@ -83,8 +95,16 @@ export default function AgenceCommandeDetail() {
     setAssignee(memberId); setShowAssignDropdown(false);
     const member = members.find((m) => m.id === memberId);
     try {
-      await ordersApi.update(orderId, { freelanceId: memberId });
-      addToast("success", `Commande assignee a ${member?.name || "membre"}`);
+      const res = await fetch(`/api/agence/orders/${orderId}/assign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, memberName: member?.name || "" }),
+      });
+      if (res.ok) {
+        addToast("success", `Commande assignee a ${member?.name || "membre"}`);
+      } else {
+        addToast("error", "Erreur lors de la reassignation");
+      }
     } catch { addToast("error", "Erreur lors de la reassignation"); }
   }
 
@@ -149,10 +169,10 @@ export default function AgenceCommandeDetail() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-white">{order.serviceTitle}</h1>
+          <h1 className="text-2xl font-black text-white">{order.serviceTitle || "Sans titre"}</h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-slate-400">
             <span className="font-mono text-primary">{order.id}</span><span>·</span>
-            <span>Client : {order.clientName}</span><span>·</span>
+            <span>Client : {order.clientName || "Inconnu"}</span><span>·</span>
             <span className="font-bold text-white">{"\u20AC"}{(order.amount ?? 0).toLocaleString("fr-FR")}</span>
           </div>
         </div>
@@ -328,7 +348,7 @@ export default function AgenceCommandeDetail() {
         {order.status === "revision" && (
           <div className="flex items-center gap-2 p-3 bg-orange-500/10 rounded-lg text-orange-400 text-sm font-bold">
             <span className="material-symbols-outlined">edit_note</span>
-            Revision demandee par le client — {order.revisionsLeft} revision(s) restante(s)
+            Revision demandee par le client — {order.revisionsLeft ?? 0} revision(s) restante(s)
           </div>
         )}
       </div>
@@ -417,10 +437,10 @@ export default function AgenceCommandeDetail() {
               <p className="text-xs text-slate-500 mt-1">Format ZIP, FIG, PSD ou PDF (Max 500MB).</p>
               <button className="mt-4 px-4 py-2 border border-primary text-primary text-sm font-semibold rounded-lg hover:bg-primary/10 transition-colors">Parcourir</button>
             </div>
-            {(draftFiles.length > 0 || order.files.length > 0) && (
+            {(draftFiles.length > 0 || (order.files || []).length > 0) && (
               <div className="mt-5 space-y-2">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-3">Fichiers ({draftFiles.length + order.files.length})</p>
-                {order.files.map((f) => (
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-3">Fichiers ({draftFiles.length + (order.files || []).length})</p>
+                {(order.files || []).map((f) => (
                   <div key={f.id} className="flex items-center gap-3 p-3 bg-background-dark rounded-lg border border-border-dark">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><span className="material-symbols-outlined text-primary">description</span></div>
                     <div className="flex-1 min-w-0">
@@ -457,13 +477,13 @@ export default function AgenceCommandeDetail() {
             <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">info</span>Details de la commande
             </h3>
-            <p className="text-sm text-slate-300 leading-relaxed">{order.category} · Forfait {order.packageType}</p>
+            <p className="text-sm text-slate-300 leading-relaxed">{order.category || "Non catégorisé"} · Forfait {order.packageType || "Standard"}</p>
             <div className="grid grid-cols-2 gap-4 mt-4">
               {[
-                { label: "Date de commande", value: fmtDate(order.createdAt) },
-                { label: "Deadline", value: fmtDate(order.deadline) },
-                { label: "Progression", value: `${order.progress}%`, cls: "text-primary" },
-                { label: "Revisions", value: `${order.revisionsLeft} restante(s)` },
+                { label: "Date de commande", value: order.createdAt ? fmtDate(order.createdAt) : "—" },
+                { label: "Deadline", value: order.deadline ? fmtDate(order.deadline) : "—" },
+                { label: "Progression", value: `${order.progress ?? 0}%`, cls: "text-primary" },
+                { label: "Revisions", value: `${order.revisionsLeft ?? 0} restante(s)` },
               ].map((d) => (
                 <div key={d.label} className="p-3 bg-background-dark rounded-lg border border-border-dark">
                   <p className="text-[10px] text-slate-500 uppercase font-bold">{d.label}</p>
@@ -479,11 +499,11 @@ export default function AgenceCommandeDetail() {
           <h3 className="text-sm font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-lg">history</span>Historique
           </h3>
-          {order.timeline.length === 0 ? (
+          {(order.timeline || []).length === 0 ? (
             <p className="text-sm text-slate-500 text-center py-6">Aucun evenement pour le moment.</p>
           ) : (
             <div className="space-y-3">
-              {order.timeline.map((ev) => (
+              {(order.timeline || []).map((ev) => (
                 <div key={ev.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-primary text-sm">event</span>

@@ -65,19 +65,21 @@ export default function ClientProjects() {
     syncProjects();
   }, [syncProjects]);
 
+  const safeProjects = projects || [];
+
   const filtered = useMemo(() => {
-    if (projectFilter === "all") return projects;
-    return projects.filter((p) => p.status === projectFilter);
-  }, [projects, projectFilter]);
+    if (projectFilter === "all") return safeProjects;
+    return safeProjects.filter((p) => p.status === projectFilter);
+  }, [safeProjects, projectFilter]);
 
   const counts = useMemo(
     () => ({
-      all: projects.length,
-      actif: projects.filter((p) => p.status === "actif").length,
-      termine: projects.filter((p) => p.status === "termine").length,
-      brouillon: projects.filter((p) => p.status === "brouillon").length,
+      all: safeProjects.length,
+      actif: safeProjects.filter((p) => p.status === "actif").length,
+      termine: safeProjects.filter((p) => p.status === "termine").length,
+      brouillon: safeProjects.filter((p) => p.status === "brouillon").length,
     }),
-    [projects],
+    [safeProjects],
   );
 
   async function handleDelete(id: string) {
@@ -99,7 +101,7 @@ export default function ClientProjects() {
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Mes Projets</h1>
           <p className="text-slate-400 text-sm mt-1">
-            {projects.length} projet{projects.length !== 1 ? "s" : ""} publié{projects.length !== 1 ? "s" : ""} — Gérez vos offres et suivez les candidatures.
+            {safeProjects.length} projet{safeProjects.length !== 1 ? "s" : ""} publié{safeProjects.length !== 1 ? "s" : ""} — Gérez vos offres et suivez les candidatures.
           </p>
         </div>
         <Link
@@ -212,7 +214,7 @@ export default function ClientProjects() {
                   <p className="text-sm text-slate-400 line-clamp-2 mt-1 mb-3">{p.description}</p>
 
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    {p.skills.map((s) => (
+                    {(p.skills || []).map((s) => (
                       <span
                         key={s}
                         className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium border border-primary/20"

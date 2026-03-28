@@ -114,7 +114,7 @@ export default function AdminAnalytics() {
   const avgRating = analytics.servicePerformance.avgRating;
 
   // Build role pie from registration trends total
-  const latestTrend = analytics.registrationTrends.length > 0 ? analytics.registrationTrends[analytics.registrationTrends.length - 1] : null;
+  const latestTrend = (analytics.registrationTrends ?? []).length > 0 ? analytics.registrationTrends[analytics.registrationTrends.length - 1] : null;
   const rolePie = latestTrend ? [
     { name: "Freelances", value: latestTrend.freelances, color: "#dc2626" },
     { name: "Clients", value: latestTrend.clients, color: "#3b82f6" },
@@ -129,7 +129,7 @@ export default function AdminAnalytics() {
   }));
 
   // Registration bar chart from registrationTrends
-  const registrationBarData = analytics.registrationTrends.map(r => ({
+  const registrationBarData = (analytics.registrationTrends ?? []).map(r => ({
     month: r.month,
     value: r.total,
   }));
@@ -138,7 +138,7 @@ export default function AdminAnalytics() {
   const funnel = analytics.conversionFunnel;
 
   // Revenue by category
-  const revenueByCategory = analytics.revenueByCategory;
+  const revenueByCategory = analytics.revenueByCategory ?? [];
 
   // Review stats distribution for pie chart
   const reviewDistribution = analytics.reviewStats.distribution.map(d => ({
@@ -148,15 +148,15 @@ export default function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">bar_chart</span>
             Analytics Plateforme
           </h1>
           <p className="text-slate-400 text-sm mt-1">Vue complète des performances de FreelanceHigh.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleManualRefresh}
             disabled={loading.analytics}
@@ -164,7 +164,7 @@ export default function AdminAnalytics() {
             title="Actualiser les données"
           >
             <span className={cn("material-symbols-outlined text-sm", loading.analytics && "animate-spin")}>refresh</span>
-            Actualiser
+            <span className="hidden sm:inline">Actualiser</span>
           </button>
           {lastRefreshedAt.analytics && (
             <span className="text-[10px] text-slate-600 hidden sm:block">
@@ -173,13 +173,13 @@ export default function AdminAnalytics() {
           )}
           <div className="flex bg-border-dark rounded-lg p-0.5">
             {["7j", "30j", "90j", "12m"].map(p => (
-              <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-md text-xs font-semibold transition-colors", period === p ? "bg-neutral-dark text-primary shadow-sm" : "text-slate-500 hover:text-slate-300")}>
+              <button key={p} onClick={() => setPeriod(p)} className={cn("px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-colors", period === p ? "bg-neutral-dark text-primary shadow-sm" : "text-slate-500 hover:text-slate-300")}>
                 {p}
               </button>
             ))}
           </div>
           <button onClick={() => addToast("success", "Rapport exporté")} className="px-3 py-1.5 border border-border-dark rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-primary/5 flex items-center gap-1 transition-colors">
-            <span className="material-symbols-outlined text-sm">download</span>Export
+            <span className="material-symbols-outlined text-sm">download</span><span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>

@@ -21,8 +21,9 @@ const TARGET_OPTIONS: { value: string; label: string; target: Record<string, unk
   { value: "freelance", label: "Freelances", target: { role: "freelance" } },
   { value: "client", label: "Clients", target: { role: "client" } },
   { value: "agence", label: "Agences", target: { role: "agence" } },
-  { value: "pro", label: "Abonnés Pro", target: { plan: "pro" } },
-  { value: "business", label: "Abonnés Business", target: { plan: "business" } },
+  { value: "ascension", label: "Abonnés Ascension", target: { plan: "ascension" } },
+  { value: "sommet", label: "Abonnés Sommet", target: { plan: "sommet" } },
+  { value: "empire", label: "Abonnés Empire", target: { plan: "empire" } },
 ];
 
 const CHANNEL_MAP: Record<string, { label: string; icon: string }> = {

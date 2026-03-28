@@ -39,9 +39,24 @@ export async function GET(
         category: true,
         options: true,
         media: true,
-        reviews: true,
+        reviews: {
+          include: {
+            author: { select: { name: true, image: true, avatar: true, country: true, countryFlag: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
         user: {
-          include: { freelancerProfile: true },
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            avatar: true,
+            country: true,
+            countryFlag: true,
+            plan: true,
+            createdAt: true,
+            freelancerProfile: true,
+          },
         },
       },
     });
@@ -59,6 +74,27 @@ export async function GET(
       data: { views: { increment: 1 } },
     });
 
+    // Map reviews to include author info
+    const mappedReviews = (service.reviews || []).map((r) => {
+      const author = r.author as { name?: string; image?: string; avatar?: string; country?: string; countryFlag?: string } | null;
+      return {
+        id: r.id,
+        orderId: r.orderId,
+        serviceId: r.serviceId,
+        rating: r.rating,
+        comment: r.comment,
+        clientName: author?.name || "Client",
+        clientAvatar: author?.avatar || author?.image || "",
+        clientCountry: author?.countryFlag || author?.country || "",
+        qualite: r.quality,
+        communication: r.communication,
+        delai: r.timeliness,
+        reply: r.response,
+        repliedAt: r.response ? r.updatedAt : null,
+        createdAt: r.createdAt,
+      };
+    });
+
     return NextResponse.json({
       service: {
         ...service,
@@ -67,6 +103,7 @@ export async function GET(
         faq: service.faq ?? [],
         extras: service.extras ?? [],
         images: service.images ?? [],
+        reviews: mappedReviews,
       },
     });
   } catch (error) {

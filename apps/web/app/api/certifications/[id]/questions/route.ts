@@ -7,10 +7,10 @@ import path from "path";
 const IS_DEV = process.env.DEV_MODE === "true";
 
 type QuestionDef = { id: string; question: string; options: string[]; correctIndex: number };
-let _cache: Record<string, QuestionDef[]> | null = null;
+let _cache: Record<string, QuestionDef[]> = {};
 
 function loadQuestions(): Record<string, QuestionDef[]> {
-  if (_cache) return _cache;
+  if (Object.keys(_cache).length > 0) return _cache;
   const libDir = path.join(process.cwd(), "lib");
   const p1 = path.join(libDir, "certifications-questions.json");
   const p2 = path.join(libDir, "certifications-questions-part2.json");

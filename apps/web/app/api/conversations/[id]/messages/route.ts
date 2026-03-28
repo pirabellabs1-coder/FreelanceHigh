@@ -56,7 +56,7 @@ export async function GET(
     const messages = await prisma.message.findMany({
       where: { conversationId: id },
       include: {
-        sender: { select: { id: true, name: true, image: true, role: true } },
+        sender: { select: { id: true, name: true, image: true, avatar: true, role: true } },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -83,7 +83,7 @@ export async function GET(
         id: m.id,
         senderId: m.senderId,
         senderName: m.sender?.name || "Utilisateur",
-        senderAvatar: m.sender?.image || "",
+        senderAvatar: m.sender?.avatar || m.sender?.image || "",
         senderRole: ((m.sender as Record<string, unknown>)?.role as string) || "client",
         content: m.content,
         type: isOffer ? "offer" : (m.type || "TEXT").toLowerCase(),
@@ -189,7 +189,7 @@ export async function POST(
         linkPreviewData: linkPreviewData || undefined,
       },
       include: {
-        sender: { select: { id: true, name: true, image: true, role: true } },
+        sender: { select: { id: true, name: true, image: true, avatar: true, role: true } },
       },
     });
 
@@ -223,7 +223,7 @@ export async function POST(
         id: message.id,
         senderId: message.senderId,
         senderName: message.sender?.name || senderName,
-        senderAvatar: message.sender?.image || "",
+        senderAvatar: message.sender?.avatar || message.sender?.image || "",
         senderRole: ((message.sender as Record<string, unknown>)?.role as string) || "client",
         content: message.content,
         type: (message.type || "TEXT").toLowerCase(),

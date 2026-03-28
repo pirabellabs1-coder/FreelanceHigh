@@ -305,7 +305,7 @@ export default function ProjectDetailPage() {
           Competences requises
         </h3>
         <div className="flex flex-wrap gap-2">
-          {project.skills.map((s) => (
+          {(project.skills || []).map((s) => (
             <span
               key={s}
               className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-bold rounded-full border border-primary/20"
@@ -345,7 +345,7 @@ export default function ProjectDetailPage() {
           <div className="space-y-3">
             {candidatures.map((c) => {
               const candStatus = CAND_STATUS[c.status];
-              const initials = c.name
+              const initials = (c.name || "?")
                 .split(" ")
                 .map((n) => n[0])
                 .join("")

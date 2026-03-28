@@ -101,22 +101,49 @@ export interface AdminKycRequest {
   role: string;
   currentLevel: number;
   nextLevel: number;
+  nextLevelLabel?: string;
+  documentType?: string;
+  documentSubmitted?: boolean;
+  submissionType?: string;
+  submittedAt?: string;
   createdAt: string;
   requestId?: string;
+  metadata?: {
+    documentFrontUrl?: string;
+    documentBackUrl?: string;
+    selfieUrl?: string;
+    registrationDocUrl?: string;
+    representativeIdUrl?: string;
+    firstName?: string;
+    lastName?: string;
+    country?: string;
+    city?: string;
+    agencyName?: string;
+    siret?: string;
+  };
 }
 
 export interface AdminDispute {
   id: string;
+  orderId?: string;
   serviceTitle: string;
   clientId: string;
   clientName: string;
+  clientCountry?: string;
   freelanceId: string;
-  freelanceName: string;
+  freelanceName?: string;
   amount: number;
+  reason?: string;
+  clientArgument?: string;
+  freelanceArgument?: string;
   status: string;
+  verdict?: string;
+  verdictNote?: string;
+  partialPercent?: number;
+  resolvedAt?: string;
   createdAt: string;
-  updatedAt: string;
-  timeline: { id: string; type: string; title: string; description: string; timestamp: string }[];
+  updatedAt?: string;
+  timeline?: { id: string; type: string; title: string; description: string; timestamp: string }[];
 }
 
 export interface AdminBlogArticle {
@@ -482,7 +509,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await fetchAdmin<{ queue: any[]; summary: { total: number; byLevel: Record<string, number> } }>("/api/admin/kyc");
-      // Map queue to include requestId
+      // Map queue to include requestId + document metadata
       const queue: AdminKycRequest[] = (data.queue || []).map((r) => ({
         userId: r.userId,
         name: r.userName || r.name,
@@ -490,8 +517,14 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
         role: r.userRole || r.role,
         currentLevel: r.currentLevel,
         nextLevel: r.nextLevel,
+        nextLevelLabel: r.nextLevelLabel,
+        documentType: r.documentType,
+        documentSubmitted: r.documentSubmitted,
+        submissionType: r.submissionType,
+        submittedAt: r.submittedAt,
         createdAt: r.createdAt,
         requestId: r.requestId,
+        metadata: r.metadata,
       }));
       set({ kycRequests: queue, kycSummary: data.summary, loading: { ...get().loading, kyc: false }, error: { ...get().error, kyc: null } });
     } catch (e: unknown) {

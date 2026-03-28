@@ -75,8 +75,8 @@ export const propositionStore = {
       acceptedAt: null,
       rejectedAt: null,
       orderId: null,
-      expiresAt: null,
       ...data,
+      expiresAt: data.expiresAt ?? null,
       createdAt: now,
       updatedAt: now,
     };

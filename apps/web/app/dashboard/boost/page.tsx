@@ -228,6 +228,11 @@ export default function BoostPage() {
         return;
       }
 
+      if (!data || typeof data !== "object") {
+        addToast("error", "Reponse invalide du serveur");
+        return;
+      }
+
       addToast("success", data.message || "Boost active avec succes !");
       // Refresh boost data
       await fetchBoostData(selectedServiceId);
@@ -359,7 +364,7 @@ export default function BoostPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                   <div className="text-center">
                     <p className="text-xl font-black text-primary">{daysRemaining(activeBoost.expiresAt)}</p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">Jours restants</p>

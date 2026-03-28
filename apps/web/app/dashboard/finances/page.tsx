@@ -37,20 +37,30 @@ export default function FinancesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setError(null);
-    try {
-      syncStats();
-      syncWallet();
-    } catch {
-      setError("Impossible de charger les donnees financieres.");
-    } finally {
-      const timer = setTimeout(() => setLoading(false), 600);
-      return () => clearTimeout(timer);
-    }
+    Promise.allSettled([syncStats(), syncWallet()])
+      .then((results) => {
+        if (cancelled) return;
+        const allFailed = results.every((r) => r.status === "rejected");
+        if (allFailed) {
+          setError("Impossible de charger les donnees financieres.");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError("Impossible de charger les donnees financieres.");
+      })
+      .finally(() => {
+        if (!cancelled) setTimeout(() => setLoading(false), 600);
+      });
+    return () => { cancelled = true; };
   }, [syncStats, syncWallet]);
 
-  const monthlyRevenue = apiStats?.monthlyRevenue ?? [];
+  const monthlyRevenue = (apiStats?.monthlyRevenue ?? []).map((m) => ({
+    month: m.month ?? "",
+    revenue: m.revenue ?? 0,
+  }));
   const addToast = useToastStore((s) => s.addToast);
 
   const [filterType, setFilterType] = useState<string>("all");
@@ -72,14 +82,14 @@ export default function FinancesPage() {
     // Fallback to API stats summary
     if (apiStats?.summary) {
       return {
-        available: apiStats.summary.available,
-        pending: apiStats.summary.pending,
-        totalEarned: apiStats.summary.totalEarned,
+        available: apiStats.summary.available ?? 0,
+        pending: apiStats.summary.pending ?? 0,
+        totalEarned: apiStats.summary.totalEarned ?? 0,
       };
     }
-    const complete = transactions.filter((t) => t.status === "complete").reduce((s, t) => s + t.amount, 0);
-    const pending = transactions.filter((t) => t.status === "en_attente").reduce((s, t) => s + t.amount, 0);
-    const totalEarned = transactions.filter((t) => t.type === "vente" && t.status === "complete").reduce((s, t) => s + t.amount, 0);
+    const complete = transactions.filter((t) => t.status === "complete").reduce((s, t) => s + (t.amount ?? 0), 0);
+    const pending = transactions.filter((t) => t.status === "en_attente").reduce((s, t) => s + (t.amount ?? 0), 0);
+    const totalEarned = transactions.filter((t) => t.type === "vente" && t.status === "complete").reduce((s, t) => s + (t.amount ?? 0), 0);
     return { available: complete, pending, totalEarned };
   }, [transactions, apiStats, wallet]);
 
@@ -87,16 +97,20 @@ export default function FinancesPage() {
     let result = [...transactions];
     if (filterType !== "all") result = result.filter((t) => t.type === filterType);
     if (filterStatus !== "all") result = result.filter((t) => t.status === filterStatus);
-    return result.sort((a, b) => b.date.localeCompare(a.date));
+    return result.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   }, [transactions, filterType, filterStatus]);
 
   async function handleWithdraw() {
     const amount = Number(withdrawAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      addToast("error", "Veuillez entrer un montant valide");
+      return;
+    }
     if (amount < 20) {
       addToast("error", "Le montant minimum de retrait est de 20€");
       return;
     }
-    if (amount > balances.available) {
+    if (amount > (balances.available ?? 0)) {
       addToast("error", "Solde insuffisant pour ce retrait");
       return;
     }
@@ -121,7 +135,7 @@ export default function FinancesPage() {
   function handleExportCSV() {
     const header = "Date,Type,Description,Montant,Statut";
     const rows = filtered.map((t) =>
-      `${t.date},${t.type},"${t.description}",${t.amount},${t.status}`
+      `${t.date ?? ""},${t.type ?? ""},"${(t.description ?? "").replace(/"/g, '""')}",${t.amount ?? 0},${t.status ?? ""}`
     );
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -142,7 +156,7 @@ export default function FinancesPage() {
         </div>
         <h3 className="text-lg font-bold mb-2">Erreur de chargement</h3>
         <p className="text-sm text-slate-400 max-w-sm text-center mb-6">{error}</p>
-        <button onClick={() => { setError(null); setLoading(true); syncStats(); setTimeout(() => setLoading(false), 600); }} className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:brightness-110 transition-all">
+        <button onClick={() => { setError(null); setLoading(true); Promise.allSettled([syncStats(), syncWallet()]).finally(() => setTimeout(() => setLoading(false), 600)); }} className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:brightness-110 transition-all">
           Reessayer
         </button>
       </div>
@@ -222,7 +236,7 @@ export default function FinancesPage() {
             <label className="block text-sm font-semibold mb-2">Montant (€)</label>
             <input type="number" min={1} max={balances.available}
               value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)}
-              placeholder={`Max: €${balances.available}`}
+              placeholder={`Max: €${balances.available ?? 0}`}
               className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div>
@@ -261,7 +275,7 @@ export default function FinancesPage() {
             <CartesianGrid strokeDasharray="3 3" stroke="#293835" />
             <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
             <YAxis stroke="#64748b" fontSize={12} tickFormatter={(v) => `€${v}`} />
-            <Tooltip content={<ChartTooltip formatter={(v) => `€${v.toLocaleString("fr-FR")}`} />} />
+            <Tooltip content={<ChartTooltip formatter={(v) => `€${(v ?? 0).toLocaleString("fr-FR")}`} />} />
             <Bar dataKey="revenue" fill="#0e7c66" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -297,22 +311,27 @@ export default function FinancesPage() {
           )}
           {filtered.map((tx) => {
             const icon = TX_ICONS[tx.type] ?? TX_ICONS.vente;
-            const status = STATUS_LABELS[tx.status];
+            const status = STATUS_LABELS[tx.status] ?? { label: tx.status ?? "—", color: "text-slate-400 bg-slate-500/10" };
+            const txAmount = tx.amount ?? 0;
+            const txDate = tx.date ? new Date(tx.date) : null;
+            const dateStr = txDate && !isNaN(txDate.getTime())
+              ? txDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+              : "—";
             return (
               <div key={tx.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-primary/5 transition-colors">
                 <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", icon.color)}>
                   <span className="material-symbols-outlined">{icon.icon}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{tx.description}</p>
+                  <p className="font-semibold text-sm truncate">{tx.description || "Transaction"}</p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {new Date(tx.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                    {dateStr}
                     {tx.method && ` · ${tx.method}`}
                   </p>
                 </div>
-                <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", status?.color)}>{status?.label}</span>
-                <p className={cn("text-sm font-bold w-24 text-right", tx.amount >= 0 ? "text-emerald-400" : "text-red-400")}>
-                  {tx.amount >= 0 ? "+" : ""}€{Math.abs(tx.amount).toLocaleString("fr-FR")}
+                <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", status.color)}>{status.label}</span>
+                <p className={cn("text-sm font-bold w-24 text-right", txAmount >= 0 ? "text-emerald-400" : "text-red-400")}>
+                  {txAmount >= 0 ? "+" : ""}€{Math.abs(txAmount).toLocaleString("fr-FR")}
                 </p>
               </div>
             );
@@ -331,24 +350,29 @@ export default function FinancesPage() {
           </div>
           <div className="divide-y divide-border-dark">
             {walletTransactions.map((wtx) => {
-              const isPositive = wtx.amount >= 0;
-              const statusLabel = wtx.status === "WALLET_COMPLETED" ? "Complete" : wtx.status === "WALLET_PENDING" ? "En attente" : wtx.status;
+              const wtxAmount = wtx.amount ?? 0;
+              const isPositive = wtxAmount >= 0;
+              const statusLabel = wtx.status === "WALLET_COMPLETED" ? "Complete" : wtx.status === "WALLET_PENDING" ? "En attente" : (wtx.status ?? "—");
               const statusColor = wtx.status === "WALLET_COMPLETED" ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10";
+              const wtxDate = wtx.createdAt ? new Date(wtx.createdAt) : null;
+              const wtxDateStr = wtxDate && !isNaN(wtxDate.getTime())
+                ? wtxDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+                : "—";
               return (
                 <div key={wtx.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 hover:bg-primary/5 transition-colors">
                   <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isPositive ? "text-emerald-400 bg-emerald-500/10" : "text-blue-400 bg-blue-500/10")}>
                     <span className="material-symbols-outlined">{isPositive ? "payments" : "arrow_upward"}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{wtx.description}</p>
+                    <p className="font-semibold text-sm truncate">{wtx.description || "Transaction wallet"}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {new Date(wtx.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                      {wtxDateStr}
                       {wtx.withdrawalMethod && ` · ${wtx.withdrawalMethod}`}
                     </p>
                   </div>
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", statusColor)}>{statusLabel}</span>
                   <p className={cn("text-sm font-bold w-24 text-right", isPositive ? "text-emerald-400" : "text-red-400")}>
-                    {isPositive ? "+" : ""}€{Math.abs(wtx.amount).toLocaleString("fr-FR")}
+                    {isPositive ? "+" : ""}€{Math.abs(wtxAmount).toLocaleString("fr-FR")}
                   </p>
                 </div>
               );

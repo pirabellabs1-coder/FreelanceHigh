@@ -81,14 +81,15 @@ interface AgencyData {
     badges: string[];
   } | null;
   services: AgencyService[];
-  reviews: AgencyReview[];
-  stats: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reviews: any[];
+  stats?: {
     completedOrders: number;
     avgRating: number;
     totalReviews: number;
     activeServices: number;
     teamSize: number;
-  };
+  } | null;
 }
 
 // ============================================================
@@ -167,7 +168,7 @@ function CircularProgress({
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(value / max, 1);
+  const progress = max > 0 ? Math.min(value / max, 1) : 0;
   const offset = circumference * (1 - progress);
 
   return (
@@ -209,9 +210,9 @@ function AgencySkeleton() {
         <div className="flex flex-col md:flex-row gap-6 px-6 -mt-16 relative z-10">
           <div className="w-36 h-36 rounded-2xl bg-slate-300 dark:bg-slate-600 border-4 border-white dark:border-slate-800" />
           <div className="flex-1 space-y-3 pt-20 md:pt-0 pb-2">
-            <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded" />
-            <div className="h-5 w-96 bg-slate-200 dark:bg-slate-700 rounded" />
-            <div className="h-4 w-80 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-8 w-full max-w-[16rem] bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-5 w-full max-w-[24rem] bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-4 w-full max-w-[20rem] bg-slate-200 dark:bg-slate-700 rounded" />
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -302,8 +303,18 @@ export default function AgencyProfileClient() {
   if (notFound || !agency) return <NotFound t={t} />;
 
   const profile = agency.profile;
-  const stats = agency.stats;
-  const reviews = agency.reviews || [];
+  const stats = agency.stats ?? { completedOrders: 0, avgRating: 0, totalReviews: 0, activeServices: 0, teamSize: 0 };
+  // Normalize reviews: Prisma API returns { author: { name } } while dev store returns { clientName }
+  const rawReviews = agency.reviews || [];
+  const reviews = rawReviews.map((r: any) => ({
+    id: r.id ?? "",
+    clientName: r.clientName || r.author?.name || "",
+    clientId: r.clientId || r.author?.id || "",
+    rating: r.rating ?? 0,
+    comment: r.comment || "",
+    createdAt: r.createdAt || "",
+    reply: r.reply || r.response || "",
+  }));
   const services = agency.services || [];
   const badges = profile?.badges || [];
   const skills = profile?.skills || [];
@@ -321,7 +332,7 @@ export default function AgencyProfileClient() {
     (reviewPage + 1) * REVIEWS_PER_PAGE
   );
 
-  const avgRating = stats.avgRating.toFixed(1);
+  const avgRating = (stats.avgRating ?? 0).toFixed(1);
 
   // Add verified badge if applicable
   const allBadges = [...badges];
@@ -330,7 +341,7 @@ export default function AgencyProfileClient() {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center">
+    <div className="flex-1 flex flex-col items-center overflow-x-hidden">
       <div className="w-full max-w-[1200px] px-4 md:px-6 py-8">
         {/* ============================================================ */}
         {/* Cover + Logo + Info Section                                   */}
@@ -422,10 +433,10 @@ export default function AgencyProfileClient() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-end gap-2 pb-2 self-start md:self-end flex-wrap">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pb-2 self-stretch md:self-end w-full md:w-auto">
               <button
                 onClick={() => setContactOpen(!contactOpen)}
-                className="h-11 px-5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary/20 transition-all text-sm flex items-center gap-2"
+                className="h-11 px-5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary/20 transition-all text-sm flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">mail</span>
                 {t("contact_agency")}
@@ -435,7 +446,7 @@ export default function AgencyProfileClient() {
                   const el = document.getElementById("agency-services");
                   if (el) el.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="h-11 px-5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2 text-sm"
+                className="h-11 px-5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm"
               >
                 <span className="material-symbols-outlined text-sm">storefront</span>
                 {t("view_our_services")}
@@ -611,7 +622,7 @@ export default function AgencyProfileClient() {
                         {agency.workProcess.map((step, idx) => (
                           <div key={step.step} className="relative bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 text-center">
                             {/* Connector line between steps (hidden on last step and on mobile single-col) */}
-                            {idx < agency.workProcess!.length - 1 && (
+                            {idx < (agency.workProcess?.length ?? 0) - 1 && (
                               <div className="hidden lg:block absolute top-[28px] -right-4 w-4 h-0.5 bg-primary/30 z-10" />
                             )}
                             <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-primary/20">
@@ -674,7 +685,7 @@ export default function AgencyProfileClient() {
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-3">
                                 <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                                  {review.clientName?.split(" ").map((w) => w[0]).join("").slice(0, 2) || "?"}
+                                  {(review.clientName || "?").split(" ").map((w: string) => w?.[0] || "").join("").slice(0, 2) || "?"}
                                 </div>
                                 <div>
                                   <p className="font-bold text-sm">{review.clientName}</p>
@@ -684,13 +695,15 @@ export default function AgencyProfileClient() {
                               <div className="text-right">
                                 <StarRating rating={review.rating} />
                                 <p className="text-[10px] text-slate-400 mt-0.5">
-                                  {new Date(review.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                  {review.createdAt
+                                    ? new Date(review.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "short", year: "numeric" })
+                                    : ""}
                                 </p>
                               </div>
                             </div>
                             <p className="text-slate-700 dark:text-slate-400 text-sm">{review.comment}</p>
                             {review.reply && (
-                              <div className="mt-3 ml-6 pl-4 border-l-2 border-primary/20">
+                              <div className="mt-3 ml-3 sm:ml-6 pl-4 border-l-2 border-primary/20">
                                 <p className="text-xs font-bold text-primary mb-1 flex items-center gap-1">
                                   <span className="material-symbols-outlined text-xs">reply</span>
                                   {t("reply_from", { name: agency.name })}
@@ -913,7 +926,7 @@ export default function AgencyProfileClient() {
         {agency.team && agency.team.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {agency.team.map((member) => {
-              const initials = member.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
+              const initials = (member.name || "?").split(" ").map((n) => n?.[0] || "").join("").slice(0, 2) || "?";
               const card = (
                 <div className={cn(
                   "bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center",
@@ -985,9 +998,11 @@ export default function AgencyProfileClient() {
                       <span className="material-symbols-outlined text-4xl text-slate-300">image</span>
                     </div>
                   )}
-                  <span className="absolute top-3 left-3 px-2.5 py-1 bg-primary/90 text-white text-[11px] font-bold rounded-full backdrop-blur-sm">
-                    {project.category}
-                  </span>
+                  {project.category && (
+                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-primary/90 text-white text-[11px] font-bold rounded-full backdrop-blur-sm">
+                      {project.category}
+                    </span>
+                  )}
                 </div>
                 <div className="p-5">
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">{project.title}</h4>
@@ -1045,14 +1060,16 @@ export default function AgencyProfileClient() {
                       </div>
                     )}
                     {/* Category badge on image */}
-                    <span
-                      className={cn(
-                        "absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm",
-                        catColor
-                      )}
-                    >
-                      {service.categoryName}
-                    </span>
+                    {service.categoryName && (
+                      <span
+                        className={cn(
+                          "absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm",
+                          catColor
+                        )}
+                      >
+                        {service.categoryName}
+                      </span>
+                    )}
                   </div>
 
                   {/* Card body */}
@@ -1063,22 +1080,22 @@ export default function AgencyProfileClient() {
 
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <div className="flex items-center gap-1">
-                        <StarRating rating={service.rating} />
+                        <StarRating rating={service.rating ?? 0} />
                         <span className="text-xs text-slate-500">
-                          {service.rating} ({service.ratingCount})
+                          {service.rating ?? 0} ({service.ratingCount ?? 0})
                         </span>
                       </div>
                       {(service.orderCount ?? 0) > 0 && (
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           <span className="material-symbols-outlined text-sm text-emerald-500">shopping_bag</span>
-                          <span className="font-semibold">{service.orderCount} {service.orderCount > 1 ? "ventes" : "vente"}</span>
+                          <span className="font-semibold">{service.orderCount} {(service.orderCount ?? 0) > 1 ? "ventes" : "vente"}</span>
                         </div>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-border-dark">
                       <span className="text-sm font-black text-primary">
-                        {t("from_price", { price: format(service.basePrice) })}
+                        {t("from_price", { price: format(service.basePrice ?? 0) })}
                       </span>
                     </div>
                   </div>

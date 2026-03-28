@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { orderStore, transactionStore } from "@/lib/dev/data-store";
 import { createNotification } from "@/lib/notifications/service";
+import type { OrderStatus } from "@prisma/client";
 
 // GET /api/admin/orders/[id] — Get full order details
 export async function GET(
@@ -13,7 +14,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "admin" && session.user.role !== "ADMIN")) {
+    if (!session?.user || (!["admin", "ADMIN"].includes(session.user.role) && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -72,7 +73,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "admin" && session.user.role !== "ADMIN")) {
+    if (!session?.user || (!["admin", "ADMIN"].includes(session.user.role) && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -235,7 +236,7 @@ export async function PATCH(
               update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
             });
           } else {
-            await tx.wallet.upsert({
+            await tx.walletFreelance.upsert({
               where: { userId: order.freelanceId },
               create: { userId: order.freelanceId, balance: netAmount, totalEarned: netAmount },
               update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
@@ -342,7 +343,7 @@ export async function PATCH(
 
         const updated = await prisma.order.update({
           where: { id },
-          data: { status: prismaStatus },
+          data: { status: prismaStatus as OrderStatus },
         });
 
         await prisma.notification.createMany({

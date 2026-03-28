@@ -68,7 +68,7 @@ export default function ClientFavorites() {
 
   // Get initials from name
   const getInitials = (name: string) => {
-    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+    return (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
   };
 
   // Get type icon

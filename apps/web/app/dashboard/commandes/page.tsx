@@ -98,8 +98,11 @@ export default function CommandesPage() {
     }
   }, [apiDeliverOrder, addToast, syncFromApi]);
 
-  function getDaysLeft(deadline: string): number {
-    return Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  function getDaysLeft(deadline: string | null | undefined): number {
+    if (!deadline) return 0;
+    const ms = new Date(deadline).getTime();
+    if (isNaN(ms)) return 0;
+    return Math.ceil((ms - Date.now()) / (1000 * 60 * 60 * 24));
   }
 
   return (
@@ -180,27 +183,27 @@ export default function CommandesPage() {
           return (
             <Link key={order.id} href={`/dashboard/commandes/${order.id}`}
               className="block bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4 lg:p-5 hover:border-primary/30 transition-all group">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
-                    {order.clientAvatar}
+                    {order.clientAvatar || (order.clientName || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
                       <p className="font-bold text-sm truncate">{order.serviceTitle}</p>
-                      <span className="text-xs text-slate-500">{order.id}</span>
+                      <span className="text-xs text-slate-500 hidden sm:inline flex-shrink-0">{order.id}</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 sm:gap-3 mt-1 text-xs text-slate-400 flex-wrap">
                       <span>{order.clientName}</span>
-                      <span>·</span>
-                      <span className="uppercase">{order.clientCountry}</span>
-                      <span>·</span>
-                      <span className="capitalize">{order.packageType}</span>
+                      <span className="hidden sm:inline">·</span>
+                      <span className="uppercase hidden sm:inline">{order.clientCountry}</span>
+                      <span className="hidden sm:inline">·</span>
+                      <span className="capitalize hidden sm:inline">{order.packageType}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 flex-wrap sm:flex-nowrap pl-13 sm:pl-0">
                   {/* Deadline */}
                   {["en_cours", "en_attente", "revision"].includes(order.status) && (
                     <div className={cn("text-xs font-bold", daysLeft <= 2 ? "text-red-400" : daysLeft <= 5 ? "text-amber-400" : "text-slate-400")}>
@@ -212,9 +215,9 @@ export default function CommandesPage() {
                   <p className="text-sm font-bold">€{(order.amount ?? 0).toLocaleString("fr-FR")}</p>
 
                   {/* Status */}
-                  <span className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border", sc?.color)}>
-                    <span className="material-symbols-outlined text-sm">{sc?.icon}</span>
-                    {sc?.label}
+                  <span className={cn("inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold border", sc?.color || "bg-slate-500/10 text-slate-400 border-slate-500/20")}>
+                    <span className="material-symbols-outlined text-sm">{sc?.icon || "help"}</span>
+                    <span className="hidden sm:inline">{sc?.label || order.status}</span>
                   </span>
 
                   {/* Quick actions with spinner */}
@@ -225,7 +228,7 @@ export default function CommandesPage() {
                     <ActionButton label="Livrer" icon="local_shipping" onClick={() => handleDeliver(order.id)} variant="emerald" />
                   )}
 
-                  <span className="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">arrow_forward</span>
+                  <span className="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors hidden sm:block">arrow_forward</span>
                 </div>
               </div>
 
@@ -234,10 +237,10 @@ export default function CommandesPage() {
                 <div className="mt-4">
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-slate-500">Progression</span>
-                    <span className="font-bold text-primary">{order.progress}%</span>
+                    <span className="font-bold text-primary">{order.progress ?? 0}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-border-dark rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${order.progress}%` }} />
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${order.progress ?? 0}%` }} />
                   </div>
                 </div>
               )}

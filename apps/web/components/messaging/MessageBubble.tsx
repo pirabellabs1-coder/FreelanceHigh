@@ -169,7 +169,7 @@ export function MessageBubble({
         </div>
       )}
 
-      <div className={cn("max-w-[75%] md:max-w-[70%]", !isOwn && !showSenderInfo && "ml-11")}>
+      <div className={cn("max-w-[85%] md:max-w-[70%]", !isOwn && !showSenderInfo && "ml-11")}>
         {/* Sender info */}
         {!isOwn && showSenderInfo && (
           <p className="text-xs mb-1">
@@ -262,7 +262,7 @@ export function MessageBubble({
                   /* Image with inline preview */
                   <div className="space-y-2">
                     {imageError ? (
-                      <div className="flex items-center gap-3 bg-background-dark/50 rounded-lg px-3 py-3 max-w-[300px]">
+                      <div className="flex items-center gap-3 bg-background-dark/50 rounded-lg px-3 py-3 max-w-[240px] md:max-w-[300px]">
                         <span className="material-symbols-outlined text-slate-500">broken_image</span>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs text-slate-400">{message.fileName || "Image"}</p>
@@ -281,7 +281,7 @@ export function MessageBubble({
                     ) : (
                       <button
                         onClick={() => onImageClick?.(message.fileUrl!)}
-                        className="block rounded-lg overflow-hidden max-w-[300px] hover:opacity-90 transition-opacity"
+                        className="block rounded-lg overflow-hidden max-w-[240px] md:max-w-[300px] hover:opacity-90 transition-opacity"
                       >
                         <img
                           src={message.fileUrl}
@@ -316,7 +316,7 @@ export function MessageBubble({
                 ) : message.type === "file" && message.fileType?.startsWith("video/") && message.fileUrl ? (
                   /* Video inline player */
                   <div className="space-y-2">
-                    <div className="rounded-lg overflow-hidden max-w-[300px]">
+                    <div className="rounded-lg overflow-hidden max-w-[240px] md:max-w-[300px]">
                       <video
                         src={message.fileUrl}
                         controls

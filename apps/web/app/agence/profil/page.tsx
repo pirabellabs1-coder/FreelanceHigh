@@ -154,7 +154,7 @@ export default function AgenceProfilPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {visibleMembers.map((m) => (
                 <div key={m.id} className="flex items-center gap-3 p-3 bg-neutral-dark rounded-lg border border-border-dark">
-                  <div className="w-10 h-10 rounded-full bg-[#14B835]/20 flex items-center justify-center text-[#14B835] text-sm font-bold flex-shrink-0">{m.name.split(" ").map((n) => n[0]).join("")}</div>
+                  <div className="w-10 h-10 rounded-full bg-[#14B835]/20 flex items-center justify-center text-[#14B835] text-sm font-bold flex-shrink-0">{(m.name || "?").split(" ").map((n) => n[0]).join("")}</div>
                   <div className="min-w-0"><p className="text-sm font-bold text-white truncate">{m.name}</p><p className="text-xs text-slate-400 truncate">{m.role}</p></div>
                 </div>))}
             </div>
@@ -252,7 +252,7 @@ export default function AgenceProfilPage() {
             {members.map((m) => (
               <div key={m.id} className="flex items-center justify-between p-3 border border-border-dark rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#14B835]/20 flex items-center justify-center text-[#14B835] text-xs font-bold flex-shrink-0">{m.name.split(" ").map((n) => n[0]).join("")}</div>
+                  <div className="w-9 h-9 rounded-full bg-[#14B835]/20 flex items-center justify-center text-[#14B835] text-xs font-bold flex-shrink-0">{(m.name || "?").split(" ").map((n) => n[0]).join("")}</div>
                   <div><p className="text-sm font-bold text-white">{m.name}</p><p className="text-xs text-slate-400">{m.role}</p></div>
                 </div>
                 <button onClick={() => setMemberVis((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}

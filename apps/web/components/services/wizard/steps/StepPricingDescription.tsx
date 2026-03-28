@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useServiceWizardStore } from "@/store/service-wizard";
 import { step2Schema, DELIVERY_DAYS_OPTIONS, COMMISSION_RATES, PRICE_OPTIONS } from "@/lib/validations/service";
+import { useDashboardStore } from "@/store/dashboard";
+import { normalizePlanName, getCommissionLabel } from "@/lib/plans";
 
 const RichTextEditor = dynamic(
   () => import("../editor/RichTextEditor").then((m) => m.RichTextEditor),
@@ -16,9 +18,9 @@ export function StepPricingDescription({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Mock user plan — in production, from session
-  const userPlan = "GRATUIT";
-  const commissionRate = COMMISSION_RATES[userPlan] || 0.2;
+  const rawPlan = useDashboardStore((s) => s.currentPlan);
+  const planName = normalizePlanName(rawPlan);
+  const commissionRate = COMMISSION_RATES[planName] || COMMISSION_RATES.DECOUVERTE || 0.12;
 
   const netAmount = useMemo(() => {
     if (!store.basePrice || store.basePrice < 10) return 0;
@@ -82,7 +84,7 @@ export function StepPricingDescription({ role }: { role: string }) {
                 <strong className="text-emerald-400">{netAmount} EUR</strong>
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                Commission FreelanceHigh : {commissionRate * 100}% (Plan {userPlan.charAt(0) + userPlan.slice(1).toLowerCase()})
+                Commission FreelanceHigh : {getCommissionLabel(planName)} (Plan {planName.charAt(0) + planName.slice(1).toLowerCase()})
               </p>
             </div>
           )}

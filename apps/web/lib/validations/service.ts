@@ -214,13 +214,22 @@ export const PRICE_OPTIONS: number[] = [
 // Authoritative source: @/lib/plans calculateCommissionEur()
 
 export const COMMISSION_RATES: Record<string, number> = {
-  GRATUIT: PLAN_RULES.GRATUIT.commissionValue / 100, // 12% → 0.12
-  PRO: 0, // Not a percentage — flat 1 EUR. Use calculateCommissionEur() instead.
+  DECOUVERTE: PLAN_RULES.DECOUVERTE.commissionValue / 100, // 12% → 0.12
+  ASCENSION: PLAN_RULES.ASCENSION.commissionValue / 100, // 5% → 0.05
+  SOMMET: 0, // Not a percentage — flat 1 EUR. Use calculateCommissionEur() instead.
+  EMPIRE: 0,
+  // Legacy aliases
+  GRATUIT: PLAN_RULES.DECOUVERTE.commissionValue / 100,
+  PRO: PLAN_RULES.ASCENSION.commissionValue / 100,
   BUSINESS: 0,
   AGENCE: 0,
 };
 
 export const OPTIONS_LIMITS: Record<string, number> = {
+  DECOUVERTE: 3,
+  ASCENSION: 10,
+  SOMMET: Infinity,
+  EMPIRE: Infinity,
   GRATUIT: 3,
   PRO: 10,
   BUSINESS: Infinity,
@@ -229,10 +238,15 @@ export const OPTIONS_LIMITS: Record<string, number> = {
 
 // Service limits — now sourced from @/lib/plans (PLAN_RULES)
 export const SERVICES_LIMITS: Record<string, number> = {
-  GRATUIT: PLAN_RULES.GRATUIT.serviceLimit,
-  PRO: PLAN_RULES.PRO.serviceLimit,
-  BUSINESS: PLAN_RULES.BUSINESS.serviceLimit,
-  AGENCE: PLAN_RULES.AGENCE.serviceLimit,
+  DECOUVERTE: PLAN_RULES.DECOUVERTE.serviceLimit,
+  ASCENSION: PLAN_RULES.ASCENSION.serviceLimit,
+  SOMMET: PLAN_RULES.SOMMET.serviceLimit,
+  EMPIRE: PLAN_RULES.EMPIRE.serviceLimit,
+  // Legacy aliases
+  GRATUIT: PLAN_RULES.DECOUVERTE.serviceLimit,
+  PRO: PLAN_RULES.ASCENSION.serviceLimit,
+  BUSINESS: PLAN_RULES.SOMMET.serviceLimit,
+  AGENCE: PLAN_RULES.EMPIRE.serviceLimit,
 };
 
 export const LANGUAGES = [

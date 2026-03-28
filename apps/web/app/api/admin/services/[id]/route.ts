@@ -15,7 +15,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -46,12 +46,12 @@ export async function PATCH(
           return NextResponse.json({ success: true, message: `Service "${service.title}" refuse` });
         }
         case "feature": {
-          serviceStore.update(id, { status: "actif", isBoosted: true });
+          serviceStore.update(id, { status: "actif" as typeof service.status, isBoosted: true });
           emitEvent("service.approved", { serviceId: id, serviceTitle: service.title, userId: service.userId, userName, userEmail }).catch(() => {});
           return NextResponse.json({ success: true, message: `Service "${service.title}" mis en vedette` });
         }
         case "unfeature": {
-          serviceStore.update(id, { isBoosted: false });
+          serviceStore.update(id, { status: "actif", isBoosted: false });
           return NextResponse.json({ success: true, message: `Service "${service.title}" retire de la vedette` });
         }
         case "pause": {

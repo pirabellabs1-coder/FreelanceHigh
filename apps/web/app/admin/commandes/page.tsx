@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useToastStore } from "@/store/toast";
 import { useAdminStore } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ function StatSkeleton() {
 
 export default function AdminCommandes() {
   const { orders, loading, syncOrders, forceDelivery, forceCancel, releaseEscrow, refundOrder } = useAdminStore();
+  const { addToast } = useToastStore();
   const [tab, setTab] = useState("toutes");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
@@ -57,14 +59,14 @@ export default function AdminCommandes() {
       if (tab !== "toutes" && o.status !== tab) return false;
       if (search) {
         const q = search.toLowerCase();
-        return o.id.toLowerCase().includes(q) || o.serviceTitle.toLowerCase().includes(q) || o.freelanceName.toLowerCase().includes(q) || o.clientName.toLowerCase().includes(q);
+        return (o.id || "").toLowerCase().includes(q) || (o.serviceTitle || "").toLowerCase().includes(q) || (o.freelanceName || "").toLowerCase().includes(q) || (o.clientName || "").toLowerCase().includes(q);
       }
       return true;
-    }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   }, [orders, tab, search]);
 
-  const totalVolume = orders.filter(o => o.status !== "annule").reduce((s, o) => s + o.amount, 0);
-  const totalCommissions = orders.filter(o => ["termine", "livre"].includes(o.status)).reduce((s, o) => s + o.commission, 0);
+  const totalVolume = orders.filter(o => o.status !== "annule").reduce((s, o) => s + (o.amount ?? 0), 0);
+  const totalCommissions = orders.filter(o => ["termine", "livre"].includes(o.status)).reduce((s, o) => s + (o.commission ?? 0), 0);
 
   const tabs = [
     { key: "toutes", label: "Toutes", count: orders.length },
@@ -83,13 +85,23 @@ export default function AdminCommandes() {
     if (!confirmAction) return;
     setActionLoading(true);
     const { orderId, action } = confirmAction;
-    switch (action) {
-      case "forceDelivery": await forceDelivery(orderId); break;
-      case "forceCancel": await forceCancel(orderId); break;
-      case "releaseEscrow": await releaseEscrow(orderId); break;
-      case "refundOrder": await refundOrder(orderId); break;
+    let ok = false;
+    try {
+      switch (action) {
+        case "forceDelivery": ok = await forceDelivery(orderId); break;
+        case "forceCancel": ok = await forceCancel(orderId); break;
+        case "releaseEscrow": ok = await releaseEscrow(orderId); break;
+        case "refundOrder": ok = await refundOrder(orderId); break;
+      }
+    } catch {
+      ok = false;
     }
     setActionLoading(false);
+    if (ok) {
+      addToast("success", `Action "${actionLabels[action]?.label ?? action}" effectuée avec succès`);
+    } else {
+      addToast("error", `Erreur lors de l'exécution de "${actionLabels[action]?.label ?? action}"`);
+    }
     setConfirmAction(null);
     setSelectedOrder(null);
   }
@@ -102,10 +114,10 @@ export default function AdminCommandes() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">shopping_bag</span>
             Gestion des Commandes
           </h1>
@@ -190,12 +202,12 @@ export default function AdminCommandes() {
                 filtered.map(o => (
                   <tr key={o.id} className="border-b border-border-dark/50 hover:bg-primary/5 transition-colors">
                     <td className="px-4 py-3 text-sm font-mono font-bold text-primary">{o.id}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-white max-w-[180px] truncate">{o.serviceTitle}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{o.freelanceName}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{o.clientName}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-white max-w-[180px] truncate">{o.serviceTitle || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{o.freelanceName || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{o.clientName || "—"}</td>
                     <td className="px-4 py-3 text-sm text-center">
                       <span className="font-bold text-white">&euro;{(o.amount ?? 0).toLocaleString()}</span>
-                      <span className="block text-[10px] text-slate-500">comm. &euro;{o.commission}</span>
+                      <span className="block text-[10px] text-slate-500">comm. &euro;{(o.commission ?? 0).toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1", STATUS_MAP[o.status]?.cls)}>
@@ -206,12 +218,12 @@ export default function AdminCommandes() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-16 h-1.5 bg-border-dark rounded-full overflow-hidden">
-                          <div className="h-full bg-primary rounded-full" style={{ width: `${o.progress}%` }} />
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${o.progress ?? 0}%` }} />
                         </div>
-                        <span className="text-xs text-slate-500">{o.progress}%</span>
+                        <span className="text-xs text-slate-500">{o.progress ?? 0}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">{new Date(o.deadline).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400">{o.deadline ? new Date(o.deadline).toLocaleDateString("fr-FR") : "—"}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => setSelectedOrder(o.id)}
@@ -239,51 +251,51 @@ export default function AdminCommandes() {
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedOrder(null)}>
           <div className="bg-neutral-dark rounded-2xl border border-border-dark w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-border-dark flex items-center justify-between">
+            <div className="p-4 sm:p-6 border-b border-border-dark flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">receipt_long</span>
                   Commande {detail.id}
                 </h2>
-                <p className="text-sm text-slate-400 mt-0.5">{detail.serviceTitle}</p>
+                <p className="text-sm text-slate-400 mt-0.5">{detail.serviceTitle || "Service inconnu"}</p>
               </div>
               <button onClick={() => setSelectedOrder(null)} className="text-slate-400 hover:text-white">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-6 space-y-5">
               {/* Info grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Freelance</p>
-                  <p className="text-sm font-semibold text-white">{detail.freelanceName}</p>
+                  <p className="text-sm font-semibold text-white">{detail.freelanceName || "—"}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Client</p>
-                  <p className="text-sm font-semibold text-white">{detail.clientName}</p>
+                  <p className="text-sm font-semibold text-white">{detail.clientName || "—"}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Montant</p>
                   <p className="text-sm font-bold text-primary">&euro;{(detail.amount ?? 0).toLocaleString()}</p>
-                  <p className="text-xs text-slate-500">Commission : &euro;{detail.commission}</p>
+                  <p className="text-xs text-slate-500">Commission : &euro;{(detail.commission ?? 0).toLocaleString()}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Catégorie</p>
-                  <p className="text-sm text-white">{detail.category}</p>
+                  <p className="text-sm text-white">{detail.category || "—"}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Créée le</p>
-                  <p className="text-sm text-white">{new Date(detail.createdAt).toLocaleDateString("fr-FR")}</p>
+                  <p className="text-sm text-white">{detail.createdAt ? new Date(detail.createdAt).toLocaleDateString("fr-FR") : "—"}</p>
                 </div>
                 <div className="bg-background-dark/50 rounded-lg p-3">
                   <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Deadline</p>
-                  <p className="text-sm text-white">{new Date(detail.deadline).toLocaleDateString("fr-FR")}</p>
+                  <p className="text-sm text-white">{detail.deadline ? new Date(detail.deadline).toLocaleDateString("fr-FR") : "—"}</p>
                 </div>
               </div>
 
               {/* Status */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Statut :</span>
                   <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1", STATUS_MAP[detail.status]?.cls)}>
@@ -293,7 +305,7 @@ export default function AdminCommandes() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Forfait :</span>
-                  <span className="text-xs font-semibold text-white capitalize">{detail.packageType}</span>
+                  <span className="text-xs font-semibold text-white capitalize">{detail.packageType || "—"}</span>
                 </div>
               </div>
 
@@ -301,33 +313,33 @@ export default function AdminCommandes() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-slate-400">Progression</span>
-                  <span className="text-xs font-bold text-white">{detail.progress}%</span>
+                  <span className="text-xs font-bold text-white">{detail.progress ?? 0}%</span>
                 </div>
                 <div className="h-2 bg-border-dark rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${detail.progress}%` }} />
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${detail.progress ?? 0}%` }} />
                 </div>
               </div>
 
               {/* Extra info */}
-              <div className="flex items-center gap-4 text-xs text-slate-400">
+              <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">chat</span>
-                  {detail.messagesCount} messages
+                  {detail.messagesCount ?? 0} messages
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">attach_file</span>
-                  {detail.filesCount} fichiers
+                  {detail.filesCount ?? 0} fichiers
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">update</span>
-                  MAJ {new Date(detail.updatedAt).toLocaleDateString("fr-FR")}
+                  MAJ {detail.updatedAt ? new Date(detail.updatedAt).toLocaleDateString("fr-FR") : "—"}
                 </span>
               </div>
 
               {/* Admin actions */}
               <div className="border-t border-border-dark pt-5">
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Actions admin</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {!["termine", "annule"].includes(detail.status) && (
                     <>
                       <button

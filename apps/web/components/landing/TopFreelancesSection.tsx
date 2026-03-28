@@ -32,12 +32,12 @@ export function TopFreelancesSection() {
     fetch("/api/public/top-freelances?limit=3")
       .then((res) => (res.ok ? res.json() : { freelances: [] }))
       .then((data) => {
-        if (data.freelances) setFreelances(data.freelances);
+        if (Array.isArray(data.freelances)) setFreelances(data.freelances);
       })
       .catch(() => {});
   }, []);
 
-  if (freelances.length === 0) return null;
+  if (!freelances || freelances.length === 0) return null;
 
   return (
     <section className="bg-primary/5 dark:bg-primary/5 py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-8">
@@ -91,13 +91,13 @@ export function TopFreelancesSection() {
               </div>
 
               {/* Content */}
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h4 className="text-2xl font-bold mb-1">{f.name}</h4>
-                    <p className="text-sm text-primary font-bold uppercase tracking-wider">{f.title}</p>
+              <div className="p-5 sm:p-8">
+                <div className="flex justify-between items-start mb-4 sm:mb-6 gap-2">
+                  <div className="min-w-0">
+                    <h4 className="text-lg sm:text-2xl font-bold mb-1 truncate">{f.name}</h4>
+                    <p className="text-xs sm:text-sm text-primary font-bold uppercase tracking-wider truncate">{f.title}</p>
                   </div>
-                  {f.rating > 0 && (
+                  {(f.rating ?? 0) > 0 && (
                     <div className="flex items-center gap-1 bg-accent/10 text-accent px-3 py-1.5 rounded-xl">
                       <span
                         className="material-symbols-outlined text-base"
@@ -105,26 +105,26 @@ export function TopFreelancesSection() {
                       >
                         star
                       </span>
-                      <span className="text-base font-extrabold">{f.rating.toFixed(1)}</span>
+                      <span className="text-base font-extrabold">{(f.rating ?? 0).toFixed(1)}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Stats: ventes + avis */}
-                <div className="flex items-center gap-4 mb-6 text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-base text-emerald-500">shopping_cart</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{f.completedOrders}</span> vente{f.completedOrders !== 1 ? "s" : ""}
+                    <span className="font-bold text-slate-900 dark:text-white">{f.completedOrders ?? 0}</span> vente{(f.completedOrders ?? 0) !== 1 ? "s" : ""}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-base text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{f.reviewCount}</span> avis
+                    <span className="font-bold text-slate-900 dark:text-white">{f.reviewCount ?? 0}</span> avis
                   </div>
                 </div>
 
-                {f.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {f.skills.map((skill) => (
+                {(f.skills || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+                    {(f.skills || []).map((skill) => (
                       <span
                         key={skill}
                         className="bg-slate-100 dark:bg-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg"
@@ -135,20 +135,21 @@ export function TopFreelancesSection() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-700">
-                  {f.dailyRateEur > 0 ? (
-                    <div className="flex flex-col">
+                <div className="flex items-center justify-between pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-700 gap-2">
+                  {(f.dailyRateEur ?? 0) > 0 ? (
+                    <div className="flex flex-col min-w-0">
                       <span className="text-slate-500 text-[10px] font-bold uppercase">{t("daily_rate")}</span>
-                      <span className="text-xl font-extrabold text-slate-900 dark:text-white">
-                        {format(f.dailyRateEur)} <span className="text-sm font-normal text-slate-500">{t("per_day")}</span>
+                      <span className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white">
+                        {format(f.dailyRateEur)} <span className="text-xs sm:text-sm font-normal text-slate-500">{t("per_day")}</span>
                       </span>
                     </div>
                   ) : (
                     <div />
                   )}
-                  <span className="bg-primary text-white font-bold text-sm px-4 py-2.5 rounded-xl group-hover:bg-primary/90 transition-all flex items-center gap-1.5">
+                  <span className="bg-primary text-white font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl group-hover:bg-primary/90 transition-all flex items-center gap-1.5 flex-shrink-0">
                     <span className="material-symbols-outlined text-base">visibility</span>
-                    Voir le profil
+                    <span className="hidden sm:inline">Voir le profil</span>
+                    <span className="sm:hidden">Profil</span>
                   </span>
                 </div>
               </div>

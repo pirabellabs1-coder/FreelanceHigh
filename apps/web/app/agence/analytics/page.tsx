@@ -22,8 +22,17 @@ const PERIODS: { value: "7d" | "30d" | "3m" | "6m" | "1y"; label: string }[] = [
   { value: "1y", label: "1an" },
 ];
 
+function escapeCsvField(field: string): string {
+  if (field == null) return "";
+  const s = String(field);
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
 function downloadCsv(filename: string, headers: string[], rows: string[][]) {
-  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const csv = [headers.join(","), ...rows.map((r) => r.map(escapeCsvField).join(","))].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -70,18 +79,18 @@ export default function AgenceAnalytics() {
   const conversionRate = stats?.conversionRate ?? 0;
 
   const servicePerf = useMemo(
-    () => services.map((s) => ({ title: s.title, views: s.views, orderCount: s.orderCount, revenue: s.revenue, rating: s.rating })),
+    () => (services || []).map((s) => ({ title: s.title ?? "Sans titre", views: s.views ?? 0, orderCount: s.orderCount ?? 0, revenue: s.revenue ?? 0, rating: s.rating ?? 0 })),
     [services],
   );
 
   const memberRevenue = useMemo(
-    () => members.map((m) => ({ name: m.name, revenue: m.revenue })),
+    () => (members || []).map((m) => ({ name: m.name ?? "Membre", revenue: m.revenue ?? 0 })),
     [members],
   );
 
   const trafficSources = useMemo(() => {
     const map = new Map<string, number>();
-    orders.forEach((o) => {
+    (orders || []).forEach((o) => {
       const cat = o.category || "Autre";
       map.set(cat, (map.get(cat) ?? 0) + 1);
     });
@@ -90,7 +99,7 @@ export default function AgenceAnalytics() {
 
   const recurringVsNew = useMemo(() => {
     const clientOrderCount = new Map<string, number>();
-    orders.forEach((o) => clientOrderCount.set(o.clientId, (clientOrderCount.get(o.clientId) ?? 0) + 1));
+    (orders || []).forEach((o) => clientOrderCount.set(o.clientId, (clientOrderCount.get(o.clientId) ?? 0) + 1));
     let recurring = 0;
     let newClients = 0;
     clientOrderCount.forEach((count) => { if (count > 1) recurring++; else newClients++; });
@@ -101,7 +110,7 @@ export default function AgenceAnalytics() {
   }, [orders]);
 
   const ratingEvolution = useMemo(() => {
-    if (!reviews.length) return [];
+    if (!reviews || !reviews.length) return [];
     const sorted = [...reviews].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     let cumSum = 0;
     return sorted.map((r, i) => {
@@ -112,16 +121,16 @@ export default function AgenceAnalytics() {
 
   const revenueByCategory = useMemo(() => {
     const map = new Map<string, number>();
-    services.forEach((s) => {
+    (services || []).forEach((s) => {
       const cat = s.categoryName || "Autre";
-      map.set(cat, (map.get(cat) ?? 0) + s.revenue);
+      map.set(cat, (map.get(cat) ?? 0) + (s.revenue ?? 0));
     });
     return Array.from(map.entries()).map(([name, revenue]) => ({ name, revenue }));
   }, [services]);
 
   // NPS from reviews
   const nps = useMemo(() => {
-    if (!reviews.length) return null;
+    if (!reviews || !reviews.length) return null;
     const total = reviews.length;
     const promoters = reviews.filter((r) => r.rating >= 4.5).length;
     const detractors = reviews.filter((r) => r.rating <= 2.5).length;
@@ -135,26 +144,31 @@ export default function AgenceAnalytics() {
   // ── CSV export helpers ──
 
   const exportMonthlyRevenue = useCallback(() => {
-    downloadCsv("ca-par-mois.csv", ["Mois", "Revenu"], monthlyRevenue.map((r) => [r.month, String(r.revenue)]));
+    if (!monthlyRevenue.length) { addToast("info", "Aucune donnée a exporter"); return; }
+    downloadCsv("ca-par-mois.csv", ["Mois", "Revenu"], monthlyRevenue.map((r) => [r.month ?? "", String(r.revenue ?? 0)]));
     addToast("success", "Export CSV CA par mois téléchargé");
   }, [monthlyRevenue, addToast]);
 
   const exportWeeklyOrders = useCallback(() => {
-    downloadCsv("commandes-semaine.csv", ["Semaine", "Commandes"], weeklyOrders.map((w) => [w.week, String(w.orders)]));
+    if (!weeklyOrders.length) { addToast("info", "Aucune donnée a exporter"); return; }
+    downloadCsv("commandes-semaine.csv", ["Semaine", "Commandes"], weeklyOrders.map((w) => [w.week ?? "", String(w.orders ?? 0)]));
     addToast("success", "Export CSV commandes téléchargé");
   }, [weeklyOrders, addToast]);
 
   const exportServicePerf = useCallback(() => {
+    if (!servicePerf.length) { addToast("info", "Aucune donnée a exporter"); return; }
     downloadCsv("performance-services.csv", ["Service", "Vues", "Commandes", "Revenu", "Note"], servicePerf.map((s) => [s.title, String(s.views), String(s.orderCount), String(s.revenue), String(s.rating)]));
     addToast("success", "Export CSV services téléchargé");
   }, [servicePerf, addToast]);
 
   const exportMemberRevenue = useCallback(() => {
+    if (!memberRevenue.length) { addToast("info", "Aucune donnée a exporter"); return; }
     downloadCsv("performance-membres.csv", ["Membre", "Revenu"], memberRevenue.map((m) => [m.name, String(m.revenue)]));
     addToast("success", "Export CSV membres téléchargé");
   }, [memberRevenue, addToast]);
 
   const exportRevenueByCategory = useCallback(() => {
+    if (!revenueByCategory.length) { addToast("info", "Aucune donnée a exporter"); return; }
     downloadCsv("revenus-categorie.csv", ["Catégorie", "Revenu"], revenueByCategory.map((c) => [c.name, String(c.revenue)]));
     addToast("success", "Export CSV catégories téléchargé");
   }, [revenueByCategory, addToast]);
@@ -188,12 +202,12 @@ export default function AgenceAnalytics() {
       <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
         <h2 className="font-bold text-white mb-4">Satisfaction Clients (NPS)</h2>
         {nps ? (
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <p className={cn("text-5xl font-black", nps.score >= 50 ? "text-primary" : nps.score >= 0 ? "text-amber-400" : "text-red-400")}>{nps.score}</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+            <div className="text-center flex-shrink-0">
+              <p className={cn("text-4xl sm:text-5xl font-black", nps.score >= 50 ? "text-primary" : nps.score >= 0 ? "text-amber-400" : "text-red-400")}>{nps.score}</p>
               <p className="text-xs text-slate-500 mt-1">Score NPS</p>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex-1 h-3 bg-border-dark rounded-full overflow-hidden flex">
                   <div className="h-full bg-emerald-500" style={{ width: `${nps.promoters}%` }} />
@@ -201,7 +215,7 @@ export default function AgenceAnalytics() {
                   <div className="h-full bg-red-400" style={{ width: `${nps.detractors}%` }} />
                 </div>
               </div>
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-xs gap-2 flex-wrap">
                 <span className="text-emerald-400 font-semibold">Promoteurs {nps.promoters}%</span>
                 <span className="text-amber-400 font-semibold">Passifs {nps.passives}%</span>
                 <span className="text-red-400 font-semibold">Détracteurs {nps.detractors}%</span>
@@ -252,28 +266,30 @@ export default function AgenceAnalytics() {
           <SectionHeader title="Performance par service" onExport={exportServicePerf} />
         </div>
         {servicePerf.length ? (
-          <table className="w-full">
-            <thead>
-              <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                <th className="px-5 py-3 text-left font-semibold">Service</th>
-                <th className="px-5 py-3 text-left font-semibold">Vues</th>
-                <th className="px-5 py-3 text-left font-semibold">Commandes</th>
-                <th className="px-5 py-3 text-left font-semibold">Revenu</th>
-                <th className="px-5 py-3 text-left font-semibold">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {servicePerf.map((s) => (
-                <tr key={s.title} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
-                  <td className="px-5 py-3 text-sm font-semibold text-white truncate max-w-[220px]">{s.title}</td>
-                  <td className="px-5 py-3 text-sm text-slate-300">{s.views}</td>
-                  <td className="px-5 py-3 text-sm text-slate-300">{s.orderCount}</td>
-                  <td className="px-5 py-3 text-sm text-primary font-semibold">{(s.revenue ?? 0).toLocaleString("fr-FR")} &euro;</td>
-                  <td className="px-5 py-3"><span className="text-sm font-semibold text-yellow-400 flex items-center gap-0.5"><span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>{s.rating.toFixed(1)}</span></td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[500px]">
+              <thead>
+                <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
+                  <th className="px-5 py-3 text-left font-semibold">Service</th>
+                  <th className="px-5 py-3 text-left font-semibold">Vues</th>
+                  <th className="px-5 py-3 text-left font-semibold">Commandes</th>
+                  <th className="px-5 py-3 text-left font-semibold">Revenu</th>
+                  <th className="px-5 py-3 text-left font-semibold">Note</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {servicePerf.map((s) => (
+                  <tr key={s.title} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
+                    <td className="px-5 py-3 text-sm font-semibold text-white truncate max-w-[220px]">{s.title}</td>
+                    <td className="px-5 py-3 text-sm text-slate-300">{s.views}</td>
+                    <td className="px-5 py-3 text-sm text-slate-300">{s.orderCount}</td>
+                    <td className="px-5 py-3 text-sm text-primary font-semibold">{(s.revenue ?? 0).toLocaleString("fr-FR")} &euro;</td>
+                    <td className="px-5 py-3"><span className="text-sm font-semibold text-yellow-400 flex items-center gap-0.5"><span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>{s.rating.toFixed(1)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : <EmptyState text="Aucun service publié" />}
       </div>
 
@@ -296,7 +312,8 @@ export default function AgenceAnalytics() {
 
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <SectionHeader title="Vues profil" onExport={() => {
-            downloadCsv("vues-profil.csv", ["Date", "Vues"], profileViews.map((v) => [v.date, String(v.views)]));
+            if (!profileViews.length) { addToast("info", "Aucune donnée a exporter"); return; }
+            downloadCsv("vues-profil.csv", ["Date", "Vues"], profileViews.map((v) => [v.date ?? "", String(v.views ?? 0)]));
             addToast("success", "Export CSV vues téléchargé");
           }} />
           {profileViews.length ? (
@@ -318,20 +335,22 @@ export default function AgenceAnalytics() {
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h2 className="font-bold text-white mb-4">Sources de trafic (par catégorie)</h2>
           {trafficSources.length ? (
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width={180} height={180}>
-                <PieChart>
-                  <Pie data={trafficSources} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3}>
-                    {trafficSources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip content={<ChartTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-2">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <div className="w-[160px] h-[160px] sm:w-[180px] sm:h-[180px] flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={trafficSources} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3}>
+                      {trafficSources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 space-y-2 w-full">
                 {trafficSources.map((s, i) => (
                   <div key={s.name} className="flex items-center gap-2 text-sm">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                    <span className="text-slate-300 flex-1">{s.name}</span>
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                    <span className="text-slate-300 flex-1 truncate">{s.name}</span>
                     <span className="text-white font-semibold">{s.value}</span>
                   </div>
                 ))}
@@ -342,21 +361,23 @@ export default function AgenceAnalytics() {
 
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h2 className="font-bold text-white mb-4">Clients récurrents vs nouveaux</h2>
-          {orders.length ? (
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width={180} height={180}>
-                <PieChart>
-                  <Pie data={recurringVsNew} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3}>
-                    <Cell fill="#14B835" />
-                    <Cell fill="#0EA5E9" />
-                  </Pie>
-                  <Tooltip content={<ChartTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-3">
+          {(orders || []).length ? (
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <div className="w-[160px] h-[160px] sm:w-[180px] sm:h-[180px] flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={recurringVsNew} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3}>
+                      <Cell fill="#14B835" />
+                      <Cell fill="#0EA5E9" />
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 space-y-3 w-full">
                 {recurringVsNew.map((d, i) => (
                   <div key={d.name} className="flex items-center gap-2 text-sm">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: i === 0 ? "#14B835" : "#0EA5E9" }} />
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: i === 0 ? "#14B835" : "#0EA5E9" }} />
                     <span className="text-slate-300 flex-1">{d.name}</span>
                     <span className="text-white font-semibold">{d.value}</span>
                   </div>
@@ -371,8 +392,8 @@ export default function AgenceAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
           <h2 className="font-bold text-white mb-4">Taux de conversion</h2>
-          <div className="flex items-center gap-6 mb-4">
-            <p className="text-5xl font-black text-primary">{conversionRate.toFixed(1)}%</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mb-4">
+            <p className="text-4xl sm:text-5xl font-black text-primary">{conversionRate.toFixed(1)}%</p>
             <p className="text-sm text-slate-400">des visiteurs deviennent clients</p>
           </div>
           {profileViews.length ? (
@@ -422,7 +443,7 @@ export default function AgenceAnalytics() {
             </ResponsiveContainer>
             <div className="mt-4 pt-4 border-t border-border-dark flex items-center justify-between">
               <span className="text-sm font-bold text-white">Total</span>
-              <span className="text-sm font-bold text-primary">{revenueByCategory.reduce((s, c) => s + c.revenue, 0).toLocaleString("fr-FR")} &euro;</span>
+              <span className="text-sm font-bold text-primary">{revenueByCategory.reduce((s, c) => s + (c.revenue ?? 0), 0).toLocaleString("fr-FR")} &euro;</span>
             </div>
           </>
         ) : <EmptyState text="Aucun service publié" />}

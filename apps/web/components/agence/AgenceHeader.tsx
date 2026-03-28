@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface AgenceHeaderProps {
@@ -35,9 +36,18 @@ export function AgenceHeader({ onMenuClick }: AgenceHeaderProps) {
           <span className="material-symbols-outlined text-xl">help</span>
         </Link>
 
-        <Link href="/agence/parametres" className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
+        <Link href="/agence/parametres" className="hidden sm:flex p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
           <span className="material-symbols-outlined text-xl">settings</span>
         </Link>
+
+        {/* Mobile logout button — visible when sidebar is hidden */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/connexion" })}
+          className="lg:hidden p-1.5 sm:p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+          title="Se déconnecter"
+        >
+          <span className="material-symbols-outlined text-xl">logout</span>
+        </button>
 
         <Link href="/agence/profil" className="hidden sm:flex items-center gap-3 ml-2 pl-3 border-l border-border-dark">
           <span className="text-sm font-medium text-white">TechCorp Agency</span>

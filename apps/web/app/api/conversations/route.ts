@@ -23,12 +23,12 @@ export async function GET() {
         messages: {
           orderBy: { createdAt: "desc" as const },
           take: 1,
-          include: { sender: { select: { id: true, name: true, image: true } } },
+          include: { sender: { select: { id: true, name: true, image: true, avatar: true } } },
         },
         users: {
           include: {
             user: {
-              select: { id: true, name: true, image: true, role: true },
+              select: { id: true, name: true, image: true, avatar: true, role: true },
             },
           },
         },
@@ -73,7 +73,7 @@ export async function GET() {
             id: u.user.id,
             name: userName,
             avatar: initials,
-            avatarUrl: u.user.image || null, // URL kept separate for <img> usage
+            avatarUrl: u.user.avatar || u.user.image || null, // URL kept separate for <img> usage
             role: (u.user as Record<string, unknown>).role || "client",
             online: false,
           };
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
         messages: { orderBy: { createdAt: "desc" as const }, take: 1 },
         users: {
           include: {
-            user: { select: { id: true, name: true, image: true, role: true } },
+            user: { select: { id: true, name: true, image: true, avatar: true, role: true } },
           },
         },
       },
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
           id: u.user.id,
           name: userName,
           avatar: initials,
-          avatarUrl: u.user.image || null,
+          avatarUrl: u.user.avatar || u.user.image || null,
           role: (u.user as Record<string, unknown>).role || contactRole || "client",
           online: false,
         };
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
       include: {
         users: {
           include: {
-            user: { select: { id: true, name: true, image: true, role: true } },
+            user: { select: { id: true, name: true, image: true, avatar: true, role: true } },
           },
         },
       },
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
         id: u.user.id,
         name: userName,
         avatar: initials,
-        avatarUrl: u.user.image || null,
+        avatarUrl: u.user.avatar || u.user.image || null,
         role: (u.user as Record<string, unknown>).role || contactRole || "client",
         online: false,
       };

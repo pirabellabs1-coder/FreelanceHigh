@@ -193,8 +193,8 @@ export function ServiceWizard({ role, editServiceId }: ServiceWizardProps) {
         </div>
 
         {/* Mobile step nav */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background-dark/95 backdrop-blur-xl border-t border-white/5 px-4 py-2">
-          <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background-dark/95 backdrop-blur-xl border-t border-white/5 px-3 py-2 safe-area-pb">
+          <div className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-none pb-1">
             {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((step) => {
               const isCompleted = completedSteps.includes(step);
               const isCurrent = currentStep === step;
@@ -206,7 +206,7 @@ export function ServiceWizard({ role, editServiceId }: ServiceWizardProps) {
                     if (canClick) setStep(step);
                   }}
                   className={cn(
-                    "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all",
+                    "min-w-[40px] h-10 rounded-full flex flex-col items-center justify-center text-xs font-bold flex-shrink-0 transition-all",
                     isCompleted && "bg-emerald-500/20 text-emerald-400",
                     isCurrent && !isCompleted && "bg-primary text-white",
                     !isCurrent && !isCompleted && "bg-white/5 text-slate-500"
@@ -225,7 +225,7 @@ export function ServiceWizard({ role, editServiceId }: ServiceWizardProps) {
 
         {/* Content area */}
         <div className="flex-1 min-w-0 pb-20 lg:pb-0">
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 sm:p-8">
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 sm:p-6 md:p-8">
             {/* Step title */}
             <h2 className="text-2xl font-bold mb-1">
               {STEP_TITLES[currentStep]}

@@ -170,7 +170,7 @@ export function StepTitleCategory({ role }: { role: string }) {
         </div>
 
         {/* Title rules */}
-        <div className="mt-3 grid grid-cols-2 gap-1.5">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           {[
             "Pas de prix dans le titre",
             "Pas de majuscules excessives",
@@ -311,10 +311,10 @@ export function StepTitleCategory({ role }: { role: string }) {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-end pt-4 border-t border-white/5">
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t border-white/5">
         <button
           onClick={handleNext}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-all"
+          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-all"
         >
           Enregistrer et suivant
           <span className="material-symbols-outlined text-lg">arrow_forward</span>

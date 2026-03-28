@@ -67,19 +67,22 @@ export default function AdminCategories() {
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     syncCategories();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const safeCategories = categories || [];
+
   const sorted = useMemo(() => {
-    let list = [...categories].sort((a, b) => a.order - b.order);
-    if (search) list = list.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+    let list = [...safeCategories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (search) list = list.filter(c => (c.name || "").toLowerCase().includes(search.toLowerCase()));
     return list;
-  }, [categories, search]);
+  }, [safeCategories, search]);
 
   function openAdd() {
-    setForm({ ...emptyForm, order: categories.length + 1 });
+    setForm({ ...emptyForm, order: safeCategories.length + 1 });
     setEditId(null);
     setModal("add");
   }
@@ -93,12 +96,13 @@ export default function AdminCategories() {
   async function handleSave() {
     if (!form.name.trim()) { addToast("warning", "Le nom est requis"); return; }
 
+    setSaving(true);
     try {
       if (modal === "add") {
         const res = await fetch("/api/admin/categories", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: form.name, slug: form.slug, icon: form.icon, color: form.color, description: form.description, order: form.order }),
+          body: JSON.stringify({ name: form.name, slug: form.slug || slugify(form.name), icon: form.icon, color: form.color, description: form.description, order: form.order }),
         });
         const data = await res.json();
         if (!res.ok) { addToast("error", data.error || "Erreur lors de la creation"); return; }
@@ -107,7 +111,7 @@ export default function AdminCategories() {
         const res = await fetch("/api/admin/categories", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editId, name: form.name, slug: form.slug, icon: form.icon, color: form.color, description: form.description, order: form.order, isActive: form.status === "actif" }),
+          body: JSON.stringify({ id: editId, name: form.name, slug: form.slug || slugify(form.name), icon: form.icon, color: form.color, description: form.description, order: form.order, isActive: form.status === "actif" }),
         });
         const data = await res.json();
         if (!res.ok) { addToast("error", data.error || "Erreur lors de la modification"); return; }
@@ -117,11 +121,13 @@ export default function AdminCategories() {
       setModal(null);
     } catch {
       addToast("error", "Erreur de connexion");
+    } finally {
+      setSaving(false);
     }
   }
 
   async function handleDelete(id: string) {
-    const cat = categories.find(c => c.id === id);
+    const cat = safeCategories.find(c => c.id === id);
     const linkedServices = cat?.servicesCount ?? 0;
     if (linkedServices > 0) {
       addToast("warning", `${linkedServices} service(s) utilisent cette catégorie. Réassignez-les d'abord.`);
@@ -129,6 +135,7 @@ export default function AdminCategories() {
       return;
     }
 
+    setSaving(true);
     try {
       const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -139,6 +146,8 @@ export default function AdminCategories() {
     } catch {
       addToast("error", "Erreur de connexion");
       setDeleteConfirm(null);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -158,8 +167,8 @@ export default function AdminCategories() {
     }
   }
 
-  const activeCount = categories.filter(c => c.status === "actif").length;
-  const totalServices = categories.reduce((s, c) => s + c.servicesCount, 0);
+  const activeCount = safeCategories.filter(c => c.status === "actif").length;
+  const totalServices = safeCategories.reduce((s, c) => s + (c.servicesCount ?? 0), 0);
 
   if (loading.categories) return <CategoriesSkeleton />;
 
@@ -171,7 +180,7 @@ export default function AdminCategories() {
             <span className="material-symbols-outlined text-primary">category</span>
             Catégories
           </h1>
-          <p className="text-slate-400 text-sm mt-1">{activeCount} actives sur {categories.length} — {totalServices} services au total</p>
+          <p className="text-slate-400 text-sm mt-1">{activeCount} actives sur {safeCategories.length} — {totalServices} services au total</p>
         </div>
         <button onClick={openAdd} className="px-4 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
           <span className="material-symbols-outlined text-lg">add</span>
@@ -214,7 +223,7 @@ export default function AdminCategories() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-xs font-mono text-slate-400">{cat.slug}</td>
-                  <td className="px-5 py-3 text-center text-sm font-bold text-white">{cat.servicesCount}</td>
+                  <td className="px-5 py-3 text-center text-sm font-bold text-white">{cat.servicesCount ?? 0}</td>
                   <td className="px-5 py-3 text-center">
                     <button onClick={() => toggleStatus(cat)} className={cn("text-xs font-semibold px-2.5 py-1 rounded-full cursor-pointer transition-colors", cat.status === "actif" ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" : "bg-slate-500/20 text-slate-400 hover:bg-slate-500/30")}>
                       {cat.status === "actif" ? "Actif" : "Inactif"}
@@ -317,7 +326,10 @@ export default function AdminCategories() {
 
             <div className="flex gap-3 mt-6">
               <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={handleSave} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">{modal === "add" ? "Créer" : "Enregistrer"}</button>
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {modal === "add" ? "Créer" : "Enregistrer"}
+              </button>
             </div>
           </div>
         </div>
@@ -336,7 +348,10 @@ export default function AdminCategories() {
             <p className="text-sm text-slate-400 mb-6">Cette action est irréversible. Les services associés devront être réassignés.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors">Annuler</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors">Supprimer</button>
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={saving} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

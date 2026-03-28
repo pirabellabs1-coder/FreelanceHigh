@@ -36,6 +36,7 @@ function ChartSkeleton() {
 // ── Pie chart colors ──
 const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
 const PIE_STATUS_LABELS: Record<string, string> = {
+  en_attente: "En attente",
   en_cours: "En cours",
   termine: "Terminé",
   livre: "Livré",
@@ -70,14 +71,14 @@ export default function ClientDashboard() {
 
   // Compute unique freelances from orders
   const uniqueFreelances = useMemo(() => {
-    const ids = new Set(store.orders.map((o) => o.freelanceId).filter(Boolean));
+    const ids = new Set((store.orders || []).map((o) => o.freelanceId).filter(Boolean));
     return ids.size;
   }, [store.orders]);
 
   // Build order status distribution for pie chart
   const orderStatusData = useMemo(() => {
     const counts: Record<string, number> = {};
-    store.orders.forEach((o) => {
+    (store.orders || []).forEach((o) => {
       const key = o.status || "autre";
       counts[key] = (counts[key] || 0) + 1;
     });
@@ -89,7 +90,7 @@ export default function ClientDashboard() {
 
   // Enrich projects with icons/colors
   const myProjects = useMemo(() => {
-    return store.projects
+    return (store.projects || [])
       .filter((p) => p.status === "actif")
       .slice(0, 5)
       .map((p) => ({
@@ -104,10 +105,10 @@ export default function ClientDashboard() {
   }, [store.projects]);
 
   // Recent orders for right panel
-  const recentOrders = useMemo(() => store.orders.slice(0, 5), [store.orders]);
+  const recentOrders = useMemo(() => (store.orders || []).slice(0, 5), [store.orders]);
 
   // KPI values
-  const activeProjectsCount = store.stats?.activeOrders || store.projects.filter((p) => p.status === "actif").length;
+  const activeProjectsCount = store.stats?.activeOrders || (store.projects || []).filter((p) => p.status === "actif").length;
   const totalSpent = store.stats?.summary?.totalEarned || 0;
   const activeOrdersCount = store.stats?.activeOrders || 0;
   const completedOrders = store.stats?.completedOrders || 0;
@@ -127,7 +128,7 @@ export default function ClientDashboard() {
     {
       label: "Dépenses Totales",
       value: `${totalSpent.toLocaleString("fr-FR")} €`,
-      variation: `${store.orders.length} commandes`,
+      variation: `${(store.orders || []).length} commandes`,
       variationColor: "text-emerald-400",
       icon: "payments",
       iconBg: "bg-orange-500/10",
@@ -177,7 +178,7 @@ export default function ClientDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {isLoadingStats
           ? Array.from({ length: 4 }).map((_, i) => <KPISkeleton key={i} />)
           : STATS.map((s) => (
@@ -435,11 +436,11 @@ export default function ClientDashboard() {
           </div>
 
           {/* Activité récente */}
-          {store.activities.length > 0 && (
+          {(store.activities || []).length > 0 && (
             <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
               <h3 className="text-base font-bold text-white mb-4">Activité Récente</h3>
               <div className="space-y-3">
-                {store.activities.slice(0, 6).map((a) => (
+                {(store.activities || []).slice(0, 6).map((a) => (
                   <Link key={a.id} href={a.link} className="flex items-center gap-3 group">
                     <div className="w-8 h-8 rounded-lg bg-border-dark flex items-center justify-center flex-shrink-0">
                       <span className={cn("material-symbols-outlined text-base", a.color)}>{a.icon}</span>

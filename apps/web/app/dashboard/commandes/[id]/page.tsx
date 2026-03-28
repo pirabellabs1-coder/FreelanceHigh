@@ -17,6 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
   revision: { label: "Révision", color: "bg-orange-500/10 text-orange-400", icon: "edit_note" },
   termine: { label: "Terminé", color: "bg-emerald-500/10 text-emerald-400", icon: "check_circle" },
   annule: { label: "Annulé", color: "bg-red-500/10 text-red-400", icon: "cancel" },
+  litige: { label: "Litige", color: "bg-red-500/10 text-red-400", icon: "gavel" },
 };
 
 const TIMELINE_ICONS: Record<string, { icon: string; color: string }> = {
@@ -95,7 +96,7 @@ export default function OrderDetailPage() {
       setFetchLoading(true);
       ordersApi.get(orderId)
         .then((data) => setLocalOrder(data))
-        .catch(() => {})
+        .catch((err) => console.error("[OrderDetail] Failed to fetch order:", err))
         .finally(() => setFetchLoading(false));
     }
   }, [storeOrder, orderId, fetchLoading, localOrder]);
@@ -105,7 +106,7 @@ export default function OrderDetailPage() {
     serviceTitle: localOrder.serviceTitle,
     category: localOrder.category,
     clientName: localOrder.clientName,
-    status: (localOrder.status || "en_attente").toLowerCase() as "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule",
+    status: (localOrder.status || "en_attente").toLowerCase() as "en_attente" | "en_cours" | "livre" | "revision" | "termine" | "annule" | "litige",
     amount: localOrder.amount,
     packageType: localOrder.packageType,
     deadline: localOrder.deadline,
@@ -115,10 +116,9 @@ export default function OrderDetailPage() {
     timeline: localOrder.timeline || [],
     files: localOrder.files || [],
     deliveredAt: localOrder.deliveredAt,
-  } : null) as typeof storeOrder;
+  } : null) as typeof storeOrder | null;
 
   const pageLoading = (isLoading && orders.length === 0) || fetchLoading;
-  const [activeTab, setActiveTab] = useState<"chat" | "fichiers">("chat");
   const [message, setMessage] = useState("");
   const [accepting, setAccepting] = useState(false);
   const [delivering, setDelivering] = useState(false);
@@ -193,7 +193,8 @@ export default function OrderDetailPage() {
   }
 
   const sc = STATUS_CONFIG[order.status];
-  const daysLeft = Math.ceil((new Date(order.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const deadlineMs = order.deadline ? new Date(order.deadline).getTime() : NaN;
+  const daysLeft = isNaN(deadlineMs) ? 0 : Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24));
 
   async function handleSendMessage() {
     if (!message.trim() || !order) return;
@@ -244,7 +245,7 @@ export default function OrderDetailPage() {
   async function handleDeliver() {
     if (!order) return;
     setDelivering(true);
-    const result = await apiDeliverOrder(order.id, "Livraison effectuee", order.files.filter((f) => f.uploadedBy === "freelance"));
+    const result = await apiDeliverOrder(order.id, "Livraison effectuee", (order.files || []).filter((f) => f.uploadedBy === "freelance"));
     setDelivering(false);
     setShowDeliverModal(false);
     if (result.success) {
@@ -307,19 +308,19 @@ export default function OrderDetailPage() {
       />
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-primary/10 transition-colors">
+      <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-primary/10 transition-colors flex-shrink-0 mt-0.5 sm:mt-0">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-extrabold">{order.serviceTitle}</h2>
-            <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold", sc?.color)}>
-              <span className="material-symbols-outlined text-sm">{sc?.icon}</span>
-              {sc?.label}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+            <h2 className="text-lg sm:text-xl font-extrabold truncate">{order.serviceTitle}</h2>
+            <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold w-fit flex-shrink-0", sc?.color || "bg-slate-500/10 text-slate-400")}>
+              <span className="material-symbols-outlined text-sm">{sc?.icon || "help"}</span>
+              {sc?.label || order.status}
             </span>
           </div>
-          <p className="text-sm text-slate-400 mt-0.5">{order.id} · {order.clientName} · {order.category}</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5 truncate">{order.id} · {order.clientName} · {order.category}</p>
         </div>
       </div>
 
@@ -327,14 +328,14 @@ export default function OrderDetailPage() {
       {/* ETAPES D'ACTION — Ligne de progression avec boutons d'action */}
       {/* TOUJOURS VISIBLE — impossible a manquer                       */}
       {/* ════════════════════════════════════════════════════════════════ */}
-      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-5 space-y-4">
+      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-3 sm:p-5 space-y-4">
         <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
           <span className="material-symbols-outlined text-primary">timeline</span>
           Actions de la commande
         </h3>
 
-        {/* Step line — spread evenly across full width */}
-        <div className="flex items-start justify-between overflow-x-auto pb-2">
+        {/* Step line — spread evenly across full width, scrollable on mobile */}
+        <div className="flex items-start justify-between overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
           {/* Step 1: Accepter */}
           {(() => {
             const done = ["en_cours", "livre", "revision", "termine"].includes(order.status);
@@ -470,6 +471,12 @@ export default function OrderDetailPage() {
             Commande annulee
           </div>
         )}
+        {order.status === "litige" && (
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg text-red-400 text-sm font-bold">
+            <span className="material-symbols-outlined">gavel</span>
+            Litige en cours — les fonds sont geles en attendant la resolution
+          </div>
+        )}
       </div>
 
       {/* Countdown Timers */}
@@ -496,38 +503,38 @@ export default function OrderDetailPage() {
       )}
 
       {/* Info Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-semibold">Montant</p>
-          <p className="text-lg font-bold mt-1">€{(order.amount ?? 0).toLocaleString("fr-FR")}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Montant</p>
+          <p className="text-base sm:text-lg font-bold mt-1">€{(order.amount ?? 0).toLocaleString("fr-FR")}</p>
         </div>
-        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-semibold">Forfait</p>
-          <p className="text-lg font-bold mt-1 capitalize">{order.packageType}</p>
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Forfait</p>
+          <p className="text-base sm:text-lg font-bold mt-1 capitalize">{order.packageType}</p>
         </div>
-        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-semibold">Deadline</p>
-          <p className={cn("text-lg font-bold mt-1", daysLeft <= 2 ? "text-red-400" : "")}>
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Deadline</p>
+          <p className={cn("text-base sm:text-lg font-bold mt-1", daysLeft <= 2 ? "text-red-400" : "")}>
             {daysLeft > 0 ? `${daysLeft}j` : "Expire"}
           </p>
         </div>
-        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-semibold">Progression</p>
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Progression</p>
           {order.status === "en_cours" || order.status === "revision" ? (
-            <ProgressSlider orderId={order.id} currentProgress={order.progress} />
+            <ProgressSlider orderId={order.id} currentProgress={order.progress ?? 0} />
           ) : (
-            <p className="text-lg font-bold mt-1 text-primary">{order.progress}%</p>
+            <p className="text-base sm:text-lg font-bold mt-1 text-primary">{order.progress ?? 0}%</p>
           )}
         </div>
-        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-semibold">Revisions</p>
-          <p className="text-lg font-bold mt-1">{order.revisionsLeft} restantes</p>
+        <div className="bg-background-dark/50 border border-border-dark rounded-xl p-3 sm:p-4 col-span-2 sm:col-span-1">
+          <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Revisions</p>
+          <p className="text-base sm:text-lg font-bold mt-1">{order.revisionsLeft ?? 0} restantes</p>
         </div>
       </div>
 
       {/* Progress bar */}
       <div className="w-full h-2 bg-border-dark rounded-full overflow-hidden">
-        <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${order.progress}%` }} />
+        <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${order.progress ?? 0}%` }} />
       </div>
 
       {/* ================================================================ */}
@@ -542,22 +549,22 @@ export default function OrderDetailPage() {
       {/* ================================================================ */}
       {/* HISTORIQUE DÉTAILLÉ (événements)                                  */}
       {/* ================================================================ */}
-      {order.timeline.length > 0 && (
+      {(order.timeline?.length ?? 0) > 0 && (
         <details className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden group/details">
           <summary className="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">history</span>
               <h3 className="text-sm font-bold">Historique détaillé</h3>
-              <span className="text-xs text-slate-500 bg-border-dark px-1.5 py-0.5 rounded">{order.timeline.length}</span>
+              <span className="text-xs text-slate-500 bg-border-dark px-1.5 py-0.5 rounded">{order.timeline?.length ?? 0}</span>
             </div>
             <span className="material-symbols-outlined text-slate-500 transition-transform group-open/details:rotate-180">expand_more</span>
           </summary>
           <div className="px-5 pb-5 space-y-0">
-            {order.timeline.map((event, i) => {
+            {(order.timeline || []).map((event, i) => {
               const tc = TIMELINE_ICONS[event.type] ?? { icon: "circle", color: "text-slate-400" };
-              const isLast = i === order.timeline.length - 1;
+              const isLast = i === (order.timeline || []).length - 1;
               return (
-                <div key={event.id} className="flex gap-3">
+                <div key={event.id || `timeline-${i}`} className="flex gap-3">
                   <div className="flex flex-col items-center flex-shrink-0">
                     <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
                       <span className={cn("material-symbols-outlined text-lg", tc.color)}>{tc.icon}</span>
@@ -565,9 +572,9 @@ export default function OrderDetailPage() {
                     {!isLast && <div className="w-0.5 flex-1 bg-border-dark my-1" />}
                   </div>
                   <div className={cn("pb-4", isLast && "pb-0")}>
-                    <p className="font-bold text-sm text-slate-200">{event.title}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{event.description}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(event.timestamp)}</p>
+                    <p className="font-bold text-sm text-slate-200">{event.title || "Evenement"}</p>
+                    {event.description && <p className="text-xs text-slate-400 mt-0.5">{event.description}</p>}
+                    {event.timestamp && <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(event.timestamp)}</p>}
                   </div>
                 </div>
               );
@@ -577,40 +584,94 @@ export default function OrderDetailPage() {
       )}
 
       {/* Secondary actions */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-3">
         {["en_cours", "en_attente"].includes(order.status) && (
           <button onClick={() => setCancelModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 border border-red-500/30 text-red-400 font-semibold rounded-lg text-sm hover:bg-red-500/10">
+            className="flex items-center justify-center gap-2 px-4 py-2.5 border border-red-500/30 text-red-400 font-semibold rounded-lg text-sm hover:bg-red-500/10 w-full sm:w-auto">
             <span className="material-symbols-outlined text-lg">cancel</span> Annuler la commande
           </button>
         )}
         <button onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2.5 border border-border-dark text-slate-300 font-semibold rounded-lg text-sm hover:border-primary/50">
+          className="flex items-center justify-center gap-2 px-4 py-2.5 border border-border-dark text-slate-300 font-semibold rounded-lg text-sm hover:border-primary/50 w-full sm:w-auto">
           <span className="material-symbols-outlined text-lg">attach_file</span> Joindre un fichier
         </button>
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleFileUpload(e.target.files)} />
+      </div>
+
+      {/* Chat / Messages */}
+      <div className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden">
+        <div className="flex items-center gap-2 p-4 border-b border-border-dark">
+          <span className="material-symbols-outlined text-primary text-lg">chat</span>
+          <h3 className="text-sm font-bold">Messages ({(order.messages || []).length})</h3>
+        </div>
+        <div className="max-h-80 overflow-y-auto p-4 space-y-3">
+          {(order.messages || []).length === 0 && (
+            <div className="text-center py-8">
+              <span className="material-symbols-outlined text-3xl text-slate-600 mb-2">forum</span>
+              <p className="text-slate-500 text-sm">Aucun message pour le moment.</p>
+            </div>
+          )}
+          {(order.messages || []).map((msg, i) => (
+            <div key={msg.id || `msg-${i}`} className={cn("flex", msg.sender === "freelance" ? "justify-end" : "justify-start")}>
+              <div className={cn(
+                "max-w-[75%] rounded-xl px-4 py-2.5",
+                msg.type === "system" ? "bg-amber-500/10 text-amber-300 text-xs italic w-full max-w-full text-center" :
+                msg.sender === "freelance" ? "bg-primary/20 text-slate-200" : "bg-white/5 text-slate-300"
+              )}>
+                {msg.type !== "system" && (
+                  <p className="text-[10px] font-bold text-slate-500 mb-0.5">{msg.senderName || msg.sender}</p>
+                )}
+                <p className="text-sm">{msg.content}</p>
+                {msg.timestamp && (
+                  <p className="text-[10px] text-slate-500 mt-1">{formatDate(msg.timestamp)}</p>
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+        {/* Message input */}
+        {!["termine", "annule"].includes(order.status) && (
+          <div className="p-4 border-t border-border-dark flex gap-2">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+              placeholder="Ecrire un message..."
+              className="flex-1 bg-neutral-dark border border-border-dark rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-1 focus:ring-primary placeholder:text-slate-500"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!message.trim()}
+              className="px-4 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-lg">send</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Fichiers */}
       <div className="space-y-3">
         <h3 className="text-sm font-bold flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-lg">folder</span>
-          Fichiers ({order.files.length})
+          Fichiers ({(order.files || []).length})
         </h3>
-        {order.files.length === 0 && (
+        {(order.files || []).length === 0 && (
           <div className="bg-background-dark/50 border border-border-dark rounded-xl p-12 text-center">
             <span className="material-symbols-outlined text-3xl text-slate-600 mb-2">folder_open</span>
             <p className="text-slate-500">Aucun fichier pour cette commande.</p>
           </div>
         )}
-        {order.files.map((file) => (
-          <div key={file.id} className="flex items-center gap-4 bg-background-dark/50 border border-border-dark rounded-xl p-4 hover:border-primary/30 transition-all">
+        {(order.files || []).map((file, i) => (
+          <div key={file.id || `file-${i}`} className="flex items-center gap-4 bg-background-dark/50 border border-border-dark rounded-xl p-4 hover:border-primary/30 transition-all">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined">description</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{file.name}</p>
-              <p className="text-xs text-slate-400">{file.size} · {file.uploadedBy === "freelance" ? "Vous" : order.clientName} · {formatDate(file.uploadedAt)}</p>
+              <p className="text-xs text-slate-400">{file.size} · {file.uploadedBy === "freelance" ? "Vous" : order.clientName}{file.uploadedAt ? ` · ${formatDate(file.uploadedAt)}` : ""}</p>
             </div>
             <button className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors" onClick={() => addToast("info", `Telechargement de ${file.name}`)}>
               <span className="material-symbols-outlined">download</span>

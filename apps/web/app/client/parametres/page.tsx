@@ -5,6 +5,7 @@ import { useClientStore } from "@/store/client";
 import { profileApi } from "@/lib/api-client";
 import { useToastStore } from "@/store/toast";
 import { useChangeLocale, useLocaleStore } from "@/store/locale";
+import { useCurrencyStore, CURRENCIES } from "@/store/currency";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_ITEMS = [
@@ -45,8 +46,8 @@ export default function ClientSettings() {
     twoFactor: false,
   });
 
-  const [language, setLanguage] = useState("fr");
-  const [currency, setCurrency] = useState("FCFA");
+  const { currency, setCurrency: setGlobalCurrency } = useCurrencyStore();
+  const [language, setLanguage] = useState(currentLocale);
 
   const [notifications, setNotifications] = useState(NOTIFICATION_ITEMS_DEFAULT);
 
@@ -72,13 +73,14 @@ export default function ClientSettings() {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, [type]: !n[type] } : n));
   }
 
-  async function saveSection(section: string, data: Record<string, unknown>) {
+  async function saveSection(section: string, data: Record<string, unknown>): Promise<boolean> {
     const success = await updateSettings(data);
     if (success) {
       addToast("success", `${section} mis à jour`);
     } else {
       addToast("error", `Erreur lors de la mise à jour de ${section.toLowerCase()}`);
     }
+    return success;
   }
 
   return (
@@ -231,7 +233,7 @@ export default function ClientSettings() {
                   <span className="material-symbols-outlined text-primary">lock</span>
                   Sécurité du compte
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Mot de passe actuel</label>
                     <input
@@ -252,14 +254,36 @@ export default function ClientSettings() {
                       className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1.5">Confirmer le mot de passe</label>
+                    <input
+                      type="password"
+                      value={securityForm.confirmPassword}
+                      onChange={(e) => setSecurityForm((s) => ({ ...s, confirmPassword: e.target.value }))}
+                      placeholder="--------"
+                      className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
                   <div className="flex items-end">
                     <button
-                      onClick={() => {
-                        saveSection("Sécurité", {
+                      onClick={async () => {
+                        if (!securityForm.currentPassword || !securityForm.newPassword || !securityForm.confirmPassword) {
+                          addToast("error", "Tous les champs sont requis");
+                          return;
+                        }
+                        if (securityForm.newPassword !== securityForm.confirmPassword) {
+                          addToast("error", "Les mots de passe ne correspondent pas");
+                          return;
+                        }
+                        if (securityForm.newPassword.length < 8) {
+                          addToast("error", "Le mot de passe doit faire au moins 8 caractères");
+                          return;
+                        }
+                        const ok = await saveSection("Sécurité", {
                           currentPassword: securityForm.currentPassword,
                           newPassword: securityForm.newPassword,
                         });
-                        setSecurityForm((s) => ({ ...s, currentPassword: "", newPassword: "" }));
+                        setSecurityForm((s) => ({ ...s, currentPassword: "", newPassword: "", confirmPassword: "" }));
                       }}
                       className="w-full px-4 py-2.5 bg-primary/10 text-primary text-sm font-bold rounded-xl hover:bg-primary hover:text-background-dark transition-all"
                     >
@@ -282,7 +306,7 @@ export default function ClientSettings() {
                       }}
                       className={cn("w-12 h-6 rounded-full transition-colors relative flex-shrink-0", securityForm.twoFactor ? "bg-primary" : "bg-slate-600")}
                     >
-                      <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", securityForm.twoFactor ? "left-6" : "left-0.5")} />
+                      <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", securityForm.twoFactor ? "left-[26px]" : "left-0.5")} />
                     </button>
                   </div>
                 </div>
@@ -290,30 +314,40 @@ export default function ClientSettings() {
                 <div className="pt-5 border-t border-border-dark">
                   <p className="font-bold text-white text-sm mb-3">Sessions actives</p>
                   <div className="space-y-2">
-                    {[
-                      { device: "Chrome - Windows", location: "Dakar, Sénégal", time: "Actuellement actif", current: true },
-                      { device: "Safari - iPhone", location: "Dakar, Sénégal", time: "Il y a 2 heures", current: false },
-                    ].map((s, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-background-dark rounded-lg border border-border-dark">
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-slate-400">{s.device.includes("iPhone") ? "phone_iphone" : "laptop"}</span>
-                          <div>
-                            <p className="text-sm font-medium text-white">{s.device}</p>
-                            <p className="text-xs text-slate-500">{s.location} &middot; {s.time}</p>
+                    {(() => {
+                      const sessionItems = [
+                        { device: "Chrome - Windows", location: "Dakar, Sénégal", time: "Actuellement actif", current: true },
+                        { device: "Safari - iPhone", location: "Dakar, Sénégal", time: "Il y a 2 heures", current: false },
+                      ];
+                      if (sessionItems.length === 0) {
+                        return (
+                          <div className="text-center py-6 text-slate-500 text-sm">
+                            Aucune session active trouvée.
                           </div>
+                        );
+                      }
+                      return sessionItems.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-background-dark rounded-lg border border-border-dark">
+                          <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-slate-400">{s.device.includes("iPhone") ? "phone_iphone" : "laptop"}</span>
+                            <div>
+                              <p className="text-sm font-medium text-white">{s.device}</p>
+                              <p className="text-xs text-slate-500">{s.location} &middot; {s.time}</p>
+                            </div>
+                          </div>
+                          {s.current ? (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Session actuelle</span>
+                          ) : (
+                            <button
+                              onClick={() => addToast("success", "Session révoquée")}
+                              className="text-xs text-red-400 hover:text-red-300 font-semibold"
+                            >
+                              Révoquer
+                            </button>
+                          )}
                         </div>
-                        {s.current ? (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Session actuelle</span>
-                        ) : (
-                          <button
-                            onClick={() => addToast("success", "Session révoquée")}
-                            className="text-xs text-red-400 hover:text-red-300 font-semibold"
-                          >
-                            Révoquer
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>
@@ -406,14 +440,10 @@ export default function ClientSettings() {
                   </label>
                   <select
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                    onChange={(e) => { setGlobalCurrency(e.target.value as typeof currency); addToast("success", "Devise modifiée"); }}
                     className="w-full px-4 py-3 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="FCFA">FCFA (Franc CFA)</option>
-                    <option value="EUR">EUR (Euro)</option>
-                    <option value="USD">USD (US Dollar)</option>
-                    <option value="GBP">GBP (Livre sterling)</option>
-                    <option value="MAD">MAD (Dirham marocain)</option>
+                    {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.symbol} - {c.label}</option>)}
                   </select>
                   <p className="text-[11px] text-slate-500 mt-2">Note : Les conversions sont approximatives et basées sur le taux du marché en temps réel.</p>
                 </div>
@@ -424,6 +454,32 @@ export default function ClientSettings() {
               >
                 Enregistrer les préférences
               </button>
+
+              {/* Theme */}
+              <div className="pt-5 border-t border-border-dark">
+                <label className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
+                  <span className="material-symbols-outlined text-sm">palette</span>
+                  Thème de l&apos;interface
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { code: "sombre" as const, label: "Sombre", icon: "dark_mode" },
+                    { code: "clair" as const, label: "Clair", icon: "light_mode" },
+                  ].map((theme) => (
+                    <button
+                      key={theme.code}
+                      onClick={() => { saveSection("Thème", { theme: theme.code }); addToast("success", `Thème: ${theme.label}`); }}
+                      className={cn(
+                        "p-4 rounded-xl border-2 text-center transition-all flex items-center justify-center gap-2",
+                        "border-border-dark hover:border-primary/40 text-slate-400"
+                      )}
+                    >
+                      <span className="material-symbols-outlined text-lg">{theme.icon}</span>
+                      <span className="font-bold text-sm">{theme.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -437,29 +493,36 @@ export default function ClientSettings() {
               <p className="text-sm text-slate-400">Choisissez comment recevoir vos notifications</p>
 
               <div className="space-y-1">
-                <div className="flex items-center justify-end gap-10 pr-4 pb-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Email</span>
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Push</span>
+                {/* Header row - hidden on mobile */}
+                <div className="hidden sm:flex items-center justify-end gap-6 pr-4 pb-2">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold w-12 text-center">Email</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold w-12 text-center">Push</span>
                 </div>
                 {notifications.map((n) => (
-                  <div key={n.id} className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-background-dark/30 transition-colors">
+                  <div key={n.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-lg hover:bg-background-dark/30 transition-colors gap-2">
                     <div>
                       <p className="text-sm font-medium text-white">{n.label}</p>
                       <p className="text-xs text-slate-500">{n.desc}</p>
                     </div>
-                    <div className="flex items-center gap-10">
-                      <button
-                        onClick={() => toggleNotif(n.id, "email")}
-                        className={cn("w-10 h-5 rounded-full transition-colors relative flex-shrink-0", n.email ? "bg-primary" : "bg-slate-600")}
-                      >
-                        <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform", n.email ? "left-5.5" : "left-0.5")} />
-                      </button>
-                      <button
-                        onClick={() => toggleNotif(n.id, "push")}
-                        className={cn("w-10 h-5 rounded-full transition-colors relative flex-shrink-0", n.push ? "bg-primary" : "bg-slate-600")}
-                      >
-                        <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform", n.push ? "left-5.5" : "left-0.5")} />
-                      </button>
+                    <div className="flex items-center gap-4 sm:gap-6">
+                      <label className="flex sm:w-12 items-center sm:justify-center gap-1.5 cursor-pointer">
+                        <button
+                          onClick={() => toggleNotif(n.id, "email")}
+                          className={cn("w-10 h-5 rounded-full transition-colors relative flex-shrink-0", n.email ? "bg-primary" : "bg-slate-600")}
+                        >
+                          <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform", n.email ? "left-[22px]" : "left-0.5")} />
+                        </button>
+                        <span className="text-[10px] text-slate-500 uppercase sm:hidden">Email</span>
+                      </label>
+                      <label className="flex sm:w-12 items-center sm:justify-center gap-1.5 cursor-pointer">
+                        <button
+                          onClick={() => toggleNotif(n.id, "push")}
+                          className={cn("w-10 h-5 rounded-full transition-colors relative flex-shrink-0", n.push ? "bg-primary" : "bg-slate-600")}
+                        >
+                          <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform", n.push ? "left-[22px]" : "left-0.5")} />
+                        </button>
+                        <span className="text-[10px] text-slate-500 uppercase sm:hidden">Push</span>
+                      </label>
                     </div>
                   </div>
                 ))}

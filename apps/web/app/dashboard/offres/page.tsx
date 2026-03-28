@@ -72,7 +72,7 @@ export default function OffresPage() {
       const res = await fetch("/api/offres");
       if (res.ok) {
         const data = await res.json();
-        setOffres(data.offres);
+        setOffres(data.offres || data.offers || []);
       }
     } catch (err) {
       console.error("Erreur chargement offres:", err);
@@ -306,7 +306,7 @@ export default function OffresPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 bg-neutral-dark rounded-xl px-3 py-2 flex-1 max-w-xs ml-auto">
+          <div className="flex items-center gap-2 bg-neutral-dark rounded-xl px-3 py-2 flex-1 sm:max-w-xs sm:ml-auto">
             <span className="material-symbols-outlined text-base leading-none text-slate-500">search</span>
             <input
               value={search}
@@ -365,17 +365,17 @@ export default function OffresPage() {
 
                       <p className="text-xs text-slate-500 line-clamp-2 mb-3">{o.description}</p>
 
-                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <div className="flex items-center gap-2 sm:gap-4 text-xs text-slate-500 flex-wrap">
                         <span>Montant : <span className="font-black text-slate-100">€{(o.amount ?? 0).toLocaleString("fr-FR")}</span></span>
-                        <span>·</span>
+                        <span className="hidden sm:inline">·</span>
                         <span>Délai : <span className="font-semibold text-slate-300">{o.delay}</span></span>
-                        <span>·</span>
+                        <span className="hidden sm:inline">·</span>
                         <span>{o.revisions} révisions</span>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => handleDuplicate(o)}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"

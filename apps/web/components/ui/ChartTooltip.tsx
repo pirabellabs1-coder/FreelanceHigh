@@ -42,7 +42,7 @@ export function ChartTooltip({
       {payload.map((entry, i) => {
         const displayValue = formatter
           ? formatter(entry.value ?? 0, entry.name ?? entry.dataKey ?? "")
-          : entry.value?.toLocaleString("fr-FR");
+          : (entry.value ?? 0).toLocaleString("fr-FR");
         return (
           <div key={i} className="flex items-center gap-2">
             <span

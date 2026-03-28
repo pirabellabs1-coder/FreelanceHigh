@@ -294,12 +294,12 @@ export function ChatPanel({
     );
   }
 
-  const otherParticipants = conversation.participants.filter((p) => p.id !== currentUserId);
+  const otherParticipants = (conversation.participants || []).filter((p) => p.id !== currentUserId);
   // Sanitize display name — never show technical IDs
   const rawName = conversation.title || otherParticipants.map((p) => p.name).join(", ") || "";
   const displayName = sanitizeDisplay(rawName, otherParticipants.length > 0 ? "Utilisateur" : "Conversation");
   const isOnline = otherParticipants.some((p) => p.online);
-  const filteredMessages = conversation.messages;
+  const filteredMessages = conversation.messages || [];
 
   return (
     <div
@@ -400,7 +400,7 @@ export function ChatPanel({
             // Render offer messages as OfferBubble
             if (msg.type === "offer" && msg.offerData) {
               return (
-                <div key={msg.id} className={cn("flex flex-col gap-1 px-2 md:px-4 my-3", isOwn ? "items-end" : "items-start")}>
+                <div key={msg.id} className={cn("flex flex-col gap-1 px-1 md:px-4 my-3 max-w-full overflow-hidden", isOwn ? "items-end" : "items-start")}>
                   {showSenderInfo && <p className="text-xs font-semibold text-slate-500 mb-1">{msg.senderName}</p>}
                   <OfferBubble
                     offer={msg.offerData}
@@ -467,7 +467,7 @@ export function ChatPanel({
       {showOfferForm && conversation && (
         <div className="border-t border-border-dark p-3 md:p-4 bg-background-dark/80 backdrop-blur-sm">
           <InlineOfferForm
-            recipientName={conversation.participants.find((p) => p.id !== currentUserId)?.name || "le destinataire"}
+            recipientName={(conversation.participants || []).find((p) => p.id !== currentUserId)?.name || "le destinataire"}
             conversationId={conversation.id}
             onSubmit={async (data) => {
               if (onSendOffer) {

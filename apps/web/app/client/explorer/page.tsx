@@ -93,7 +93,7 @@ export default function ClientExplorer() {
       if (search) params.q = search;
       if (category) params.category = category;
       if (sortBy !== "pertinence") params.sort = sortBy;
-      const { services: result } = await feedApi.list(params);
+      const { services: result = [] } = await feedApi.list(params);
       setServices(result);
     } catch {
       setError("Impossible de charger les services. Veuillez réessayer.");
@@ -138,7 +138,7 @@ export default function ClientExplorer() {
         existing.serviceCount++;
         existing.rating = Math.max(existing.rating, s.rating);
         existing.ratingCount += s.ratingCount;
-        for (const tag of s.tags.slice(0, 3)) {
+        for (const tag of (s.tags || []).slice(0, 3)) {
           if (!existing.skills.includes(tag)) existing.skills.push(tag);
         }
       } else {
@@ -150,7 +150,7 @@ export default function ClientExplorer() {
           rating: s.rating,
           ratingCount: s.ratingCount,
           serviceCount: 1,
-          skills: s.tags.slice(0, 4),
+          skills: (s.tags || []).slice(0, 4),
           badges: s.vendorBadges || [],
         });
       }
@@ -407,7 +407,7 @@ export default function ClientExplorer() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {s.tags.slice(0, 3).map(t => (
+                        {(s.tags || []).slice(0, 3).map(t => (
                           <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
                         ))}
                       </div>
@@ -479,7 +479,7 @@ export default function ClientExplorer() {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex gap-1">
-                          {s.tags.slice(0, 3).map(t => (
+                          {(s.tags || []).slice(0, 3).map(t => (
                             <span key={t} className="text-[10px] bg-border-dark text-slate-400 px-2 py-0.5 rounded-full">{t}</span>
                           ))}
                         </div>

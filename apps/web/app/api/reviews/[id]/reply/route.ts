@@ -79,8 +79,25 @@ export async function POST(
     const updated = await prisma.review.update({
       where: { id },
       data: { response: reply.trim() },
-      include: { author: true, service: true },
+      include: {
+        author: { select: { name: true, image: true, avatar: true, country: true, countryFlag: true } },
+        service: { select: { title: true } },
+      },
     });
+
+    // Notify the review author that the freelance responded
+    await prisma.notification.create({
+      data: {
+        userId: review.authorId,
+        title: "Reponse a votre avis",
+        message: `Le freelance a repondu a votre avis.`,
+        type: "REVIEW",
+        read: false,
+        link: `/client/avis`,
+      },
+    }).catch(() => {});
+
+    const author = updated.author as { name?: string; image?: string; avatar?: string; country?: string; countryFlag?: string } | null;
 
     return NextResponse.json({
       review: {
@@ -88,10 +105,11 @@ export async function POST(
         orderId: updated.orderId,
         serviceId: updated.serviceId,
         clientId: updated.authorId,
-        clientName: (updated as Record<string, unknown>).author
-          ? ((updated as Record<string, unknown>).author as Record<string, unknown>).name || ""
-          : "",
+        clientName: author?.name || "",
+        clientAvatar: author?.avatar || author?.image || "",
+        clientCountry: author?.countryFlag || author?.country || "",
         freelanceId: updated.targetId,
+        serviceTitle: (updated.service as { title?: string } | null)?.title || "",
         rating: updated.rating,
         qualite: updated.quality ?? 0,
         communication: updated.communication ?? 0,
@@ -99,6 +117,8 @@ export async function POST(
         comment: updated.comment || "",
         reply: updated.response,
         repliedAt: updated.updatedAt.toISOString(),
+        helpful: 0,
+        reported: false,
         createdAt: updated.createdAt.toISOString(),
       },
     });

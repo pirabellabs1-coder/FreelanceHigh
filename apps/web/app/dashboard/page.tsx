@@ -45,29 +45,32 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     // Use API stats if available, fall back to local calculation
+    const safeConversations = conversations ?? [];
     if (apiStats) {
-      const unreadMessages = conversations.reduce((sum, c) => sum + c.unread, 0);
-      const completedOrders = apiStats.completedOrders;
-      const totalOrders = apiStats.totalOrders;
+      const unreadMessages = safeConversations.reduce((sum, c) => sum + (c.unread ?? 0), 0);
+      const completedOrders = apiStats.completedOrders ?? 0;
+      const totalOrders = apiStats.totalOrders ?? 0;
       const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0;
       return {
-        totalRevenue: apiStats.summary.totalEarned,
-        pendingRevenue: apiStats.summary.pending,
-        activeOrders: apiStats.activeOrders,
+        totalRevenue: apiStats.summary?.totalEarned ?? 0,
+        pendingRevenue: apiStats.summary?.pending ?? 0,
+        activeOrders: apiStats.activeOrders ?? 0,
         unreadMessages,
         completionRate,
       };
     }
-    const totalRevenue = transactions
+    const safeTransactions = transactions ?? [];
+    const safeOrders = orders ?? [];
+    const totalRevenue = safeTransactions
       .filter((t) => t.type === "vente" && t.status === "complete")
-      .reduce((sum, t) => sum + t.amount, 0);
-    const pendingRevenue = transactions
+      .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+    const pendingRevenue = safeTransactions
       .filter((t) => t.type === "vente" && t.status === "en_attente")
-      .reduce((sum, t) => sum + t.amount, 0);
-    const activeOrders = orders.filter((o) => ["en_cours", "en_attente", "revision"].includes(o.status)).length;
-    const unreadMessages = conversations.reduce((sum, c) => sum + c.unread, 0);
-    const completedOrders = orders.filter((o) => o.status === "termine").length;
-    const totalOrders = orders.filter((o) => o.status !== "annule").length;
+      .reduce((sum, t) => sum + (t.amount ?? 0), 0);
+    const activeOrders = safeOrders.filter((o) => ["en_cours", "en_attente", "revision"].includes(o.status)).length;
+    const unreadMessages = safeConversations.reduce((sum, c) => sum + (c.unread ?? 0), 0);
+    const completedOrders = safeOrders.filter((o) => o.status === "termine").length;
+    const totalOrders = safeOrders.filter((o) => o.status !== "annule").length;
     const completionRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0;
     return { totalRevenue, pendingRevenue, activeOrders, unreadMessages, completionRate };
   }, [transactions, orders, conversations, apiStats]);
@@ -85,18 +88,19 @@ export default function DashboardPage() {
   const trendStyle = getTrendStyle(revenueTrend);
 
   const recentOrders = useMemo(
-    () => [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5),
+    () => [...(orders ?? [])].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")).slice(0, 5),
     [orders]
   );
 
   const conversionData = useMemo(() => {
-    const totalViews = services.reduce((s, sv) => s + sv.views, 0);
-    const totalClicks = services.reduce((s, sv) => s + sv.clicks, 0);
-    const totalOrders = services.reduce((s, sv) => s + sv.orders, 0);
+    const safeServices = services ?? [];
+    const totalViews = safeServices.reduce((s, sv) => s + (sv.views ?? 0), 0);
+    const totalClicks = safeServices.reduce((s, sv) => s + (sv.clicks ?? 0), 0);
+    const totalOrders = safeServices.reduce((s, sv) => s + (sv.orders ?? 0), 0);
     return [
       { name: "Commandes", value: totalOrders, color: "#0e7c66" },
-      { name: "Clics", value: totalClicks - totalOrders, color: "#f2b705" },
-      { name: "Vues restantes", value: totalViews - totalClicks, color: "#293835" },
+      { name: "Clics", value: Math.max(0, totalClicks - totalOrders), color: "#f2b705" },
+      { name: "Vues restantes", value: Math.max(0, totalViews - totalClicks), color: "#293835" },
     ];
   }, [services]);
 
@@ -104,7 +108,7 @@ export default function DashboardPage() {
   const weeklyOrders = apiStats?.weeklyOrders ?? [];
 
   function handleExport() {
-    const csv = ["Mois,Revenus,Commandes", ...monthlyRevenue.map((r) => `${r.month},${r.revenue},${r.orders}`)].join("\n");
+    const csv = ["Mois,Revenus,Commandes", ...monthlyRevenue.map((r) => `${r.month ?? ""},${r.revenue ?? 0},${r.orders ?? 0}`)].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -134,7 +138,7 @@ export default function DashboardPage() {
     return (
       <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8 animate-pulse">
         <div className="h-10 bg-slate-200 dark:bg-neutral-dark rounded-lg w-1/3" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6 h-32" />
           ))}
@@ -155,17 +159,17 @@ export default function DashboardPage() {
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Aperçu du Tableau de bord</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Bienvenue, gérez vos revenus et vos projets en un coup d&apos;œil.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full sm:w-auto">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 rounded-lg text-sm font-semibold hover:shadow-sm transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 rounded-lg text-sm font-semibold hover:shadow-sm transition-all"
           >
             <span className="material-symbols-outlined text-lg">download</span>
             Exporter
           </button>
           <Link
             href="/dashboard/services/creer"
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:bg-primary/90 transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:bg-primary/90 transition-all"
           >
             <span className="material-symbols-outlined text-lg">add</span>
             Nouveau Service
@@ -174,7 +178,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <div className="bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -229,9 +233,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold leading-tight">Revenus mensuels</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <AnimatedCounter value={stats.totalRevenue} prefix="€" className="text-3xl font-black" />
-                <span className={`text-sm font-bold ${trendStyle.color}`}>{formatTrend(revenueTrend)} vs mois dernier</span>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <AnimatedCounter value={stats.totalRevenue} prefix="€" className="text-xl sm:text-3xl font-black" />
+                <span className={`text-xs sm:text-sm font-bold ${trendStyle.color}`}>{formatTrend(revenueTrend)} vs mois dernier</span>
               </div>
             </div>
             <select
@@ -248,7 +252,7 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#293835" />
               <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
               <YAxis stroke="#64748b" fontSize={12} tickFormatter={(v) => `€${v}`} />
-              <Tooltip content={<ChartTooltip formatter={(v) => `€${v.toLocaleString("fr-FR")}`} />} />
+              <Tooltip content={<ChartTooltip formatter={(v) => `€${(v ?? 0).toLocaleString("fr-FR")}`} />} />
               <Bar dataKey="revenue" fill="#0e7c66" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -353,8 +357,8 @@ export default function DashboardPage() {
       {/* Rank Progress */}
       <RankProgress completedSales={apiStats?.completedOrders ?? 0} />
 
-      {/* Recent Orders Table */}
-      <div className="bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl shadow-sm overflow-hidden">
+      {/* Recent Orders Table — desktop */}
+      <div className="bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl shadow-sm overflow-hidden hidden sm:block">
         <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-primary/10 flex justify-between items-center">
           <h3 className="text-lg font-bold">Commandes récentes</h3>
           <Link href="/dashboard/commandes" className="text-primary text-sm font-bold hover:underline">Voir tout</Link>
@@ -363,12 +367,12 @@ export default function DashboardPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-primary/5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">Projet / Service</th>
-                <th className="px-6 py-4">Client</th>
-                <th className="px-6 py-4">Deadline</th>
-                <th className="px-6 py-4">Montant</th>
-                <th className="px-6 py-4">Statut</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 whitespace-nowrap">Projet / Service</th>
+                <th className="px-6 py-4 whitespace-nowrap">Client</th>
+                <th className="px-6 py-4 whitespace-nowrap">Deadline</th>
+                <th className="px-6 py-4 whitespace-nowrap">Montant</th>
+                <th className="px-6 py-4 whitespace-nowrap">Statut</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-primary/10">
@@ -398,13 +402,13 @@ export default function DashboardPage() {
                         <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-primary/20 flex items-center justify-center text-[10px] font-bold">
                           {order.clientAvatar}
                         </div>
-                        <span className="text-sm font-medium">{order.clientName}</span>
+                        <span className="text-sm font-medium whitespace-nowrap">{order.clientName}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{new Date(order.deadline).toLocaleDateString("fr-FR")}</td>
-                    <td className="px-6 py-4 text-sm font-bold">€{(order.amount ?? 0).toLocaleString("fr-FR")}</td>
+                    <td className="px-6 py-4 text-sm whitespace-nowrap">{order.deadline ? new Date(order.deadline).toLocaleDateString("fr-FR") : "—"}</td>
+                    <td className="px-6 py-4 text-sm font-bold whitespace-nowrap">€{(order.amount ?? 0).toLocaleString("fr-FR")}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s?.color ?? ""}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${s?.color ?? ""}`}>
                         {s?.label ?? order.status}
                       </span>
                     </td>
@@ -419,6 +423,53 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Recent Orders Cards — mobile */}
+      <div className="sm:hidden space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold">Commandes récentes</h3>
+          <Link href="/dashboard/commandes" className="text-primary text-sm font-bold hover:underline">Voir tout</Link>
+        </div>
+        {recentOrders.length === 0 && (
+          <EmptyState
+            icon="shopping_cart"
+            title="Aucune commande"
+            description="Vos commandes recentes apparaitront ici une fois que vous aurez recu des commandes."
+            actionLabel="Creer un service"
+            actionHref="/dashboard/services/creer"
+          />
+        )}
+        {recentOrders.map((order) => {
+          const s = STATUS_CONFIG[order.status];
+          return (
+            <Link key={order.id} href={`/dashboard/commandes/${order.id}`}
+              className="block bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl p-4 hover:border-primary/30 transition-all">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm truncate">{order.serviceTitle}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{order.category}</p>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${s?.color ?? ""}`}>
+                  {s?.label ?? order.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-3 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-primary/20 flex items-center justify-center text-[8px] font-bold">
+                    {order.clientAvatar}
+                  </div>
+                  <span>{order.clientName}</span>
+                </div>
+                <span className="font-bold text-sm text-slate-200">€{(order.amount ?? 0).toLocaleString("fr-FR")}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+                <span>{order.deadline ? new Date(order.deadline).toLocaleDateString("fr-FR") : "—"}</span>
+                <span className="material-symbols-outlined text-sm text-slate-400">arrow_forward</span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

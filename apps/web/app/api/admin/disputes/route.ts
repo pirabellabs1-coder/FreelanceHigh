@@ -11,7 +11,7 @@ import { createAuditLog } from "@/lib/admin/audit";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -101,7 +101,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -186,48 +186,166 @@ export async function POST(request: NextRequest) {
     if (action === "resolve") {
       if (!verdict) return NextResponse.json({ error: "verdict requis (freelance | client | partiel)" }, { status: 400 });
 
-      const verdictMap: Record<string, string> = { freelance: "FREELANCE", client: "CLIENT", partiel: "PARTIEL" };
+      const verdictMap: Record<string, string> = { freelance: "FREELANCE", client: "CLIENT", partiel: "PARTIEL", annulation: "ANNULATION" };
       const prismaVerdict = verdictMap[verdict];
       if (!prismaVerdict) return NextResponse.json({ error: `Verdict invalide: ${verdict}` }, { status: 400 });
 
-      await prisma.dispute.update({
-        where: { id: dispute.id },
-        data: {
-          status: "RESOLU",
-          verdict: prismaVerdict as "FREELANCE" | "CLIENT" | "PARTIEL",
-          verdictNote: resolution,
-          partialPercent: verdict === "partiel" ? (partialPercent ?? 50) : null,
-          resolvedAt: new Date(),
-        },
-      });
+      const order = dispute.order;
+      const orderAmount = order?.amount ?? 0;
+      const orderCommission = order?.commission ?? order?.platformFee ?? 0;
+      const pct = verdict === "partiel" ? (partialPercent ?? 50) : 0;
 
-      // Update order status
-      const orderStatus = verdict === "client" ? "ANNULE" : "TERMINE";
-      await prisma.order.update({
-        where: { id: dispute.orderId },
-        data: { status: orderStatus as "ANNULE" | "TERMINE", completedAt: orderStatus === "TERMINE" ? new Date() : null },
-      });
+      await prisma.$transaction(async (tx) => {
+        // 1. Update dispute
+        await tx.dispute.update({
+          where: { id: dispute.id },
+          data: {
+            status: "RESOLU",
+            verdict: prismaVerdict as "FREELANCE" | "CLIENT" | "PARTIEL" | "ANNULATION",
+            verdictNote: resolution,
+            partialPercent: verdict === "partiel" ? pct : null,
+            resolvedAt: new Date(),
+          },
+        });
 
-      // Notifications
-      const notifData = [];
-      if (verdict === "freelance") {
-        notifData.push({ userId: dispute.freelanceId, title: "Litige resolu en votre faveur", message: `Les fonds ont ete liberes.`, type: "PAYMENT" as const });
-        notifData.push({ userId: dispute.clientId, title: "Litige resolu", message: `Verdict en faveur du freelance.`, type: "ORDER" as const });
-      } else if (verdict === "client") {
-        notifData.push({ userId: dispute.clientId, title: "Litige resolu en votre faveur", message: `Remboursement effectue.`, type: "PAYMENT" as const });
-        notifData.push({ userId: dispute.freelanceId, title: "Litige resolu", message: `Verdict en faveur du client.`, type: "ORDER" as const });
-      } else {
-        notifData.push({ userId: dispute.clientId, title: "Remboursement partiel", message: `Le litige a ete resolu avec un remboursement partiel.`, type: "PAYMENT" as const });
-        notifData.push({ userId: dispute.freelanceId, title: "Paiement partiel", message: `Le litige a ete resolu avec un paiement partiel.`, type: "PAYMENT" as const });
-      }
-      await prisma.notification.createMany({ data: notifData });
+        // 2. Update order status + escrow
+        const orderStatus = verdict === "client" ? "ANNULE" : "TERMINE";
+        const escrowStatus = verdict === "client" ? "REFUNDED" : "RELEASED";
+        await tx.order.update({
+          where: { id: dispute.orderId },
+          data: {
+            status: orderStatus as "ANNULE" | "TERMINE",
+            escrowStatus,
+            completedAt: orderStatus === "TERMINE" ? new Date() : null,
+          },
+        });
+
+        // 3. Release/refund escrow record
+        await tx.escrow.updateMany({
+          where: { orderId: dispute.orderId, status: "HELD" },
+          data: { status: escrowStatus, releasedAt: new Date() },
+        });
+
+        // 4. Handle financial flows based on verdict
+        const adminWallet = await tx.adminWallet.findFirst();
+
+        if (verdict === "freelance") {
+          // Full release to freelance
+          const netAmount = orderAmount - orderCommission;
+
+          // Admin wallet: held → released
+          if (adminWallet) {
+            await tx.adminWallet.update({
+              where: { id: adminWallet.id },
+              data: { totalFeesHeld: { decrement: orderCommission }, totalFeesReleased: { increment: orderCommission } },
+            });
+            await tx.adminTransaction.updateMany({
+              where: { orderId: dispute.orderId, status: "PENDING" },
+              data: { status: "CONFIRMED" },
+            });
+          }
+
+          // Credit freelance/agency wallet
+          if (order?.agencyId) {
+            const w = await tx.walletAgency.upsert({
+              where: { agencyId: order.agencyId },
+              create: { agencyId: order.agencyId, balance: netAmount, totalEarned: netAmount },
+              update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: { agencyWalletId: w.id, type: "ORDER_PAYOUT", amount: netAmount, description: `Paiement apres litige - commande #${dispute.orderId.slice(0, 8)}`, status: "WALLET_COMPLETED", orderId: dispute.orderId },
+            });
+          } else {
+            const w = await tx.walletFreelance.upsert({
+              where: { userId: dispute.freelanceId },
+              create: { userId: dispute.freelanceId, balance: netAmount, totalEarned: netAmount },
+              update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: { freelanceWalletId: w.id, type: "ORDER_PAYOUT", amount: netAmount, description: `Paiement apres litige - commande #${dispute.orderId.slice(0, 8)}`, status: "WALLET_COMPLETED", orderId: dispute.orderId },
+            });
+          }
+
+          // Update payments
+          await tx.payment.updateMany({ where: { orderId: dispute.orderId }, data: { status: "COMPLETE" } });
+
+        } else if (verdict === "client") {
+          // Full refund to client — reverse admin fees
+          if (adminWallet) {
+            await tx.adminWallet.update({
+              where: { id: adminWallet.id },
+              data: { totalFeesHeld: { decrement: orderCommission } },
+            });
+            await tx.adminTransaction.updateMany({
+              where: { orderId: dispute.orderId, status: "PENDING" },
+              data: { status: "PAID_OUT" },
+            });
+          }
+          await tx.payment.updateMany({ where: { orderId: dispute.orderId }, data: { status: "REMBOURSE" } });
+
+        } else if (verdict === "partiel") {
+          // Partial: pct% refund to client, rest to freelance
+          const refundAmount = Math.round(orderAmount * (pct / 100) * 100) / 100;
+          const freelanceAmount = Math.round((orderAmount - refundAmount - orderCommission * ((100 - pct) / 100)) * 100) / 100;
+          const adminFee = Math.round(orderCommission * ((100 - pct) / 100) * 100) / 100;
+
+          if (adminWallet) {
+            await tx.adminWallet.update({
+              where: { id: adminWallet.id },
+              data: { totalFeesHeld: { decrement: orderCommission }, totalFeesReleased: { increment: adminFee } },
+            });
+            await tx.adminTransaction.updateMany({
+              where: { orderId: dispute.orderId, status: "PENDING" },
+              data: { status: "CONFIRMED" },
+            });
+          }
+
+          // Credit freelance wallet with partial amount
+          if (order?.agencyId) {
+            const w = await tx.walletAgency.upsert({
+              where: { agencyId: order.agencyId },
+              create: { agencyId: order.agencyId, balance: freelanceAmount, totalEarned: freelanceAmount },
+              update: { balance: { increment: freelanceAmount }, totalEarned: { increment: freelanceAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: { agencyWalletId: w.id, type: "ORDER_PAYOUT", amount: freelanceAmount, description: `Paiement partiel apres litige - commande #${dispute.orderId.slice(0, 8)}`, status: "WALLET_COMPLETED", orderId: dispute.orderId },
+            });
+          } else {
+            const w = await tx.walletFreelance.upsert({
+              where: { userId: dispute.freelanceId },
+              create: { userId: dispute.freelanceId, balance: freelanceAmount, totalEarned: freelanceAmount },
+              update: { balance: { increment: freelanceAmount }, totalEarned: { increment: freelanceAmount } },
+            });
+            await tx.walletTransaction.create({
+              data: { freelanceWalletId: w.id, type: "ORDER_PAYOUT", amount: freelanceAmount, description: `Paiement partiel apres litige - commande #${dispute.orderId.slice(0, 8)}`, status: "WALLET_COMPLETED", orderId: dispute.orderId },
+            });
+          }
+          await tx.payment.updateMany({ where: { orderId: dispute.orderId }, data: { status: "COMPLETE" } });
+        }
+
+        // 5. Notifications
+        const notifData = [];
+        if (verdict === "freelance") {
+          const netAmount = orderAmount - orderCommission;
+          notifData.push({ userId: dispute.freelanceId, title: "Litige resolu en votre faveur", message: `${netAmount.toFixed(2)} EUR liberes.`, type: "PAYMENT" as const, link: "/dashboard/finances" });
+          notifData.push({ userId: dispute.clientId, title: "Litige resolu", message: `Verdict en faveur du freelance.`, type: "ORDER" as const, link: `/client/commandes/${dispute.orderId}` });
+        } else if (verdict === "client") {
+          notifData.push({ userId: dispute.clientId, title: "Litige resolu en votre faveur", message: `Remboursement de ${orderAmount.toFixed(2)} EUR.`, type: "PAYMENT" as const, link: `/client/commandes/${dispute.orderId}` });
+          notifData.push({ userId: dispute.freelanceId, title: "Litige resolu", message: `Verdict en faveur du client.`, type: "ORDER" as const, link: `/dashboard/commandes/${dispute.orderId}` });
+        } else {
+          const refundAmount = Math.round(orderAmount * (pct / 100) * 100) / 100;
+          notifData.push({ userId: dispute.clientId, title: "Remboursement partiel", message: `${refundAmount.toFixed(2)} EUR rembourses.`, type: "PAYMENT" as const, link: `/client/commandes/${dispute.orderId}` });
+          notifData.push({ userId: dispute.freelanceId, title: "Paiement partiel", message: `Le litige a ete resolu avec un paiement partiel.`, type: "PAYMENT" as const, link: "/dashboard/finances" });
+        }
+        await tx.notification.createMany({ data: notifData });
+      });
 
       await createAuditLog({
         actorId: session.user.id,
         action: "dispute.resolved",
         targetType: "dispute",
         targetId: dispute.id,
-        details: { orderId: dispute.orderId, verdict, resolution, partialPercent },
+        details: { orderId: dispute.orderId, verdict, resolution, partialPercent: pct },
       });
 
       return NextResponse.json({ success: true, message: `Litige resolu: verdict ${verdict}`, verdict });

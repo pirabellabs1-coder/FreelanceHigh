@@ -39,7 +39,7 @@ const EMAILS = [
   { key: "password_reset", label: "Réinitialisation mot de passe" },
 ];
 
-const PLAN_NAMES = ["gratuit", "pro", "business", "agence"];
+const PLAN_NAMES = ["decouverte", "ascension", "sommet", "empire"];
 
 function ConfigSkeleton() {
   return (
@@ -106,9 +106,10 @@ export default function AdminConfiguration() {
   // Toggle currency in the enabled list
   async function toggleCurrency(code: string) {
     if (!draft) return;
-    const list = draft.enabledCurrencies.includes(code)
-      ? draft.enabledCurrencies.filter(c => c !== code)
-      : [...draft.enabledCurrencies, code];
+    const currencies = draft.enabledCurrencies || [];
+    const list = currencies.includes(code)
+      ? currencies.filter(c => c !== code)
+      : [...currencies, code];
     setDraft({ ...draft, enabledCurrencies: list });
     await saveConfig({ enabledCurrencies: list }, "Devise mise à jour");
   }
@@ -116,9 +117,10 @@ export default function AdminConfiguration() {
   // Toggle payment method in the enabled list
   async function togglePayment(id: string) {
     if (!draft) return;
-    const list = draft.enabledPaymentMethods.includes(id)
-      ? draft.enabledPaymentMethods.filter(p => p !== id)
-      : [...draft.enabledPaymentMethods, id];
+    const methods = draft.enabledPaymentMethods || [];
+    const list = methods.includes(id)
+      ? methods.filter(p => p !== id)
+      : [...methods, id];
     setDraft({ ...draft, enabledPaymentMethods: list });
     await saveConfig({ enabledPaymentMethods: list }, "Méthode de paiement mise à jour");
   }
@@ -201,7 +203,7 @@ export default function AdminConfiguration() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-300 mb-2">Langues actives</label>
-            <p className="text-sm text-slate-400">{draft.languages.join(", ")}</p>
+            <p className="text-sm text-slate-400">{(draft.languages || []).join(", ")}</p>
           </div>
           <div className="flex items-center gap-4 pt-2">
             <button
@@ -232,9 +234,9 @@ export default function AdminConfiguration() {
                       type="number"
                       min={0}
                       max={50}
-                      value={draft.commissions[plan] ?? 0}
+                      value={(draft.commissions || {})[plan] ?? 0}
                       onChange={e => {
-                        const updated = { ...draft.commissions, [plan]: Number(e.target.value) };
+                        const updated = { ...(draft.commissions || {}), [plan]: Number(e.target.value) };
                         setDraft({ ...draft, commissions: updated });
                       }}
                       className="w-20 px-3 py-2 rounded-lg border border-border-dark bg-background-dark text-white text-sm text-center outline-none focus:border-primary"
@@ -271,7 +273,7 @@ export default function AdminConfiguration() {
                 </thead>
                 <tbody>
                   {PLAN_NAMES.map(planName => {
-                    const plan = (draft.plans as Record<string, { price: number; commission: number; maxServices: number; maxCandidatures: number; boostsPerMonth: number }>)[planName];
+                    const plan = ((draft.plans || {}) as Record<string, { price: number; commission: number; maxServices: number; maxCandidatures: number; boostsPerMonth: number }>)[planName];
                     if (!plan) return null;
                     return (
                       <tr key={planName} className="border-b border-border-dark/50">
@@ -281,7 +283,7 @@ export default function AdminConfiguration() {
                             type="number"
                             value={plan.price}
                             onChange={e => {
-                              const updated = { ...draft.plans, [planName]: { ...plan, price: Number(e.target.value) } };
+                              const updated = { ...(draft.plans || {}), [planName]: { ...plan, price: Number(e.target.value) } };
                               setDraft({ ...draft, plans: updated });
                             }}
                             className="w-16 px-2 py-1 rounded border border-border-dark bg-background-dark text-white text-sm text-center outline-none focus:border-primary"
@@ -292,7 +294,7 @@ export default function AdminConfiguration() {
                             type="number"
                             value={plan.commission}
                             onChange={e => {
-                              const updated = { ...draft.plans, [planName]: { ...plan, commission: Number(e.target.value) } };
+                              const updated = { ...(draft.plans || {}), [planName]: { ...plan, commission: Number(e.target.value) } };
                               setDraft({ ...draft, plans: updated });
                             }}
                             className="w-16 px-2 py-1 rounded border border-border-dark bg-background-dark text-white text-sm text-center outline-none focus:border-primary"
@@ -305,7 +307,7 @@ export default function AdminConfiguration() {
                             type="number"
                             value={plan.boostsPerMonth}
                             onChange={e => {
-                              const updated = { ...draft.plans, [planName]: { ...plan, boostsPerMonth: Number(e.target.value) } };
+                              const updated = { ...(draft.plans || {}), [planName]: { ...plan, boostsPerMonth: Number(e.target.value) } };
                               setDraft({ ...draft, plans: updated });
                             }}
                             className="w-16 px-2 py-1 rounded border border-border-dark bg-background-dark text-white text-sm text-center outline-none focus:border-primary"
@@ -336,7 +338,7 @@ export default function AdminConfiguration() {
           <p className="text-sm text-slate-400 mb-4">Activez ou désactivez les devises disponibles sur la plateforme.</p>
           <div className="space-y-3">
             {ALL_CURRENCIES.map(c => {
-              const active = draft.enabledCurrencies.includes(c.code);
+              const active = (draft.enabledCurrencies || []).includes(c.code);
               return (
                 <div key={c.code} className="flex items-center justify-between p-4 rounded-lg border border-border-dark hover:border-border-dark/80 transition-colors">
                   <div className="flex items-center gap-3">
@@ -360,7 +362,7 @@ export default function AdminConfiguration() {
               );
             })}
           </div>
-          <p className="text-xs text-slate-500 mt-4">Devises actives : {draft.enabledCurrencies.join(", ")}</p>
+          <p className="text-xs text-slate-500 mt-4">Devises actives : {(draft.enabledCurrencies || []).join(", ")}</p>
         </div>
       )}
 
@@ -371,7 +373,7 @@ export default function AdminConfiguration() {
           <p className="text-sm text-slate-400 mb-4">Activez les méthodes de paiement disponibles pour les utilisateurs.</p>
           <div className="space-y-3">
             {ALL_PAYMENT_METHODS.map(pm => {
-              const active = draft.enabledPaymentMethods.includes(pm.id);
+              const active = (draft.enabledPaymentMethods || []).includes(pm.id);
               return (
                 <div key={pm.id} className="flex items-center justify-between p-4 rounded-lg border border-border-dark hover:border-border-dark/80 transition-colors">
                   <div className="flex items-center gap-3">
@@ -395,7 +397,7 @@ export default function AdminConfiguration() {
               );
             })}
           </div>
-          <p className="text-xs text-slate-500 mt-4">Méthodes actives : {draft.enabledPaymentMethods.length}/{ALL_PAYMENT_METHODS.length}</p>
+          <p className="text-xs text-slate-500 mt-4">Méthodes actives : {(draft.enabledPaymentMethods || []).length}/{ALL_PAYMENT_METHODS.length}</p>
         </div>
       )}
 
@@ -475,52 +477,53 @@ export default function AdminConfiguration() {
           <div className="flex items-center gap-3 mb-2">
             <button
               onClick={() => {
-                const next = !draft.announcementBanner.enabled;
-                setDraft({ ...draft, announcementBanner: { ...draft.announcementBanner, enabled: next } });
+                const banner = draft.announcementBanner || { enabled: false, message: "" };
+                const next = !banner.enabled;
+                setDraft({ ...draft, announcementBanner: { ...banner, enabled: next } });
               }}
               className={cn(
                 "w-10 h-5 rounded-full transition-colors relative",
-                draft.announcementBanner.enabled ? "bg-primary" : "bg-slate-600"
+                (draft.announcementBanner || {}).enabled ? "bg-primary" : "bg-slate-600"
               )}
             >
-              <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform", draft.announcementBanner.enabled ? "translate-x-5" : "translate-x-0.5")} />
+              <div className={cn("w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform", (draft.announcementBanner || {}).enabled ? "translate-x-5" : "translate-x-0.5")} />
             </button>
-            <span className="text-sm text-slate-300 font-semibold">{draft.announcementBanner.enabled ? "Bannière activée" : "Bannière désactivée"}</span>
+            <span className="text-sm text-slate-300 font-semibold">{(draft.announcementBanner || {}).enabled ? "Bannière activée" : "Bannière désactivée"}</span>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-300 mb-2">Texte de la bannière</label>
             <textarea
-              value={draft.announcementBanner.message}
-              onChange={e => setDraft({ ...draft, announcementBanner: { ...draft.announcementBanner, message: e.target.value } })}
+              value={(draft.announcementBanner || { message: "" }).message}
+              onChange={e => setDraft({ ...draft, announcementBanner: { ...(draft.announcementBanner || { enabled: false, message: "" }), message: e.target.value } })}
               rows={3}
               placeholder="Laissez vide pour masquer la bannière..."
               className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-white text-sm outline-none resize-none focus:border-primary placeholder:text-slate-500"
             />
           </div>
 
-          {draft.announcementBanner.message && draft.announcementBanner.enabled && (
+          {(draft.announcementBanner || {}).message && (draft.announcementBanner || {}).enabled && (
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">Aperçu</p>
               <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm text-primary font-semibold text-center">
-                {draft.announcementBanner.message}
+                {(draft.announcementBanner || { message: "" }).message}
               </div>
             </div>
           )}
 
           <div className="flex gap-3">
             <button
-              onClick={() => saveConfig({ announcementBanner: draft.announcementBanner }, "Bannière mise à jour")}
+              onClick={() => saveConfig({ announcementBanner: draft.announcementBanner || { enabled: false, message: "" } }, "Bannière mise à jour")}
               disabled={saving}
               className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               Sauvegarder
             </button>
-            {draft.announcementBanner.message && (
+            {(draft.announcementBanner || {}).message && (
               <button
                 onClick={() => {
-                  const cleared = { ...draft.announcementBanner, message: "", enabled: false };
+                  const cleared = { ...(draft.announcementBanner || { enabled: false, message: "" }), message: "", enabled: false };
                   setDraft({ ...draft, announcementBanner: cleared });
                   saveConfig({ announcementBanner: cleared }, "Bannière supprimée");
                 }}

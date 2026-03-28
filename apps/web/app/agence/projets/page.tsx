@@ -129,8 +129,8 @@ export default function AgenceProjets() {
       let initials = "NA";
       if (activeMembers.length > 0) {
         const member = activeMembers[idx % activeMembers.length];
-        assignee = member.name;
-        initials = getInitials(member.name);
+        assignee = member.name ?? "Non assigné";
+        initials = member.name ? getInitials(member.name) : "NA";
       }
 
       return {
@@ -322,7 +322,8 @@ export default function AgenceProjets() {
 
       {/* Kanban view */}
       {!isLoading && projects.length > 0 && view === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="overflow-x-auto -mx-4 px-4 pb-2 sm:mx-0 sm:px-0 sm:pb-0">
+        <div className="grid grid-cols-[repeat(4,minmax(260px,1fr))] sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 min-w-[1040px] sm:min-w-0">
           {COLUMNS.map((col) => {
             const colProjects = filtered.filter(
               (p) => p.status === col.key
@@ -396,12 +397,14 @@ export default function AgenceProjets() {
             );
           })}
         </div>
+        </div>
       )}
 
       {/* List view */}
       {!isLoading && projects.length > 0 && view === "liste" && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead>
               <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
                 <th className="px-5 py-3 text-left font-semibold">Projet</th>
@@ -479,6 +482,7 @@ export default function AgenceProjets() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

@@ -27,7 +27,18 @@ async function handleProductionMode(slug: string) {
       options: true,
       category: true,
       user: {
-        include: { freelancerProfile: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          avatar: true,
+          country: true,
+          countryFlag: true,
+          plan: true,
+          createdAt: true,
+          freelancerProfile: true,
+        },
       },
     },
   });
@@ -114,7 +125,7 @@ async function handleProductionMode(slug: string) {
       vendor: {
         id: service.userId,
         name: service.user.name,
-        avatar: service.user.image || "",
+        avatar: service.user.avatar || service.user.image || "",
         username: service.user.email?.split("@")[0] || "",
         country: fp?.country || service.user.country || "",
         badges: fp?.badges || [],

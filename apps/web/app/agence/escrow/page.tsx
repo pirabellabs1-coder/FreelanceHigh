@@ -8,13 +8,13 @@ import { useAgencyStore } from "@/store/agency";
 // ---------------------------------------------------------------------------
 // Escrow statuses mapped from order statuses
 // ---------------------------------------------------------------------------
-function getEscrowStatus(orderStatus: string): {
+function getEscrowStatus(orderStatus: string | null | undefined): {
   label: string;
   color: string;
   icon: string;
   category: "escrow" | "validation" | "libere" | "litige" | "all";
 } {
-  const s = orderStatus.toLowerCase();
+  const s = (orderStatus || "").toLowerCase();
   switch (s) {
     case "en_attente":
       return { label: "Fonds en depot", color: "text-amber-400 bg-amber-500/10", icon: "hourglass_top", category: "escrow" };
@@ -28,18 +28,22 @@ function getEscrowStatus(orderStatus: string): {
       return { label: "Fonds liberes", color: "text-emerald-400 bg-emerald-500/10", icon: "check_circle", category: "libere" };
     case "annule":
       return { label: "Rembourse", color: "text-slate-400 bg-slate-500/10", icon: "undo", category: "libere" };
+    case "rembourse_partiel":
+      return { label: "Remboursement partiel", color: "text-orange-400 bg-orange-500/10", icon: "undo", category: "libere" };
     case "litige":
+    case "en_mediation":
       return { label: "Fonds geles", color: "text-red-400 bg-red-500/10", icon: "gavel", category: "litige" };
     default:
       return { label: "Inconnu", color: "text-slate-400 bg-slate-500/10", icon: "help", category: "all" };
   }
 }
 
-function getOrderEscrowSteps(orderStatus: string, amount: number) {
-  const s = orderStatus.toLowerCase();
-  const fmt = (n: number) => n.toLocaleString("fr-FR");
+function getOrderEscrowSteps(orderStatus: string, amount: number | null | undefined) {
+  const s = (orderStatus || "").toLowerCase();
+  const safeAmount = amount ?? 0;
+  const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("fr-FR");
   const steps = [
-    { title: "Paiement Client Effectue", description: `Le client a effectue le paiement de ${fmt(amount)} EUR.`, status: "completed" as const },
+    { title: "Paiement Client Effectue", description: `Le client a effectue le paiement de ${fmt(safeAmount)} EUR.`, status: "completed" as const },
     { title: "Fonds Securises par FreelanceHigh", description: "Les fonds sont securises sur la plateforme.", status: "completed" as const },
     {
       title: "Validation des Livrables",
@@ -53,9 +57,14 @@ function getOrderEscrowSteps(orderStatus: string, amount: number) {
     },
   ];
 
-  if (s === "litige") {
+  if (s === "litige" || s === "en_mediation") {
     steps[2] = { ...steps[2], status: "in_progress", description: "Un litige est en cours. Les fonds restent geles." };
     steps[3] = { ...steps[3], status: "pending", description: "Les fonds seront liberes selon le verdict de la mediation." };
+  }
+
+  if (s === "rembourse_partiel") {
+    steps[2] = { ...steps[2], status: "completed", description: "Les livrables ont ete partiellement valides." };
+    steps[3] = { ...steps[3], status: "completed", description: "Les fonds ont ete partiellement liberes et le reste rembourse au client." };
   }
 
   return steps;
@@ -92,15 +101,15 @@ export default function AgenceEscrowPage() {
       const amt = o.amount ?? 0;
       const s = (o.status || "").toLowerCase();
       if (["en_attente", "en_cours"].includes(s)) inEscrow += amt;
-      else if (s === "termine") released += amt;
-      else if (s === "litige") inDispute += amt;
+      else if (["termine", "annule", "rembourse_partiel"].includes(s)) released += amt;
+      else if (["litige", "en_mediation"].includes(s)) inDispute += amt;
     }
     return { inEscrow, released, inDispute, total: inEscrow + released + inDispute };
   }, [allOrders]);
 
   const selectedOrder = selectedOrderId
     ? allOrders.find((o) => o.id === selectedOrderId)
-    : allOrders.find((o) => ["en_attente", "en_cours", "livre", "revision", "litige"].includes((o.status || "").toLowerCase()));
+    : allOrders.find((o) => ["en_attente", "en_cours", "livre", "revision", "litige", "en_mediation"].includes((o.status || "").toLowerCase()));
 
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
     { key: "all", label: "Tous", count: allOrders.length },
@@ -110,7 +119,7 @@ export default function AgenceEscrowPage() {
     { key: "litige", label: "Litiges", count: allOrders.filter((o) => o.escrow.category === "litige").length },
   ];
 
-  const fmt = (n: number) => n.toLocaleString("fr-FR");
+  const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString("fr-FR");
 
   return (
     <div className="max-w-full space-y-6">
@@ -148,15 +157,17 @@ export default function AgenceEscrowPage() {
       {/* Escrow Steps for selected order */}
       {selectedOrder && (
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6 sm:p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary">swap_vert</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-primary">swap_vert</span>
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-lg">Flux de Securisation</h3>
+                <p className="text-xs text-slate-500 truncate">{selectedOrder.serviceTitle || "Service"} — {selectedOrder.clientName || "Client"}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">Flux de Securisation</h3>
-              <p className="text-xs text-slate-500">{selectedOrder.serviceTitle || selectedOrder.title} — {selectedOrder.clientName || "Client"}</p>
-            </div>
-            <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5", selectedOrder.escrow.color)}>
+            <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 w-fit flex-shrink-0", selectedOrder.escrow.color)}>
               <span className="material-symbols-outlined text-sm">{selectedOrder.escrow.icon}</span>
               {selectedOrder.escrow.label}
             </span>
@@ -232,20 +243,25 @@ export default function AgenceEscrowPage() {
           )}
           {filteredOrders.map((order) => (
             <button key={order.id} onClick={() => setSelectedOrderId(order.id)}
-              className={cn("flex items-center gap-4 px-6 py-4 hover:bg-primary/5 transition-colors w-full text-left",
+              className={cn("flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-primary/5 transition-colors w-full text-left",
                 selectedOrderId === order.id && "bg-primary/5")}>
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
-                {(order.clientName || "CL").slice(0, 2).toUpperCase()}
+              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                  {(order.clientName || "CL").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{order.serviceTitle || "Service"}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{order.clientName || "Client"}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{order.serviceTitle || order.title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{order.clientName || "Client"}</p>
+              <div className="flex items-center gap-3 sm:gap-4 pl-[52px] sm:pl-0">
+                <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 flex-shrink-0", order.escrow.color)}>
+                  <span className="material-symbols-outlined text-sm">{order.escrow.icon}</span>
+                  <span className="hidden sm:inline">{order.escrow.label}</span>
+                  <span className="sm:hidden">{order.escrow.label.split(" ")[0]}</span>
+                </span>
+                <p className="text-sm font-bold flex-shrink-0">&euro;{fmt(order.amount ?? 0)}</p>
               </div>
-              <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5", order.escrow.color)}>
-                <span className="material-symbols-outlined text-sm">{order.escrow.icon}</span>
-                {order.escrow.label}
-              </span>
-              <p className="text-sm font-bold w-20 text-right flex-shrink-0">&euro;{fmt(order.amount ?? 0)}</p>
             </button>
           ))}
         </div>

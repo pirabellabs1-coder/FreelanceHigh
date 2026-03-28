@@ -9,7 +9,7 @@ import { orderStore } from "@/lib/dev/data-store";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== "admin" && session.user.role !== "ADMIN")) {
+    if (!session?.user || (!["admin", "ADMIN"].includes(session.user.role) && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         deliveredAt: o.deliveredAt?.toISOString() || null,
         completedAt: o.completedAt?.toISOString() || null,
         progress: o.progress || 0,
-        revisionsLeft: o.revisionsLeft ?? 0,
+        revisionsLeft: o._count.revisions ?? 0,
         reviewed: o._count.reviews > 0,
         messagesCount: 0,
         filesCount: 0,

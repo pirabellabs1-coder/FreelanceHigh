@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useMessagingStore } from "@/store/messaging";
 import { useCallStore } from "@/store/call";
+import { useToastStore } from "@/store/toast";
 import type { UserRole } from "@/store/messaging";
 import type { CallType, CallUser } from "@/lib/webrtc/types";
 import { useSocket } from "@/lib/socket-provider";
@@ -154,7 +155,7 @@ export function MessagingLayout({
   // Start audio call
   const handleStartAudioCall = useCallback(() => {
     if (!selectedConv) return;
-    const otherParticipant = selectedConv.participants.find((p) => p.id !== userId);
+    const otherParticipant = (selectedConv.participants || []).find((p) => p.id !== userId);
     if (!otherParticipant) return;
     initiateCall(toCallUser(otherParticipant), "audio", selectedConv.id);
   }, [selectedConv, userId, initiateCall]);
@@ -162,7 +163,7 @@ export function MessagingLayout({
   // Start video call
   const handleStartVideoCall = useCallback(() => {
     if (!selectedConv) return;
-    const otherParticipant = selectedConv.participants.find((p) => p.id !== userId);
+    const otherParticipant = (selectedConv.participants || []).find((p) => p.id !== userId);
     if (!otherParticipant) return;
     initiateCall(toCallUser(otherParticipant), "video", selectedConv.id);
   }, [selectedConv, userId, initiateCall]);
@@ -185,7 +186,7 @@ export function MessagingLayout({
   }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)]">
+    <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden">
       {showAllConversations && (
         <NewConversationDialog
           open={showNewConvDialog}
@@ -286,7 +287,7 @@ export function MessagingLayout({
             onSendOffer={userRole === "freelance" || userRole === "agence" ? async (data) => {
               if (!selectedId) return false;
               try {
-                const recipient = selectedConv?.participants.find(p => p.id !== userId);
+                const recipient = (selectedConv?.participants || []).find(p => p.id !== userId);
                 const res = await fetch("/api/conversations/offer", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -309,7 +310,10 @@ export function MessagingLayout({
                   addOfferMessage(selectedId, result.offerMessageData);
                 }
                 return true;
-              } catch { return false; }
+              } catch {
+                useToastStore.getState().addToast("error", "Erreur lors de l'envoi de l'offre");
+                return false;
+              }
             } : undefined}
             onStartAudioCall={handleStartAudioCall}
             onStartVideoCall={handleStartVideoCall}

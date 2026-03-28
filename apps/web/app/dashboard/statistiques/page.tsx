@@ -33,22 +33,24 @@ export default function StatistiquesPage() {
   }, [syncStats]);
 
   const stats = useMemo(() => {
+    const safeServices = services || [];
+    const safeTransactions = transactions || [];
     if (apiStats) {
       const totalViews = apiStats.viewsThisMonth;
-      const totalClicks = services.reduce((s, sv) => s + sv.clicks, 0);
-      const totalOrders = services.reduce((s, sv) => s + sv.orders, 0);
+      const totalClicks = safeServices.reduce((s, sv) => s + (sv.clicks || 0), 0);
+      const totalOrders = safeServices.reduce((s, sv) => s + (sv.orders || 0), 0);
       return {
         totalViews,
         totalClicks,
         totalOrders,
-        totalRevenue: apiStats.summary.totalEarned,
-        conversionRate: apiStats.conversionRate,
+        totalRevenue: apiStats.summary?.totalEarned ?? 0,
+        conversionRate: apiStats.conversionRate ?? 0,
       };
     }
-    const totalViews = services.reduce((s, sv) => s + sv.views, 0);
-    const totalClicks = services.reduce((s, sv) => s + sv.clicks, 0);
-    const totalOrders = services.reduce((s, sv) => s + sv.orders, 0);
-    const totalRevenue = transactions.filter((t) => t.type === "vente" && t.status === "complete").reduce((s, t) => s + t.amount, 0);
+    const totalViews = safeServices.reduce((s, sv) => s + (sv.views || 0), 0);
+    const totalClicks = safeServices.reduce((s, sv) => s + (sv.clicks || 0), 0);
+    const totalOrders = safeServices.reduce((s, sv) => s + (sv.orders || 0), 0);
+    const totalRevenue = safeTransactions.filter((t) => t.type === "vente" && t.status === "complete").reduce((s, t) => s + (t.amount || 0), 0);
     const conversionRate = totalViews > 0 ? ((totalOrders / totalViews) * 100) : 0;
     return { totalViews, totalClicks, totalOrders, totalRevenue, conversionRate };
   }, [services, transactions, apiStats]);
@@ -58,7 +60,7 @@ export default function StatistiquesPage() {
   const weeklyOrders = apiStats?.weeklyOrders ?? [];
 
   const servicePerf = useMemo(() =>
-    services.filter((s) => s.status === "actif").map((s) => ({
+    (services || []).filter((s) => s.status === "actif").map((s) => ({
       name: s.title.length > 25 ? s.title.slice(0, 25) + "..." : s.title,
       vues: s.views,
       clics: s.clicks,
@@ -87,7 +89,7 @@ export default function StatistiquesPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-5">
           <p className="text-xs font-bold text-slate-500 uppercase">Vues</p>
           <AnimatedCounter value={stats.totalViews} className="text-2xl font-extrabold mt-1 block" />
@@ -151,10 +153,10 @@ export default function StatistiquesPage() {
               <Tooltip content={<ChartTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4">
             {TRAFFIC_SOURCES.map((s) => (
               <div key={s.name} className="flex items-center gap-2 text-xs">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
                 <span className="text-slate-400">{s.name} ({s.value}%)</span>
               </div>
             ))}
@@ -194,15 +196,17 @@ export default function StatistiquesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-dark">
-              {servicePerf.map((s) => {
+              {servicePerf.length === 0 ? (
+                <tr><td colSpan={6} className="px-6 py-6 text-sm text-slate-500 text-center">Aucun service actif</td></tr>
+              ) : servicePerf.map((s) => {
                 const rate = s.vues > 0 ? ((s.commandes / s.vues) * 100).toFixed(1) : "0.0";
                 return (
                   <tr key={s.name} className="hover:bg-primary/5 transition-colors">
                     <td className="px-6 py-3 text-sm font-semibold">{s.name}</td>
-                    <td className="px-6 py-3 text-sm text-right">{s.vues.toLocaleString("fr-FR")}</td>
-                    <td className="px-6 py-3 text-sm text-right">{s.clics}</td>
-                    <td className="px-6 py-3 text-sm text-right">{s.commandes}</td>
-                    <td className="px-6 py-3 text-sm text-right font-bold">€{s.revenus}</td>
+                    <td className="px-6 py-3 text-sm text-right">{(s.vues || 0).toLocaleString("fr-FR")}</td>
+                    <td className="px-6 py-3 text-sm text-right">{s.clics || 0}</td>
+                    <td className="px-6 py-3 text-sm text-right">{s.commandes || 0}</td>
+                    <td className="px-6 py-3 text-sm text-right font-bold">€{s.revenus || 0}</td>
                     <td className="px-6 py-3 text-sm text-right text-primary font-bold">{rate}%</td>
                   </tr>
                 );

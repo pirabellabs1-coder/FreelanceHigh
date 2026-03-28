@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== "admin") {
+    if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 

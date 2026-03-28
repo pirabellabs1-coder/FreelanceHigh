@@ -17,8 +17,8 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-slate-950 border-t border-white/5 px-4 sm:px-6 lg:px-8 py-20">
-      <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
+    <footer className="bg-slate-950 border-t border-white/5 px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
+      <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 lg:gap-16">
         {/* Branding */}
         <div className="space-y-8">
           <Link href="/" className="flex items-center gap-2 text-primary">
@@ -43,7 +43,7 @@ export function Footer() {
 
         {/* Plateforme */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">{t("platform")}</h4>
+          <h4 className="text-white font-bold text-lg mb-4 sm:mb-8">{t("platform")}</h4>
           <ul className="space-y-4 text-slate-500 text-base">
             <li><Link href="/explorer" className="hover:text-primary transition-colors">{t("links.explore_services")}</Link></li>
             <li><Link href="/offres-projets" className="hover:text-primary transition-colors">{t("links.ongoing_projects")}</Link></li>
@@ -55,7 +55,7 @@ export function Footer() {
 
         {/* Support & Sécurité */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">{t("support_security")}</h4>
+          <h4 className="text-white font-bold text-lg mb-4 sm:mb-8">{t("support_security")}</h4>
           <ul className="space-y-4 text-slate-500 text-base">
             <li><Link href="/confiance-securite" className="hover:text-primary transition-colors">{t("links.payment_protection")}</Link></li>
             <li><Link href="/comment-ca-marche" className="hover:text-primary transition-colors">{t("links.how_it_works")}</Link></li>
@@ -67,7 +67,7 @@ export function Footer() {
 
         {/* Newsletter */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-8">{t("newsletter_title")}</h4>
+          <h4 className="text-white font-bold text-lg mb-4 sm:mb-8">{t("newsletter_title")}</h4>
           <p className="text-slate-500 text-sm mb-6 leading-relaxed">
             {t("newsletter_desc")}
           </p>
@@ -100,7 +100,7 @@ export function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="max-w-[1440px] mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div className="max-w-[1440px] mx-auto pt-8 sm:pt-16 mt-8 sm:mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-8">
         <p className="text-slate-600 text-xs">{t("copyright")}</p>
         <div className="flex flex-wrap justify-center gap-6 text-xs text-slate-600 font-bold">
           <Link href="/cgu" className="hover:text-white transition-colors">{t("links.terms")}</Link>

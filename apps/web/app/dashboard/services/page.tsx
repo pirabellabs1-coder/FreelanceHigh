@@ -39,39 +39,41 @@ export default function ServicesPage() {
     syncFromApi();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const safeServices = services || [];
+
   const filtered = useMemo(() => {
-    let result = services.filter((s) => normalizeStatus(s.status) === STATUS_MAP[activeTab]);
+    let result = safeServices.filter((s) => normalizeStatus(s.status) === STATUS_MAP[activeTab]);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((s) => s.title.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
     }
     return result;
-  }, [services, activeTab, search]);
+  }, [safeServices, activeTab, search]);
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   const totals = useMemo(() =>
-    services.reduce(
+    safeServices.reduce(
       (acc, s) => ({
-        views: acc.views + s.views,
-        clicks: acc.clicks + s.clicks,
-        revenue: acc.revenue + s.revenue,
-        orders: acc.orders + s.orders,
+        views: acc.views + (s.views ?? 0),
+        clicks: acc.clicks + (s.clicks ?? 0),
+        revenue: acc.revenue + (s.revenue ?? 0),
+        orders: acc.orders + (s.orders ?? 0),
       }),
       { views: 0, clicks: 0, revenue: 0, orders: 0 }
-    ), [services]);
+    ), [safeServices]);
 
   // Stats pour tendances (simule un delta)
   const trends = useMemo(() => {
-    const totalViews = services.reduce((s, sv) => s + (sv.views ?? 0), 0);
-    const totalOrders = services.reduce((s, sv) => s + (sv.orders ?? 0), 0);
-    const totalRevenue = services.reduce((s, sv) => s + (sv.revenue ?? 0), 0);
+    const totalViews = safeServices.reduce((s, sv) => s + (sv.views ?? 0), 0);
+    const totalOrders = safeServices.reduce((s, sv) => s + (sv.orders ?? 0), 0);
+    const totalRevenue = safeServices.reduce((s, sv) => s + (sv.revenue ?? 0), 0);
     return { views: totalViews, clicks: totalOrders, revenue: totalRevenue };
-  }, [services]);
+  }, [safeServices]);
 
   async function handleToggle(id: string) {
-    const svc = services.find((s) => s.id === id);
+    const svc = safeServices.find((s) => s.id === id);
     const success = await apiToggleService(id);
     if (success) {
       addToast("success", svc?.status === "actif" ? "Service mis en pause" : "Service active !");
@@ -91,32 +93,40 @@ export default function ServicesPage() {
   }
 
   function handleDuplicate(id: string) {
-    const svc = services.find((s) => s.id === id);
-    if (!svc) return;
-    addService({
-      title: svc.title + " (copie)",
-      category: svc.category,
-      subcategory: svc.subcategory,
-      description: svc.description,
-      tags: svc.tags,
-      image: svc.image,
-      status: "brouillon",
-      price: svc.price,
-      deliveryDays: svc.deliveryDays,
-      revisions: svc.revisions,
-      packages: svc.packages,
-      faq: svc.faq,
-      extras: svc.extras,
-    });
-    addToast("success", "Service duplique en brouillon !");
+    try {
+      const svc = safeServices.find((s) => s.id === id);
+      if (!svc) {
+        addToast("error", "Service introuvable.");
+        return;
+      }
+      addService({
+        title: svc.title + " (copie)",
+        category: svc.category,
+        subcategory: svc.subcategory,
+        description: svc.description,
+        tags: svc.tags,
+        image: svc.image,
+        status: "brouillon",
+        price: svc.price,
+        deliveryDays: svc.deliveryDays,
+        revisions: svc.revisions,
+        packages: svc.packages,
+        faq: svc.faq,
+        extras: svc.extras,
+      });
+      addToast("success", "Service duplique en brouillon !");
+    } catch (err) {
+      console.error("[Service duplicate] Error:", err);
+      addToast("error", "Erreur lors de la duplication du service.");
+    }
   }
 
-  const statsService = services.find((s) => s.id === statsModal);
+  const statsService = safeServices.find((s) => s.id === statsModal);
 
   // Plan limits calculation
   const planName = normalizePlanName(useDashboardStore.getState().currentPlan) as PlanName;
-  const planRules = PLAN_RULES[planName] || PLAN_RULES.GRATUIT;
-  const activeServiceCount = services.filter((s) => s.status === "actif" || (s.status as string) === "en_attente").length;
+  const planRules = PLAN_RULES[planName] || PLAN_RULES.DECOUVERTE;
+  const activeServiceCount = safeServices.filter((s) => normalizeStatus(s.status) === "actif" || normalizeStatus(s.status) === "en_attente").length;
 
   return (
     <div className="max-w-full space-y-4 sm:space-y-6 lg:space-y-8">
@@ -313,7 +323,7 @@ export default function ServicesPage() {
         {/* Tabs */}
         <div className="px-4 sm:px-6 flex gap-2 sm:gap-4 lg:gap-6 border-b border-primary/20 overflow-x-auto scrollbar-hide">
           {TABS.map((tab) => {
-            const count = services.filter((s) => s.status === STATUS_MAP[tab]).length;
+            const count = safeServices.filter((s) => normalizeStatus(s.status) === STATUS_MAP[tab]).length;
             const isActive = activeTab === tab;
             return (
               <button

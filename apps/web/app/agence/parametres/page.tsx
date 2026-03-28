@@ -5,13 +5,18 @@ import { useSession } from "next-auth/react";
 import { profileApi } from "@/lib/api-client";
 import { useAgencyStore } from "@/store/agency";
 import { useToastStore } from "@/store/toast";
+import { useCurrencyStore, CURRENCIES } from "@/store/currency";
+import { useChangeLocale, useLocaleStore } from "@/store/locale";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
   { key: "agence", label: "Informations", icon: "business" },
+  { key: "securite", label: "Sécurité", icon: "lock" },
   { key: "roles", label: "Rôles & Permissions", icon: "shield" },
   { key: "plan", label: "Abonnement", icon: "loyalty" },
   { key: "paiements", label: "Paiements", icon: "credit_card" },
+  { key: "langues", label: "Langues & Devises", icon: "language" },
   { key: "notifications", label: "Notifications", icon: "notifications" },
   { key: "danger", label: "Zone danger", icon: "warning" },
 ];
@@ -47,8 +52,14 @@ export default function AgenceParametres() {
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const { currency, setCurrency: setGlobalCurrency } = useCurrencyStore();
+  const changeLocale = useChangeLocale();
+  const currentLocale = useLocaleStore((s) => s.locale);
+
   const [agency, setAgency] = useState({ name: "", description: "", sector: "", website: "", country: "", siret: "" });
   const [payments, setPayments] = useState({ iban: "", paypalEmail: "", orangeMoney: "", waveMoney: "" });
+  const [passwordForm, setPasswordForm] = useState({ current: "", new: "", confirm: "" });
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [permissions, setPermissions] = useState<Record<string, boolean[]>>(DEFAULT_PERMS);
   // Notifications critiques activées par défaut (email + push)
   const CRITICAL_NOTIFS = ["new_order", "dispute_opened", "payment_received", "new_client_message"];
@@ -109,9 +120,20 @@ export default function AgenceParametres() {
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Paramètres</h1>
         <p className="text-slate-400 text-sm mt-1">Configurez votre agence, les rôles et les préférences.{members.length > 0 && <span className="ml-2 text-slate-500">({members.length} membres)</span>}</p>
       </div>
-      <div className="flex gap-6">
-        {/* Left menu */}
-        <div className="w-56 shrink-0 space-y-1">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Left menu - Select on mobile, sidebar on desktop */}
+        <div className="lg:hidden">
+          <select
+            value={section}
+            onChange={(e) => setSection(e.target.value)}
+            className="w-full px-4 py-3 bg-neutral-dark border border-border-dark rounded-xl text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {SECTIONS.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="hidden lg:block w-56 shrink-0 space-y-1">
           {SECTIONS.map((s) => (
             <button key={s.key} onClick={() => setSection(s.key)} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors text-left", section === s.key ? "bg-primary text-background-dark" : "text-slate-400 hover:text-white hover:bg-neutral-dark")}>
               <span className="material-symbols-outlined text-lg">{s.icon}</span>{s.label}
@@ -140,6 +162,65 @@ export default function AgenceParametres() {
               <div><label className={labelCls}>Site web</label><input value={agency.website} onChange={(e) => setAgency((a) => ({ ...a, website: e.target.value }))} className={inputCls} /></div>
               <div><label className={labelCls}>SIRET (optionnel)</label><input value={agency.siret} onChange={(e) => setAgency((a) => ({ ...a, siret: e.target.value }))} placeholder="XXX XXX XXX XXXXX" className={inputCls} /></div>
               <button disabled={saving} onClick={() => saveToApi({ agencyName: agency.name, bio: agency.description, sector: agency.sector, website: agency.website, country: agency.country, siret: agency.siret }, "Informations sauvegardées")} className={saveBtnCls}>{saving ? "Enregistrement..." : "Enregistrer"}</button>
+            </div>
+          )}
+
+          {/* Securite */}
+          {section === "securite" && (
+            <div className="space-y-5">
+              <h2 className="text-lg font-bold text-white mb-4">Sécurité du compte</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><label className={labelCls}>Mot de passe actuel</label><input type="password" value={passwordForm.current} onChange={(e) => setPasswordForm((f) => ({ ...f, current: e.target.value }))} placeholder="--------" className={inputCls} /></div>
+                  <div><label className={labelCls}>Nouveau mot de passe</label><input type="password" value={passwordForm.new} onChange={(e) => setPasswordForm((f) => ({ ...f, new: e.target.value }))} placeholder="--------" className={inputCls} /></div>
+                  <div><label className={labelCls}>Confirmer le mot de passe</label><input type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))} placeholder="--------" className={inputCls} /></div>
+                  <div className="flex items-end">
+                    <button disabled={saving} onClick={async () => {
+                      if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) { addToast("error", "Tous les champs sont requis"); return; }
+                      if (passwordForm.new !== passwordForm.confirm) { addToast("error", "Les mots de passe ne correspondent pas"); return; }
+                      if (passwordForm.new.length < 8) { addToast("error", "Le mot de passe doit faire au moins 8 caractères"); return; }
+                      await saveToApi({ currentPassword: passwordForm.current, newPassword: passwordForm.new }, "Mot de passe modifié");
+                      setPasswordForm({ current: "", new: "", confirm: "" });
+                    }} className={cn(saveBtnCls, "w-full")}>{saving ? "Modification..." : "Mettre à jour"}</button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-border-dark">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-white text-sm">{twoFactorEnabled ? "2FA activée" : "2FA désactivée"}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Google Authenticator ou SMS</p>
+                  </div>
+                  <button onClick={async () => {
+                    const newVal = !twoFactorEnabled;
+                    setTwoFactorEnabled(newVal);
+                    await saveToApi({ twoFactor: newVal }, newVal ? "2FA activée" : "2FA désactivée");
+                  }} className={cn("relative w-11 h-6 rounded-full transition-colors", twoFactorEnabled ? "bg-primary" : "bg-border-dark")}>
+                    <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow" style={{ left: twoFactorEnabled ? "22px" : "2px" }} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-border-dark">
+                <p className="font-bold text-white text-sm mb-3">Sessions actives</p>
+                <div className="space-y-2">
+                  {[
+                    { device: "Chrome - Windows", location: "Session actuelle", current: true },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-background-dark rounded-lg border border-border-dark">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-slate-400">laptop</span>
+                        <div>
+                          <p className="text-sm font-medium text-white">{s.device}</p>
+                          <p className="text-xs text-slate-500">{s.location}</p>
+                        </div>
+                      </div>
+                      {s.current && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Session actuelle</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -206,6 +287,52 @@ export default function AgenceParametres() {
             </div>
           )}
 
+          {/* Langues & Devises */}
+          {section === "langues" && (
+            <div className="space-y-5 max-w-lg">
+              <h2 className="text-lg font-bold text-white mb-4">Langues & Devises</h2>
+              <div>
+                <label className={labelCls}>Langue de l&apos;interface</label>
+                <div className="flex gap-3 mt-2">
+                  {[
+                    { code: "fr" as const, label: "Français", flag: "🇫🇷" },
+                    { code: "en" as const, label: "English", flag: "🇬🇧" },
+                  ].map((lang) => (
+                    <button key={lang.code} onClick={async () => { await changeLocale(lang.code); addToast("success", `Langue: ${lang.label}`); }}
+                      className={cn("flex items-center gap-3 px-6 py-3 rounded-xl border text-sm font-semibold transition-all",
+                        currentLocale === lang.code ? "border-primary bg-primary/10 text-primary" : "border-border-dark text-slate-400 hover:border-primary/30"
+                      )}>
+                      <span className="text-lg">{lang.flag}</span>{lang.label}
+                      {currentLocale === lang.code && <span className="material-symbols-outlined text-lg">check</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Devise préférée</label>
+                <select value={currency} onChange={(e) => { setGlobalCurrency(e.target.value as typeof currency); addToast("success", "Devise modifiée"); }}
+                  className={cn(inputCls, "mt-2")}>
+                  {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.symbol} - {c.label}</option>)}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-2">Les conversions sont approximatives et basées sur le taux du marché en temps réel.</p>
+              </div>
+              <div>
+                <label className={labelCls}>Thème de l&apos;interface</label>
+                <div className="flex gap-3 mt-2">
+                  {[
+                    { code: "sombre", label: "Sombre", icon: "dark_mode" },
+                    { code: "clair", label: "Clair", icon: "light_mode" },
+                  ].map((theme) => (
+                    <button key={theme.code} onClick={() => { saveToApi({ theme: theme.code }, `Thème: ${theme.label}`); }}
+                      className="flex items-center gap-3 px-6 py-3 rounded-xl border border-border-dark text-sm font-semibold text-slate-400 hover:border-primary/30 transition-all">
+                      <span className="material-symbols-outlined text-lg">{theme.icon}</span>{theme.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Notifications */}
           {section === "notifications" && (
             <div className="space-y-5">
@@ -255,23 +382,18 @@ export default function AgenceParametres() {
         </div>
       </div>
 
-      {/* Delete confirmation modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-neutral-dark rounded-2xl border border-red-500/30 p-6 w-full max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center"><span className="material-symbols-outlined text-red-400">warning</span></div>
-              <h3 className="text-lg font-bold text-white">Confirmer la suppression</h3>
-            </div>
-            <p className="text-sm text-slate-400 mb-4">Êtes-vous sûr de vouloir supprimer définitivement votre agence ? Cette action est irréversible.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2.5 text-slate-400 text-sm font-semibold hover:text-white transition-colors">Annuler</button>
-              <button onClick={async () => { try { await profileApi.update({ deleted: true }); addToast("error", "Agence supprimée"); } catch { addToast("error", "Erreur lors de la suppression"); } setShowDeleteConfirm(false); }} className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-all">Supprimer</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Supprimer l'agence"
+        variant="danger"
+        message="Êtes-vous sûr de vouloir supprimer définitivement votre agence ? Toutes les données, services, historiques et accès des membres seront définitivement supprimés. Cette action est irréversible."
+        confirmLabel="Supprimer définitivement"
+        onConfirm={async () => {
+          try { await profileApi.update({ deleted: true }); addToast("info", "Agence supprimée"); } catch { addToast("error", "Erreur lors de la suppression"); }
+          setShowDeleteConfirm(false);
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

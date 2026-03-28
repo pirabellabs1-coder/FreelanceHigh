@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
     if (!invitedUser) {
       // Create a placeholder user that will be completed at registration
       invitedUser = await prisma.user.create({
-        data: { email, name: email.split("@")[0] },
+        data: { email, name: email.split("@")[0], passwordHash: "" },
       });
     }
 

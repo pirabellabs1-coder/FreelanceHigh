@@ -13,7 +13,8 @@ export const CURRENCIES: { code: Currency; symbol: string; label: string; rate: 
   { code: "MAD", symbol: "MAD", label: "Dirham Marocain", rate: 10.95 },
 ];
 
-export function formatCurrency(amountEur: number, currency: Currency): string {
+export function formatCurrency(amountEur: number | undefined | null, currency: Currency): string {
+  if (amountEur == null || isNaN(amountEur)) return "—";
   const cur = CURRENCIES.find((c) => c.code === currency) ?? CURRENCIES[0];
   const converted = amountEur * cur.rate;
   if (currency === "FCFA") return `${Math.round(converted).toLocaleString("fr-FR")} FCFA`;
@@ -23,7 +24,7 @@ export function formatCurrency(amountEur: number, currency: Currency): string {
 interface CurrencyState {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
-  format: (amountEur: number) => string;
+  format: (amountEur: number | undefined | null) => string;
 }
 
 export const useCurrencyStore = create<CurrencyState>()(
@@ -31,7 +32,7 @@ export const useCurrencyStore = create<CurrencyState>()(
     (set, get) => ({
       currency: "EUR",
       setCurrency: (currency: Currency) => set({ currency }),
-      format: (amountEur: number) => formatCurrency(amountEur, get().currency),
+      format: (amountEur: number | undefined | null) => formatCurrency(amountEur, get().currency),
     }),
     { name: "freelancehigh-currency" }
   )

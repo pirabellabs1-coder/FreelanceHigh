@@ -8,18 +8,21 @@ import { cn } from "@/lib/utils";
 
 const FILTERS = [
   { key: "all", label: "Toutes" },
+  { key: "en_attente", label: "En attente" },
   { key: "en_cours", label: "En cours" },
   { key: "livre", label: "Livrées" },
+  { key: "revision", label: "Révision" },
   { key: "termine", label: "Terminées" },
   { key: "litige", label: "Litige" },
+  { key: "annule", label: "Annulées" },
 ];
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  en_attente: { label: "En attente", cls: "bg-slate-500/20 text-slate-400" },
+  en_attente: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
   en_cours: { label: "En cours", cls: "bg-blue-500/20 text-blue-400" },
   livre: { label: "Livré", cls: "bg-primary/20 text-primary" },
   revision: { label: "Révision", cls: "bg-orange-500/20 text-orange-400" },
-  termine: { label: "Terminé", cls: "bg-slate-500/20 text-slate-400" },
+  termine: { label: "Terminé", cls: "bg-emerald-500/20 text-emerald-400" },
   litige: { label: "Litige", cls: "bg-red-500/20 text-red-400" },
   annule: { label: "Annulé", cls: "bg-red-500/20 text-red-400" },
 };
@@ -61,20 +64,25 @@ export default function ClientOrders() {
     syncOrders();
   }, [syncOrders]);
 
+  const safeOrders = orders || [];
+
   const filtered = useMemo(() => {
-    if (orderFilter === "all") return orders;
-    return orders.filter((o) => o.status === orderFilter);
-  }, [orders, orderFilter]);
+    if (orderFilter === "all") return safeOrders;
+    return safeOrders.filter((o) => o.status === orderFilter);
+  }, [safeOrders, orderFilter]);
 
   const counts = useMemo(
     () => ({
-      all: orders.length,
-      en_cours: orders.filter((o) => o.status === "en_cours").length,
-      livre: orders.filter((o) => o.status === "livre").length,
-      termine: orders.filter((o) => o.status === "termine").length,
-      litige: orders.filter((o) => o.status === "litige").length,
+      all: safeOrders.length,
+      en_attente: safeOrders.filter((o) => o.status === "en_attente").length,
+      en_cours: safeOrders.filter((o) => o.status === "en_cours").length,
+      livre: safeOrders.filter((o) => o.status === "livre").length,
+      revision: safeOrders.filter((o) => o.status === "revision").length,
+      termine: safeOrders.filter((o) => o.status === "termine").length,
+      litige: safeOrders.filter((o) => o.status === "litige").length,
+      annule: safeOrders.filter((o) => o.status === "annule").length,
     }),
-    [orders],
+    [safeOrders],
   );
 
   const isLoading = loading.orders;
@@ -87,7 +95,7 @@ export default function ClientOrders() {
         <p className="text-slate-400 text-sm mt-1">
           {isLoading
             ? "Chargement..."
-            : `${orders.length} commande${orders.length !== 1 ? "s" : ""} — Suivez l'avancement de vos commandes`}
+            : `${safeOrders.length} commande${safeOrders.length !== 1 ? "s" : ""} — Suivez l'avancement de vos commandes`}
         </p>
       </div>
 
@@ -95,10 +103,10 @@ export default function ClientOrders() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
           { label: "Total", value: counts.all, icon: "receipt_long", color: "text-white" },
+          { label: "En attente", value: counts.en_attente, icon: "hourglass_top", color: "text-amber-400" },
           { label: "En cours", value: counts.en_cours, icon: "construction", color: "text-blue-400" },
           { label: "Livrées", value: counts.livre, icon: "local_shipping", color: "text-primary" },
           { label: "Terminées", value: counts.termine, icon: "check_circle", color: "text-slate-400" },
-          { label: "Litiges", value: counts.litige, icon: "gavel", color: "text-red-400" },
         ].map((s) => (
           <div key={s.label} className="bg-neutral-dark rounded-xl border border-border-dark p-2 sm:p-3 flex items-center gap-2 sm:gap-3">
             <span className={cn("material-symbols-outlined text-base sm:text-lg", s.color)}>{s.icon}</span>
@@ -187,40 +195,58 @@ export default function ClientOrders() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-4 ml-13 sm:ml-0 flex-shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-4 ml-[3.25rem] sm:ml-0 flex-shrink-0 flex-wrap">
                     <span className={cn("text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full", statusInfo.cls)}>
                       {statusInfo.label}
                     </span>
                     <span className="text-sm sm:text-lg font-bold text-white">{(o.amount ?? 0).toLocaleString("fr-FR")} €</span>
 
-                    {/* Quick action buttons */}
+                    {/* Quick action buttons — hidden on mobile to avoid overflow, visible on sm+ */}
                     {o.status === "livre" && (
                       <>
                         <button onClick={(e) => { e.preventDefault(); validateDelivery(o.id).then(r => { if (r.success) addToast("success", "Livraison validee ! Fonds liberes."); else addToast("error", r.error || "Erreur"); }); }}
-                          className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-1">
+                          className="hidden sm:flex px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-all items-center gap-1">
                           <span className="material-symbols-outlined text-xs">check_circle</span>
                           Valider
                         </button>
                         <button onClick={(e) => { e.preventDefault(); requestRevision(o.id, "Modifications demandees").then(r => { if (r.success) addToast("success", "Revision demandee"); else addToast("error", r.error || "Erreur"); }); }}
-                          className="px-3 py-1.5 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-lg hover:bg-orange-500/10 transition-all flex items-center gap-1">
+                          className="hidden sm:flex px-3 py-1.5 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-lg hover:bg-orange-500/10 transition-all items-center gap-1">
                           <span className="material-symbols-outlined text-xs">edit_note</span>
                           Revision
                         </button>
                       </>
                     )}
                     {o.status === "en_attente" && (
-                      <span className="text-[10px] text-amber-400 font-semibold">En attente du freelance (3j)</span>
+                      <span className="hidden sm:inline text-[10px] text-amber-400 font-semibold">En attente du freelance (3j)</span>
                     )}
 
                     <span className="material-symbols-outlined text-slate-500 text-lg">chevron_right</span>
                   </div>
+                  {/* Mobile-only action buttons for livre status */}
+                  {o.status === "livre" && (
+                    <div className="flex sm:hidden gap-2 mt-2 ml-[3.25rem]">
+                      <button onClick={(e) => { e.preventDefault(); validateDelivery(o.id).then(r => { if (r.success) addToast("success", "Livraison validee ! Fonds liberes."); else addToast("error", r.error || "Erreur"); }); }}
+                        className="flex-1 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-all flex items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-xs">check_circle</span>
+                        Valider
+                      </button>
+                      <button onClick={(e) => { e.preventDefault(); requestRevision(o.id, "Modifications demandees").then(r => { if (r.success) addToast("success", "Revision demandee"); else addToast("error", r.error || "Erreur"); }); }}
+                        className="flex-1 px-3 py-1.5 border border-orange-500/30 text-orange-400 text-xs font-bold rounded-lg hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-xs">edit_note</span>
+                        Revision
+                      </button>
+                    </div>
+                  )}
+                  {o.status === "en_attente" && (
+                    <p className="sm:hidden text-[10px] text-amber-400 font-semibold mt-1 ml-[3.25rem]">En attente du freelance (3j)</p>
+                  )}
                 </div>
                 {o.status === "en_cours" && (
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex-1 h-2 bg-border-dark rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${o.progress}%` }} />
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${o.progress ?? 0}%` }} />
                     </div>
-                    <span className="text-xs font-semibold text-primary">{o.progress}%</span>
+                    <span className="text-xs font-semibold text-primary">{o.progress ?? 0}%</span>
                   </div>
                 )}
               </Link>

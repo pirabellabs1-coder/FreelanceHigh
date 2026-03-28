@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { signOut } from "next-auth/react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileSidebarOverlay } from "@/components/ui/MobileSidebarOverlay";
 import { ToastContainer } from "@/components/ui/toast";
@@ -10,7 +11,7 @@ import { AccessDeniedToast } from "@/components/auth/AccessDeniedToast";
 import { useDashboardStore } from "@/store/dashboard";
 
 const IS_DEV = process.env.NODE_ENV === "development";
-const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 30_000; // 5min en dev, 30s en prod
+const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 10_000; // 5min en dev, 10s en prod
 const DATA_SYNC_INTERVAL = IS_DEV ? 600_000 : 120_000; // 10min en dev, 2min en prod
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -55,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile sidebar overlay */}
       <MobileSidebarOverlay open={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <Sidebar />
+        <Sidebar onClose={() => setMobileOpen(false)} />
       </MobileSidebarOverlay>
 
       {/* Main content */}
@@ -74,7 +75,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="font-bold text-lg text-white">FreelanceHigh</span>
             </div>
           </div>
-          <DashboardNotificationBell />
+          <div className="flex items-center gap-1 sm:gap-2">
+            <DashboardNotificationBell />
+            {/* Mobile logout button — visible when sidebar is hidden */}
+            <button
+              onClick={() => signOut({ callbackUrl: "/connexion" })}
+              className="lg:hidden p-1.5 sm:p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+              title="Se déconnecter"
+            >
+              <span className="material-symbols-outlined text-xl">logout</span>
+            </button>
+          </div>
         </div>
 
         <KycRequiredBanner />

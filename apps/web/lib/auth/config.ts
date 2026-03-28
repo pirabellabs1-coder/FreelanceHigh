@@ -6,6 +6,19 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { checkRateLimit, recordFailedAttempt, resetAttempts } from "./rate-limiter";
 
+// Map legacy plan names to new elevation plan names
+const PLAN_NAME_MAP: Record<string, string> = {
+  gratuit: "decouverte", free: "decouverte",
+  pro: "ascension",
+  business: "sommet",
+  agence: "empire", agency: "empire",
+  // New names pass through
+  decouverte: "decouverte", ascension: "ascension", sommet: "sommet", empire: "empire",
+};
+function mapPlanName(plan: string): string {
+  return PLAN_NAME_MAP[plan] || "decouverte";
+}
+
 // Types etendus pour le JWT et la session
 declare module "next-auth" {
   interface User {
@@ -194,9 +207,9 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role.toLowerCase(),
+            role: (user.role || "FREELANCE").toLowerCase(),
             kyc: user.kyc,
-            plan: user.plan.toLowerCase(),
+            plan: mapPlanName(((user.plan as string) || "gratuit").toLowerCase()),
             formationsRole: user.formationsRole?.toLowerCase() as any,
           };
         } catch (err) {
@@ -402,9 +415,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id as string;
-        token.role = (user.role as string) ?? "client";
+        token.role = ((user.role as string) ?? "client").toLowerCase();
         token.kyc = (user.kyc as number) ?? 1;
-        token.plan = (user.plan as string) ?? "gratuit";
+        token.plan = mapPlanName(((user.plan as string) ?? "gratuit").toLowerCase());
         if (user.formationsRole) {
           token.formationsRole = user.formationsRole as string;
         }
@@ -423,9 +436,9 @@ export const authOptions: NextAuthOptions = {
               const dbUser = devStore.findById(token.id);
               if (dbUser) {
                 token.kyc = dbUser.kyc;
-                token.plan = dbUser.plan;
+                token.plan = mapPlanName(dbUser.plan);
               }
-            } else {
+            } else if (token.id) {
               const { prisma } = await import("@freelancehigh/db");
               const dbUser = await prisma.user.findUnique({
                 where: { id: token.id },
@@ -433,7 +446,7 @@ export const authOptions: NextAuthOptions = {
               });
               if (dbUser) {
                 token.kyc = dbUser.kyc;
-                token.plan = dbUser.plan.toLowerCase();
+                token.plan = mapPlanName(dbUser.plan.toLowerCase());
               }
             }
             (token as Record<string, unknown>).kycRefreshedAt = now;

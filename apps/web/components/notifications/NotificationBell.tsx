@@ -42,7 +42,7 @@ export function NotificationBell({ userId, notificationsHref = "/dashboard/param
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const notifications = getUserNotifications(userId);
+  const notifications = getUserNotifications(userId) ?? [];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export function NotificationBell({ userId, notificationsHref = "/dashboard/param
       <button
         onClick={() => setOpen(!open)}
         className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors relative"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ""}`}
       >
         <span className="material-symbols-outlined text-lg">notifications</span>
         {unreadCount > 0 && (

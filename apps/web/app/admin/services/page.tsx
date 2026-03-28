@@ -6,19 +6,19 @@ import { useAdminStore } from "@/store/admin";
 import { formatServiceTitle } from "@/lib/format-service-title";
 import { cn } from "@/lib/utils";
 
+// Normalized status map — always use lowercase keys via getStatusInfo()
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   actif: { label: "Actif", cls: "bg-emerald-500/20 text-emerald-400" },
-  ACTIF: { label: "Actif", cls: "bg-emerald-500/20 text-emerald-400" },
   en_attente: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
-  EN_ATTENTE: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
   refuse: { label: "Refusé", cls: "bg-red-500/20 text-red-400" },
-  REFUSE: { label: "Refusé", cls: "bg-red-500/20 text-red-400" },
   pause: { label: "En pause", cls: "bg-slate-500/20 text-slate-400" },
-  PAUSE: { label: "En pause", cls: "bg-slate-500/20 text-slate-400" },
   vedette: { label: "En vedette", cls: "bg-purple-500/20 text-purple-400" },
-  VEDETTE: { label: "En vedette", cls: "bg-purple-500/20 text-purple-400" },
-  BROUILLON: { label: "Brouillon", cls: "bg-slate-500/20 text-slate-400" },
+  brouillon: { label: "Brouillon", cls: "bg-slate-500/20 text-slate-400" },
 };
+
+function getStatusInfo(status: string) {
+  return STATUS_MAP[status?.toLowerCase()] ?? { label: status || "Inconnu", cls: "bg-slate-500/20 text-slate-400" };
+}
 
 function CardSkeleton() {
   return (
@@ -62,7 +62,7 @@ export default function AdminServices() {
   const [refuseId, setRefuseId] = useState<string | null>(null);
   const [refuseReason, setRefuseReason] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { addToast } = useToastStore();
   const {
     services,
@@ -117,66 +117,91 @@ export default function AdminServices() {
 
   async function handleApprove(id: string) {
     const svc = typedServices.find(s => s.id === id);
-    setActionLoading(true);
-    const ok = await approveService(id);
-    setActionLoading(false);
-    if (ok) {
-      addToast("success", `"${svc?.title}" approuvé — visible sur la marketplace`);
-    } else {
-      addToast("warning", "Erreur lors de l'approbation");
+    setActionLoading(id);
+    try {
+      const ok = await approveService(id);
+      if (ok) {
+        addToast("success", `"${svc?.title || "Service"}" approuvé — visible sur la marketplace`);
+      } else {
+        addToast("warning", "Erreur lors de l'approbation");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors de l'approbation");
+    } finally {
+      setActionLoading(null);
     }
   }
 
   async function handleRefuse() {
     if (!refuseId || !refuseReason.trim()) { addToast("warning", "Indiquez un motif de refus"); return; }
     const svc = typedServices.find(s => s.id === refuseId);
-    setActionLoading(true);
-    const ok = await refuseServiceAction(refuseId, refuseReason);
-    setActionLoading(false);
-    if (ok) {
-      addToast("success", `"${svc?.title}" refusé`);
-    } else {
-      addToast("warning", "Erreur lors du refus");
+    setActionLoading(refuseId);
+    try {
+      const ok = await refuseServiceAction(refuseId, refuseReason);
+      if (ok) {
+        addToast("success", `"${svc?.title || "Service"}" refusé`);
+      } else {
+        addToast("warning", "Erreur lors du refus");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors du refus");
+    } finally {
+      setActionLoading(null);
+      setRefuseId(null);
+      setRefuseReason("");
     }
-    setRefuseId(null);
-    setRefuseReason("");
   }
 
   async function handleDelete() {
     if (!deleteId) return;
     const svc = typedServices.find(s => s.id === deleteId);
-    setActionLoading(true);
-    const ok = await deleteServiceAction(deleteId);
-    setActionLoading(false);
-    if (ok) {
-      addToast("success", `"${svc?.title}" supprimé définitivement`);
-    } else {
-      addToast("warning", "Erreur lors de la suppression");
+    setActionLoading(deleteId);
+    try {
+      const ok = await deleteServiceAction(deleteId);
+      if (ok) {
+        addToast("success", `"${svc?.title || "Service"}" supprimé définitivement`);
+      } else {
+        addToast("warning", "Erreur lors de la suppression");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors de la suppression");
+    } finally {
+      setActionLoading(null);
+      setDeleteId(null);
     }
-    setDeleteId(null);
   }
 
   async function handleFeature(id: string) {
     const svc = typedServices.find(s => s.id === id);
-    setActionLoading(true);
-    const ok = await featureService(id);
-    setActionLoading(false);
-    if (ok) {
-      addToast("success", `"${svc?.title}" mis en vedette sur la marketplace`);
-    } else {
-      addToast("warning", "Erreur lors de la mise en vedette");
+    setActionLoading(id);
+    try {
+      const ok = await featureService(id);
+      if (ok) {
+        addToast("success", `"${svc?.title || "Service"}" mis en vedette sur la marketplace`);
+      } else {
+        addToast("warning", "Erreur lors de la mise en vedette");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors de la mise en vedette");
+    } finally {
+      setActionLoading(null);
     }
   }
 
   async function handlePause(id: string) {
     const svc = typedServices.find(s => s.id === id);
-    setActionLoading(true);
-    const ok = await pauseService(id);
-    setActionLoading(false);
-    if (ok) {
-      addToast("success", `"${svc?.title}" mis en pause`);
-    } else {
-      addToast("warning", "Erreur lors de la mise en pause");
+    setActionLoading(id);
+    try {
+      const ok = await pauseService(id);
+      if (ok) {
+        addToast("success", `"${svc?.title || "Service"}" mis en pause`);
+      } else {
+        addToast("warning", "Erreur lors de la mise en pause");
+      }
+    } catch {
+      addToast("error", "Erreur réseau lors de la mise en pause");
+    } finally {
+      setActionLoading(null);
     }
   }
 
@@ -238,52 +263,55 @@ export default function AdminServices() {
           <>
             {filtered.map(s => {
               const cat = categories.find(c => c.name === s.category);
+              const statusInfo = getStatusInfo(s.status);
+              const statusLower = (s.status || "").toLowerCase();
+              const isThisLoading = actionLoading === s.id;
               return (
                 <div key={s.id} className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-bold text-white">{formatServiceTitle(s.title)}</h3>
-                        <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[s.status]?.cls)}>{STATUS_MAP[s.status]?.label}</span>
+                        <h3 className="font-bold text-white text-sm sm:text-base">{formatServiceTitle(s.title || "Sans titre")}</h3>
+                        <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", statusInfo.cls)}>{statusInfo.label}</span>
                         {cat && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: cat.color + "20", color: cat.color }}>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: (cat.color || "#666") + "20", color: cat.color || "#666" }}>
                             {cat.name}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-400 mb-2 line-clamp-1">{s.description}</p>
-                      <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
-                        <span>par <b className="text-slate-300">{s.freelanceName}</b></span>
-                        <span className="font-bold text-primary">&euro;{s.price}</span>
-                        {s.views > 0 && <span>{(s.views ?? 0).toLocaleString()} vues</span>}
-                        {s.orders > 0 && <span>{s.orders} commandes</span>}
-                        {s.rating > 0 && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-amber-400 text-sm">star</span>{s.rating}</span>}
-                        <span>Créé le {new Date(s.createdAt).toLocaleDateString("fr-FR")}</span>
+                      <p className="text-sm text-slate-400 mb-2 line-clamp-1">{s.description || "Pas de description"}</p>
+                      <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-400 flex-wrap">
+                        <span>par <b className="text-slate-300">{s.freelanceName || "Inconnu"}</b></span>
+                        <span className="font-bold text-primary">&euro;{s.price ?? 0}</span>
+                        {(s.views ?? 0) > 0 && <span>{(s.views ?? 0).toLocaleString()} vues</span>}
+                        {(s.orders ?? 0) > 0 && <span>{s.orders} cmd</span>}
+                        {(s.rating ?? 0) > 0 && <span className="flex items-center gap-0.5"><span className="material-symbols-outlined text-amber-400 text-sm">star</span>{s.rating}</span>}
+                        <span className="hidden sm:inline">Créé le {s.createdAt ? new Date(s.createdAt).toLocaleDateString("fr-FR") : "N/A"}</span>
                       </div>
                       {s.refuseReason && <p className="text-xs text-red-400/80 mt-1">Motif : {s.refuseReason}</p>}
                     </div>
-                    <div className="flex gap-2 shrink-0 flex-wrap">
-                      {s.status === "en_attente" && (
+                    <div className="flex gap-2 shrink-0 flex-wrap self-end sm:self-start">
+                      {statusLower === "en_attente" && (
                         <>
-                          <button onClick={() => handleApprove(s.id)} disabled={actionLoading} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50">Approuver</button>
-                          <button onClick={() => setRefuseId(s.id)} className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors">Refuser</button>
+                          <button onClick={() => handleApprove(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50">{isThisLoading ? "..." : "Approuver"}</button>
+                          <button onClick={() => setRefuseId(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50">Refuser</button>
                         </>
                       )}
-                      {s.status === "actif" && (
+                      {statusLower === "actif" && (
                         <>
-                          <button onClick={() => handleFeature(s.id)} disabled={actionLoading} className="px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 disabled:opacity-50">
-                            <span className="material-symbols-outlined text-sm">star</span>Vedette
+                          <button onClick={() => handleFeature(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 disabled:opacity-50">
+                            <span className="material-symbols-outlined text-sm">star</span>{isThisLoading ? "..." : "Vedette"}
                           </button>
-                          <button onClick={() => handlePause(s.id)} disabled={actionLoading} className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-bold rounded-lg hover:bg-border-dark/80 transition-colors disabled:opacity-50">Pause</button>
+                          <button onClick={() => handlePause(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-bold rounded-lg hover:bg-border-dark/80 transition-colors disabled:opacity-50">{isThisLoading ? "..." : "Pause"}</button>
                         </>
                       )}
-                      {s.status.toLowerCase() === "vedette" && (
-                        <button onClick={() => handlePause(s.id)} disabled={actionLoading} className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-bold rounded-lg hover:bg-border-dark/80 transition-colors disabled:opacity-50">Retirer vedette</button>
+                      {statusLower === "vedette" && (
+                        <button onClick={() => handlePause(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-bold rounded-lg hover:bg-border-dark/80 transition-colors disabled:opacity-50">{isThisLoading ? "..." : "Retirer vedette"}</button>
                       )}
-                      {(s.status.toLowerCase() === "pause" || s.status.toLowerCase() === "refuse") && (
-                        <button onClick={() => handleApprove(s.id)} disabled={actionLoading} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50">Réactiver</button>
+                      {(statusLower === "pause" || statusLower === "refuse") && (
+                        <button onClick={() => handleApprove(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50">{isThisLoading ? "..." : "Réactiver"}</button>
                       )}
-                      <button onClick={() => setDeleteId(s.id)} className="px-3 py-1.5 bg-red-500/10 text-red-400 text-xs font-bold rounded-lg hover:bg-red-500/20 transition-colors">
+                      <button onClick={() => setDeleteId(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-red-500/10 text-red-400 text-xs font-bold rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50">
                         <span className="material-symbols-outlined text-sm">delete</span>
                       </button>
                     </div>
@@ -308,9 +336,9 @@ export default function AdminServices() {
             <h3 className="font-bold text-lg text-white mb-4">Motif de refus</h3>
             <textarea value={refuseReason} onChange={e => setRefuseReason(e.target.value)} rows={3} placeholder="Expliquez pourquoi ce service est refusé..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />
             <div className="flex gap-3">
-              <button onClick={() => setRefuseId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors" disabled={actionLoading}>Annuler</button>
-              <button onClick={handleRefuse} disabled={actionLoading} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">
-                {actionLoading ? "Traitement..." : "Confirmer le refus"}
+              <button onClick={() => setRefuseId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors" disabled={actionLoading !== null}>Annuler</button>
+              <button onClick={handleRefuse} disabled={actionLoading !== null} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">
+                {actionLoading === refuseId ? "Traitement..." : "Confirmer le refus"}
               </button>
             </div>
           </div>
@@ -327,9 +355,9 @@ export default function AdminServices() {
             </div>
             <p className="text-sm text-slate-400 mb-6">Cette action est irréversible. Le service sera retiré de la plateforme.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors" disabled={actionLoading}>Annuler</button>
-              <button onClick={handleDelete} disabled={actionLoading} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">
-                {actionLoading ? "Suppression..." : "Supprimer"}
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors" disabled={actionLoading !== null}>Annuler</button>
+              <button onClick={handleDelete} disabled={actionLoading !== null} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition-colors disabled:opacity-50">
+                {actionLoading === deleteId ? "Suppression..." : "Supprimer"}
               </button>
             </div>
           </div>

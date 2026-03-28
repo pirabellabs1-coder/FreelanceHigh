@@ -34,14 +34,24 @@ export default function AvisPage() {
   };
 
   const handleReport = async (reviewId: string) => {
-    const ok = await apiReportReview(reviewId);
-    if (ok) {
-      addToast("info", "Avis signalé aux modérateurs");
+    try {
+      const ok = await apiReportReview(reviewId);
+      if (ok) {
+        addToast("info", "Avis signalé aux modérateurs");
+      } else {
+        addToast("error", "Erreur lors du signalement");
+      }
+    } catch {
+      addToast("error", "Erreur lors du signalement de l'avis");
     }
   };
 
   const handleHelpful = async (reviewId: string) => {
-    await apiMarkHelpful(reviewId);
+    try {
+      await apiMarkHelpful(reviewId);
+    } catch {
+      addToast("error", "Erreur lors du marquage");
+    }
   };
 
   const avgRating = reviewSummary?.avgRating ?? 0;
@@ -76,7 +86,7 @@ export default function AvisPage() {
       {/* Header */}
       <div>
         <h2 className="text-xl font-black text-slate-100">Avis reçus</h2>
-        <p className="text-sm text-slate-400 mt-0.5">{reviews.length} avis vérifiés</p>
+        <p className="text-sm text-slate-400 mt-0.5">{(reviews || []).length} avis vérifiés</p>
       </div>
 
       {/* Summary */}
@@ -136,7 +146,7 @@ export default function AvisPage() {
       </div>
 
       {/* Reviews list */}
-      {reviews.length === 0 ? (
+      {(reviews || []).length === 0 ? (
         <div className="bg-background-dark/50 rounded-2xl border border-border-dark p-8 text-center">
           <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">reviews</span>
           <p className="text-sm text-slate-400">Aucun avis reçu pour le moment</p>
@@ -144,7 +154,7 @@ export default function AvisPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {reviews.map((r) => {
+          {(reviews || []).map((r) => {
             const isExpanded = expandedId === r.id;
             const isReplying = replyingTo === r.id;
 

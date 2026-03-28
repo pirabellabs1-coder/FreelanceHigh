@@ -55,8 +55,16 @@ export async function GET(
         );
       }
 
-      // Verify the user is either the client or the freelance on this order
-      if (order.clientId !== session.user.id && order.freelanceId !== session.user.id) {
+      // Verify the user is the client, the freelance, or the agency owner on this order
+      const userId = session!.user.id;
+      let hasAccess = order.clientId === userId || order.freelanceId === userId;
+      if (!hasAccess && order.agencyId) {
+        const isAgencyOwner = await prisma.agencyProfile.findFirst({
+          where: { id: order.agencyId, userId },
+        });
+        if (isAgencyOwner) hasAccess = true;
+      }
+      if (!hasAccess) {
         return NextResponse.json(
           { error: "Acces non autorise" },
           { status: 403 }
@@ -386,6 +394,15 @@ export async function PATCH(
 
           return updated;
         });
+
+        // Emit delivery event outside transaction
+        if (updatedOrder) {
+          emitEvent("order.delivered", {
+            orderId: id, serviceTitle, amount: order.amount,
+            freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
+            clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
+          }).catch(() => {});
+        }
       }
       // Handle accepting an order (status changes to "EN_COURS")
       else if (status === "en_cours") {
@@ -395,6 +412,8 @@ export async function PATCH(
             data: {
               status: "EN_COURS",
               progress: 10,
+              acceptedAt: new Date(),
+              startedAt: new Date(),
             },
             include: { service: true, client: true, freelance: true },
           });
@@ -413,6 +432,15 @@ export async function PATCH(
 
           return updated;
         });
+
+        // Emit accepted event outside transaction
+        if (updatedOrder) {
+          emitEvent("order.accepted", {
+            orderId: id, serviceTitle, amount: order.amount,
+            freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
+            clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
+          }).catch(() => {});
+        }
       }
       // Handle other status changes
       else {
@@ -446,10 +474,74 @@ export async function PATCH(
 
           if (prismaStatus === "LITIGE") {
             updateData.escrowStatus = "DISPUTED";
+
+            // Update escrow record to disputed
+            await tx.escrow.updateMany({
+              where: { orderId: order.id, status: "HELD" },
+              data: { status: "DISPUTED" },
+            });
+
+            // Create a Dispute record so admin can see and resolve it
+            await tx.dispute.create({
+              data: {
+                orderId: order.id,
+                clientId: order.clientId,
+                freelanceId: order.freelanceId,
+                reason: body.reason || "Litige ouvert par le client",
+                clientArgument: body.description || "",
+                status: "OUVERT",
+              },
+            });
+
+            // Notify all admins about the new dispute
+            const admins = await tx.user.findMany({
+              where: { role: "ADMIN" },
+              select: { id: true },
+            });
+            if (admins.length > 0) {
+              await tx.notification.createMany({
+                data: admins.map((a) => ({
+                  userId: a.id,
+                  title: "Nouveau litige",
+                  message: `Litige ouvert sur la commande ${serviceTitle}`,
+                  type: "ORDER" as const,
+                  read: false,
+                  link: `/admin/litiges`,
+                })),
+              });
+            }
           }
 
           if (prismaStatus === "ANNULE") {
             updateData.escrowStatus = "REFUNDED";
+
+            // Refund escrow record
+            await tx.escrow.updateMany({
+              where: { orderId: order.id, status: "HELD" },
+              data: { status: "REFUNDED", releasedAt: new Date() },
+            });
+
+            // Mark payments as refunded
+            await tx.payment.updateMany({
+              where: { orderId: order.id, status: "EN_ATTENTE" },
+              data: { status: "REMBOURSE" },
+            });
+
+            // Reverse admin wallet held fees
+            const cancelFee = order.platformFee || order.commission;
+            if (cancelFee > 0) {
+              const adminWallet = await tx.adminWallet.findFirst();
+              if (adminWallet) {
+                await tx.adminWallet.update({
+                  where: { id: adminWallet.id },
+                  data: { totalFeesHeld: { decrement: cancelFee } },
+                });
+                await tx.adminTransaction.updateMany({
+                  where: { orderId: order.id, status: "PENDING" },
+                  data: { status: "CONFIRMED" },
+                });
+              }
+            }
           }
 
           const updated = await tx.order.update({
@@ -473,9 +565,19 @@ export async function PATCH(
                 : order.clientId;
 
             if (statusLabels[prismaStatus]) {
-              const notifMessage = prismaStatus === "REVISION" && revisionComment
-                ? `Revision demandee : ${revisionComment}`
-                : `${statusLabels[prismaStatus]} pour ${serviceTitle}`;
+              let notifMessage = `${statusLabels[prismaStatus]} pour ${serviceTitle}`;
+              let notifLink = `/dashboard/commandes/${id}`;
+              if (prismaStatus === "REVISION" && revisionComment) {
+                notifMessage = `Revision demandee : ${revisionComment}`;
+              } else if (prismaStatus === "LITIGE") {
+                const disputeReason = body.reason || "";
+                notifMessage = disputeReason
+                  ? `Litige ouvert pour ${serviceTitle} — Motif : ${disputeReason}`
+                  : `Litige ouvert pour ${serviceTitle}`;
+                notifLink = userId === order.clientId
+                  ? `/dashboard/commandes/${id}`
+                  : `/client/commandes/${id}`;
+              }
 
               await tx.notification.create({
                 data: {
@@ -484,7 +586,7 @@ export async function PATCH(
                   message: notifMessage,
                   type: "ORDER",
                   read: false,
-                  link: `/dashboard/commandes/${id}`,
+                  link: notifLink,
                 },
               });
             }
@@ -508,7 +610,8 @@ export async function PATCH(
 
             // When order is completed, create payment records, credit wallet, and update service stats
             if (prismaStatus === "TERMINE") {
-              const netAmount = order.amount - order.commission;
+              const feeAmount = order.platformFee || order.commission;
+              const netAmount = order.amount - feeAmount;
 
               // Update escrow payment to completed
               await tx.payment.updateMany({
@@ -529,19 +632,21 @@ export async function PATCH(
               });
 
               // Release admin commission (held → released)
-              const adminWallet = await tx.adminWallet.findFirst();
-              if (adminWallet) {
-                await tx.adminWallet.update({
-                  where: { id: adminWallet.id },
-                  data: {
-                    totalFeesHeld: { decrement: order.platformFee },
-                    totalFeesReleased: { increment: order.platformFee },
-                  },
-                });
-                await tx.adminTransaction.updateMany({
-                  where: { orderId: order.id, status: "PENDING" },
-                  data: { status: "CONFIRMED" },
-                });
+              if (feeAmount > 0) {
+                const adminWallet = await tx.adminWallet.findFirst();
+                if (adminWallet) {
+                  await tx.adminWallet.update({
+                    where: { id: adminWallet.id },
+                    data: {
+                      totalFeesHeld: { decrement: feeAmount },
+                      totalFeesReleased: { increment: feeAmount },
+                    },
+                  });
+                  await tx.adminTransaction.updateMany({
+                    where: { orderId: order.id, status: "PENDING" },
+                    data: { status: "CONFIRMED" },
+                  });
+                }
               }
 
               // Credit freelancer or agency wallet
@@ -563,7 +668,7 @@ export async function PATCH(
                   },
                 });
               } else {
-                // Freelancer wallet
+                // Freelancer wallet (walletFreelance, not wallet)
                 const freelanceWallet = await tx.walletFreelance.upsert({
                   where: { userId: order.freelanceId },
                   create: { userId: order.freelanceId, balance: netAmount, totalEarned: netAmount },
@@ -581,25 +686,29 @@ export async function PATCH(
                 });
               }
 
-              // Increment service orderCount
+              // Update service totalRevenue (orderCount already incremented at POST creation)
               if (order.serviceId) {
                 await tx.service.update({
                   where: { id: order.serviceId },
-                  data: { orderCount: { increment: 1 } },
+                  data: { totalRevenue: { increment: netAmount } },
                 }).catch(() => {}); // ignore if service doesn't exist
               }
-
-              // Emit order.completed event (notification + email — outside tx)
-              emitEvent("order.completed", {
-                orderId: order.id, serviceTitle: serviceTitle, amount: netAmount,
-                freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
-                clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
-              }).catch(() => {});
             }
           }
 
           return updated;
         });
+
+        // Emit order.completed event OUTSIDE the transaction (fire-and-forget)
+        if (prismaStatus === "TERMINE" && updatedOrder && !("error" in updatedOrder)) {
+          const feeAmount = order.platformFee || order.commission;
+          const completedNet = order.amount - feeAmount;
+          emitEvent("order.completed", {
+            orderId: order.id, serviceTitle, amount: completedNet,
+            freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
+            clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
+          }).catch(() => {});
+        }
       }
 
       // Handle error returned from transaction (can't return NextResponse inside $transaction)
@@ -621,10 +730,12 @@ export async function PATCH(
       }
 
       // Normalize Prisma UPPERCASE enum values to lowercase for frontend compatibility
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const uo = updatedOrder as any;
       const normalizedOrder = {
-        ...updatedOrder,
-        status: typeof updatedOrder.status === "string" ? updatedOrder.status.toLowerCase() : updatedOrder.status,
-        escrowStatus: typeof updatedOrder.escrowStatus === "string" ? updatedOrder.escrowStatus.toLowerCase() : updatedOrder.escrowStatus,
+        ...uo,
+        status: typeof uo.status === "string" ? uo.status.toLowerCase() : uo.status,
+        escrowStatus: typeof uo.escrowStatus === "string" ? uo.escrowStatus.toLowerCase() : uo.escrowStatus,
       };
 
       return NextResponse.json({ order: normalizedOrder });

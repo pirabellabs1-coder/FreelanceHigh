@@ -7,17 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 // Plan data
 // ---------------------------------------------------------------------------
 const PLAN_NAMES: Record<string, string> = {
-  free: "Gratuit",
-  pro: "Pro",
-  business: "Business",
-  agence: "Agence",
+  decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", empire: "Empire",
+  free: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire",
 };
 
 const PLAN_COMMISSIONS: Record<string, string> = {
-  free: "20%",
-  pro: "15%",
-  business: "10%",
-  agence: "8%",
+  decouverte: "12%", ascension: "5%", sommet: "1€/vente", empire: "0%",
+  free: "12%", pro: "5%", business: "1€/vente", agence: "0%",
 };
 
 // ---------------------------------------------------------------------------
@@ -27,12 +23,12 @@ function ConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const planId = searchParams.get("plan") || "pro";
+  const planId = searchParams.get("plan") || "ascension";
   const billing = searchParams.get("billing") || "monthly";
   const amount = searchParams.get("amount") || "0";
   const nextBillingParam = searchParams.get("nextBilling");
 
-  const planName = PLAN_NAMES[planId] || "Pro";
+  const planName = PLAN_NAMES[planId] || "Ascension";
   const commission = PLAN_COMMISSIONS[planId] || "15%";
 
   // Format next billing date
@@ -58,7 +54,7 @@ function ConfirmationContent() {
   }
 
   return (
-    <div className="max-w-lg mx-auto text-center py-10 space-y-8">
+    <div className="max-w-lg mx-auto text-center px-4 sm:px-0 py-10 space-y-8">
       {/* Success icon */}
       <div className="flex flex-col items-center gap-4">
         <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-[scale-in_0.4s_ease-out]">

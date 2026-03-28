@@ -20,11 +20,11 @@ export default function PortfolioPage() {
   }
 
   function openEdit(id: string) {
-    const p = portfolio.find((x) => x.id === id);
+    const p = (portfolio || []).find((x) => x.id === id);
     if (!p) return;
     setForm({
       title: p.title, description: p.description, category: p.category,
-      skills: p.skills.join(", "), images: p.images.join(", "), link: p.link, featured: p.featured,
+      skills: (p.skills || []).join(", "), images: (p.images || []).join(", "), link: p.link, featured: p.featured,
     });
     setEditingId(id);
     setShowForm(true);
@@ -32,20 +32,24 @@ export default function PortfolioPage() {
 
   function handleSave() {
     if (!form.title.trim()) { addToast("error", "Le titre est requis"); return; }
-    const data = {
-      title: form.title, description: form.description, category: form.category,
-      skills: form.skills.split(",").map((s) => s.trim()).filter(Boolean),
-      images: form.images.split(",").map((s) => s.trim()).filter(Boolean),
-      link: form.link, featured: form.featured,
-    };
-    if (editingId) {
-      updatePortfolioProject(editingId, data);
-      addToast("success", "Projet modifie !");
-    } else {
-      addPortfolioProject(data);
-      addToast("success", "Projet ajoute au portfolio !");
+    try {
+      const data = {
+        title: form.title, description: form.description, category: form.category,
+        skills: (form.skills || "").split(",").map((s) => s.trim()).filter(Boolean),
+        images: (form.images || "").split(",").map((s) => s.trim()).filter(Boolean),
+        link: form.link, featured: form.featured,
+      };
+      if (editingId) {
+        updatePortfolioProject(editingId, data);
+        addToast("success", "Projet modifie !");
+      } else {
+        addPortfolioProject(data);
+        addToast("success", "Projet ajoute au portfolio !");
+      }
+      resetForm();
+    } catch {
+      addToast("error", "Erreur lors de la sauvegarde du projet");
     }
-    resetForm();
   }
 
   function handleDelete(id: string) {
@@ -55,7 +59,7 @@ export default function PortfolioPage() {
   }
 
   function toggleFeatured(id: string) {
-    const p = portfolio.find((x) => x.id === id);
+    const p = (portfolio || []).find((x) => x.id === id);
     if (p) {
       updatePortfolioProject(id, { featured: !p.featured });
       addToast("info", p.featured ? "Retire des favoris" : "Ajoute aux favoris");
@@ -67,13 +71,13 @@ export default function PortfolioPage() {
       <ConfirmModal open={!!deleteModal} title="Supprimer le projet" message="Etes-vous sur ? Cette action est irreversible."
         confirmLabel="Supprimer" variant="danger" onConfirm={() => deleteModal && handleDelete(deleteModal)} onCancel={() => setDeleteModal(null)} />
 
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Portfolio</h2>
-          <p className="text-slate-400 mt-1">{portfolio.length} projet(s) · {portfolio.filter((p) => p.featured).length} en vedette</p>
+          <p className="text-slate-400 mt-1">{(portfolio || []).length} projet(s) · {(portfolio || []).filter((p) => p.featured).length} en vedette</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 shadow-lg shadow-primary/20">
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 shadow-lg shadow-primary/20 w-full sm:w-auto justify-center">
           <span className="material-symbols-outlined text-lg">add</span> Ajouter un projet
         </button>
       </div>
@@ -130,10 +134,10 @@ export default function PortfolioPage() {
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {portfolio.map((p) => (
+        {(portfolio || []).map((p) => (
           <div key={p.id} className="bg-background-dark/50 border border-border-dark rounded-xl overflow-hidden group hover:border-primary/30 transition-all">
-            {p.images[0] && (
-              <img src={p.images[0]} alt={p.title} className="w-full h-48 object-cover" />
+            {(p.images || [])[0] && (
+              <img src={(p.images || [])[0]} alt={p.title} className="w-full h-48 object-cover" />
             )}
             <div className="p-5 space-y-3">
               <div className="flex items-start justify-between">
@@ -149,7 +153,7 @@ export default function PortfolioPage() {
               </div>
               <p className="text-sm text-slate-400 line-clamp-2">{p.description}</p>
               <div className="flex flex-wrap gap-1.5">
-                {p.skills.map((s) => (
+                {(p.skills || []).map((s) => (
                   <span key={s} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{s}</span>
                 ))}
               </div>

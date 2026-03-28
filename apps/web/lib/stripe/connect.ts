@@ -132,6 +132,7 @@ export async function createAccountLink(
  * @param currency - ISO currency code (e.g. "eur", "usd", "xof")
  * @param freelanceStripeAccountId - Connected account ID for the freelance
  * @param orderId - FreelanceHigh order ID for tracking
+ * @param vendorPlan - The vendor's subscription plan (for commission calculation)
  * @param metadata - Additional metadata for the payment
  * @returns Payment intent details, or null if Stripe is not configured
  */
@@ -140,6 +141,7 @@ export async function createPaymentIntent(
   currency: string,
   freelanceStripeAccountId: string,
   orderId: string,
+  vendorPlan?: string,
   metadata?: Record<string, string>
 ): Promise<PaymentIntentResult | null> {
   if (!stripe) {
@@ -148,9 +150,10 @@ export async function createPaymentIntent(
   }
 
   try {
-    // Calculate platform commission based on amount
-    // Default 20% commission for free plan; actual rate depends on freelance subscription tier
-    const applicationFeeAmount = Math.round(amount * 0.20);
+    // Calculate platform commission dynamically based on vendor's plan
+    const { calculateCommission, normalizePlanName } = await import("@/lib/plans");
+    const plan = normalizePlanName(vendorPlan);
+    const applicationFeeAmount = calculateCommission(plan, amount);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -172,9 +175,13 @@ export async function createPaymentIntent(
       `[Stripe Connect] Payment intent created: ${paymentIntent.id} for order ${orderId} (${amount} ${currency})`
     );
 
+    if (!paymentIntent.client_secret) {
+      throw new Error("Stripe PaymentIntent missing client_secret");
+    }
+
     return {
       paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret ?? "",
+      clientSecret: paymentIntent.client_secret,
       status: paymentIntent.status,
     };
   } catch (error) {

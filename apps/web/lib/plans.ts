@@ -1,64 +1,178 @@
 // ============================================================
-// FreelanceHigh — Plan Rules & Enforcement
+// FreelanceHigh — Plan Rules & Enforcement (Modèle "Élévation")
 // Authoritative source of truth for subscription plan limits
 // ============================================================
 
 export const PLAN_RULES = {
-  GRATUIT: {
-    name: "Gratuit",
+  DECOUVERTE: {
+    name: "Découverte",
+    nameEn: "Discovery",
     commissionType: "percentage" as const,
     commissionValue: 12, // 12%
-    serviceLimit: 7,
+    priceMonthly: 0,
+    priceAnnual: 0,
+    serviceLimit: 5,
     applicationLimit: 10,
     boostLimit: 0,
     scenarioLimit: 0,
     certificationLimit: 0,
     productiviteAccess: false,
+    teamLimit: 0,
+    crmAccess: false,
+    cloudStorageGB: 0,
+    apiAccess: false,
+    supportLevel: "email" as const,
   },
-  PRO: {
-    name: "Pro",
-    commissionType: "fixed" as const,
-    commissionValue: 1, // 1 EUR
-    serviceLimit: Infinity,
-    applicationLimit: 20,
-    boostLimit: 5,
-    scenarioLimit: 5,
-    certificationLimit: 3,
-    productiviteAccess: true,
+  ASCENSION: {
+    name: "Ascension",
+    nameEn: "Ascension",
+    commissionType: "percentage" as const,
+    commissionValue: 5, // 5%
+    priceMonthly: 15,
+    priceAnnual: 135, // 15 × 12 × 0.75
+    serviceLimit: 15,
+    applicationLimit: 30,
+    boostLimit: 3,
+    scenarioLimit: 3,
+    certificationLimit: 1,
+    productiviteAccess: false,
+    teamLimit: 0,
+    crmAccess: false,
+    cloudStorageGB: 0,
+    apiAccess: false,
+    supportLevel: "prioritaire" as const,
   },
-  BUSINESS: {
-    name: "Business",
+  SOMMET: {
+    name: "Sommet",
+    nameEn: "Summit",
     commissionType: "fixed" as const,
-    commissionValue: 1, // 1 EUR
+    commissionValue: 1, // 1 EUR fixed per sale
+    priceMonthly: 29.99,
+    priceAnnual: 269.91, // 29.99 × 12 × 0.75
     serviceLimit: Infinity,
     applicationLimit: Infinity,
     boostLimit: 10,
-    scenarioLimit: 15,
+    scenarioLimit: 10,
     certificationLimit: Infinity,
     productiviteAccess: true,
+    teamLimit: 0,
+    crmAccess: false,
+    cloudStorageGB: 0,
+    apiAccess: true,
+    supportLevel: "dedie" as const,
   },
-  AGENCE: {
-    name: "Agence",
+  EMPIRE: {
+    name: "Empire",
+    nameEn: "Empire",
     commissionType: "fixed" as const,
-    commissionValue: 1, // 1 EUR
+    commissionValue: 0, // 0% — ZERO commission
+    priceMonthly: 65,
+    priceAnnual: 585, // 65 × 12 × 0.75
     serviceLimit: Infinity,
     applicationLimit: Infinity,
-    boostLimit: 10,
+    boostLimit: 20,
     scenarioLimit: Infinity,
     certificationLimit: Infinity,
     productiviteAccess: true,
+    teamLimit: 25,
+    crmAccess: true,
+    cloudStorageGB: 100,
+    apiAccess: true,
+    supportLevel: "vip" as const,
   },
 } as const;
 
 export type PlanName = keyof typeof PLAN_RULES;
 
+/** Lowercase plan IDs for client-side / JWT usage */
+export type PlanId = "decouverte" | "ascension" | "sommet" | "empire";
+
+/** Ordered list of plan IDs (for UI iteration) */
+export const PLAN_ORDER: PlanName[] = ["DECOUVERTE", "ASCENSION", "SOMMET", "EMPIRE"];
+
+/** Display names for each plan */
+export const PLAN_DISPLAY_NAMES: Record<PlanName, { fr: string; en: string }> = {
+  DECOUVERTE: { fr: "Découverte", en: "Discovery" },
+  ASCENSION: { fr: "Ascension", en: "Ascension" },
+  SOMMET: { fr: "Sommet", en: "Summit" },
+  EMPIRE: { fr: "Empire", en: "Empire" },
+};
+
+/** Feature lists for UI display per plan */
+export const PLAN_FEATURES: Record<PlanName, string[]> = {
+  DECOUVERTE: [
+    "5 services actifs",
+    "10 candidatures/mois",
+    "Commission 12%",
+    "Support email",
+    "Profil public",
+  ],
+  ASCENSION: [
+    "15 services actifs",
+    "30 candidatures/mois",
+    "Commission 5%",
+    "3 boosts/mois",
+    "1 certification IA/mois",
+    "3 scénarios automatisés",
+    "Statistiques avancées",
+    "Support prioritaire",
+  ],
+  SOMMET: [
+    "Services illimités",
+    "Candidatures illimitées",
+    "Commission 1€/vente",
+    "10 boosts/mois",
+    "Certifications IA illimitées",
+    "10 scénarios automatisés",
+    "Outils de productivité",
+    "Clés API & Webhooks",
+    "Support dédié",
+  ],
+  EMPIRE: [
+    "Services illimités",
+    "Candidatures illimitées",
+    "0% commission",
+    "20 boosts/mois",
+    "Certifications IA illimitées",
+    "Scénarios illimités",
+    "Outils de productivité",
+    "Jusqu'à 25 membres d'équipe",
+    "CRM clients intégré",
+    "100 GB cloud partagé",
+    "Clés API & Webhooks",
+    "Support VIP dédié",
+  ],
+};
+
+/** Mapping between old DB enum names and new plan names */
+const LEGACY_TO_NEW: Record<string, PlanName> = {
+  GRATUIT: "DECOUVERTE",
+  FREE: "DECOUVERTE",
+  PRO: "ASCENSION",
+  BUSINESS: "SOMMET",
+  AGENCE: "EMPIRE",
+  AGENCY: "EMPIRE",
+  // New names (already correct)
+  DECOUVERTE: "DECOUVERTE",
+  ASCENSION: "ASCENSION",
+  SOMMET: "SOMMET",
+  EMPIRE: "EMPIRE",
+};
+
+/** Mapping from new plan names back to DB enum values */
+export const NEW_TO_DB: Record<PlanName, string> = {
+  DECOUVERTE: "GRATUIT",
+  ASCENSION: "PRO",
+  SOMMET: "BUSINESS",
+  EMPIRE: "AGENCE",
+};
+
 /**
  * Calculate the commission amount in cents for a given plan and sale amount (in cents).
- * - Gratuit: 12% of the sale amount
- * - Pro/Business/Agence: flat 1 EUR = 100 cents
  */
 export function calculateCommission(plan: PlanName, saleAmountCents: number): number {
   const rules = PLAN_RULES[plan];
+  if (rules.commissionValue === 0) return 0;
   if (rules.commissionType === "percentage") {
     return Math.round(saleAmountCents * rules.commissionValue / 100);
   }
@@ -71,6 +185,7 @@ export function calculateCommission(plan: PlanName, saleAmountCents: number): nu
  */
 export function calculateCommissionEur(plan: PlanName, saleAmountEur: number): number {
   const rules = PLAN_RULES[plan];
+  if (rules.commissionValue === 0) return 0;
   if (rules.commissionType === "percentage") {
     return Math.round(saleAmountEur * rules.commissionValue) / 100;
   }
@@ -82,10 +197,11 @@ export function calculateCommissionEur(plan: PlanName, saleAmountEur: number): n
  */
 export function getCommissionLabel(plan: PlanName): string {
   const rules = PLAN_RULES[plan];
+  if (rules.commissionValue === 0) return "0%";
   if (rules.commissionType === "percentage") {
     return `${rules.commissionValue}%`;
   }
-  return `${rules.commissionValue} EUR/vente`;
+  return `${rules.commissionValue}€/vente`;
 }
 
 export function canCreateService(plan: PlanName, currentCount: number): boolean {
@@ -112,37 +228,59 @@ export function hasProductiviteAccess(plan: PlanName): boolean {
   return PLAN_RULES[plan].productiviteAccess;
 }
 
+export function hasTeamAccess(plan: PlanName): boolean {
+  return PLAN_RULES[plan].teamLimit > 0;
+}
+
+export function hasCrmAccess(plan: PlanName): boolean {
+  return PLAN_RULES[plan].crmAccess;
+}
+
+export function hasApiAccess(plan: PlanName): boolean {
+  return PLAN_RULES[plan].apiAccess;
+}
+
 export function getPlanLimits(plan: PlanName) {
   return PLAN_RULES[plan];
 }
 
 /**
- * Normalize a plan string (from session/DB) to a valid PlanName.
- * Handles case insensitivity, aliases (e.g. "free" -> "GRATUIT"), and defaults to GRATUIT.
+ * Normalize a plan string (from session/DB/JWT) to a valid PlanName.
+ * Handles legacy names (GRATUIT→DECOUVERTE, PRO→ASCENSION, etc.)
  */
 export function normalizePlanName(plan: string | undefined | null): PlanName {
-  if (!plan) return "GRATUIT";
+  if (!plan) return "DECOUVERTE";
   const upper = plan.toUpperCase();
-  if (upper in PLAN_RULES) return upper as PlanName;
-  // Handle common aliases
-  if (upper === "FREE" || upper === "GRATUIT") return "GRATUIT";
-  if (upper === "AGENCY") return "AGENCE";
-  return "GRATUIT";
+  return LEGACY_TO_NEW[upper] || "DECOUVERTE";
+}
+
+/**
+ * Convert a PlanName to its lowercase PlanId for JWT / client usage.
+ */
+export function planNameToId(plan: PlanName): PlanId {
+  return plan.toLowerCase() as PlanId;
+}
+
+/**
+ * Convert a PlanId to PlanName.
+ */
+export function planIdToName(id: string): PlanName {
+  return normalizePlanName(id);
 }
 
 /**
  * Format a limit value for display (handles Infinity).
  */
 export function formatLimit(value: number): string {
-  if (!isFinite(value)) return "Illimite";
+  if (!isFinite(value)) return "Illimité";
   return String(value);
 }
 
 /**
- * Format usage display: "used/limit" or "used/Illimite".
+ * Format usage display: "used/limit" or "used/Illimité".
  */
 export function formatUsage(used: number, limit: number): string {
-  if (!isFinite(limit)) return `${used} / Illimite`;
+  if (!isFinite(limit)) return `${used} / Illimité`;
   return `${used} / ${limit}`;
 }
 

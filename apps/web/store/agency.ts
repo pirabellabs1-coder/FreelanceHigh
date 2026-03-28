@@ -173,9 +173,9 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
       const updates: Partial<AgencyState> = { isLoading: false, lastSyncAt: new Date().toISOString() };
 
       if (servicesRes.status === "fulfilled") updates.services = servicesRes.value;
-      if (ordersRes.status === "fulfilled") updates.orders = ordersRes.value.orders;
+      if (ordersRes.status === "fulfilled") updates.orders = ordersRes.value?.orders || [];
       if (financeRes.status === "fulfilled") updates.financeSummary = financeRes.value;
-      if (transactionsRes.status === "fulfilled") updates.transactions = transactionsRes.value.transactions;
+      if (transactionsRes.status === "fulfilled") updates.transactions = transactionsRes.value?.transactions || [];
       if (reviewsRes.status === "fulfilled") {
         updates.reviews = reviewsRes.value.reviews;
         updates.reviewSummary = reviewsRes.value.summary;
@@ -278,7 +278,8 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
 
   syncOrders: async () => {
     try {
-      const { orders: rawOrders } = await ordersApi.list();
+      const res = await ordersApi.list();
+      const rawOrders = res?.orders || [];
       // Normalize status to lowercase (Prisma returns UPPERCASE enum values)
       const orders = rawOrders.map((o) => ({ ...o, status: (o.status || "en_attente").toLowerCase() }));
       set({ orders });
@@ -287,12 +288,12 @@ export const useAgencyStore = create<AgencyState>()((set, get) => ({
         fetch("/api/orders/auto-cancel", { method: "POST" }),
         fetch("/api/orders/auto-validate", { method: "POST" }),
       ]).then(async (results) => {
-        const c = results[0].status === "fulfilled" ? await results[0].value.json().catch(() => null) : null;
-        const v = results[1].status === "fulfilled" ? await results[1].value.json().catch(() => null) : null;
+        const c = results[0].status === "fulfilled" && results[0].value.ok ? await results[0].value.json().catch(() => null) : null;
+        const v = results[1].status === "fulfilled" && results[1].value.ok ? await results[1].value.json().catch(() => null) : null;
         if ((c?.count > 0) || (v?.count > 0)) {
           try {
             const fresh = await ordersApi.list();
-            set({ orders: fresh.orders.map((o) => ({ ...o, status: (o.status || "en_attente").toLowerCase() })) });
+            set({ orders: (fresh?.orders || []).map((o) => ({ ...o, status: (o.status || "en_attente").toLowerCase() })) });
           } catch { /* ignore */ }
         }
       }).catch(() => {});

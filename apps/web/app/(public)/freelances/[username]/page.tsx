@@ -154,13 +154,14 @@ const CATEGORY_COLORS: Record<string, string> = {
 // ============================================================
 
 function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "base" }) {
+  const safeRating = Number.isFinite(rating) ? rating : 0;
   const stars = [];
   for (let i = 1; i <= 5; i++) {
-    if (i <= Math.floor(rating)) {
+    if (i <= Math.floor(safeRating)) {
       stars.push(
         <span key={i} className={cn("material-symbols-outlined fill-icon text-primary", size === "sm" ? "text-sm" : "text-base")}>star</span>
       );
-    } else if (i - 0.5 <= rating) {
+    } else if (i - 0.5 <= safeRating) {
       stars.push(
         <span key={i} className={cn("material-symbols-outlined fill-icon text-primary", size === "sm" ? "text-sm" : "text-base")}>star_half</span>
       );
@@ -194,7 +195,7 @@ function CircularProgress({
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(value / max, 1);
+  const progress = max > 0 ? Math.min(value / max, 1) : 0;
   const offset = circumference * (1 - progress);
 
   return (
@@ -238,9 +239,9 @@ function ProfileSkeleton() {
         <div className="flex flex-col md:flex-row gap-6 px-6 -mt-16 relative z-10">
           <div className="w-40 h-40 rounded-2xl bg-slate-300 dark:bg-slate-600 border-4 border-white dark:border-slate-800" />
           <div className="flex-1 space-y-3 pt-20 md:pt-0 pb-2">
-            <div className="h-8 w-64 bg-slate-200 dark:bg-slate-700 rounded" />
-            <div className="h-5 w-96 bg-slate-200 dark:bg-slate-700 rounded" />
-            <div className="h-4 w-80 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-8 w-full max-w-[16rem] bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-5 w-full max-w-[24rem] bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-4 w-full max-w-[20rem] bg-slate-200 dark:bg-slate-700 rounded" />
           </div>
         </div>
         {/* Stats */}
@@ -413,14 +414,14 @@ export default function FreelanceProfilePage() {
   if (notFound || !freelancer) return <NotFound />;
 
   const profile = freelancer.profile;
-  const stats = freelancer.stats;
-  const reviews = freelancer.reviews || [];
-  const certificates = freelancer.certificates || [];
-  const services = freelancer.services || [];
-  const skills = profile?.skills || [];
-  const badges = profile?.badges || [];
-  const languages = profile?.languages || [];
-  const education = profile?.education || [];
+  const stats = freelancer.stats || { completedOrders: 0, totalOrders: 0, completionRate: 0, avgRating: 0, totalReviews: 0, activeServices: 0 };
+  const reviews = Array.isArray(freelancer.reviews) ? freelancer.reviews : [];
+  const certificates = Array.isArray(freelancer.certificates) ? freelancer.certificates : [];
+  const services = Array.isArray(freelancer.services) ? freelancer.services : [];
+  const skills = (Array.isArray(profile?.skills) ? profile?.skills : []) as Skill[];
+  const badges = (Array.isArray(profile?.badges) ? profile?.badges : []) as string[];
+  const languages = (Array.isArray(profile?.languages) ? profile?.languages : []) as Language[];
+  const education = (Array.isArray(profile?.education) ? profile?.education : []) as Education[];
   const links = profile?.links || {};
   const available = profile?.availability?.availableNow ?? false;
   const bio = profile?.bio || "";
@@ -436,7 +437,7 @@ export default function FreelanceProfilePage() {
     (reviewPage + 1) * REVIEWS_PER_PAGE
   );
 
-  const avgRating = stats.avgRating.toFixed(1);
+  const avgRating = (stats.avgRating ?? 0).toFixed(1);
 
   // Derive badge from API response
   const allBadges = [...badges];
@@ -448,7 +449,7 @@ export default function FreelanceProfilePage() {
   const tags = skills.slice(3).map((s) => s.name);
 
   return (
-    <div className="flex-1 flex flex-col items-center">
+    <div className="flex-1 flex flex-col items-center overflow-x-hidden">
       <div className="w-full max-w-[1200px] px-4 md:px-6 py-8">
         {/* ============================================================ */}
         {/* Hero / Header                                                 */}
@@ -542,7 +543,7 @@ export default function FreelanceProfilePage() {
                     {[profile?.city, profile?.country].filter(Boolean).join(", ")}
                   </span>
                 )}
-                {stats.completedOrders > 0 && (
+                {(stats.completedOrders ?? 0) > 0 && (
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-base">work_history</span>
                     {stats.completedOrders} {t("completed_orders")}
@@ -565,18 +566,18 @@ export default function FreelanceProfilePage() {
               <div className="flex items-center gap-3 mt-2">
                 <StarRating rating={parseFloat(avgRating)} size="base" />
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{avgRating}</span>
-                <span className="text-sm text-slate-500">({stats.totalReviews} {t("reviews")})</span>
+                <span className="text-sm text-slate-500">({stats.totalReviews ?? 0} {t("reviews")})</span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 pb-2 self-start md:self-end">
+            <div className="flex flex-col gap-2 pb-2 self-stretch md:self-end w-full md:w-auto">
               <button
                 onClick={() => {
                   if (!requireAuth()) return;
                   setContactOpen(!contactOpen);
                 }}
-                className="h-11 px-5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary/20 transition-all text-sm flex items-center gap-2"
+                className="h-11 px-5 rounded-lg bg-primary/10 border border-primary/30 text-primary font-bold hover:bg-primary/20 transition-all text-sm flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">mail</span>
                 {t("send_message")}
@@ -662,9 +663,9 @@ export default function FreelanceProfilePage() {
           {/* Commandes complétées */}
           <div className="bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/[0.06] dark:to-white/[0.02] rounded-2xl border border-primary/10 p-5 flex flex-col items-center">
             <div className="relative">
-              <CircularProgress value={stats.completedOrders} max={Math.max(stats.completedOrders, 50)} color="#6C2BD9" />
+              <CircularProgress value={stats.completedOrders ?? 0} max={Math.max(stats.completedOrders ?? 0, 50)} color="#6C2BD9" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.completedOrders}</span>
+                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.completedOrders ?? 0}</span>
               </div>
             </div>
             <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("completed_orders")}</p>
@@ -673,9 +674,9 @@ export default function FreelanceProfilePage() {
           {/* Taux de complétion */}
           <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 dark:from-emerald-500/10 dark:to-emerald-500/[0.02] rounded-2xl border border-emerald-500/10 p-5 flex flex-col items-center">
             <div className="relative">
-              <CircularProgress value={stats.completionRate} max={100} color="#10b981" />
+              <CircularProgress value={stats.completionRate ?? 0} max={100} color="#10b981" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.completionRate}%</span>
+                <span className="text-xl font-black text-slate-900 dark:text-white">{stats.completionRate ?? 0}%</span>
               </div>
             </div>
             <p className="text-xs font-semibold text-slate-500 mt-3 text-center">{t("completion_rate")}</p>
@@ -695,9 +696,9 @@ export default function FreelanceProfilePage() {
           {/* Commandes en cours */}
           <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 dark:from-blue-500/10 dark:to-blue-500/[0.02] rounded-2xl border border-blue-500/10 p-5 flex flex-col items-center">
             <div className="relative">
-              <CircularProgress value={Math.max(stats.totalOrders - stats.completedOrders, 0)} max={Math.max(stats.totalOrders, 10)} color="#3b82f6" />
+              <CircularProgress value={Math.max((stats.totalOrders ?? 0) - (stats.completedOrders ?? 0), 0)} max={Math.max(stats.totalOrders ?? 0, 10)} color="#3b82f6" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-black text-slate-900 dark:text-white">{Math.max(stats.totalOrders - stats.completedOrders, 0)}</span>
+                <span className="text-xl font-black text-slate-900 dark:text-white">{Math.max((stats.totalOrders ?? 0) - (stats.completedOrders ?? 0), 0)}</span>
               </div>
             </div>
             <p className="text-xs font-semibold text-slate-500 mt-3 text-center">Commandes en cours</p>
@@ -836,12 +837,12 @@ export default function FreelanceProfilePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/30 text-center">
                       <span className="material-symbols-outlined text-2xl text-emerald-600 dark:text-emerald-400 mb-1">task_alt</span>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.completedOrders}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.completedOrders ?? 0}</p>
                       <p className="text-xs text-slate-500">{t("completed_orders")}</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-200 dark:border-blue-800/30 text-center">
                       <span className="material-symbols-outlined text-2xl text-blue-600 dark:text-blue-400 mb-1">percent</span>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.completionRate}%</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.completionRate ?? 0}%</p>
                       <p className="text-xs text-slate-500">{t("completion_rate")}</p>
                     </div>
                     <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-200 dark:border-purple-800/30 text-center">
@@ -868,7 +869,7 @@ export default function FreelanceProfilePage() {
                         <div className="flex-1 space-y-1">
                           {[5, 4, 3, 2, 1].map((star) => {
                             const count = reviews.filter(
-                              (r) => Math.floor(r.rating) === star
+                              (r) => Math.floor(r.rating ?? 0) === star
                             ).length;
                             const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
                             return (
@@ -895,23 +896,23 @@ export default function FreelanceProfilePage() {
                             <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-3">
                                 <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                                  {review.clientName?.split(" ").map((w) => w[0]).join("").slice(0, 2) || "?"}
+                                  {review.clientName ? review.clientName.split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2) || "?" : "?"}
                                 </div>
                                 <div>
-                                  <p className="font-bold text-sm">{review.clientName}</p>
+                                  <p className="font-bold text-sm">{review.clientName || "Client"}</p>
                                   <p className="text-slate-500 text-xs">{t("client")}</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <StarRating rating={review.rating} />
+                                <StarRating rating={review.rating ?? 0} />
                                 <p className="text-[10px] text-slate-400 mt-0.5">
-                                  {new Date(review.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                  {review.createdAt ? new Date(review.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "short", year: "numeric" }) : ""}
                                 </p>
                               </div>
                             </div>
-                            <p className="text-slate-700 dark:text-slate-400 text-sm">{review.comment}</p>
+                            <p className="text-slate-700 dark:text-slate-400 text-sm">{review.comment || ""}</p>
                             {review.reply && (
-                              <div className="mt-3 ml-6 pl-4 border-l-2 border-primary/20">
+                              <div className="mt-3 ml-3 sm:ml-6 pl-4 border-l-2 border-primary/20">
                                 <p className="text-xs font-bold text-primary mb-1 flex items-center gap-1">
                                   <span className="material-symbols-outlined text-xs">reply</span>
                                   {t("reply_from", { name: freelancer.name })}
@@ -985,7 +986,7 @@ export default function FreelanceProfilePage() {
                               <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
                                 <span className="flex items-center gap-1">
                                   <span className="material-symbols-outlined text-sm">calendar_today</span>
-                                  {new Date(cert.issuedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                                  {cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : ""}
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <span className="material-symbols-outlined text-sm">grade</span>
@@ -1049,7 +1050,7 @@ export default function FreelanceProfilePage() {
                         <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                           <div
                             className={cn("h-full rounded-full transition-all duration-700", levelColor)}
-                            style={{ width: `${skill.percent}%` }}
+                            style={{ width: `${skill.percent ?? 0}%` }}
                           />
                         </div>
                       </div>
@@ -1079,10 +1080,10 @@ export default function FreelanceProfilePage() {
               </h4>
               <div className="space-y-4">
                 {[
-                  { label: t("average_rating"), value: avgRating, max: 5, display: `${avgRating}/5` },
-                  { label: t("orders"), value: stats.completedOrders, max: Math.max(stats.completedOrders, 50), display: stats.completedOrders.toString() },
-                  { label: t("completion"), value: stats.completionRate, max: 100, display: `${stats.completionRate}%` },
-                  { label: "Commandes en cours", value: Math.max(stats.totalOrders - stats.completedOrders, 0), max: Math.max(stats.totalOrders, 10), display: `${Math.max(stats.totalOrders - stats.completedOrders, 0)}` },
+                  { label: t("average_rating"), value: parseFloat(avgRating), max: 5, display: `${avgRating}/5` },
+                  { label: t("orders"), value: stats.completedOrders ?? 0, max: Math.max(stats.completedOrders ?? 0, 50), display: String(stats.completedOrders ?? 0) },
+                  { label: t("completion"), value: stats.completionRate ?? 0, max: 100, display: `${stats.completionRate ?? 0}%` },
+                  { label: "Commandes en cours", value: Math.max((stats.totalOrders ?? 0) - (stats.completedOrders ?? 0), 0), max: Math.max(stats.totalOrders ?? 0, 10), display: `${Math.max((stats.totalOrders ?? 0) - (stats.completedOrders ?? 0), 0)}` },
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="flex justify-between text-xs mb-1.5">
@@ -1124,21 +1125,21 @@ export default function FreelanceProfilePage() {
             {/* Social Links */}
             <div className="flex justify-center gap-4 py-2">
               {links.linkedin && (
-                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.linkedin} aria-label="LinkedIn">
+                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <svg className="size-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 16h-2v-6h2v6zm-1-6.891c-.607 0-1.1-.496-1.1-1.109 0-.612.493-1.109 1.1-1.109s1.1.497 1.1 1.109c0 .613-.493 1.109-1.1 1.109zm8 6.891h-2v-3.86c0-.881-.719-1.6-1.6-1.6s-1.6.719-1.6 1.6v3.86h-2v-6h2v1.135c.671-.647 1.62-1.135 2.6-1.135 1.989 0 3.6 1.611 3.6 3.6v2.399z" />
                   </svg>
                 </a>
               )}
               {links.github && (
-                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.github} aria-label="GitHub">
+                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                   <svg className="size-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                   </svg>
                 </a>
               )}
               {links.portfolio && (
-                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.portfolio} aria-label="Portfolio">
+                <a className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" href={links.portfolio} target="_blank" rel="noopener noreferrer" aria-label="Portfolio">
                   <span className="material-symbols-outlined text-xl">language</span>
                 </a>
               )}
@@ -1150,7 +1151,7 @@ export default function FreelanceProfilePage() {
       {/* ============================================================ */}
       {/* Portfolio                                                      */}
       {/* ============================================================ */}
-      {freelancer.portfolio && freelancer.portfolio.length > 0 && (
+      {Array.isArray(freelancer.portfolio) && freelancer.portfolio.length > 0 && (
         <div className="w-full max-w-[1200px] px-4 md:px-6 pb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold flex items-center gap-3">
@@ -1293,15 +1294,15 @@ export default function FreelanceProfilePage() {
                     </h4>
 
                     <div className="flex items-center gap-2 mb-3">
-                      <StarRating rating={service.rating} />
+                      <StarRating rating={service.rating ?? 0} />
                       <span className="text-xs text-slate-500">
-                        {service.rating} ({service.ratingCount} {t("reviews")})
+                        {(service.rating ?? 0).toFixed(1)} ({service.ratingCount ?? 0} {t("reviews")})
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-border-dark">
                       <span className="text-sm font-black text-primary">
-                        {t("from")} {format(service.basePrice)}
+                        {t("from")} {format(service.basePrice ?? 0)}
                       </span>
                     </div>
                   </div>

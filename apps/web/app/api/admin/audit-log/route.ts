@@ -7,7 +7,7 @@ import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 // GET /api/admin/audit-log — Paginated audit log entries
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
     return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
   }
 

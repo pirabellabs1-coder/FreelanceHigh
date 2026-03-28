@@ -6,34 +6,44 @@ import { authOptions } from "@/lib/auth/config";
 import { stripe } from "@/lib/stripe";
 import { rateLimit } from "@/lib/api-rate-limit";
 
-const VALID_PLANS = ["pro", "business", "agence"] as const;
+const VALID_PLANS = ["ascension", "sommet", "empire"] as const;
 type PaidPlanId = (typeof VALID_PLANS)[number];
 
+// Legacy plan name mapping
+const LEGACY_MAP: Record<string, PaidPlanId> = {
+  pro: "ascension",
+  business: "sommet",
+  agence: "empire",
+  agency: "empire",
+};
+
 const PLAN_NAMES: Record<PaidPlanId, string> = {
-  pro: "Pro",
-  business: "Business",
-  agence: "Agence",
+  ascension: "Ascension",
+  sommet: "Sommet",
+  empire: "Empire",
 };
 
 const PLAN_PRICES_MONTHLY: Record<PaidPlanId, number> = {
-  pro: 15,
-  business: 45,
-  agence: 99,
+  ascension: 15,
+  sommet: 29.99,
+  empire: 65,
 };
 
 /**
  * Map plan IDs to Stripe Price IDs from environment variables.
  *
  * Expected env vars:
- *   STRIPE_PRICE_PRO       — e.g. price_xxx for Pro (15 EUR/month)
- *   STRIPE_PRICE_BUSINESS  — e.g. price_xxx for Business (45 EUR/month)
- *   STRIPE_PRICE_AGENCE    — e.g. price_xxx for Agence (99 EUR/month)
+ *   STRIPE_PRICE_ASCENSION — e.g. price_xxx for Ascension (15 EUR/month)
+ *   STRIPE_PRICE_SOMMET    — e.g. price_xxx for Sommet (29.99 EUR/month)
+ *   STRIPE_PRICE_EMPIRE    — e.g. price_xxx for Empire (65 EUR/month)
+ *
+ * Falls back to legacy env vars (STRIPE_PRICE_PRO, etc.) if new ones not set.
  */
 function getStripePriceId(planId: PaidPlanId): string | null {
   const envMap: Record<PaidPlanId, string | undefined> = {
-    pro: process.env.STRIPE_PRICE_PRO,
-    business: process.env.STRIPE_PRICE_BUSINESS,
-    agence: process.env.STRIPE_PRICE_AGENCE,
+    ascension: process.env.STRIPE_PRICE_ASCENSION || process.env.STRIPE_PRICE_PRO,
+    sommet: process.env.STRIPE_PRICE_SOMMET || process.env.STRIPE_PRICE_BUSINESS,
+    empire: process.env.STRIPE_PRICE_EMPIRE || process.env.STRIPE_PRICE_AGENCE,
   };
   return envMap[planId] ?? null;
 }
@@ -63,12 +73,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { planId } = body as { planId: string };
+    let { planId } = body as { planId: string };
+
+    // Map legacy plan names to new names
+    if (planId && LEGACY_MAP[planId]) {
+      planId = LEGACY_MAP[planId];
+    }
 
     // Validate planId
     if (!planId || !VALID_PLANS.includes(planId as PaidPlanId)) {
       return NextResponse.json(
-        { error: "Plan invalide. Les plans acceptes sont : pro, business, agence." },
+        { error: "Plan invalide. Les plans acceptes sont : ascension, sommet, empire." },
         { status: 400 }
       );
     }
@@ -89,9 +104,6 @@ export async function POST(request: NextRequest) {
     const successUrl = `${origin}/dashboard/abonnement?success=true&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/dashboard/abonnement?cancelled=true`;
 
-    // Determine or create Stripe customer
-    // For now, use the user email. In production, the Stripe customer ID
-    // should be stored in the DB and reused.
     const userEmail = session.user.email ?? undefined;
 
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -131,7 +143,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[API /subscription POST]", error);
 
-    // Return Stripe-specific error messages when available
     if (error instanceof Error && "type" in error) {
       return NextResponse.json(
         { error: `Erreur Stripe : ${error.message}` },

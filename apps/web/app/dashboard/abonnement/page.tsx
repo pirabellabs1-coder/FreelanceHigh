@@ -4,40 +4,51 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useDashboardStore, useToastStore } from "@/store/dashboard";
-import { DEMO_PLANS, INVOICES } from "@/lib/demo-data";
+import { INVOICES } from "@/lib/demo-data";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import {
+  PLAN_RULES,
+  PLAN_ORDER,
+  PLAN_FEATURES,
+  getCommissionLabel,
+  normalizePlanName,
+  type PlanName,
+} from "@/lib/plans";
 
-const PLAN_STYLES: Record<string, { icon: string; color: string; bg: string; border: string }> = {
-  free: { icon: "person", color: "text-slate-400", bg: "bg-slate-500/10", border: "border-border-dark" },
-  pro: { icon: "bolt", color: "text-primary", bg: "bg-primary/10", border: "border-primary" },
-  business: { icon: "workspace_premium", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/40" },
+const PLAN_STYLES: Record<PlanName, { icon: string; color: string; bg: string; border: string }> = {
+  DECOUVERTE: { icon: "explore", color: "text-slate-400", bg: "bg-slate-500/10", border: "border-border-dark" },
+  ASCENSION: { icon: "trending_up", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/40" },
+  SOMMET: { icon: "bolt", color: "text-primary", bg: "bg-primary/10", border: "border-primary" },
+  EMPIRE: { icon: "workspace_premium", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40" },
 };
 
 export default function AbonnementPage() {
   const router = useRouter();
-  const { currentPlan, changePlan } = useDashboardStore();
+  const { currentPlan: rawPlan, changePlan } = useDashboardStore();
   const addToast = useToastStore((s) => s.addToast);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const current = DEMO_PLANS.find((p) => p.id === currentPlan) || DEMO_PLANS[1];
-  const style = PLAN_STYLES[currentPlan] || PLAN_STYLES.pro;
+  const currentPlanKey = normalizePlanName(rawPlan);
+  const currentRules = PLAN_RULES[currentPlanKey] ?? PLAN_RULES.DECOUVERTE;
+  const style = PLAN_STYLES[currentPlanKey] ?? PLAN_STYLES.DECOUVERTE;
+  const currentIndex = PLAN_ORDER.indexOf(currentPlanKey);
 
-  function handleSelectPlan(planId: string) {
+  function handleSelectPlan(planKey: PlanName) {
+    const planId = planKey.toLowerCase();
     router.push(`/dashboard/abonnement/paiement?plan=${planId}&billing=${billing}`);
   }
 
   function handleCancelSubscription() {
     setShowCancelConfirm(false);
-    changePlan("free");
-    addToast("info", "Votre abonnement a ete annule. Vous passerez au plan Gratuit a la fin de la periode.");
+    changePlan("decouverte");
+    addToast("info", "Votre abonnement a ete annule. Vous passerez au plan Découverte a la fin de la periode.");
   }
 
   async function handleDownloadPDF(invoice: typeof INVOICES[0]) {
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
       if (!res.ok) {
-        // Fallback: client-side generation
         const { generateInvoicePDF } = await import("@/lib/pdf/invoice-template");
         const pdfBytes = generateInvoicePDF({
           id: invoice.id,
@@ -74,7 +85,7 @@ export default function AbonnementPage() {
         open={showCancelConfirm}
         title="Annuler l'abonnement"
         variant="danger"
-        message="Votre plan Pro restera actif jusqu'a la fin de la periode de facturation. Ensuite, votre compte passera automatiquement au plan Gratuit avec les limitations correspondantes."
+        message={`Votre plan ${currentRules.name} restera actif jusqu'a la fin de la periode de facturation. Ensuite, votre compte passera automatiquement au plan Découverte avec les limitations correspondantes.`}
         confirmLabel="Annuler mon abonnement"
         onConfirm={handleCancelSubscription}
         onCancel={() => setShowCancelConfirm(false)}
@@ -88,30 +99,30 @@ export default function AbonnementPage() {
       {/* Current plan banner */}
       <div className={cn(
         "rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4",
-        currentPlan === "free" ? "bg-slate-500/10 border border-border-dark" : "bg-primary"
+        currentPlanKey === "DECOUVERTE" ? "bg-slate-500/10 border border-border-dark" : "bg-primary"
       )}>
         <div className="flex items-center gap-4">
           <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center",
-            currentPlan === "free" ? "bg-slate-500/20" : "bg-white/20"
+            currentPlanKey === "DECOUVERTE" ? "bg-slate-500/20" : "bg-white/20"
           )}>
             <span className={cn("material-symbols-outlined text-2xl",
-              currentPlan === "free" ? "text-slate-400" : "text-white"
+              currentPlanKey === "DECOUVERTE" ? "text-slate-400" : "text-white"
             )}>{style.icon}</span>
           </div>
           <div>
-            <p className={cn("text-xs font-bold", currentPlan === "free" ? "text-slate-500" : "text-white/70")}>Plan actuel</p>
-            <p className={cn("text-lg font-extrabold", currentPlan === "free" ? "text-slate-200" : "text-white")}>
-              Plan {current.name} {current.price > 0 ? `· €${current.price}/mois` : "· Gratuit"}
+            <p className={cn("text-xs font-bold", currentPlanKey === "DECOUVERTE" ? "text-slate-500" : "text-white/70")}>Plan actuel</p>
+            <p className={cn("text-lg font-extrabold", currentPlanKey === "DECOUVERTE" ? "text-slate-200" : "text-white")}>
+              Plan {currentRules.name} {(currentRules.priceMonthly ?? 0) > 0 ? `· €${currentRules.priceMonthly}/mois` : "· Gratuit"}
             </p>
           </div>
         </div>
-        <div className={cn("flex items-center gap-3 text-sm", currentPlan === "free" ? "text-slate-500" : "text-white/70")}>
+        <div className={cn("flex flex-wrap items-center gap-2 sm:gap-3 text-sm", currentPlanKey === "DECOUVERTE" ? "text-slate-500" : "text-white/70")}>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-emerald-400" />
-            {currentPlan === "free" ? "Actif" : "Actif · Renouvelle le 1 Avr 2026"}
+            {currentPlanKey === "DECOUVERTE" ? "Actif" : "Actif · Renouvelle le 1 Avr 2026"}
           </div>
           <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs font-bold">
-            {current.commission > 0 ? `${current.commission}% commission` : "1\u20AC/vente"}
+            Commission {getCommissionLabel(currentPlanKey)}
           </span>
         </div>
       </div>
@@ -130,28 +141,33 @@ export default function AbonnementPage() {
         </button>
         <span className={cn("text-sm font-bold", billing === "annual" ? "text-slate-100" : "text-slate-500")}>
           Annuel
-          <span className="ml-1.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full">-20%</span>
+          <span className="ml-1.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full">-25%</span>
         </span>
       </div>
 
       {/* Plans grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {DEMO_PLANS.map((plan) => {
-          const isCurrent = plan.id === currentPlan;
-          const s = PLAN_STYLES[plan.id] || PLAN_STYLES.free;
-          const price = billing === "annual" ? Math.round(plan.price * 0.8) : plan.price;
-          const isUpgrade = DEMO_PLANS.findIndex((p) => p.id === plan.id) > DEMO_PLANS.findIndex((p) => p.id === currentPlan);
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        {PLAN_ORDER.map((planKey, idx) => {
+          const rules = PLAN_RULES[planKey];
+          const features = PLAN_FEATURES[planKey];
+          const isCurrent = planKey === currentPlanKey;
+          const s = PLAN_STYLES[planKey];
+          const price = billing === "annual" && rules.priceAnnual > 0
+            ? Math.round(rules.priceAnnual / 12 * 100) / 100
+            : (rules.priceMonthly ?? 0);
+          const isUpgrade = idx > currentIndex;
+          const isPopular = planKey === "SOMMET";
 
           return (
             <div
-              key={plan.id}
+              key={planKey}
               className={cn(
                 "bg-background-dark/50 rounded-xl border-2 p-6 relative transition-all hover:border-primary/30",
                 isCurrent ? s.border : "border-border-dark",
-                plan.id === "pro" && !isCurrent && "border-primary/30"
+                isPopular && !isCurrent && "border-primary/30"
               )}
             >
-              {plan.id === "pro" && (
+              {isPopular && !isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="text-[10px] font-bold bg-primary text-white px-3 py-1 rounded-full whitespace-nowrap">
                     Le plus populaire
@@ -170,21 +186,21 @@ export default function AbonnementPage() {
                 <span className={cn("material-symbols-outlined text-xl", s.color)}>{s.icon}</span>
               </div>
 
-              <h3 className="text-lg font-extrabold mb-0.5">{plan.name}</h3>
-              <p className="text-xs text-slate-500 mb-4">{plan.commission > 0 ? `${plan.commission}% de commission` : "1\u20AC/vente"}</p>
+              <h3 className="text-lg font-extrabold mb-0.5">{rules.name}</h3>
+              <p className="text-xs text-slate-500 mb-4">Commission {getCommissionLabel(planKey)}</p>
 
               <div className="mb-5">
                 <span className="text-3xl font-extrabold">{price > 0 ? `€${price}` : "€0"}</span>
                 <span className="text-sm text-slate-500">/mois</span>
-                {billing === "annual" && price > 0 && (
+                {billing === "annual" && rules.priceMonthly > 0 && (
                   <p className="text-xs text-emerald-400 font-semibold mt-0.5">
-                    Soit €{price * 12}/an — economisez €{(plan.price - price) * 12}
+                    Soit €{rules.priceAnnual}/an — economisez €{Math.max(0, Math.round((rules.priceMonthly ?? 0) * 12 - (rules.priceAnnual ?? 0)))}
                   </p>
                 )}
               </div>
 
               <ul className="space-y-2 mb-5">
-                {plan.features.map((f) => (
+                {features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-slate-300">
                     <span className="material-symbols-outlined text-sm text-emerald-400 flex-shrink-0 mt-0.5">check</span>
                     {f}
@@ -193,7 +209,7 @@ export default function AbonnementPage() {
               </ul>
 
               <button
-                onClick={() => !isCurrent && handleSelectPlan(plan.id)}
+                onClick={() => !isCurrent && (rules.priceMonthly ?? 0) > 0 && handleSelectPlan(planKey)}
                 disabled={isCurrent}
                 className={cn(
                   "w-full py-2.5 rounded-lg text-sm font-bold transition-all",
@@ -204,7 +220,7 @@ export default function AbonnementPage() {
                     : "bg-slate-700 text-slate-200 hover:bg-slate-600"
                 )}
               >
-                {isCurrent ? "Plan actuel" : isUpgrade ? `Passer au ${plan.name}` : `Revenir au ${plan.name}`}
+                {isCurrent ? "Plan actuel" : (rules.priceMonthly ?? 0) === 0 ? "Plan gratuit" : isUpgrade ? `Passer au ${rules.name}` : `Revenir au ${rules.name}`}
               </button>
             </div>
           );
@@ -222,31 +238,67 @@ export default function AbonnementPage() {
         </div>
         <div className="divide-y divide-border-dark">
           {INVOICES.map((inv) => (
-            <div key={inv.id} className="flex items-center justify-between px-6 py-4 hover:bg-primary/5 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm text-primary">description</span>
+            <div key={inv.id} className="px-4 sm:px-6 py-4 hover:bg-primary/5 transition-colors">
+              {/* Desktop row */}
+              <div className="hidden sm:flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-sm text-primary">description</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">{inv.description || "Facture"}</p>
+                    <p className="text-xs text-slate-500">{inv.id} · {inv.date ? new Date(inv.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—"}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold">{inv.description}</p>
-                  <p className="text-xs text-slate-500">{inv.id} · {new Date(inv.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                <div className="flex items-center gap-4">
+                  <span className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                    inv.status === "payee" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                  )}>
+                    {inv.status === "payee" ? "Payee" : "En attente"}
+                  </span>
+                  <span className="text-sm font-extrabold w-16 text-right">€{(inv.amount ?? 0).toFixed(2)}</span>
+                  <button
+                    onClick={() => handleDownloadPDF(inv)}
+                    className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    PDF
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                  inv.status === "payee" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
-                )}>
-                  {inv.status === "payee" ? "Payee" : "En attente"}
-                </span>
-                <span className="text-sm font-extrabold w-16 text-right">€{inv.amount.toFixed(2)}</span>
-                <button
-                  onClick={() => handleDownloadPDF(inv)}
-                  className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-sm">download</span>
-                  PDF
-                </button>
+              {/* Mobile card */}
+              <div className="sm:hidden space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-sm text-primary">description</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold truncate">{inv.description || "Facture"}</p>
+                      <p className="text-xs text-slate-500 truncate">{inv.id}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-extrabold whitespace-nowrap">€{(inv.amount ?? 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                      inv.status === "payee" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                    )}>
+                      {inv.status === "payee" ? "Payee" : "En attente"}
+                    </span>
+                    <span className="text-xs text-slate-500">{inv.date ? new Date(inv.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDownloadPDF(inv)}
+                    className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    PDF
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -254,12 +306,12 @@ export default function AbonnementPage() {
       </div>
 
       {/* Cancel subscription */}
-      {currentPlan !== "free" && (
+      {currentPlanKey !== "DECOUVERTE" && (
         <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6 space-y-4">
           <h3 className="font-bold text-lg text-red-400">Annuler l&apos;abonnement</h3>
           <p className="text-sm text-slate-400">
-            Si vous annulez, votre plan {current.name} reste actif jusqu&apos;a la fin de la periode de facturation.
-            Ensuite, votre compte passera automatiquement au plan Gratuit.
+            Si vous annulez, votre plan {currentRules.name} reste actif jusqu&apos;a la fin de la periode de facturation.
+            Ensuite, votre compte passera automatiquement au plan Découverte.
           </p>
           <button
             onClick={() => setShowCancelConfirm(true)}

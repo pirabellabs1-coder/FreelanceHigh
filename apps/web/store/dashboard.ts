@@ -255,8 +255,8 @@ export const useDashboardStore = create<DashboardState>()(
             fetch("/api/orders/auto-cancel", { method: "POST" }),
             fetch("/api/orders/auto-validate", { method: "POST" }),
           ]).then(async (results) => {
-            const cancelRes = results[0].status === "fulfilled" ? await results[0].value.json().catch(() => null) : null;
-            const validateRes = results[1].status === "fulfilled" ? await results[1].value.json().catch(() => null) : null;
+            const cancelRes = results[0].status === "fulfilled" && results[0].value.ok ? await results[0].value.json().catch(() => null) : null;
+            const validateRes = results[1].status === "fulfilled" && results[1].value.ok ? await results[1].value.json().catch(() => null) : null;
             if ((cancelRes?.count > 0) || (validateRes?.count > 0)) {
               // Re-fetch orders if any were auto-cancelled/validated
               try {
@@ -483,9 +483,8 @@ export const useDashboardStore = create<DashboardState>()(
           set((s) => ({ orders: s.orders.map((o) => (o.id === orderId ? local : o)) }));
           return true;
         } catch (err) {
-          console.error("[Order message] API error, message kept locally:", err);
-          // Message already added optimistically via addOrderMessage, so just return true
-          return true;
+          console.error("[Order message] API error, falling back to local:", err);
+          return false;
         }
       },
 
@@ -758,7 +757,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       // Subscription
-      currentPlan: "pro",
+      currentPlan: "ascension",
       changePlan: (planId) => set({ currentPlan: planId }),
 
       // Affiliation

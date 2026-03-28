@@ -61,7 +61,7 @@ export function InlineOfferForm({ recipientName, onSubmit, onCancel }: InlineOff
   }
 
   return (
-    <div className="bg-neutral-dark border-2 border-primary/30 rounded-xl p-5 space-y-4 animate-scale-in">
+    <div className="bg-neutral-dark border-2 border-primary/30 rounded-xl p-3 md:p-5 space-y-3 md:space-y-4 animate-scale-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary">local_offer</span>
@@ -81,7 +81,7 @@ export function InlineOfferForm({ recipientName, onSubmit, onCancel }: InlineOff
             className="w-full px-3 py-2.5 bg-background-dark/50 border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-slate-400 mb-1 block">Montant (EUR) *</label>
             <input type="number" value={form.amount} onChange={(e) => updateField("amount", e.target.value)}
@@ -97,7 +97,7 @@ export function InlineOfferForm({ recipientName, onSubmit, onCancel }: InlineOff
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-slate-400 mb-1 block">Revisions incluses</label>
             <select value={form.revisions} onChange={(e) => updateField("revisions", e.target.value)}

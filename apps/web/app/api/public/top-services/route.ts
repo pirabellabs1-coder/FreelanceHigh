@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
         category: s.category?.name ?? "",
         priceEur: s.basePrice,
         rating: s.rating,
-        reviews: s._count.reviews || s.ratingCount,
+        reviews: s._count.reviews || (s.ratingCount ?? 0),
         orderCount: s.orderCount,
         image: (s.images as string[])?.[0] ?? "",
-        freelancer: s.agency?.agencyName || s.user?.name ?? "",
-        freelancerAvatar: s.agency?.logo || s.user?.avatar || s.user?.image ?? "",
+        freelancer: s.agency?.agencyName || (s.user?.name ?? ""),
+        freelancerAvatar: s.agency?.logo || s.user?.avatar || (s.user?.image ?? ""),
         vendorBadges: badges,
       };
     });

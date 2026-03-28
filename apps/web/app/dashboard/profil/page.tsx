@@ -336,7 +336,7 @@ export default function ProfilPage() {
           )}
 
           {/* Stats summary */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-background-dark/50 border border-border-dark rounded-xl p-4 text-center">
               <span className="material-symbols-outlined text-2xl text-primary mb-1">verified</span>
               <p className="text-xl font-black text-primary">{form.completionPercent}%</p>
@@ -480,18 +480,20 @@ export default function ProfilPage() {
             </span>
           ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input value={newSkill} onChange={(e) => setNewSkill(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
             placeholder="Nouvelle competence..."
             className="flex-1 px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
-          <select value={newSkillLevel} onChange={(e) => setNewSkillLevel(e.target.value as typeof newSkillLevel)}
-            className="px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none">
-            {SKILL_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <button onClick={addSkill} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90">
-            <span className="material-symbols-outlined text-lg">add</span>
-          </button>
+          <div className="flex gap-2">
+            <select value={newSkillLevel} onChange={(e) => setNewSkillLevel(e.target.value as typeof newSkillLevel)}
+              className="flex-1 sm:flex-none px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none">
+              {SKILL_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <button onClick={addSkill} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90">
+              <span className="material-symbols-outlined text-lg">add</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -513,18 +515,20 @@ export default function ProfilPage() {
             <p className="text-sm text-slate-500">Aucune langue ajoutée</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input value={newLanguage} onChange={(e) => setNewLanguage(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLanguage(); } }}
             placeholder="Ex: Français, Anglais, Arabe..."
             className="flex-1 px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
-          <select value={newLanguageLevel} onChange={(e) => setNewLanguageLevel(e.target.value)}
-            className="px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none">
-            {LANGUAGE_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <button onClick={addLanguage} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90">
-            <span className="material-symbols-outlined text-lg">add</span>
-          </button>
+          <div className="flex gap-2">
+            <select value={newLanguageLevel} onChange={(e) => setNewLanguageLevel(e.target.value)}
+              className="flex-1 sm:flex-none px-3 py-2 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none">
+              {LANGUAGE_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <button onClick={addLanguage} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90">
+              <span className="material-symbols-outlined text-lg">add</span>
+            </button>
+          </div>
         </div>
       </div>
 

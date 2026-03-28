@@ -8,7 +8,7 @@ import prisma from "@freelancehigh/db";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

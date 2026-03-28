@@ -5,9 +5,9 @@ import { useAdminStore } from "@/store/admin";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
-const PLAN_KEYS = ["gratuit", "pro", "business", "agence"] as const;
-const PLAN_LABELS: Record<string, string> = { gratuit: "Gratuit", pro: "Pro", business: "Business", agence: "Agence" };
-const PLAN_COLORS = ["border-slate-500", "border-primary", "border-blue-500", "border-purple-500"];
+const PLAN_KEYS = ["decouverte", "ascension", "sommet", "empire"] as const;
+const PLAN_LABELS: Record<string, string> = { decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", empire: "Empire", gratuit: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire" };
+const PLAN_COLORS = ["border-slate-500", "border-amber-500", "border-primary", "border-emerald-500"];
 
 function PlansSkeleton() {
   return (

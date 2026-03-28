@@ -256,26 +256,26 @@ export default function CandidaturesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 w-full sm:w-fit overflow-x-auto">
         <button
           onClick={() => setTab("candidatures")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+            "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
             tab === "candidatures" ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <span className="material-symbols-outlined text-base align-middle mr-1.5">assignment</span>
-          Mes candidatures
+          <span className="material-symbols-outlined text-base align-middle mr-1">assignment</span>
+          Candidatures
         </button>
         <button
           onClick={() => setTab("propositions")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+            "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
             tab === "propositions" ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <span className="material-symbols-outlined text-base align-middle mr-1.5">local_offer</span>
-          Mes propositions
+          <span className="material-symbols-outlined text-base align-middle mr-1">local_offer</span>
+          Propositions
           {propositions.length > 0 && (
             <span className="ml-1.5 bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">{propositions.length}</span>
           )}
@@ -283,12 +283,12 @@ export default function CandidaturesPage() {
         <button
           onClick={() => setTab("explorer")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+            "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap",
             tab === "explorer" ? "bg-primary/10 text-primary" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <span className="material-symbols-outlined text-base align-middle mr-1.5">explore</span>
-          Explorer les offres
+          <span className="material-symbols-outlined text-base align-middle mr-1">explore</span>
+          Explorer
         </button>
       </div>
 
@@ -298,7 +298,7 @@ export default function CandidaturesPage() {
       {tab === "candidatures" && (
         <div className="space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { label: "Total soumises", value: totalCandidatures, icon: "send", color: "text-blue-400" },
               { label: "Acceptées", value: accepted, icon: "check_circle", color: "text-emerald-400" },
@@ -315,7 +315,7 @@ export default function CandidaturesPage() {
           </div>
 
           {/* Status filter */}
-          <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 w-fit">
+          <div className="flex gap-1 bg-neutral-dark rounded-xl p-1 w-full sm:w-fit overflow-x-auto">
             {FILTER_STATUSES.map((s) => (
               <button
                 key={s}
@@ -515,8 +515,8 @@ export default function CandidaturesPage() {
               {filteredProjects.map((p) => {
                 const urgCfg = URGENCY_CFG[p.urgency];
                 return (
-                  <div key={p.id} className="bg-background-dark/50 border border-border-dark rounded-xl p-5 hover:border-primary/30 transition-all">
-                    <div className="flex items-start justify-between gap-4 mb-3">
+                  <div key={p.id} className="bg-background-dark/50 border border-border-dark rounded-xl p-4 sm:p-5 hover:border-primary/30 transition-all">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-bold text-slate-100">{p.title}</h3>
                         <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
@@ -527,8 +527,8 @@ export default function CandidaturesPage() {
                           <span className={urgCfg.color}>{urgCfg.label}</span>
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-primary font-black text-lg">€{(p.budgetMin ?? 0).toLocaleString("fr-FR")} – €{(p.budgetMax ?? 0).toLocaleString("fr-FR")}</p>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <p className="text-primary font-black text-base sm:text-lg">€{(p.budgetMin ?? 0).toLocaleString("fr-FR")} – €{(p.budgetMax ?? 0).toLocaleString("fr-FR")}</p>
                         <p className="text-xs text-slate-500">{p.contractType === "ponctuel" ? "Ponctuel" : p.contractType === "long_terme" ? "Long terme" : "Récurrent"}</p>
                       </div>
                     </div>
@@ -543,7 +543,7 @@ export default function CandidaturesPage() {
                       ))}
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-border-dark">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border-dark">
                       <div className="flex items-center gap-4 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">schedule</span>
@@ -557,13 +557,13 @@ export default function CandidaturesPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setDetailProject(p)}
-                          className="px-4 py-2 bg-primary/10 text-primary text-sm font-bold rounded-lg hover:bg-primary/20 transition-all"
+                          className="flex-1 sm:flex-none px-4 py-2 bg-primary/10 text-primary text-sm font-bold rounded-lg hover:bg-primary/20 transition-all"
                         >
                           Voir détails
                         </button>
                         <button
                           onClick={() => setSelectedProject(p)}
-                          className="px-5 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm shadow-primary/20"
+                          className="flex-1 sm:flex-none px-5 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-all shadow-sm shadow-primary/20"
                         >
                           Postuler
                         </button>
@@ -609,7 +609,7 @@ export default function CandidaturesPage() {
             </div>
 
             {/* Stats cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: "Budget", value: `€${(detailProject.budgetMin ?? 0).toLocaleString("fr-FR")} – €${(detailProject.budgetMax ?? 0).toLocaleString("fr-FR")}`, icon: "payments", color: "text-primary" },
                 { label: "Deadline", value: new Date(detailProject.deadline).toLocaleDateString("fr-FR"), icon: "calendar_today", color: "text-amber-400" },

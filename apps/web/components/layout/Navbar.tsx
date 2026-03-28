@@ -30,9 +30,9 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
       <div className="max-w-[1440px] mx-auto flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 text-primary">
-          <span className="material-symbols-outlined text-3xl font-bold">public</span>
-          <h2 className="text-xl font-extrabold tracking-tight dark:text-slate-100">FreelanceHigh</h2>
+        <Link href="/" className="flex items-center gap-2 text-primary flex-shrink-0">
+          <span className="material-symbols-outlined text-2xl sm:text-3xl font-bold">public</span>
+          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight dark:text-slate-100">FreelanceHigh</h2>
         </Link>
 
         {/* Nav desktop */}
@@ -49,7 +49,7 @@ export function Navbar() {
         </nav>
 
         {/* Actions desktop */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 lg:gap-6">
           {/* Theme toggle */}
           <ThemeToggle className="hidden lg:block" />
 
@@ -148,22 +148,24 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-primary/20 mt-4 pt-4 pb-4 px-4 space-y-4">
-          <nav className="flex flex-col gap-2">
-            <Link href="/explorer" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("explorer")}</Link>
-            <Link href="/inscription" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("devenir_freelance")}</Link>
-            {process.env.NEXT_PUBLIC_FORMATIONS_ENABLED !== "false" && (
-              <Link href="/formations" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("formations")}</Link>
+        <div className="md:hidden border-t border-primary/20 mt-3 pt-3 pb-4 space-y-3">
+          <nav className="flex flex-col gap-1">
+            <Link href="/explorer" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("explorer")}</Link>
+            {!isLoggedIn && (
+              <Link href="/inscription" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("devenir_freelance")}</Link>
             )}
-            <Link href="/offres-projets" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
-            <Link href="/tarifs" className="px-3 py-2 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("tarifs")}</Link>
+            {process.env.NEXT_PUBLIC_FORMATIONS_ENABLED !== "false" && (
+              <Link href="/formations" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("formations")}</Link>
+            )}
+            <Link href="/offres-projets" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
+            <Link href="/tarifs" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("tarifs")}</Link>
           </nav>
 
           {/* Theme + Locale mobile */}
-          <div className="pt-2 border-t border-primary/20">
+          <div className="pt-3 border-t border-primary/20">
             <div className="flex items-center justify-between px-3 mb-3">
               <div>
-                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">{t("devise")}</p>
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">{t("langue") ?? "Langue"}</p>
                 <LocaleSwitcher />
               </div>
               <ThemeToggle />
@@ -171,13 +173,13 @@ export function Navbar() {
           </div>
 
           {/* Currency selector mobile */}
-          <div className="pt-2 border-t border-primary/20">
+          <div className="pt-3 border-t border-primary/20">
             <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 px-3">{t("devise")}</p>
             <div className="flex flex-wrap gap-2 px-3">
               {CURRENCIES.map((c) => (
                 <button
                   key={c.code}
-                  onClick={() => setCurrency(c.code as Currency)}
+                  onClick={() => { setCurrency(c.code as Currency); setMobileOpen(false); }}
                   className={cn(
                     "px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors",
                     currency === c.code
@@ -191,11 +193,11 @@ export function Navbar() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 pt-2 border-t border-primary/20">
+          <div className="flex flex-col gap-2 pt-3 border-t border-primary/20">
             {isLoggedIn ? (
               <>
                 <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                  <div className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary text-sm font-bold">
+                  <div className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
                     {(session.user.name || "U").charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -217,7 +219,7 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>{t("connexion")}</Link>
+                <Link href="/connexion" className="block text-center text-sm font-bold hover:text-primary py-2.5" onClick={() => setMobileOpen(false)}>{t("connexion")}</Link>
                 <Link href="/inscription" className="block text-center bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-2.5 text-sm font-bold transition-all" onClick={() => setMobileOpen(false)}>{t("inscription")}</Link>
               </>
             )}

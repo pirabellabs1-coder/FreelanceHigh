@@ -22,16 +22,29 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: string
 };
 
 const PLAN_LABELS: Record<string, { label: string; color: string }> = {
-  gratuit: { label: "Gratuit", color: "bg-slate-500/20 text-slate-400" },
-  pro: { label: "Pro", color: "bg-blue-500/20 text-blue-400" },
-  business: { label: "Business", color: "bg-purple-500/20 text-purple-400" },
-  agence: { label: "Agence", color: "bg-amber-500/20 text-amber-400" },
+  decouverte: { label: "Découverte", color: "bg-slate-500/20 text-slate-400" },
+  ascension: { label: "Ascension", color: "bg-amber-500/20 text-amber-400" },
+  sommet: { label: "Sommet", color: "bg-primary/20 text-primary" },
+  empire: { label: "Empire", color: "bg-emerald-500/20 text-emerald-400" },
+  // Legacy
+  gratuit: { label: "Découverte", color: "bg-slate-500/20 text-slate-400" },
+  pro: { label: "Ascension", color: "bg-amber-500/20 text-amber-400" },
+  business: { label: "Sommet", color: "bg-primary/20 text-primary" },
+  agence: { label: "Empire", color: "bg-emerald-500/20 text-emerald-400" },
 };
 
 type Tab = "info" | "orders" | "transactions" | "audit";
 
+/** Normalize legacy plan names to new plan names */
+function normalizePlan(plan: string | undefined | null): string {
+  const p = (plan ?? "").toLowerCase();
+  const map: Record<string, string> = { gratuit: "decouverte", pro: "ascension", business: "sommet", agence: "empire" };
+  return map[p] ?? (p || "decouverte");
+}
+
 function getInitials(name: string): string {
-  return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  if (!name) return "??";
+  return name.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase() || "??";
 }
 
 function SkeletonBlock() {
@@ -135,10 +148,10 @@ export default function UserDetailPage() {
   const statusInfo = STATUS_LABELS[user.status?.toLowerCase()] ?? STATUS_LABELS.actif;
   const planInfo = PLAN_LABELS[user.plan?.toLowerCase()] ?? PLAN_LABELS.gratuit;
 
-  // Stats from AdminUser fields
-  const totalEarnings = user.revenue;
-  const totalSpent = user.totalSpent;
-  const ordersCount = user.ordersCount;
+  // Stats from AdminUser fields — null guards for potentially missing data
+  const totalEarnings = user.revenue ?? 0;
+  const totalSpent = user.totalSpent ?? 0;
+  const ordersCount = user.ordersCount ?? 0;
   const activeOrders = userOrders.filter((o) => ["en_cours", "en_attente", "revision"].includes(o.status)).length;
 
   async function handleSuspend() {
@@ -369,7 +382,7 @@ export default function UserDetailPage() {
               <div>
                 <label className="block text-xs text-slate-500 mb-1">Changer le role</label>
                 <select
-                  value={user.role}
+                  value={user.role ?? "freelance"}
                   onChange={async (e) => {
                     const ok = await changeUserRole(id, e.target.value);
                     if (ok) addToast("success", `Role change en ${e.target.value}`);
@@ -386,24 +399,25 @@ export default function UserDetailPage() {
               <div>
                 <label className="block text-xs text-slate-500 mb-1">Changer le plan</label>
                 <select
-                  value={user.plan}
+                  value={normalizePlan(user.plan)}
                   onChange={async (e) => {
                     const ok = await changeUserPlan(id, e.target.value);
-                    if (ok) addToast("success", `Plan change en ${e.target.value}`);
+                    const label = PLAN_LABELS[e.target.value]?.label ?? e.target.value;
+                    if (ok) addToast("success", `Plan change en ${label}`);
                     else addToast("error", "Erreur lors du changement de plan");
                   }}
                   className="w-full px-3 py-2 bg-background-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary appearance-none"
                 >
-                  <option value="gratuit">Gratuit</option>
-                  <option value="pro">Pro</option>
-                  <option value="business">Business</option>
-                  <option value="agence">Agence</option>
+                  <option value="decouverte">Découverte</option>
+                  <option value="ascension">Ascension</option>
+                  <option value="sommet">Sommet</option>
+                  <option value="empire">Empire</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1">Niveau KYC</label>
                 <select
-                  value={user.kycLevel}
+                  value={user.kycLevel ?? 1}
                   onChange={async (e) => {
                     const ok = await approveKyc(id, parseInt(e.target.value));
                     if (ok) addToast("success", `KYC vérifié au niveau ${e.target.value}`);

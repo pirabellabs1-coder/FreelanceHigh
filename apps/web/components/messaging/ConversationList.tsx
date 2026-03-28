@@ -78,7 +78,7 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("tous");
 
-  const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0);
+  const totalUnread = (conversations || []).reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   const filtered = useMemo(() => {
     let list = conversations;
@@ -90,11 +90,12 @@ export function ConversationList({
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((c) => {
-        const names = c.participants
+        const names = (c.participants || [])
           .filter((p) => p.id !== currentUserId)
-          .map((p) => p.name.toLowerCase());
+          .map((p) => (p.name || "").toLowerCase());
         const title = c.title?.toLowerCase() ?? "";
-        return names.some((n) => n.includes(q)) || title.includes(q) || c.lastMessage.toLowerCase().includes(q);
+        const lastMsg = (c.lastMessage || "").toLowerCase();
+        return names.some((n) => n.includes(q)) || title.includes(q) || lastMsg.includes(q);
       });
     }
 
@@ -103,14 +104,14 @@ export function ConversationList({
 
   function getConversationName(conv: UnifiedConversation): string {
     if (conv.title && !isGarbageDisplay(conv.title)) return conv.title;
-    const others = conv.participants.filter((p) => p.id !== currentUserId);
+    const others = (conv.participants || []).filter((p) => p.id !== currentUserId);
     if (others.length === 0) return "Conversation";
     if (others.length === 1) return sanitizeName(others[0].name, "Utilisateur");
     return others.map((p) => sanitizeName(p.name, "Utilisateur").split(" ")[0]).join(", ");
   }
 
   function getConversationAvatar(conv: UnifiedConversation): { text: string; online: boolean } {
-    const others = conv.participants.filter((p) => p.id !== currentUserId);
+    const others = (conv.participants || []).filter((p) => p.id !== currentUserId);
     if (others.length === 0) return { text: "?", online: false };
     const avatar = others[0].avatar || "";
     // If avatar is a URL or ID, generate initials from name
@@ -123,9 +124,9 @@ export function ConversationList({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-border-dark">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-white">Messages</h2>
+      <div className="p-3 md:p-4 border-b border-border-dark">
+        <div className="flex items-center justify-between mb-2 md:mb-3">
+          <h2 className="font-bold text-white text-sm md:text-base">Messages</h2>
           {totalUnread > 0 && (
             <span className="text-[10px] bg-primary text-background-dark px-2 py-0.5 rounded-full font-bold">
               {totalUnread} non lu{totalUnread > 1 ? "s" : ""}
@@ -147,7 +148,7 @@ export function ConversationList({
 
         {/* Type filter */}
         {(showTypeFilter || showAllTypes) && (
-          <div className="flex gap-1 mt-3">
+          <div className="flex gap-1 mt-2 md:mt-3 overflow-x-auto scrollbar-hide">
             {[
               { key: "tous", label: "Tous" },
               { key: "direct", label: "Direct" },
@@ -159,7 +160,7 @@ export function ConversationList({
                 key={t.key}
                 onClick={() => setFilterType(t.key)}
                 className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                  "px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex-shrink-0 whitespace-nowrap",
                   filterType === t.key
                     ? "bg-primary text-background-dark"
                     : "text-slate-500 hover:text-white hover:bg-border-dark"
@@ -177,7 +178,7 @@ export function ConversationList({
         {isLoading ? (
           <div className="space-y-0">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-border-dark/50 animate-pulse">
+              <div key={i} className="flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 border-b border-border-dark/50 animate-pulse">
                 <div className="w-10 h-10 rounded-full bg-slate-700/50 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-slate-700/50 rounded w-2/3" />
@@ -205,7 +206,7 @@ export function ConversationList({
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors border-b border-border-dark/50",
+                  "w-full flex items-center gap-2.5 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 text-left transition-colors border-b border-border-dark/50",
                   selectedId === conv.id ? "bg-primary/10" : "hover:bg-primary/5"
                 )}
               >

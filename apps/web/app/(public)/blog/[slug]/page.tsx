@@ -85,42 +85,79 @@ export default function BlogArticlePage() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-8 pt-32 pb-12">
+      <div className="bg-gradient-to-b from-primary/10 to-transparent px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-10 sm:pb-12">
         <div className="max-w-3xl mx-auto">
-          <Link href="/blog" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary transition-colors mb-6">
+          <Link href="/blog" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary transition-colors mb-5 sm:mb-6">
             <span className="material-symbols-outlined text-sm">arrow_back</span>
             {t("back")}
           </Link>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
             <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{article.category}</span>
-            {(article.tags ?? []).map(tag => (
+            {(article.tags ?? []).slice(0, 4).map(tag => (
               <span key={tag} className="text-xs text-slate-500">#{tag}</span>
             ))}
           </div>
-          <h1 className="text-3xl lg:text-4xl font-black text-white mb-4">{article.title}</h1>
-          <p className="text-lg text-slate-400 mb-6">{article.excerpt}</p>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{article.author.split(" ").map(n => n[0]).join("")}</div>
-            <div>
-              <p className="text-sm font-semibold text-white">{article.author}</p>
-              <p className="text-xs text-slate-500">
-                {article.publishedAt && new Date(article.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                {" · "}{t("views", { count: (article.views ?? 0).toLocaleString() })}
-              </p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-3 sm:mb-4">{article.title}</h1>
+          <p className="text-base sm:text-lg text-slate-400 mb-5 sm:mb-6">{article.excerpt}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">{(article.author || "?").split(" ").map(n => n[0]).join("")}</div>
+              <div>
+                <p className="text-sm font-semibold text-white">{article.author}</p>
+                <p className="text-xs text-slate-500">
+                  {article.publishedAt && new Date(article.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                  {" · "}{t("views", { count: (article.views ?? 0).toLocaleString() })}
+                </p>
+              </div>
+            </div>
+            {/* Share buttons */}
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <button
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    navigator.share({ title: article.title, url: window.location.href }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-400 hover:text-white hover:border-white/20 transition-colors"
+                title={t("share") ?? "Partager"}
+              >
+                <span className="material-symbols-outlined text-sm">share</span>
+                <span className="hidden sm:inline">{t("share") ?? "Partager"}</span>
+              </button>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${typeof window !== "undefined" ? encodeURIComponent(window.location.href) : ""}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-colors"
+                title="Twitter/X"
+              >
+                <span className="text-xs font-bold">X</span>
+              </a>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${typeof window !== "undefined" ? encodeURIComponent(window.location.href) : ""}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-colors"
+                title="LinkedIn"
+              >
+                <span className="text-xs font-bold">in</span>
+              </a>
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-6 lg:px-0 pb-24">
-        <article>
-          <TiptapRenderer content={article.content} className="prose-lg prose-invert" />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-0 pb-24">
+        <article className="overflow-hidden">
+          <TiptapRenderer content={article.content} className="prose-base sm:prose-lg prose-invert [&_img]:w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:text-sm" />
         </article>
 
         {/* Tags */}
         {(article.tags ?? []).length > 0 && (
-          <div className="mt-12 pt-8 border-t border-white/10">
+          <div className="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-white/10">
             <div className="flex flex-wrap gap-2">
               {(article.tags ?? []).map(tag => (
                 <span key={tag} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-full font-medium">#{tag}</span>
@@ -131,11 +168,11 @@ export default function BlogArticlePage() {
 
         {/* Related */}
         {related.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold text-white mb-6">{t("similar_articles")}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-12 sm:mt-16">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-5 sm:mb-6">{t("similar_articles")}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {related.map(r => (
-                <Link key={r.id} href={`/blog/${r.slug}`} className="group bg-white/5 rounded-xl border border-white/10 p-5 hover:border-primary/30 transition-all">
+                <Link key={r.id} href={`/blog/${r.slug}`} className="group bg-white/5 rounded-xl border border-white/10 p-4 sm:p-5 hover:border-primary/30 transition-all">
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">{r.category}</span>
                   <h3 className="text-sm font-bold text-white mt-2 group-hover:text-primary transition-colors line-clamp-2">{r.title}</h3>
                   <p className="text-xs text-slate-500 mt-2">{r.author} · {t("views", { count: (r.views ?? 0).toLocaleString() })}</p>

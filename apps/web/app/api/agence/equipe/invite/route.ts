@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         let invitedUser = await prisma.user.findUnique({ where: { email } });
         if (!invitedUser) {
           invitedUser = await prisma.user.create({
-            data: { email, name: email.split("@")[0] },
+            data: { email, name: email.split("@")[0], passwordHash: "" },
           });
         }
 

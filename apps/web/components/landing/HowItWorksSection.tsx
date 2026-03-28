@@ -17,14 +17,15 @@ export function HowItWorksSection() {
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center">
         {/* Visual */}
         <div className="relative order-2 lg:order-1 overflow-hidden">
-          <div className="bg-accent/10 rounded-[3rem] w-full aspect-square absolute -rotate-6 z-0 border border-accent/20"></div>
+          <div className="bg-accent/10 rounded-2xl sm:rounded-[3rem] w-full aspect-square absolute -rotate-6 z-0 border border-accent/20"></div>
           <img
             alt="Collaboration entre client et freelance"
-            className="relative z-10 w-full aspect-square object-cover rounded-[3rem] shadow-2xl"
+            className="relative z-10 w-full aspect-square object-cover rounded-2xl sm:rounded-[3rem] shadow-2xl"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU-wjNmvoaekii1VavUXeH1NsSrY4IxYrzNNkTbCP8yKbfy1k_TDeZhsNcFxkTJeixI5PfZ3lPN3DXitH98toGdsHGA3QEPVNUMsRJcTEZ1kPA67JZrE1WYBDQl1BF91GUVn7T07qLGjcz-eSWPFRr4Lo2feTVSi1k3mcwpO1UW0P_ceWrYmdf9frG9yLFLjlNPDfwX5xUJiKodovaeyIgF_XnSDmuGO0-n1_rgYfJbv8OihuopGfISoad4bbM3SBwAkfp6yFhKD9o"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
           {/* Floating card */}
-          <div className="absolute -bottom-8 right-0 sm:-right-8 z-20 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-primary/10 max-w-[200px] sm:max-w-xs">
+          <div className="absolute -bottom-8 right-2 sm:-right-8 z-20 bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl border border-primary/10 max-w-[180px] sm:max-w-[200px] md:max-w-xs">
             <div className="flex items-center gap-4 mb-4">
               <span className="material-symbols-outlined text-primary text-3xl">verified</span>
               <p className="font-bold text-lg leading-tight">{t("floating_title")}</p>
@@ -41,20 +42,20 @@ export function HowItWorksSection() {
             <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight leading-tight">
               {t("title_1")} <span className="text-primary">{t("title_highlight")}</span>
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-lg">
+            <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base lg:text-lg">
               {t("subtitle")}
             </p>
           </div>
 
           <div className="space-y-8">
             {STEPS.map((step) => (
-              <div key={step.number} className="flex gap-6 items-start">
-                <div className="flex-none size-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-primary/20">
+              <div key={step.number} className="flex gap-4 sm:gap-6 items-start">
+                <div className="flex-none size-11 sm:size-14 rounded-xl sm:rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-lg sm:text-2xl shadow-lg shadow-primary/20">
                   {step.number}
                 </div>
-                <div>
-                  <h4 className="text-xl font-bold mb-2">{t(step.titleKey)}</h4>
-                  <p className="text-slate-500 dark:text-slate-400">{t(step.descKey)}</p>
+                <div className="min-w-0">
+                  <h4 className="text-base sm:text-xl font-bold mb-1 sm:mb-2">{t(step.titleKey)}</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">{t(step.descKey)}</p>
                 </div>
               </div>
             ))}

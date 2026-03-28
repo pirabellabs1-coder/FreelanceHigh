@@ -3,9 +3,14 @@
 import { useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import {
+  PLAN_RULES,
+  getCommissionLabel,
+  type PlanName,
+} from "@/lib/plans";
 
 // ---------------------------------------------------------------------------
-// Plan data
+// Plan data — derived from centralized PLAN_RULES
 // ---------------------------------------------------------------------------
 interface PlanInfo {
   id: string;
@@ -16,11 +21,28 @@ interface PlanInfo {
   commission: string;
 }
 
+function buildPlanInfo(key: PlanName): PlanInfo {
+  const r = PLAN_RULES[key];
+  return {
+    id: key.toLowerCase(),
+    name: r.name,
+    monthlyPrice: r.priceMonthly,
+    annualPrice: r.priceAnnual,
+    annualMonthly: Math.round(r.priceAnnual / 12 * 100) / 100,
+    commission: getCommissionLabel(key),
+  };
+}
+
 const PLANS: Record<string, PlanInfo> = {
-  free: { id: "free", name: "Gratuit", monthlyPrice: 0, annualPrice: 0, annualMonthly: 0, commission: "20%" },
-  pro: { id: "pro", name: "Pro", monthlyPrice: 15, annualPrice: 144, annualMonthly: 12, commission: "15%" },
-  business: { id: "business", name: "Business", monthlyPrice: 45, annualPrice: 432, annualMonthly: 36, commission: "10%" },
-  agence: { id: "agence", name: "Agence", monthlyPrice: 99, annualPrice: 948, annualMonthly: 79, commission: "8%" },
+  decouverte: buildPlanInfo("DECOUVERTE"),
+  ascension: buildPlanInfo("ASCENSION"),
+  sommet: buildPlanInfo("SOMMET"),
+  empire: buildPlanInfo("EMPIRE"),
+  // Legacy aliases
+  free: buildPlanInfo("DECOUVERTE"),
+  pro: buildPlanInfo("ASCENSION"),
+  business: buildPlanInfo("SOMMET"),
+  agence: buildPlanInfo("EMPIRE"),
 };
 
 // ---------------------------------------------------------------------------
@@ -50,11 +72,11 @@ function PaiementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const planId = searchParams.get("plan") || "agence";
+  const planId = searchParams.get("plan") || "empire";
   const billingParam = searchParams.get("billing") as "monthly" | "annual" | null;
   const billing = billingParam === "annual" ? "annual" : "monthly";
 
-  const plan = PLANS[planId] || PLANS.agence;
+  const plan = PLANS[planId] || PLANS.empire;
   const price = billing === "annual" ? plan.annualPrice : plan.monthlyPrice;
   const monthlyEquivalent = billing === "annual" ? plan.annualMonthly : plan.monthlyPrice;
   const savings = billing === "annual" ? (plan.monthlyPrice * 12) - plan.annualPrice : 0;

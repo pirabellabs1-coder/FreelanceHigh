@@ -6,12 +6,22 @@ import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
 import { profileApi } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import {
+  PLAN_RULES,
+  PLAN_ORDER,
+  PLAN_FEATURES,
+  getCommissionLabel,
+  formatLimit,
+  normalizePlanName,
+  type PlanName,
+} from "@/lib/plans";
 
 // ---------------------------------------------------------------------------
-// Plan data (static config -- defines plan structures, stays hardcoded)
+// Plan data — derived from centralized PLAN_RULES
 // ---------------------------------------------------------------------------
 interface Plan {
   id: string;
+  key: PlanName;
   name: string;
   priceMonthly: number;
   priceAnnual: number;
@@ -20,89 +30,31 @@ interface Plan {
   highlight?: boolean;
 }
 
-const PLANS: Plan[] = [
-  {
-    id: "gratuit",
-    name: "Gratuit",
-    priceMonthly: 0,
-    priceAnnual: 0,
-    commission: "12%",
-    features: [
-      "7 services actifs",
-      "10 candidatures/mois",
-      "Pas de boost",
-      "Commission 12%",
-      "Support email",
-      "Pas de certification IA",
-      "Pas de clés API",
-      "Pas de membres",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    priceMonthly: 15,
-    priceAnnual: 144,
-    commission: "1\u20AC/vente",
-    features: [
-      "Services illimités",
-      "20 candidatures/mois",
-      "5 boosts/mois",
-      "Commission 1\u20AC/vente",
-      "Support prioritaire",
-      "Certification IA",
-      "Pas de clés API",
-      "Pas de membres",
-    ],
-  },
-  {
-    id: "business",
-    name: "Business",
-    priceMonthly: 45,
-    priceAnnual: 432,
-    commission: "1\u20AC/vente",
-    features: [
-      "Services illimités",
-      "Candidatures illimitées",
-      "10 boosts/mois",
-      "Commission 1\u20AC/vente",
-      "Support dédié",
-      "Certification IA",
-      "Clés API incluses",
-      "Pas de membres",
-    ],
-  },
-  {
-    id: "agence",
-    name: "Agence",
-    priceMonthly: 99,
-    priceAnnual: 950,
-    commission: "1\u20AC/vente",
-    highlight: true,
-    features: [
-      "Services illimités",
-      "Candidatures illimitées",
-      "10 boosts/mois",
-      "Commission 1\u20AC/vente",
-      "Support dédié VIP",
-      "Certification IA",
-      "Clés API incluses",
-      "20 membres max",
-    ],
-  },
-];
+const PLANS: Plan[] = PLAN_ORDER.map((key) => {
+  const r = PLAN_RULES[key];
+  return {
+    id: key.toLowerCase(),
+    key,
+    name: r.name,
+    priceMonthly: r.priceMonthly,
+    priceAnnual: r.priceAnnual,
+    commission: getCommissionLabel(key),
+    features: PLAN_FEATURES[key],
+    highlight: key === "EMPIRE",
+  };
+});
 
-// Feature comparison rows (static config)
+// Feature comparison rows — derived from PLAN_RULES
 const COMPARISON_ROWS = [
-  { label: "Services actifs", values: ["7", "Illimité", "Illimité", "Illimité"] },
-  { label: "Candidatures/mois", values: ["10", "20", "Illimité", "Illimité"] },
-  { label: "Boost publicitaire", values: ["Non", "5/mois", "10/mois", "10/mois"] },
-  { label: "Commission", values: ["12%", "1\u20AC/vente", "1\u20AC/vente", "1\u20AC/vente"] },
-  { label: "Certification IA", values: ["Non", "Oui", "Oui", "Oui"] },
-  { label: "Clés API", values: ["Non", "Non", "Oui", "Oui"] },
-  { label: "Membres équipe", values: ["-", "-", "-", "20 max"] },
-  { label: "Stockage ressources", values: ["-", "-", "-", "50 GB"] },
-  { label: "Support", values: ["Email", "Prioritaire", "Dédié", "Dédié VIP"] },
+  { label: "Services actifs", values: PLAN_ORDER.map((k) => formatLimit(PLAN_RULES[k].serviceLimit)) },
+  { label: "Candidatures/mois", values: PLAN_ORDER.map((k) => formatLimit(PLAN_RULES[k].applicationLimit)) },
+  { label: "Boost publicitaire", values: PLAN_ORDER.map((k) => PLAN_RULES[k].boostLimit === 0 ? "Non" : `${PLAN_RULES[k].boostLimit}/mois`) },
+  { label: "Commission", values: PLAN_ORDER.map((k) => getCommissionLabel(k)) },
+  { label: "Certification IA", values: PLAN_ORDER.map((k) => PLAN_RULES[k].certificationLimit === 0 ? "Non" : PLAN_RULES[k].certificationLimit === Infinity ? "Illimité" : `${PLAN_RULES[k].certificationLimit}/mois`) },
+  { label: "Clés API", values: PLAN_ORDER.map((k) => PLAN_RULES[k].apiAccess ? "Oui" : "Non") },
+  { label: "Membres équipe", values: PLAN_ORDER.map((k) => PLAN_RULES[k].teamLimit > 0 ? `${PLAN_RULES[k].teamLimit} max` : "-") },
+  { label: "Stockage ressources", values: PLAN_ORDER.map((k) => PLAN_RULES[k].cloudStorageGB > 0 ? `${PLAN_RULES[k].cloudStorageGB} GB` : "-") },
+  { label: "Support", values: PLAN_ORDER.map((k) => ({ email: "Email", prioritaire: "Prioritaire", dedie: "Dédié", vip: "VIP dédié" })[PLAN_RULES[k].supportLevel] || PLAN_RULES[k].supportLevel) },
 ];
 
 // ---------------------------------------------------------------------------
@@ -124,13 +76,18 @@ interface SubscriptionData {
   paymentMethod: string | null;
 }
 
-// Plan limits for usage stats display (aligned with centralized plan rules in @/lib/plans)
-const PLAN_LIMITS: Record<string, { members: number | null; storage: number; services: number | null; boosts: number | null }> = {
-  gratuit: { members: 0, storage: 0, services: 7, boosts: 0 },
-  pro: { members: 0, storage: 0, services: null, boosts: 5 },
-  business: { members: 0, storage: 0, services: null, boosts: 10 },
-  agence: { members: 20, storage: 50, services: null, boosts: 10 },
-};
+// Plan limits for usage stats display — derived from PLAN_RULES
+const PLAN_LIMITS: Record<string, { members: number | null; storage: number; services: number | null; boosts: number | null }> = Object.fromEntries(
+  PLAN_ORDER.map((k) => {
+    const r = PLAN_RULES[k];
+    return [k.toLowerCase(), {
+      members: r.teamLimit || 0,
+      storage: r.cloudStorageGB,
+      services: isFinite(r.serviceLimit) ? r.serviceLimit : null,
+      boosts: r.boostLimit > 0 ? r.boostLimit : 0,
+    }];
+  })
+);
 
 // ---------------------------------------------------------------------------
 // Component
@@ -152,10 +109,12 @@ export default function AgenceAbonnement() {
   // Real usage stats from agency store
   const { members, services, syncAll, isLoading: storeLoading } = useAgencyStore();
 
-  // Derive current plan from subscription data, fallback to "gratuit"
-  const currentPlanId = subscription?.planId ?? "gratuit";
-  const currentPlan = PLANS.find((p) => p.id === currentPlanId) ?? PLANS[0];
-  const limits = PLAN_LIMITS[currentPlanId] ?? PLAN_LIMITS.gratuit;
+  // Derive current plan from subscription data, normalize legacy names
+  const rawPlanId = subscription?.planId ?? "decouverte";
+  const currentPlanKey = normalizePlanName(rawPlanId);
+  const currentPlanId = currentPlanKey.toLowerCase();
+  const currentPlan = PLANS.find((p) => p.key === currentPlanKey) ?? PLANS[0];
+  const limits = PLAN_LIMITS[currentPlanId] ?? PLAN_LIMITS.decouverte;
 
   // Compute real usage stats
   const membersCount = members.length;
@@ -292,7 +251,7 @@ export default function AgenceAbonnement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Abonnement</h1>
           <p className="text-slate-400 text-sm mt-1">
@@ -301,7 +260,7 @@ export default function AgenceAbonnement() {
         </div>
         <button
           onClick={() => setShowChangePlan(true)}
-          className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+          className="px-4 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start flex-shrink-0"
         >
           <span className="material-symbols-outlined text-lg">swap_horiz</span>
           Changer de plan
@@ -309,17 +268,17 @@ export default function AgenceAbonnement() {
       </div>
 
       {/* Current plan card */}
-      <div className="bg-neutral-dark rounded-xl border border-primary/30 p-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="bg-neutral-dark rounded-xl border border-primary/30 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-primary text-2xl">
                 card_membership
               </span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black text-white">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-black text-white">
                   Plan {currentPlan.name}
                 </h2>
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase">
@@ -332,7 +291,7 @@ export default function AgenceAbonnement() {
               </p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right flex-shrink-0">
             <p className="text-2xl font-black text-white">
               {currentPlan.priceMonthly > 0
                 ? `${currentPlan.priceMonthly}\u00A0\u20AC`
@@ -345,10 +304,10 @@ export default function AgenceAbonnement() {
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4">
           {currentPlan.features.map((feat) => (
             <div key={feat} className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-sm">
+              <span className="material-symbols-outlined text-primary text-sm flex-shrink-0">
                 check_circle
               </span>
               <span className="text-xs text-slate-300">{feat}</span>
@@ -357,8 +316,8 @@ export default function AgenceAbonnement() {
         </div>
 
         {/* Renewal info */}
-        <div className="flex items-center justify-between pt-4 border-t border-border-dark">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border-dark">
+          <div className="flex flex-wrap items-center gap-4">
             <div>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
                 Prochain renouvellement
@@ -392,7 +351,7 @@ export default function AgenceAbonnement() {
         <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
           Utilisation du plan
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             {
               label: "Membres",

@@ -86,6 +86,7 @@ export default function ClientPayments() {
   }, [syncTransactions, syncAll]);
 
   const isLoading = loading.transactions;
+  const safeTransactions = transactions || [];
 
   const totalSpent = financeSummary?.totalEarned ?? 0;
   const pending = financeSummary?.pending ?? 0;
@@ -211,20 +212,21 @@ export default function ClientPayments() {
                   <SkeletonRow />
                   <SkeletonRow />
                 </>
-              ) : transactions.length === 0 ? (
+              ) : safeTransactions.length === 0 ? (
                 <div className="text-center py-12">
                   <span className="material-symbols-outlined text-4xl text-slate-600 mb-2 block">receipt_long</span>
                   <p className="text-slate-500 text-sm font-semibold">Aucune transaction pour le moment</p>
                 </div>
               ) : (
-                transactions.slice(0, 4).map(tx => {
+                safeTransactions.slice(0, 4).map(tx => {
                   const methodIcon = tx.method === "mobile" ? "smartphone" : tx.method === "bank" ? "account_balance" : "credit_card";
-                  const methodColor = tx.method === "mobile" ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-400";
+                  const methodBg = tx.method === "mobile" ? "bg-primary/10" : "bg-blue-500/10";
+                  const methodText = tx.method === "mobile" ? "text-primary" : "text-blue-400";
                   const statusInfo = TX_STATUS_MAP[tx.status] || TX_STATUS_MAP.pending;
                   return (
                     <div key={tx.id} className="px-5 py-4 flex items-center gap-4 hover:bg-background-dark/30 transition-colors">
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", methodColor.split(" ")[0])}>
-                        <span className={cn("material-symbols-outlined", methodColor.split(" ")[1])}>{methodIcon}</span>
+                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", methodBg)}>
+                        <span className={cn("material-symbols-outlined", methodText)}>{methodIcon}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{tx.description}</p>
@@ -380,7 +382,7 @@ export default function ClientPayments() {
                 // Simulate deposit
                 setTimeout(() => {
                   setDepositLoading(false);
-                  addToast("success", `Dépôt de ${formatAmount(parseFloat(depositAmount))} initié avec succès via ${DEPOSIT_METHODS.find(m => m.id === depositMethod)?.label}`);
+                  addToast("success", `Dépôt de ${formatAmount(parseFloat(depositAmount) || 0)} initié avec succès via ${DEPOSIT_METHODS.find(m => m.id === depositMethod)?.label || "inconnu"}`);
                   setDepositAmount("");
                 }, 1500);
               }}
@@ -394,7 +396,7 @@ export default function ClientPayments() {
               ) : (
                 <>
                   <span className="material-symbols-outlined text-lg">add_circle</span>
-                  Déposer {depositAmount ? formatAmount(parseFloat(depositAmount)) : "des fonds"}
+                  Déposer {depositAmount ? formatAmount(parseFloat(depositAmount) || 0) : "des fonds"}
                 </>
               )}
             </button>
@@ -514,16 +516,16 @@ export default function ClientPayments() {
             </h2>
             <button
               onClick={() => {
-                if (transactions.length === 0) {
+                if (safeTransactions.length === 0) {
                   addToast("info", "Aucune transaction à exporter");
                   return;
                 }
                 const headers = ["Référence", "Date", "Description", "Montant (EUR)", "Statut", "Méthode"];
-                const rows = transactions.map(tx => [
+                const rows = safeTransactions.map(tx => [
                   tx.id,
                   new Date(tx.date).toLocaleDateString("fr-FR"),
                   tx.description,
-                  tx.amount.toFixed(2),
+                  (tx.amount ?? 0).toFixed(2),
                   TX_STATUS_MAP[tx.status]?.label || tx.status,
                   tx.method || "-",
                 ]);
@@ -551,7 +553,7 @@ export default function ClientPayments() {
                   <SkeletonRow key={i} />
                 ))}
               </div>
-            ) : transactions.length === 0 ? (
+            ) : safeTransactions.length === 0 ? (
               <div className="text-center py-16">
                 <span className="material-symbols-outlined text-5xl text-slate-600 mb-3 block">receipt_long</span>
                 <p className="text-slate-500 font-semibold">Aucune transaction</p>
@@ -572,7 +574,7 @@ export default function ClientPayments() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map(tx => {
+                  {safeTransactions.map(tx => {
                     const statusInfo = TX_STATUS_MAP[tx.status] || TX_STATUS_MAP.pending;
                     return (
                       <tr key={tx.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
@@ -591,7 +593,7 @@ export default function ClientPayments() {
               </table>
               {/* Mobile card layout */}
               <div className="md:hidden divide-y divide-border-dark">
-                {transactions.map(tx => {
+                {safeTransactions.map(tx => {
                   const methodIcon = tx.method === "mobile" ? "smartphone" : tx.method === "bank" ? "account_balance" : "credit_card";
                   const statusInfo = TX_STATUS_MAP[tx.status] || TX_STATUS_MAP.pending;
                   return (

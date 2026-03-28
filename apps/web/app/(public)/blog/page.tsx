@@ -63,21 +63,21 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-primary/10 to-transparent px-6 lg:px-8 pt-32 pb-16">
+      <div className="bg-gradient-to-b from-primary/10 to-transparent px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-12 sm:pb-16">
         <div className="max-w-5xl mx-auto text-center">
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4">{t("title")}</h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">{t("subtitle")}</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4">{t("title")}</h1>
+          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">{t("subtitle")}</p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-0 pb-24">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-0 pb-24">
         {/* Category filter */}
-        <div className="flex gap-2 mb-10 flex-wrap">
-          <button onClick={() => setCatFilter("")} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${!catFilter ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
+        <div className="flex gap-2 mb-8 sm:mb-10 overflow-x-auto sm:overflow-x-visible sm:flex-wrap pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+          <button onClick={() => setCatFilter("")} className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${!catFilter ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
             {t("all")}
           </button>
           {categories.map(cat => (
-            <button key={cat} onClick={() => setCatFilter(cat)} className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${catFilter === cat ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
+            <button key={cat} onClick={() => setCatFilter(cat)} className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors whitespace-nowrap ${catFilter === cat ? "bg-primary text-white" : "bg-white/5 text-slate-400 hover:text-white border border-white/10"}`}>
               {cat}
             </button>
           ))}
@@ -94,19 +94,19 @@ export default function BlogPage() {
             {featured && !catFilter && (
               <Link href={`/blog/${featured.slug}`} className="block mb-12 group">
                 <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden hover:border-primary/30 transition-all">
-                  <div className="h-64 bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-7xl text-white/20">article</span>
+                  <div className="h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-5xl sm:text-7xl text-white/20">article</span>
                   </div>
-                  <div className="p-8">
-                    <div className="flex items-center gap-3 mb-3">
+                  <div className="p-5 sm:p-8">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
                       <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{featured.category}</span>
                       <span className="text-xs text-slate-500">{featured.publishedAt && new Date(featured.publishedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
                       <span className="text-xs text-slate-500">{t("views", { count: (featured.views ?? 0).toLocaleString() })}</span>
                     </div>
-                    <h2 className="text-2xl lg:text-3xl font-black text-white group-hover:text-primary transition-colors mb-3">{featured.title}</h2>
-                    <p className="text-slate-400 leading-relaxed">{featured.excerpt}</p>
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white group-hover:text-primary transition-colors mb-3">{featured.title}</h2>
+                    <p className="text-sm sm:text-base text-slate-400 leading-relaxed">{featured.excerpt}</p>
                     <div className="flex items-center gap-3 mt-4">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{featured.author.split(" ").map(n => n[0]).join("")}</div>
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{(featured.author || "?").split(" ").map(n => n[0]).join("")}</div>
                       <span className="text-sm text-slate-400">{featured.author}</span>
                     </div>
                   </div>

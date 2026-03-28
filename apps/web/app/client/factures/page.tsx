@@ -55,16 +55,17 @@ export default function ClientInvoices() {
 
   useEffect(() => {
     // syncInvoices depends on orders being loaded first
-    syncOrders().then(() => syncInvoices());
+    syncOrders().then(() => syncInvoices()).catch(() => {});
   }, [syncOrders, syncInvoices]);
 
   const isLoading = loading.invoices || loading.orders;
+  const safeInvoices = invoices || [];
 
   // Filter by status
   const statusFiltered = useMemo(() => {
-    if (statusFilter === "all") return invoices;
-    return invoices.filter(inv => inv.status === statusFilter);
-  }, [invoices, statusFilter]);
+    if (statusFilter === "all") return safeInvoices;
+    return safeInvoices.filter(inv => inv.status === statusFilter);
+  }, [safeInvoices, statusFilter]);
 
   // Filter by period
   const filteredInvoices = useMemo(() => {
@@ -89,11 +90,11 @@ export default function ClientInvoices() {
 
   // Counts per status
   const counts = useMemo(() => ({
-    all: invoices.length,
-    payee: invoices.filter(i => i.status === "payee").length,
-    en_attente: invoices.filter(i => i.status === "en_attente").length,
-    remboursee: invoices.filter(i => i.status === "remboursee").length,
-  }), [invoices]);
+    all: safeInvoices.length,
+    payee: safeInvoices.filter(i => i.status === "payee").length,
+    en_attente: safeInvoices.filter(i => i.status === "en_attente").length,
+    remboursee: safeInvoices.filter(i => i.status === "remboursee").length,
+  }), [safeInvoices]);
 
   // Total visible
   const totalVisible = filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0);
@@ -108,7 +109,7 @@ export default function ClientInvoices() {
       new Date(inv.date).toLocaleDateString("fr-FR"),
       inv.id,
       inv.serviceTitle,
-      inv.amount.toFixed(2),
+      (inv.amount ?? 0).toFixed(2),
       STATUS_MAP[inv.status]?.label || inv.status,
     ]);
     const csv = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
@@ -282,7 +283,7 @@ export default function ClientInvoices() {
                     <td className="hidden md:table-cell px-3 sm:px-5 py-3 text-xs font-mono text-primary font-semibold">{inv.id}</td>
                     <td className="px-3 sm:px-5 py-3">
                       <p className="text-xs sm:text-sm font-medium text-white truncate max-w-[200px]">{inv.serviceTitle}</p>
-                      <p className="text-[10px] sm:text-xs text-slate-500">#{inv.orderId.slice(-6)}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500">#{(inv.orderId || "").slice(-6)}</p>
                     </td>
                     <td className="px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold text-white text-right">
                       {(inv.amount ?? 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;
@@ -327,7 +328,7 @@ export default function ClientInvoices() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-white truncate">{inv.serviceTitle}</p>
-                      <p className="text-[10px] text-slate-500">{new Date(inv.date).toLocaleDateString("fr-FR")} · #{inv.orderId.slice(-6)}</p>
+                      <p className="text-[10px] text-slate-500">{new Date(inv.date).toLocaleDateString("fr-FR")} · #{(inv.orderId || "").slice(-6)}</p>
                     </div>
                     <span className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 inline-flex items-center gap-0.5", statusInfo.cls)}>
                       <span className="material-symbols-outlined text-[9px]">{statusInfo.icon}</span>

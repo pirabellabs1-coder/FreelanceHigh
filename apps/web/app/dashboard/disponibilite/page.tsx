@@ -10,7 +10,7 @@ export default function DisponibilitePage() {
   const [toggling, setToggling] = useState(false);
 
   function handleToggleDay(day: number) {
-    const slot = availability.find((a) => a.day === day);
+    const slot = (availability || []).find((a) => a.day === day);
     if (slot) {
       updateAvailability(day, { available: !slot.available });
       addToast("success", `${slot.dayName} ${slot.available ? "desactive" : "active"}`);
@@ -39,8 +39,8 @@ export default function DisponibilitePage() {
     }
   }
 
-  const activeServices = services.filter((s) => s.status === "actif").length;
-  const pausedServices = services.filter((s) => s.status === "pause").length;
+  const activeServices = (services || []).filter((s) => s.status === "actif").length;
+  const pausedServices = (services || []).filter((s) => s.status === "pause").length;
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
@@ -94,27 +94,35 @@ export default function DisponibilitePage() {
           <h3 className="font-bold">Jours de travail</h3>
         </div>
         <div className="divide-y divide-border-dark">
-          {availability.map((slot) => (
+          {(availability || []).map((slot) => (
             <div key={slot.day} className={cn(
-              "flex items-center gap-6 px-6 py-4 transition-colors",
+              "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-4 sm:px-6 py-4 transition-colors",
               slot.available ? "hover:bg-primary/5" : "opacity-50"
             )}>
-              {/* Toggle */}
-              <button onClick={() => handleToggleDay(slot.day)}
-                className={cn("relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
-                  slot.available ? "bg-primary" : "bg-border-dark"
-                )}>
-                <div className={cn("absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow",
-                  slot.available ? "left-5.5" : "left-0.5"
-                )} style={{ left: slot.available ? "22px" : "2px" }} />
-              </button>
+              {/* Top row on mobile: toggle + day name + status */}
+              <div className="flex items-center gap-3 sm:gap-6">
+                {/* Toggle */}
+                <button onClick={() => handleToggleDay(slot.day)}
+                  className={cn("relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
+                    slot.available ? "bg-primary" : "bg-border-dark"
+                  )}>
+                  <div className={cn("absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow",
+                    slot.available ? "left-5.5" : "left-0.5"
+                  )} style={{ left: slot.available ? "22px" : "2px" }} />
+                </button>
 
-              {/* Day name */}
-              <span className="w-24 text-sm font-bold">{slot.dayName}</span>
+                {/* Day name */}
+                <span className="w-24 text-sm font-bold">{slot.dayName}</span>
 
-              {/* Time range */}
+                {/* Status indicator - visible inline on mobile */}
+                <div className={cn("w-2.5 h-2.5 rounded-full sm:hidden ml-auto",
+                  slot.available ? "bg-emerald-400" : "bg-slate-500"
+                )} />
+              </div>
+
+              {/* Time range - stacked below on mobile */}
               {slot.available ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pl-14 sm:pl-0">
                   <input type="time" value={slot.startTime}
                     onChange={(e) => handleTimeChange(slot.day, "startTime", e.target.value)}
                     className="px-3 py-1.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
@@ -124,11 +132,11 @@ export default function DisponibilitePage() {
                     className="px-3 py-1.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
                 </div>
               ) : (
-                <span className="text-sm text-slate-500">Indisponible</span>
+                <span className="text-sm text-slate-500 pl-14 sm:pl-0">Indisponible</span>
               )}
 
-              {/* Status indicator */}
-              <div className={cn("w-2.5 h-2.5 rounded-full ml-auto",
+              {/* Status indicator - desktop only */}
+              <div className={cn("w-2.5 h-2.5 rounded-full ml-auto hidden sm:block",
                 slot.available ? "bg-emerald-400" : "bg-slate-500"
               )} />
             </div>

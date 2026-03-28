@@ -136,16 +136,23 @@ function sectionHasActive(
 interface SidebarProps {
   collapsed?: boolean;
   onToggle?: () => void;
+  onClose?: () => void;
 }
 
-export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed = false, onToggle, onClose }: SidebarProps) {
   const { data: session } = useSession();
   const isActive = useIsActive();
   const unreadCount = useDashboardStore((s) => s.unreadCount);
   const currentPlan = useDashboardStore((s) => s.currentPlan);
 
   const userName = session?.user?.name || "Utilisateur";
-  const userInitials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  const userInitials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map(n => n[0] ?? "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
 
   // Augment nav items with dynamic badges
   const unreadMessages = useDashboardStore((s) => s.unreadMessages ?? 0);
@@ -190,7 +197,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             <p className="text-xs text-primary/60">Espace Freelance</p>
           </div>
         )}
-        {onToggle && (
+        {onClose && (
+          <button onClick={onClose} className="ml-auto lg:hidden text-slate-400 hover:text-white">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        )}
+        {onToggle && !onClose && (
           <button
             onClick={onToggle}
             className={cn(
@@ -217,6 +229,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {/* Accueil — retour au feed */}
         <Link
           href="/explorer"
+          onClick={onClose}
           className={cn(
             "flex items-center gap-3 rounded-xl font-semibold transition-colors mb-2",
             collapsed
@@ -269,6 +282,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                       item={item}
                       active={isActive(item.href, item.exact)}
                       collapsed={collapsed}
+                      onClose={onClose}
                     />
                   ))}
                 </div>
@@ -293,6 +307,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               item={item}
               active={isActive(item.href, item.exact)}
               collapsed={collapsed}
+              onClose={onClose}
             />
           ))}
         </div>
@@ -363,15 +378,18 @@ function NavLink({
   item,
   active,
   collapsed,
+  onClose,
 }: {
   item: NavItem;
   active: boolean;
   collapsed: boolean;
+  onClose?: () => void;
 }) {
   const badge = item.badge;
   return (
     <Link
       href={item.href}
+      onClick={onClose}
       title={collapsed ? item.label : undefined}
       className={cn(
         "flex items-center rounded-lg text-sm font-semibold transition-colors relative",

@@ -43,7 +43,9 @@ function formatEur(value: number) {
 }
 
 function conversionRate(s: ApiService) {
-  return s.clicks > 0 ? ((s.orderCount / s.clicks) * 100).toFixed(1) : "0.0";
+  const clicks = s.clicks ?? 0;
+  const orders = s.orderCount ?? 0;
+  return clicks > 0 ? ((orders / clicks) * 100).toFixed(1) : "0.0";
 }
 
 // ── Component ──
@@ -80,10 +82,10 @@ export default function AgenceServicesPage() {
   const stats = useMemo(() => {
     const total = services.length;
     const actifs = services.filter((s) => s.status === "actif").length;
-    const caTotal = services.reduce((sum, s) => sum + s.revenue, 0);
+    const caTotal = services.reduce((sum, s) => sum + (s.revenue ?? 0), 0);
 
-    const totalClicks = services.reduce((sum, s) => sum + s.clicks, 0);
-    const totalOrders = services.reduce((sum, s) => sum + s.orderCount, 0);
+    const totalClicks = services.reduce((sum, s) => sum + (s.clicks ?? 0), 0);
+    const totalOrders = services.reduce((sum, s) => sum + (s.orderCount ?? 0), 0);
     const tauxConversion = totalClicks > 0 ? ((totalOrders / totalClicks) * 100).toFixed(1) : "0.0";
 
     return { total, actifs, caTotal, tauxConversion };
@@ -270,13 +272,13 @@ export default function AgenceServicesPage() {
 
                 {/* Price */}
                 <p className="text-primary font-black text-lg mb-2">
-                  {formatEur(s.basePrice)}
+                  {formatEur(s.basePrice ?? 0)}
                 </p>
 
                 {/* Tags */}
-                {s.tags.length > 0 && (
+                {(s.tags || []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {s.tags.slice(0, 4).map((tag) => (
+                    {(s.tags || []).slice(0, 4).map((tag) => (
                       <span
                         key={tag}
                         className="px-2 py-0.5 rounded-full bg-background-dark text-[10px] text-slate-400 border border-border-dark"
@@ -284,9 +286,9 @@ export default function AgenceServicesPage() {
                         {tag}
                       </span>
                     ))}
-                    {s.tags.length > 4 && (
+                    {(s.tags || []).length > 4 && (
                       <span className="px-2 py-0.5 text-[10px] text-slate-500">
-                        +{s.tags.length - 4}
+                        +{(s.tags || []).length - 4}
                       </span>
                     )}
                   </div>
@@ -300,11 +302,11 @@ export default function AgenceServicesPage() {
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <span className="material-symbols-outlined text-[14px]">shopping_cart</span>
-                    <span>{s.orderCount} commande{s.orderCount !== 1 ? "s" : ""}</span>
+                    <span>{s.orderCount ?? 0} commande{(s.orderCount ?? 0) !== 1 ? "s" : ""}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <span className="material-symbols-outlined text-[14px]">payments</span>
-                    <span>{formatEur(s.revenue)}</span>
+                    <span>{formatEur(s.revenue ?? 0)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <span className="material-symbols-outlined text-[14px]">trending_up</span>
@@ -313,11 +315,11 @@ export default function AgenceServicesPage() {
                 </div>
 
                 {/* Rating */}
-                {s.ratingCount > 0 && (
+                {(s.ratingCount ?? 0) > 0 && (
                   <div className="flex items-center gap-1 text-[11px] text-amber-400 mb-3">
                     <span className="material-symbols-outlined text-[14px]">star</span>
-                    <span className="font-semibold">{s.rating.toFixed(1)}</span>
-                    <span className="text-slate-500">({s.ratingCount} avis)</span>
+                    <span className="font-semibold">{(s.rating ?? 0).toFixed(1)}</span>
+                    <span className="text-slate-500">({s.ratingCount ?? 0} avis)</span>
                   </div>
                 )}
 

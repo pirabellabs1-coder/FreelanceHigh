@@ -126,6 +126,7 @@ const BADGE_CONFIG: Record<string, { labelKey: string; icon: string; color: stri
 // ============================================================
 
 function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
+  const safeRating = Number.isFinite(rating) ? rating : 0;
   const sizeClasses = size === "md" ? "text-lg" : "text-sm";
   return (
     <div className="flex items-center gap-0.5">
@@ -135,9 +136,9 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
           className={cn(
             "material-symbols-outlined",
             sizeClasses,
-            star <= rating ? "text-accent" : "text-slate-600"
+            star <= safeRating ? "text-accent" : "text-slate-600"
           )}
-          style={star <= rating ? { fontVariationSettings: "'FILL' 1" } : {}}
+          style={star <= safeRating ? { fontVariationSettings: "'FILL' 1" } : {}}
         >
           star
         </span>
@@ -147,7 +148,9 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
 }
 
 function formatDate(dateStr: string, locale: string): string {
+  if (!dateStr) return "";
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
   return d.toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
@@ -193,11 +196,11 @@ function ServiceMiniCard({
           <p className="text-xs text-slate-500 mb-1">{vendorName}</p>
         )}
         <div className="flex items-center gap-2 mb-2">
-          <StarRating rating={service.rating} />
-          <span className="text-xs text-slate-500">{service.rating} ({service.ratingCount})</span>
+          <StarRating rating={service.rating ?? 0} />
+          <span className="text-xs text-slate-500">{service.rating ?? 0} ({service.ratingCount ?? 0})</span>
         </div>
         <div className="pt-2 border-t border-slate-100 dark:border-border-dark">
-          <span className="text-sm font-black text-primary">{fromLabel} {format(service.basePrice)}</span>
+          <span className="text-sm font-black text-primary">{fromLabel} {format(service.basePrice ?? 0)}</span>
         </div>
       </div>
     </Link>
@@ -408,10 +411,18 @@ export default function ServiceDetailClient() {
   // Gallery images
   const galleryImages = useMemo(() => {
     if (!service) return [];
-    if (service.images && service.images.length > 0) return service.images;
+    const imgs = Array.isArray(service.images) ? service.images.filter(Boolean) : [];
+    if (imgs.length > 0) return imgs;
     if (service.mainImage) return [service.mainImage];
     return [];
   }, [service]);
+
+  // Reset currentImage when gallery changes to avoid out-of-bounds
+  useEffect(() => {
+    if (currentImage >= galleryImages.length && galleryImages.length > 0) {
+      setCurrentImage(0);
+    }
+  }, [galleryImages.length, currentImage]);
 
   // Default features for package comparison
   const features = [
@@ -435,6 +446,19 @@ export default function ServiceDetailClient() {
     }
     return features;
   }, [service]);
+
+  // Safe package accessor — returns a safe default if tier data is missing
+  const getPackage = (tier: "basic" | "standard" | "premium"): PackageTier => {
+    const pkg = service?.packages?.[tier];
+    if (pkg && typeof pkg === "object") return pkg;
+    return {
+      name: tier.charAt(0).toUpperCase() + tier.slice(1),
+      price: service?.basePrice ?? 0,
+      deliveryDays: service?.deliveryDays ?? 0,
+      revisions: service?.revisions ?? 0,
+      description: "",
+    };
+  };
 
   // ============================================================
   // Loading state
@@ -481,24 +505,24 @@ export default function ServiceDetailClient() {
   // Render
   // ============================================================
   return (
-    <div className="min-h-screen bg-background-dark">
+    <div className="min-h-screen bg-background-dark overflow-x-hidden">
       {/* Breadcrumbs */}
       <div className="border-b border-border-dark">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-sm text-slate-400">
-            <Link href="/" className="hover:text-primary transition-colors">{t("breadcrumb_home")}</Link>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <Link href="/explorer" className="hover:text-primary transition-colors">{t("breadcrumb_services")}</Link>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-slate-500">{service.categoryName}</span>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-slate-300 font-medium truncate max-w-[200px]">{formatServiceTitle(service.title)}</span>
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-sm text-slate-400 overflow-hidden">
+            <Link href="/" className="hover:text-primary transition-colors shrink-0">{t("breadcrumb_home")}</Link>
+            <span className="material-symbols-outlined text-xs shrink-0">chevron_right</span>
+            <Link href="/explorer" className="hover:text-primary transition-colors shrink-0">{t("breadcrumb_services")}</Link>
+            <span className="material-symbols-outlined text-xs shrink-0">chevron_right</span>
+            <span className="text-slate-500 shrink-0 hidden sm:inline">{service.categoryName}</span>
+            <span className="material-symbols-outlined text-xs shrink-0 hidden sm:inline">chevron_right</span>
+            <span className="text-slate-300 font-medium truncate min-w-0">{formatServiceTitle(service.title)}</span>
           </nav>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="max-w-[1100px] mx-auto px-2.5 sm:px-4 lg:px-6 py-6">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6">
         <div>
           {/* ============================================ */}
           {/* FULL WIDTH — Main Content */}
@@ -537,21 +561,21 @@ export default function ServiceDetailClient() {
             </div>
 
             {/* Rating + orders row */}
-            <div className="flex items-center gap-4 mb-6 flex-wrap">
+            <div className="flex items-center gap-3 sm:gap-4 mb-6 flex-wrap">
               <div className="flex items-center gap-2">
                 <StarRating rating={parseFloat(avgRating)} size="md" />
                 <span className="text-white font-bold">{avgRating}</span>
-                <span className="text-slate-400 text-sm">({reviews.length || service.ratingCount} {t("reviews")})</span>
+                <span className="text-slate-400 text-sm">({reviews.length || service.ratingCount || 0} {t("reviews")})</span>
               </div>
-              <span className="text-slate-600">|</span>
+              <span className="text-slate-600 hidden sm:inline">|</span>
               <span className="text-sm text-slate-400 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm text-primary">shopping_cart</span>
-                {service.orderCount} {t("orders")}
+                {service.orderCount ?? 0} {t("orders")}
               </span>
-              <span className="text-slate-600">|</span>
+              <span className="text-slate-600 hidden sm:inline">|</span>
               <span className="text-sm text-slate-400 flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm text-primary">schedule</span>
-                {t("delivery_days", { count: service.deliveryDays })}
+                {t("delivery_days", { count: service.deliveryDays ?? 0 })}
               </span>
             </div>
 
@@ -560,19 +584,19 @@ export default function ServiceDetailClient() {
               <div className="flex items-center gap-4 mb-6 bg-gradient-to-r from-primary/5 to-transparent border border-primary/10 rounded-2xl p-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30 flex-shrink-0 relative">
                   {vendor.avatar ? (
-                    <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
+                    <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name || ""} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                      {vendor.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      {(vendor.name || "").split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link href={`/freelances/${vendor.username}`} className="text-white font-bold text-sm hover:text-primary transition-colors">
-                      {vendor.name}
+                      {vendor.name || ""}
                     </Link>
-                    {vendor.badges.slice(0, 2).map((b) => {
+                    {(vendor.badges ?? []).slice(0, 2).map((b) => {
                       const cfg = BADGE_CONFIG[b];
                       if (!cfg) return null;
                       return (
@@ -624,7 +648,7 @@ export default function ServiceDetailClient() {
             {/* Image Gallery */}
             {galleryImages.length > 0 && (
               <div className="mb-6">
-                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark shadow-xl ring-1 ring-white/5 max-h-[400px] aspect-[16/9] sm:aspect-[2/1]">
+                <div className="relative rounded-2xl overflow-hidden bg-neutral-dark border border-border-dark shadow-xl ring-1 ring-white/5 aspect-[4/3] sm:aspect-[16/9] md:aspect-[2/1]">
                   <img
                     src={optimizedUrl(galleryImages[currentImage], 900)}
                     alt={`${service.title} - Image ${currentImage + 1}`}
@@ -708,7 +732,7 @@ export default function ServiceDetailClient() {
                         : "bg-neutral-dark text-slate-400"
                     )}
                   >
-                    {service.packages[tier].name}
+                    {getPackage(tier).name}
                     {tier === "standard" && selectedPackage !== tier && (
                       <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
                     )}
@@ -721,20 +745,20 @@ export default function ServiceDetailClient() {
                 {(["basic", "standard", "premium"] as const)
                   .filter((tier) => tier === selectedPackage)
                   .map((tier) => {
-                    const p = service.packages[tier];
+                    const p = getPackage(tier);
                     return (
                       <div key={tier} className="bg-neutral-dark border border-primary ring-2 ring-primary/20 rounded-2xl p-6 shadow-lg shadow-primary/10">
                         <h3 className="text-white font-bold text-base mb-1">{p.name}</h3>
-                        <p className="text-2xl font-extrabold text-primary mb-3">{format(p.price)}</p>
-                        <p className="text-slate-400 text-xs leading-relaxed mb-4">{p.description}</p>
+                        <p className="text-2xl font-extrabold text-primary mb-3">{format(p.price ?? 0)}</p>
+                        <p className="text-slate-400 text-xs leading-relaxed mb-4">{p.description || ""}</p>
                         <div className="space-y-2 text-xs">
                           <div className="flex items-center gap-2 text-slate-300">
                             <span className="material-symbols-outlined text-sm text-primary">timer</span>
-                            {t("delivery_days", { count: p.deliveryDays ?? p.delivery })}
+                            {t("delivery_days", { count: p.deliveryDays ?? p.delivery ?? 0 })}
                           </div>
                           <div className="flex items-center gap-2 text-slate-300">
                             <span className="material-symbols-outlined text-sm text-primary">refresh</span>
-                            {p.revisions === 0 ? t("no_revision") : t("revisions", { count: p.revisions })}
+                            {(p.revisions ?? 0) === 0 ? t("no_revision") : t("revisions", { count: p.revisions ?? 0 })}
                           </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-border-dark space-y-2">
@@ -765,7 +789,7 @@ export default function ServiceDetailClient() {
               {/* Desktop: 3 columns */}
               <div className="hidden md:grid md:grid-cols-3 gap-4">
                 {(["basic", "standard", "premium"] as const).map((tier) => {
-                  const p = service.packages[tier];
+                  const p = getPackage(tier);
                   const isSelected = selectedPackage === tier;
                   return (
                     <button
@@ -782,16 +806,16 @@ export default function ServiceDetailClient() {
                         </div>
                       )}
                       <h3 className="text-white font-bold text-base mb-1">{p.name}</h3>
-                      <p className="text-2xl font-extrabold text-primary mb-3">{format(p.price)}</p>
-                      <p className="text-slate-400 text-xs leading-relaxed mb-4">{p.description}</p>
+                      <p className="text-2xl font-extrabold text-primary mb-3">{format(p.price ?? 0)}</p>
+                      <p className="text-slate-400 text-xs leading-relaxed mb-4">{p.description || ""}</p>
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center gap-2 text-slate-300">
                           <span className="material-symbols-outlined text-sm text-primary">timer</span>
-                          {t("delivery_days", { count: p.deliveryDays ?? p.delivery })}
+                          {t("delivery_days", { count: p.deliveryDays ?? p.delivery ?? 0 })}
                         </div>
                         <div className="flex items-center gap-2 text-slate-300">
                           <span className="material-symbols-outlined text-sm text-primary">refresh</span>
-                          {p.revisions === 0 ? t("no_revision") : t("revisions", { count: p.revisions })}
+                          {(p.revisions ?? 0) === 0 ? t("no_revision") : t("revisions", { count: p.revisions ?? 0 })}
                         </div>
                       </div>
                       <div className="mt-4 pt-4 border-t border-border-dark space-y-2">
@@ -834,8 +858,8 @@ export default function ServiceDetailClient() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(service.extras ?? []).map((extra, idx) => (
                     <div key={idx} className="flex items-center justify-between bg-neutral-dark border border-border-dark rounded-xl px-5 py-4">
-                      <span className="text-sm text-slate-300">{extra.label}</span>
-                      <span className="text-sm font-bold text-primary">+{format(extra.price)}</span>
+                      <span className="text-sm text-slate-300">{extra.label || ""}</span>
+                      <span className="text-sm font-bold text-primary">+{format(extra.price ?? 0)}</span>
                     </div>
                   ))}
                 </div>
@@ -881,21 +905,21 @@ export default function ServiceDetailClient() {
               <div className="mt-12 pt-8 border-t border-border-dark">
                 <h2 className="text-lg font-bold text-white mb-6">{t("about_seller")}</h2>
                 <div className="bg-gradient-to-br from-neutral-dark to-background-dark border border-border-dark rounded-2xl p-6 shadow-xl">
-                  <div className="flex items-start gap-5">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
                     <div className="relative shrink-0">
                       <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-lg shadow-primary/10">
                         {vendor.avatar ? (
-                          <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name} className="w-full h-full object-cover" />
+                          <img src={optimizedUrl(vendor.avatar, 200)} alt={vendor.name || ""} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-                            {vendor.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            {(vendor.name || "").split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="text-white font-bold text-lg">{vendor.name}</h3>
+                    <div className="flex-1 min-w-0 text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
+                        <h3 className="text-white font-bold text-lg">{vendor.name || ""}</h3>
                         {(vendor.badges ?? []).map((b) => {
                           const cfg = BADGE_CONFIG[b];
                           if (!cfg) return null;
@@ -908,7 +932,7 @@ export default function ServiceDetailClient() {
                         })}
                       </div>
                       <p className="text-primary font-medium text-sm">{vendor.title || t("freelance_default_title")}</p>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-slate-400 text-xs">
+                      <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 mt-2 text-slate-400 text-xs">
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-xs">location_on</span>
                           {vendor.country}
@@ -920,8 +944,8 @@ export default function ServiceDetailClient() {
                   {/* Vendor stats */}
                   <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-border-dark">
                     {[
-                      { value: vendor.completedOrders.toString(), label: t("completed_orders") },
-                      { value: `${vendor.rating}/5`, label: t("average_rating") },
+                      { value: String(vendor.completedOrders ?? 0), label: t("completed_orders") },
+                      { value: `${vendor.rating ?? 0}/5`, label: t("average_rating") },
                     ].map((s) => (
                       <div key={s.label} className="text-center">
                         <p className="text-white font-bold text-lg">{s.value}</p>
@@ -939,7 +963,7 @@ export default function ServiceDetailClient() {
                   )}
 
                   {/* Vendor action buttons */}
-                  <div className="flex gap-3 mt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
                     <Link
                       href={`/freelances/${vendor.username}`}
                       className="flex-1 flex items-center justify-center gap-2 bg-primary/10 border border-primary/30 text-primary rounded-xl px-4 py-3 text-sm font-bold hover:bg-primary/20 transition-all"
@@ -989,13 +1013,13 @@ export default function ServiceDetailClient() {
                 <>
                   {/* Rating summary */}
                   <div className="bg-gradient-to-br from-neutral-dark to-background-dark border border-border-dark rounded-2xl p-6 mb-6">
-                    <div className="flex items-center gap-6 flex-wrap">
-                      <div className="text-center">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                      <div className="text-center shrink-0">
                         <p className="text-4xl font-extrabold text-white">{avgRating}</p>
                         <StarRating rating={parseFloat(avgRating)} size="md" />
                         <p className="text-slate-400 text-xs mt-1">{reviews.length} {t("reviews")}</p>
                       </div>
-                      <div className="flex-1 min-w-[200px] space-y-2">
+                      <div className="flex-1 w-full min-w-0 space-y-2">
                         {[5, 4, 3, 2, 1].map((stars) => {
                           const count = reviews.filter((r) => Math.round(r.rating) === stars).length;
                           const pct = reviews.length ? (count / reviews.length) * 100 : 0;
@@ -1025,12 +1049,12 @@ export default function ServiceDetailClient() {
                                 src={review.clientAvatar}
                                 alt={review.clientName}
                                 className="w-full h-full object-cover"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="flex items-center justify-center w-full h-full text-primary font-bold text-sm">${review.clientName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</span>`; }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="flex items-center justify-center w-full h-full text-primary font-bold text-sm">${(review.clientName || "").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</span>`; }}
                               />
                             </div>
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                              {review.clientName
+                              {(review.clientName || "")
                                 .split(" ")
                                 .map((n: string) => n[0])
                                 .join("")
@@ -1103,11 +1127,11 @@ export default function ServiceDetailClient() {
             {/* ============================================ */}
             {otherServices.length > 0 && vendor && (
               <div className="mt-12 pt-8 border-t border-border-dark">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold text-white">{t("other_services", { name: vendor.name })}</h2>
+                <div className="flex items-center justify-between gap-3 mb-6">
+                  <h2 className="text-lg font-bold text-white min-w-0 truncate">{t("other_services", { name: vendor.name })}</h2>
                   <Link
                     href={`/freelances/${vendor.username}`}
-                    className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
+                    className="text-primary text-sm font-bold hover:underline flex items-center gap-1 shrink-0"
                   >
                     {t("view_all_services")}
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -1127,7 +1151,7 @@ export default function ServiceDetailClient() {
             {similarServices.length > 0 && (
               <div className="mt-12 pt-8 border-t border-border-dark">
                 <h2 className="text-lg font-bold text-white mb-6">{t("similar_services")}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {similarServices.map((s) => (
                     <ServiceMiniCard key={s.id} service={s} format={format} vendorName={s.vendorName} fromLabel={t("from")} />
                   ))}
@@ -1136,6 +1160,23 @@ export default function ServiceDetailClient() {
             )}
           </div>
 
+        </div>
+      </div>
+
+      {/* Sticky bottom CTA on mobile */}
+      <div className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-neutral-dark/95 backdrop-blur-md border-t border-border-dark px-4 py-3 safe-area-pb">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-white font-bold text-sm truncate">{getPackage(selectedPackage).name}</p>
+            <p className="text-primary font-extrabold text-lg">{format(getPackage(selectedPackage).price ?? 0)}</p>
+          </div>
+          <button
+            onClick={handleOrder}
+            className="shrink-0 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl px-6 py-3 text-sm font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-sm">shopping_cart</span>
+            {t("order_button")}
+          </button>
         </div>
       </div>
 
@@ -1154,7 +1195,7 @@ export default function ServiceDetailClient() {
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Prix</span>
                 <span className="text-primary font-bold">
-                  {((service.packages as Record<string, {price?: number}>)?.[selectedPackage]?.price ?? service.basePrice ?? 0).toLocaleString("fr-FR")} EUR
+                  {format(getPackage(selectedPackage).price ?? service.basePrice ?? 0)}
                 </span>
               </div>
             </div>

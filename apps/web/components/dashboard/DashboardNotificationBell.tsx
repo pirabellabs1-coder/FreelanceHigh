@@ -34,8 +34,8 @@ function timeAgo(dateStr: string): string {
 }
 
 export function DashboardNotificationBell() {
-  const apiNotifications = useDashboardStore((s) => s.apiNotifications);
-  const unreadCount = useDashboardStore((s) => s.unreadCount);
+  const apiNotifications = useDashboardStore((s) => s.apiNotifications) ?? [];
+  const unreadCount = useDashboardStore((s) => s.unreadCount) ?? 0;
   const markNotificationRead = useDashboardStore((s) => s.markNotificationRead);
   const markAllNotificationsRead = useDashboardStore((s) => s.markAllNotificationsRead);
   const refreshNotifications = useDashboardStore((s) => s.refreshNotifications);

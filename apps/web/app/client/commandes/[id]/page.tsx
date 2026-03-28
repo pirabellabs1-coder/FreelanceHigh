@@ -16,7 +16,7 @@ import { CountdownTimer } from "@/components/ui/countdown-timer";
 // ---------------------------------------------------------------------------
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  en_attente: { label: "En attente", cls: "bg-slate-500/20 text-slate-400" },
+  en_attente: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
   en_cours: { label: "En cours", cls: "bg-blue-500/20 text-blue-400" },
   livre: { label: "Livré", cls: "bg-primary/20 text-primary" },
   revision: { label: "Révision", cls: "bg-orange-500/20 text-orange-400" },
@@ -75,15 +75,17 @@ export default function ClientOrderDetailPage() {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [hasExistingReview, setHasExistingReview] = useState(false);
 
+  const safeOrders = orders || [];
+
   // Sync orders on mount if needed
   useEffect(() => {
-    if (orders.length === 0) {
+    if (safeOrders.length === 0) {
       syncOrders();
     }
-  }, [orders.length, syncOrders]);
+  }, [safeOrders.length, syncOrders]);
 
   // Try to find the order from the store, otherwise fetch directly
-  const storeOrder = useMemo(() => orders.find((o) => o.id === id), [orders, id]);
+  const storeOrder = useMemo(() => safeOrders.find((o) => o.id === id), [safeOrders, id]);
 
   useEffect(() => {
     if (!storeOrder && !fetchLoading && !localOrder) {
@@ -101,7 +103,7 @@ export default function ClientOrderDetailPage() {
   // Normalize status to lowercase (Prisma returns UPPERCASE enum values)
   const rawOrder = storeOrder || localOrder;
   const order = rawOrder ? { ...rawOrder, status: (rawOrder.status || "en_attente").toLowerCase() } : null;
-  const isLoading = (loading.orders && orders.length === 0) || fetchLoading;
+  const isLoading = (loading.orders && safeOrders.length === 0) || fetchLoading;
 
   // Check existing review
   useEffect(() => {
@@ -228,31 +230,31 @@ export default function ClientOrderDetailPage() {
       </div>
 
       {/* Header card */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", statusInfo.cls)}>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-2">
+              <span className={cn("text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full", statusInfo.cls)}>
                 {statusInfo.label}
               </span>
-              <span className="text-xs bg-border-dark text-slate-400 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] sm:text-xs bg-border-dark text-slate-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                 {order.category}
               </span>
-              <span className="text-xs bg-border-dark text-slate-400 px-2.5 py-1 rounded-full">
+              <span className="text-[10px] sm:text-xs bg-border-dark text-slate-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                 {order.packageType}
               </span>
             </div>
-            <h1 className="text-2xl font-black text-white">{order.serviceTitle}</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-lg sm:text-2xl font-black text-white">{order.serviceTitle}</h1>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
               Commande #{order.id.slice(-4)} -- Client: {order.clientName}
             </p>
           </div>
-          <div className="text-right flex-shrink-0">
-            <p className="text-2xl font-black text-primary">
+          <div className="flex items-center justify-between sm:block sm:text-right flex-shrink-0">
+            <p className="text-lg sm:text-2xl font-black text-primary">
               {(order.amount ?? 0).toLocaleString("fr-FR")} EUR
             </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Deadline: {new Date(order.deadline).toLocaleDateString("fr-FR")}
+            <p className="text-[10px] sm:text-xs text-slate-500 sm:mt-1">
+              Deadline: {order.deadline ? new Date(order.deadline).toLocaleDateString("fr-FR") : "Non definie"}
             </p>
           </div>
         </div>
@@ -262,18 +264,18 @@ export default function ClientOrderDetailPage() {
       {/* ETAPES D'ACTION CLIENT — Ligne de progression + boutons      */}
       {/* TOUJOURS VISIBLE                                              */}
       {/* ════════════════════════════════════════════════════════════════ */}
-      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-5 space-y-4">
-        <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
-          <span className="material-symbols-outlined text-primary">timeline</span>
+      <div className="bg-neutral-dark border-2 border-primary/20 rounded-2xl p-3 sm:p-5 space-y-3 sm:space-y-4">
+        <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
+          <span className="material-symbols-outlined text-primary text-base sm:text-xl">timeline</span>
           Suivi de la commande
         </h3>
 
-        <div className="flex items-start justify-between overflow-x-auto pb-2">
+        <div className="flex items-start justify-between overflow-x-auto pb-2 -mx-1 px-1">
           {/* Step 1: Commande passee */}
           <div className="flex items-center flex-1 min-w-0">
             <div className="flex flex-col items-center gap-1.5 flex-1">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 bg-emerald-500 border-emerald-500 text-white">
-                <span className="material-symbols-outlined text-lg">check</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 bg-emerald-500 border-emerald-500 text-white">
+                <span className="material-symbols-outlined text-sm sm:text-lg">check</span>
               </div>
               <span className="text-[10px] font-bold text-emerald-400 text-center whitespace-nowrap">Commandee</span>
             </div>
@@ -288,7 +290,7 @@ export default function ClientOrderDetailPage() {
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex flex-col items-center gap-1.5 flex-1">
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all",
                     done ? "bg-emerald-500 border-emerald-500 text-white" :
                     active ? "bg-amber-500/20 border-amber-500/50 text-amber-400 animate-pulse" :
                     "bg-slate-800 border-slate-600 text-slate-500"
@@ -313,7 +315,7 @@ export default function ClientOrderDetailPage() {
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex flex-col items-center gap-1.5 flex-1">
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all",
                     done ? "bg-emerald-500 border-emerald-500 text-white" :
                     active ? "bg-blue-500 border-blue-500 text-white" :
                     "bg-slate-800 border-slate-600 text-slate-500"
@@ -337,7 +339,7 @@ export default function ClientOrderDetailPage() {
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex flex-col items-center gap-1.5 flex-1">
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all",
                     done ? "bg-emerald-500 border-emerald-500 text-white" :
                     active ? "bg-primary border-primary text-white animate-pulse" :
                     "bg-slate-800 border-slate-600 text-slate-500"
@@ -371,7 +373,7 @@ export default function ClientOrderDetailPage() {
             return (
               <div className="flex flex-col items-center gap-1.5 min-w-0">
                 <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                  "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all",
                   done ? "bg-emerald-500 border-emerald-500 text-white" :
                   "bg-slate-800 border-slate-600 text-slate-500"
                 )}>
@@ -422,19 +424,19 @@ export default function ClientOrderDetailPage() {
           {/* Phase pipeline */}
           <OrderPhasePipeline
             status={order.status}
-            revisionsLeft={order.revisionsLeft}
-            timeline={order.timeline}
+            revisionsLeft={order.revisionsLeft ?? 0}
+            timeline={order.timeline || []}
           />
 
           {/* Timeline */}
-          {order.timeline && order.timeline.length > 0 && (
-            <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          {(order.timeline || []).length > 0 && (
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">history</span>
                 Historique
               </h3>
               <div className="space-y-3">
-                {order.timeline.map((event) => (
+                {(order.timeline || []).map((event) => (
                   <div key={event.id} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="material-symbols-outlined text-sm text-primary">
@@ -471,26 +473,26 @@ export default function ClientOrderDetailPage() {
           )}
 
           {/* Files / Deliverables */}
-          {order.files && order.files.length > 0 && (
-            <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          {(order.files || []).length > 0 && (
+            <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">folder</span>
                 Fichiers & Livrables
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold ml-1">
-                  {order.files.length}
+                  {(order.files || []).length}
                 </span>
               </h3>
               <div className="space-y-2">
-                {order.files.map((file) => (
+                {(order.files || []).map((file) => (
                   <div
                     key={file.id}
                     className="flex items-center gap-3 p-3 bg-background-dark rounded-lg border border-border-dark"
                   >
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <span className="material-symbols-outlined text-primary">
-                        {file.type.includes("image")
+                        {(file.type || "").includes("image")
                           ? "image"
-                          : file.type.includes("pdf")
+                          : (file.type || "").includes("pdf")
                             ? "picture_as_pdf"
                             : "description"}
                       </span>
@@ -505,10 +507,10 @@ export default function ClientOrderDetailPage() {
                     <a
                       href={file.url}
                       download
-                      className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1"
+                      className="px-2 sm:px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1 flex-shrink-0"
                     >
                       <span className="material-symbols-outlined text-sm">download</span>
-                      Télécharger
+                      <span className="hidden sm:inline">Télécharger</span>
                     </a>
                   </div>
                 ))}
@@ -517,18 +519,18 @@ export default function ClientOrderDetailPage() {
           )}
 
           {/* Action buttons based on status */}
-          <div className="bg-neutral-dark rounded-xl border border-border-dark p-6">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">touch_app</span>
               Actions
             </h3>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-wrap">
               {order.status === "livre" && (
                 <>
                   <button
                     onClick={() => setShowValidateModal(true)}
                     disabled={actionLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-emerald-500 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined text-lg">check_circle</span>
                     {actionLoading ? "Validation..." : "Valider la livraison"}
@@ -536,7 +538,7 @@ export default function ClientOrderDetailPage() {
                   <button
                     onClick={() => setShowRevisionModal(true)}
                     disabled={actionLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-orange-500/10 text-orange-400 text-sm font-bold rounded-xl hover:bg-orange-500/20 transition-all disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-orange-500/10 text-orange-400 text-sm font-bold rounded-xl hover:bg-orange-500/20 transition-all disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-lg">replay</span>
                     Demander une revision
@@ -547,7 +549,7 @@ export default function ClientOrderDetailPage() {
                 <button
                   onClick={() => setShowDisputeModal(true)}
                   disabled={actionLoading}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-400 text-sm font-bold rounded-xl hover:bg-red-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-red-500/10 text-red-400 text-sm font-bold rounded-xl hover:bg-red-500/20 transition-all disabled:opacity-50"
                 >
                   <span className="material-symbols-outlined text-lg">gavel</span>
                   Ouvrir un litige
@@ -568,7 +570,7 @@ export default function ClientOrderDetailPage() {
               {order.status === "revision" && (
                 <div className="flex items-center gap-2 text-orange-400 text-sm font-semibold">
                   <span className="material-symbols-outlined">replay</span>
-                  Révision en cours -- {order.revisionsLeft} révision(s) restante(s)
+                  Révision en cours -- {order.revisionsLeft ?? 0} révision(s) restante(s)
                 </div>
               )}
             </div>
@@ -636,7 +638,7 @@ export default function ClientOrderDetailPage() {
             </h4>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
-                {(order.freelanceName || "FL").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                {(order.freelanceName || "FL").split(" ").map((n: string) => (n[0] || "")).join("").slice(0, 2).toUpperCase() || "FL"}
               </div>
               <div>
                 <p className="text-sm font-bold text-white">{order.freelanceName || "Freelance"}</p>
@@ -654,9 +656,9 @@ export default function ClientOrderDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-slate-400">Montant</span><span className="font-bold">{(order.amount ?? 0).toLocaleString("fr-FR")} EUR</span></div>
               <div className="flex justify-between"><span className="text-slate-400">Forfait</span><span className="capitalize">{order.packageType}</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Progression</span><span className="text-primary font-bold">{order.progress}%</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Revisions</span><span>{order.revisionsLeft} restante(s)</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Deadline</span><span>{new Date(order.deadline).toLocaleDateString("fr-FR")}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Progression</span><span className="text-primary font-bold">{order.progress ?? 0}%</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Revisions</span><span>{order.revisionsLeft ?? 0} restante(s)</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Deadline</span><span>{order.deadline ? new Date(order.deadline).toLocaleDateString("fr-FR") : "N/A"}</span></div>
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@ import { createAuditLog } from "@/lib/admin/audit";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== "admin") {
+    if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
@@ -76,22 +76,40 @@ export async function GET() {
       orderBy: { createdAt: "asc" },
     });
 
-    const queue = requests.map((r) => ({
-      userId: r.user.id,
-      userName: r.user.name,
-      userEmail: r.user.email,
-      userRole: r.user.role,
-      currentLevel: r.currentLevel,
-      nextLevel: r.requestedLevel,
-      nextLevelLabel: `Niveau ${r.requestedLevel}`,
-      nextVerification: r.documentType,
-      status: r.user.status,
-      createdAt: r.createdAt,
-      documentSubmitted: !!r.documentUrl,
-      documentType: r.documentType,
-      submittedAt: r.createdAt,
-      requestId: r.id,
-    }));
+    const queue = requests.map((r) => {
+      const meta = (r.metadata as Record<string, unknown>) || {};
+      return {
+        userId: r.user.id,
+        userName: r.user.name,
+        userEmail: r.user.email,
+        userRole: r.user.role,
+        currentLevel: r.currentLevel,
+        nextLevel: r.requestedLevel,
+        nextLevelLabel: `Niveau ${r.requestedLevel}`,
+        nextVerification: r.documentType,
+        status: r.user.status,
+        createdAt: r.createdAt,
+        documentSubmitted: !!r.documentUrl,
+        documentType: r.documentType,
+        documentUrl: r.documentUrl || "",
+        submissionType: r.submissionType || "legacy",
+        submittedAt: r.createdAt,
+        requestId: r.id,
+        metadata: {
+          documentFrontUrl: (meta.documentFrontUrl as string) || r.documentUrl || "",
+          documentBackUrl: (meta.documentBackUrl as string) || "",
+          selfieUrl: (meta.selfieUrl as string) || "",
+          registrationDocUrl: (meta.registrationDocUrl as string) || "",
+          representativeIdUrl: (meta.representativeIdUrl as string) || "",
+          firstName: (meta.firstName as string) || "",
+          lastName: (meta.lastName as string) || "",
+          country: (meta.country as string) || "",
+          city: (meta.city as string) || "",
+          agencyName: (meta.agencyName as string) || "",
+          siret: (meta.siret as string) || "",
+        },
+      };
+    });
 
     // Summary from all users
     const summary = {
@@ -117,7 +135,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== "admin") {
+    if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
 

@@ -6,7 +6,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
     return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
   }
 
@@ -41,7 +41,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !["admin", "ADMIN"].includes(session.user.role)) {
     return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
   }
 

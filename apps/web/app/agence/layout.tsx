@@ -18,7 +18,7 @@ const AGENCE_CSS_VARS = {
 } as React.CSSProperties;
 
 const IS_DEV = process.env.NODE_ENV === "development";
-const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 30_000; // 5min en dev, 30s en prod
+const NOTIFICATION_POLL_INTERVAL = IS_DEV ? 300_000 : 10_000; // 5min en dev, 10s en prod
 const DATA_SYNC_INTERVAL = IS_DEV ? 600_000 : 120_000; // 10min en dev, 2min en prod
 
 export default function AgenceLayout({ children }: { children: React.ReactNode }) {

@@ -129,13 +129,15 @@ const defaultFilters: FilterState = {
 // ============================================================
 
 function getCategorySlug(categoryName: string): string {
+  if (!categoryName) return "";
   const normalized = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   if (CATEGORY_GRADIENTS[normalized]) return normalized;
   const match = CATEGORIES.find((c) => c.slug === normalized);
   return match?.slug ?? normalized;
 }
 
-function getBadgeLevel(badges: string[]): string {
+function getBadgeLevel(badges: string[] | null | undefined): string {
+  if (!Array.isArray(badges) || badges.length === 0) return "Nouveau";
   if (badges.includes("Elite")) return "Elite";
   if (badges.includes("Top Rated")) return "Top Rated";
   if (badges.includes("Confirme") || badges.includes("Pro") || badges.includes("Business")) return "Confirme";
@@ -144,7 +146,8 @@ function getBadgeLevel(badges: string[]): string {
   return "Nouveau";
 }
 
-function isAvatarUrl(avatar: string): boolean {
+function isAvatarUrl(avatar: string | null | undefined): boolean {
+  if (!avatar) return false;
   return avatar.startsWith("http") || avatar.startsWith("/") || avatar.startsWith("data:");
 }
 
@@ -194,7 +197,8 @@ function ServiceCardSkeleton({ view }: { view: "grid" | "list" }) {
   );
 }
 
-function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
+function StarRating({ rating, size = "sm" }: { rating: number | null | undefined; size?: "sm" | "md" }) {
+  const safeRating = Number(rating) || 0;
   const iconSize = size === "sm" ? "text-sm" : "text-base";
   return (
     <div className="flex items-center gap-0.5">
@@ -204,11 +208,11 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
           className={cn(
             "material-symbols-outlined",
             iconSize,
-            star <= Math.floor(rating) ? "text-accent" : star - 0.5 <= rating ? "text-accent" : "text-slate-300 dark:text-slate-600"
+            star <= Math.floor(safeRating) ? "text-accent" : star - 0.5 <= safeRating ? "text-accent" : "text-slate-300 dark:text-slate-600"
           )}
-          style={star <= Math.floor(rating) ? { fontVariationSettings: "'FILL' 1" } : star - 0.5 <= rating ? { fontVariationSettings: "'FILL' 1" } : {}}
+          style={star <= Math.floor(safeRating) ? { fontVariationSettings: "'FILL' 1" } : star - 0.5 <= safeRating ? { fontVariationSettings: "'FILL' 1" } : {}}
         >
-          {star <= Math.floor(rating) ? "star" : star - 0.5 <= rating ? "star_half" : "star"}
+          {star <= Math.floor(safeRating) ? "star" : star - 0.5 <= safeRating ? "star_half" : "star"}
         </span>
       ))}
     </div>
@@ -249,10 +253,16 @@ function ServiceCard({
   onToggleFavorite: (id: string) => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const categorySlug = getCategorySlug(service.category);
+  const categorySlug = getCategorySlug(service.category || "");
   const catIcon = CATEGORIES.find((c) => c.slug === categorySlug)?.icon ?? "category";
   const gradient = CATEGORY_GRADIENTS[categorySlug] ?? "from-primary/80 to-teal-800/80";
-  const vendorLevel = getBadgeLevel(service.vendorBadges || []);
+  const vendorLevel = getBadgeLevel(service.vendorBadges);
+  const safeRating = Number(service.rating) || 0;
+  const safeRatingCount = Number(service.ratingCount) || 0;
+  const safeOrderCount = Number(service.orderCount) || 0;
+  const safeDeliveryDays = Number(service.deliveryDays) || 0;
+  const safeBasePrice = Number(service.basePrice) || 0;
+  const safeVendorName = service.vendorName || "?";
 
   if (view === "list") {
     return (
@@ -301,28 +311,28 @@ function ServiceCard({
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               {service.vendorAvatar && isAvatarUrl(service.vendorAvatar) ? (
-                <img src={service.vendorAvatar} alt={service.vendorName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" loading="lazy" />
+                <img src={service.vendorAvatar} alt={safeVendorName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" loading="lazy" />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                  {(service.vendorName || "??").slice(0, 2).toUpperCase()}
+                  {safeVendorName.slice(0, 2).toUpperCase()}
                 </div>
               )}
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.vendorName}</span>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{safeVendorName}</span>
               <LevelBadge level={vendorLevel} />
             </div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-2">
-              {formatServiceTitle(service.title)}
+              {formatServiceTitle(service.title || "")}
             </h3>
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <div className="flex items-center gap-1">
-                <StarRating rating={service.rating} />
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{service.rating}</span>
-                <span className="text-xs text-slate-500">({service.ratingCount})</span>
+                <StarRating rating={safeRating} />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{safeRating.toFixed(1)}</span>
+                <span className="text-xs text-slate-500">({safeRatingCount})</span>
               </div>
-              {service.orderCount > 0 && (
+              {safeOrderCount > 0 && (
                 <div className="flex items-center gap-1 text-xs text-slate-500">
                   <span className="material-symbols-outlined text-sm text-emerald-500">shopping_bag</span>
-                  <span className="font-semibold text-slate-600 dark:text-slate-400">{service.orderCount} {service.orderCount > 1 ? "ventes" : "vente"}</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">{safeOrderCount} {safeOrderCount > 1 ? "ventes" : "vente"}</span>
                 </div>
               )}
             </div>
@@ -330,10 +340,10 @@ function ServiceCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-xs text-slate-500">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              {service.deliveryDays}{t("days_short")}
+              {safeDeliveryDays}{t("days_short")}
             </div>
             <p className="text-sm font-extrabold text-slate-900 dark:text-white">
-              {t("from")} {format(service.basePrice)}
+              {t("from")} {format(safeBasePrice)}
             </p>
           </div>
         </div>
@@ -386,30 +396,30 @@ function ServiceCard({
       <div className="flex flex-col flex-1 p-4">
         <div className="flex items-center gap-2 mb-2">
           {service.vendorAvatar && isAvatarUrl(service.vendorAvatar) ? (
-            <img src={service.vendorAvatar} alt={service.vendorName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" loading="lazy" />
+            <img src={service.vendorAvatar} alt={safeVendorName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" loading="lazy" />
           ) : (
             <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-              {(service.vendorName || "??").slice(0, 2).toUpperCase()}
+              {safeVendorName.slice(0, 2).toUpperCase()}
             </div>
           )}
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{service.vendorName}</span>
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{safeVendorName}</span>
           <LevelBadge level={vendorLevel} />
         </div>
 
         <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-2 mb-3 flex-1">
-          {formatServiceTitle(service.title)}
+          {formatServiceTitle(service.title || "")}
         </h3>
 
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-1">
-            <StarRating rating={service.rating} />
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{service.rating}</span>
-            <span className="text-xs text-slate-500">({service.ratingCount})</span>
+            <StarRating rating={safeRating} />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{safeRating.toFixed(1)}</span>
+            <span className="text-xs text-slate-500">({safeRatingCount})</span>
           </div>
-          {service.orderCount > 0 && (
+          {safeOrderCount > 0 && (
             <div className="flex items-center gap-1 text-xs">
               <span className="material-symbols-outlined text-sm text-emerald-500">shopping_bag</span>
-              <span className="font-semibold text-slate-600 dark:text-slate-400">{service.orderCount}</span>
+              <span className="font-semibold text-slate-600 dark:text-slate-400">{safeOrderCount}</span>
             </div>
           )}
         </div>
@@ -417,10 +427,10 @@ function ServiceCard({
         <div className="border-t border-slate-100 dark:border-border-dark pt-3 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-slate-500">
             <span className="material-symbols-outlined text-sm">schedule</span>
-            {service.deliveryDays}{t("days_short")}
+            {safeDeliveryDays}{t("days_short")}
           </div>
           <p className="text-sm font-extrabold text-slate-900 dark:text-white">
-            {t("from")} {format(service.basePrice)}
+            {t("from")} {format(safeBasePrice)}
           </p>
         </div>
       </div>
@@ -437,53 +447,85 @@ function Pagination({
   total: number;
   onChange: (page: number) => void;
 }) {
-  if (total <= 1) return null;
+  const safeTotalPages = Math.max(0, Math.floor(total) || 0);
+  if (safeTotalPages <= 1) return null;
+  const safeCurrent = Math.max(1, Math.min(current, safeTotalPages));
 
-  const pages: (number | "ellipsis")[] = [];
+  // Build page numbers for desktop (full) and mobile (simplified)
+  const buildPages = (compact: boolean): (number | "ellipsis")[] => {
+    const result: (number | "ellipsis")[] = [];
+    const maxVisible = compact ? 5 : 7;
 
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (current > 3) pages.push("ellipsis");
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
-      pages.push(i);
+    if (safeTotalPages <= maxVisible) {
+      for (let i = 1; i <= safeTotalPages; i++) result.push(i);
+    } else if (compact) {
+      // Mobile: show first, current, last only (with ellipsis)
+      result.push(1);
+      if (safeCurrent > 2) result.push("ellipsis");
+      if (safeCurrent !== 1 && safeCurrent !== safeTotalPages) result.push(safeCurrent);
+      if (safeCurrent < safeTotalPages - 1) result.push("ellipsis");
+      result.push(safeTotalPages);
+    } else {
+      result.push(1);
+      if (safeCurrent > 3) result.push("ellipsis");
+      for (let i = Math.max(2, safeCurrent - 1); i <= Math.min(safeTotalPages - 1, safeCurrent + 1); i++) {
+        result.push(i);
+      }
+      if (safeCurrent < safeTotalPages - 2) result.push("ellipsis");
+      result.push(safeTotalPages);
     }
-    if (current < total - 2) pages.push("ellipsis");
-    pages.push(total);
-  }
+    return result;
+  };
+
+  const desktopPages = buildPages(false);
+  const mobilePages = buildPages(true);
+
+  const handleChange = (p: number) => {
+    const clamped = Math.max(1, Math.min(p, safeTotalPages));
+    onChange(clamped);
+  };
+
+  const renderPages = (pages: (number | "ellipsis")[]) =>
+    pages.map((p, idx) =>
+      p === "ellipsis" ? (
+        <span key={`e-${idx}`} className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-slate-400 text-xs sm:text-sm">...</span>
+      ) : (
+        <button
+          key={p}
+          onClick={() => handleChange(p)}
+          className={cn(
+            "w-8 h-8 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-bold transition-colors",
+            p === safeCurrent
+              ? "bg-primary text-white"
+              : "border border-slate-200 dark:border-border-dark text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary"
+          )}
+        >
+          {p}
+        </button>
+      )
+    );
 
   return (
-    <div className="flex items-center justify-center gap-1.5 mt-8">
+    <div className="flex items-center justify-center gap-1 sm:gap-1.5 mt-8">
       <button
-        onClick={() => onChange(current - 1)}
-        disabled={current === 1}
-        className="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        onClick={() => handleChange(safeCurrent - 1)}
+        disabled={safeCurrent === 1}
+        className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <span className="material-symbols-outlined text-sm">chevron_left</span>
       </button>
-      {pages.map((page, idx) =>
-        page === "ellipsis" ? (
-          <span key={`e-${idx}`} className="w-9 h-9 flex items-center justify-center text-slate-400 text-sm">...</span>
-        ) : (
-          <button
-            key={page}
-            onClick={() => onChange(page)}
-            className={cn(
-              "w-9 h-9 rounded-lg text-sm font-bold transition-colors",
-              page === current
-                ? "bg-primary text-white"
-                : "border border-slate-200 dark:border-border-dark text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary"
-            )}
-          >
-            {page}
-          </button>
-        )
-      )}
+      {/* Mobile: simplified pagination */}
+      <div className="flex items-center gap-1 sm:hidden">
+        {renderPages(mobilePages)}
+      </div>
+      {/* Desktop: full pagination */}
+      <div className="hidden sm:flex items-center gap-1.5">
+        {renderPages(desktopPages)}
+      </div>
       <button
-        onClick={() => onChange(current + 1)}
-        disabled={current === total}
-        className="flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        onClick={() => handleChange(safeCurrent + 1)}
+        disabled={safeCurrent === safeTotalPages}
+        className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-border-dark text-slate-500 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <span className="material-symbols-outlined text-sm">chevron_right</span>
       </button>
@@ -537,7 +579,7 @@ function FilterDropdown({
         </span>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-40 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-xl p-4 min-w-[220px]">
+        <div className="absolute top-full left-0 mt-1.5 z-40 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-border-dark shadow-xl p-4 min-w-[220px] max-w-[calc(100vw-2rem)]">
           {children}
         </div>
       )}
@@ -799,33 +841,36 @@ export default function ExplorerPage() {
 
       const data: ApiResponse = await res.json();
 
-      let filtered = data.services.map((s) => ({
+      let filtered = (data.services || []).map((s) => ({
         ...s,
         favorited: favoriteIds.has(s.id),
       }));
 
       // Delivery time filter (client-side)
       if (currentFilters.delivery !== "all") {
-        const [minStr, maxStr] = currentFilters.delivery.split("-");
-        const min = Number(minStr);
-        const max = Number(maxStr);
-        filtered = filtered.filter((s) => s.deliveryDays >= min && s.deliveryDays <= max);
+        const parts = currentFilters.delivery.split("-");
+        const min = Number(parts[0]) || 0;
+        const max = Number(parts[1]) || Infinity;
+        filtered = filtered.filter((s) => {
+          const days = Number(s.deliveryDays) || 0;
+          return days >= min && days <= max;
+        });
       }
 
       // Rating filter (client-side)
       if (currentFilters.minRating > 0) {
-        filtered = filtered.filter((s) => s.rating >= currentFilters.minRating);
+        filtered = filtered.filter((s) => (Number(s.rating) || 0) >= currentFilters.minRating);
       }
 
       // Country filter (client-side)
       if (currentFilters.country !== "tous") {
         const countryName = t(`country.${currentFilters.country}`);
-        filtered = filtered.filter((s) => s.vendorCountry === countryName);
+        filtered = filtered.filter((s) => (s.vendorCountry || "") === countryName);
       }
 
       setServices(filtered);
-      setTotalResults(data.total);
-      setTotalPages(data.totalPages);
+      setTotalResults(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 0);
     } catch (err) {
       console.error("[Explorer] Fetch error:", err);
       setError("Impossible de charger les services. Veuillez reessayer.");
@@ -896,14 +941,14 @@ export default function ExplorerPage() {
     (filters.country !== "tous" ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
+    <div className="min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden">
       {/* ---- Header with search ---- */}
       <div className="border-b border-slate-200 dark:border-border-dark bg-white dark:bg-neutral-dark">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-3 sm:mb-4">
             {t("title")}
           </h1>
-          <div className="relative max-w-2xl">
+          <div className="relative w-full sm:max-w-2xl">
             <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
             <input
               type="text"
@@ -1107,43 +1152,45 @@ export default function ExplorerPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
             {/* Results count */}
-            <p className="text-sm text-slate-500 dark:text-slate-400 mr-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400 sm:mr-2">
               <span className="font-bold text-slate-800 dark:text-white">{loading ? "..." : totalResults}</span> {t("services_found")}
             </p>
 
-            {/* Sort dropdown (desktop) */}
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="hidden md:block bg-white dark:bg-neutral-dark border border-slate-200 dark:border-border-dark rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-            >
-              {SORT_VALUES.map((val) => (
-                <option key={val} value={val}>{t(`sort.${val}`)}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              {/* Sort dropdown -- compact on mobile, full on desktop */}
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="bg-white dark:bg-neutral-dark border border-slate-200 dark:border-border-dark rounded-lg px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors max-w-[120px] md:max-w-none"
+              >
+                {SORT_VALUES.map((val) => (
+                  <option key={val} value={val}>{t(`sort.${val}`)}</option>
+                ))}
+              </select>
 
-            {/* View toggle */}
-            <div className="flex items-center border border-slate-200 dark:border-border-dark rounded-lg overflow-hidden">
-              <button
-                onClick={() => setView("grid")}
-                className={cn(
-                  "p-1.5 sm:p-2 transition-colors",
-                  view === "grid" ? "bg-primary text-white" : "text-slate-500 hover:text-primary"
-                )}
-              >
-                <span className="material-symbols-outlined text-sm">grid_view</span>
-              </button>
-              <button
-                onClick={() => setView("list")}
-                className={cn(
-                  "p-1.5 sm:p-2 transition-colors",
-                  view === "list" ? "bg-primary text-white" : "text-slate-500 hover:text-primary"
-                )}
-              >
-                <span className="material-symbols-outlined text-sm">view_list</span>
-              </button>
+              {/* View toggle */}
+              <div className="flex items-center border border-slate-200 dark:border-border-dark rounded-lg overflow-hidden flex-shrink-0">
+                <button
+                  onClick={() => setView("grid")}
+                  className={cn(
+                    "p-1.5 sm:p-2 transition-colors",
+                    view === "grid" ? "bg-primary text-white" : "text-slate-500 hover:text-primary"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-sm">grid_view</span>
+                </button>
+                <button
+                  onClick={() => setView("list")}
+                  className={cn(
+                    "p-1.5 sm:p-2 transition-colors",
+                    view === "list" ? "bg-primary text-white" : "text-slate-500 hover:text-primary"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-sm">view_list</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1153,7 +1200,7 @@ export default function ExplorerPage() {
           <div
             className={cn(
               view === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
                 : "flex flex-col gap-3 sm:gap-4"
             )}
           >
@@ -1180,7 +1227,7 @@ export default function ExplorerPage() {
           <div
             className={cn(
               view === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
                 : "flex flex-col gap-3 sm:gap-4"
             )}
           >

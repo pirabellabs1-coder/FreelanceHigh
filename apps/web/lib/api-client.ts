@@ -79,6 +79,9 @@ export interface ApiOrder {
   messages: { id: string; sender: string; senderName: string; content: string; timestamp: string; type: string; fileName?: string; fileSize?: string }[];
   timeline: { id: string; type: string; title: string; description: string; timestamp: string }[];
   files: { id: string; name: string; size: string; type: string; uploadedBy: string; uploadedAt: string; url: string }[];
+  escrowStatus?: string;
+  platformFee?: number;
+  freelancerPayout?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -743,7 +746,8 @@ export interface ApiSearchResult {
   completionRate: number;
   responseTime: string;
   matchScore: number;
-  type: "freelance" | "agence";
+  type: "freelance" | "agence" | "service";
+  description?: string;
 }
 
 export const searchApi = {
@@ -1024,7 +1028,7 @@ export function mapApiServiceToLocal(s: ApiService): Service {
     isBoosted: s.isBoosted || false,
     rating: s.rating || 0,
     ratingCount: s.ratingCount || 0,
-    totalContacts: (s as Record<string, unknown>).totalContacts as number || 0,
+    totalContacts: (s as unknown as Record<string, unknown>).totalContacts as number || 0,
     slug: s.slug || "",
   };
 }

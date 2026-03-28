@@ -70,15 +70,15 @@ export function OfferBubble({ offer, isMine, currentUserRole, onAccept, onRefuse
 
   return (
     <div className={cn(
-      "w-full max-w-sm rounded-xl border-2 overflow-hidden transition-all",
+      "w-full max-w-[calc(100vw-4rem)] md:max-w-sm rounded-xl border-2 overflow-hidden transition-all",
       offer.status === "acceptee" ? "border-emerald-500/30 bg-emerald-500/5" :
       offer.status === "refusee" || isExpired ? "border-slate-500/20 bg-slate-500/5 opacity-70" :
       "border-primary/30 bg-primary/5"
     )}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border-dark/50 flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-lg">local_offer</span>
-        <span className="text-xs font-bold uppercase tracking-wider text-primary">Offre Personnalisee</span>
+      <div className="px-3 md:px-4 py-2.5 md:py-3 border-b border-border-dark/50 flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary text-base md:text-lg">local_offer</span>
+        <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-primary">Offre Personnalisee</span>
         <span className={cn("ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full border", statusInfo.color)}>
           <span className="material-symbols-outlined text-[10px] mr-0.5 align-middle">{statusInfo.icon}</span>
           {isExpired && offer.status === "en_attente" ? "Expiree" : statusInfo.label}
@@ -91,18 +91,18 @@ export function OfferBubble({ offer, isMine, currentUserRole, onAccept, onRefuse
         <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">{offer.description}</p>
 
         {/* Details grid */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-background-dark/50 rounded-lg p-2 text-center">
-            <p className="text-[10px] text-slate-500">Montant</p>
-            <p className="text-sm font-extrabold text-primary">{offer.amount} EUR</p>
+        <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+          <div className="bg-background-dark/50 rounded-lg p-1.5 md:p-2 text-center">
+            <p className="text-[9px] md:text-[10px] text-slate-500">Montant</p>
+            <p className="text-xs md:text-sm font-extrabold text-primary truncate">{offer.amount} EUR</p>
           </div>
-          <div className="bg-background-dark/50 rounded-lg p-2 text-center">
-            <p className="text-[10px] text-slate-500">Delai</p>
-            <p className="text-sm font-bold">{offer.delay}</p>
+          <div className="bg-background-dark/50 rounded-lg p-1.5 md:p-2 text-center">
+            <p className="text-[9px] md:text-[10px] text-slate-500">Delai</p>
+            <p className="text-xs md:text-sm font-bold truncate">{offer.delay}</p>
           </div>
-          <div className="bg-background-dark/50 rounded-lg p-2 text-center">
-            <p className="text-[10px] text-slate-500">Revisions</p>
-            <p className="text-sm font-bold">{offer.revisions}</p>
+          <div className="bg-background-dark/50 rounded-lg p-1.5 md:p-2 text-center">
+            <p className="text-[9px] md:text-[10px] text-slate-500">Revisions</p>
+            <p className="text-xs md:text-sm font-bold">{offer.revisions}</p>
           </div>
         </div>
 

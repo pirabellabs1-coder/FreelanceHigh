@@ -53,6 +53,7 @@ export function HeroSection() {
               alt="Professional workspace"
               className="w-full h-full object-cover"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5tMHn3iXlo2UtTqG_QRtJGsnV4ET7fnFrLu0XlMcU90NZ99up3ByX460k3LW_SbjobCS6735ENKRx5dGqoQyMGc9cHqhU5ECaRvcQZvwSGtPPSve4qWKdyvJUzPqpggU4E26MLMSveuv0GqEPWknI9QP3skKFhA8SLreffd4xpnLhNUpKr0iSWF4X8rlLrb33Y6sS9HG_qhIx0WnoDBeVM5fUXQ6H-OpS7Nxg_QM99l2ExKE1vo9wYdJKqUwdp4eAD9yHp2V-pewj"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background-dark via-background-dark/80 to-transparent"></div>
           </div>

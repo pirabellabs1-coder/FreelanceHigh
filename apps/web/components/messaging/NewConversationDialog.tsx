@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { conversationsApi } from "@/lib/api-client";
 import { useMessagingStore } from "@/store/messaging";
+import { useToastStore } from "@/store/toast";
 
 interface SearchUser {
   id: string;
@@ -75,6 +76,7 @@ export function NewConversationDialog({ open, onClose, onConversationCreated }: 
       setResults([]);
     } catch (err) {
       console.error("[NewConversationDialog]", err);
+      useToastStore.getState().addToast("error", "Erreur lors de la creation de la conversation");
     }
     setCreating(false);
   }
@@ -82,14 +84,14 @@ export function NewConversationDialog({ open, onClose, onConversationCreated }: 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#1a1f2e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-[#1a1f2e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h3 className="text-base font-bold text-white">Nouvelle conversation</h3>
           <button
             onClick={() => { onClose(); setQuery(""); setResults([]); }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>

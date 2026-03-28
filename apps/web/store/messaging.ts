@@ -219,9 +219,12 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
 
   // ── Sync conversations from API ──
   syncFromApi: async () => {
+    const { isSynced } = get();
+    // Show loading skeleton only on first load (not on subsequent polls)
+    if (!isSynced) set({ isLoading: true });
     try {
       const res = await fetch("/api/conversations");
-      if (!res.ok) return;
+      if (!res.ok) { set({ isLoading: false }); return; }
       const data = await res.json();
       const { currentUserId } = get();
 
@@ -255,7 +258,7 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
   loadMessages: async (convId) => {
     try {
       const res = await fetch(`/api/conversations/${convId}/messages`);
-      if (!res.ok) return;
+      if (!res.ok) { console.warn("[MessagingStore loadMessages] res not ok:", res.status); return; }
       const data = await res.json();
 
       const newMessages: UnifiedMessage[] = (data.messages || []).map(
@@ -702,7 +705,7 @@ export const useMessagingStore = create<MessagingState>()((set, get) => ({
 
   getMyConversations: () => {
     const { conversations, currentUserId } = get();
-    return conversations.filter((c) => c.participants.some((p) => p.id === currentUserId));
+    return (conversations || []).filter((c) => (c.participants || []).some((p) => p.id === currentUserId));
   },
 
   getAllConversations: () => get().conversations,

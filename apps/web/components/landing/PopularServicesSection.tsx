@@ -31,12 +31,12 @@ export function PopularServicesSection() {
     fetch("/api/public/top-services?limit=6")
       .then((res) => (res.ok ? res.json() : { services: [] }))
       .then((data) => {
-        if (data.services) setServices(data.services);
+        if (Array.isArray(data.services)) setServices(data.services);
       })
       .catch(() => {});
   }, []);
 
-  if (services.length === 0) return null;
+  if (!services || services.length === 0) return null;
 
   return (
     <section className="py-12 sm:py-20 lg:py-32 px-4 sm:px-6 lg:px-8">
@@ -97,10 +97,10 @@ export function PopularServicesSection() {
                     >
                       star
                     </span>
-                    <span className="text-sm font-bold">{service.rating.toFixed(1)}</span>
-                    <span className="text-xs text-slate-400">({service.reviews})</span>
+                    <span className="text-sm font-bold">{(service.rating ?? 0).toFixed(1)}</span>
+                    <span className="text-xs text-slate-400">({service.reviews ?? 0})</span>
                   </div>
-                  {service.orderCount > 0 && (
+                  {(service.orderCount ?? 0) > 0 && (
                     <div className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-emerald-500 text-sm">shopping_bag</span>
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{service.orderCount} {service.orderCount > 1 ? "ventes" : "vente"}</span>

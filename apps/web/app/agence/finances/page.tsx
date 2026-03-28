@@ -90,7 +90,7 @@ export default function AgenceFinances() {
   const monthlyRevenue = stats?.monthlyRevenue ?? [];
 
   const sortedTransactions = useMemo(
-    () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)),
+    () => [...(transactions || [])].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
     [transactions],
   );
 
@@ -102,8 +102,8 @@ export default function AgenceFinances() {
       addToast("error", `Le montant minimum de retrait est de ${MIN_WITHDRAWAL}\u00A0\u20AC`);
       return;
     }
-    const available = financeSummary?.available ?? 0;
-    if (amount > available) {
+    const bal = wallet?.balance ?? financeSummary?.available ?? 0;
+    if (amount > bal) {
       addToast("error", "Solde insuffisant pour ce retrait");
       return;
     }
@@ -124,7 +124,7 @@ export default function AgenceFinances() {
     } finally {
       setSubmitting(false);
     }
-  }, [retraitAmount, retraitMethod, financeSummary, requestWithdrawal, addToast]);
+  }, [retraitAmount, retraitMethod, wallet, financeSummary, requestWithdrawal, addToast]);
 
   // ── CSV export ──
 
@@ -135,9 +135,11 @@ export default function AgenceFinances() {
     }
     const header = "Date,Type,Description,Montant,Commission (1 EUR),Net,Statut";
     const rows = sortedTransactions.map((t) => {
+      const amt = t.amount ?? 0;
       const commission = COMMISSION_FLAT;
-      const net = Math.abs(t.amount) - commission;
-      return `${t.date},${t.type},"${t.description}",${t.amount},${commission.toFixed(2)},${net.toFixed(2)},${t.status}`;
+      const net = Math.abs(amt) - commission;
+      const desc = (t.description ?? "").replace(/"/g, '""');
+      return `${t.date ?? ""},${t.type ?? ""},"${desc}",${amt},${commission.toFixed(2)},${net.toFixed(2)},${t.status ?? ""}`;
     });
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -190,7 +192,7 @@ export default function AgenceFinances() {
 
   // ── Loading skeleton ──
 
-  if (isLoading && !financeSummary && transactions.length === 0) {
+  if (isLoading && !financeSummary && (transactions || []).length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-start justify-between">
@@ -220,7 +222,7 @@ export default function AgenceFinances() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Finances</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white">Finances</h1>
           <p className="text-slate-400 text-sm mt-1">Revenus, transactions et retraits de l&apos;agence.</p>
         </div>
         <div className="flex gap-2">
@@ -261,7 +263,7 @@ export default function AgenceFinances() {
       </div>
 
       {/* Revenue BarChart */}
-      <div className="bg-neutral-dark rounded-xl border border-border-dark p-5">
+      <div className="bg-neutral-dark rounded-xl border border-border-dark p-3 sm:p-4 lg:p-5">
         <h2 className="font-bold text-white mb-4">CA Mensuel (12 mois)</h2>
         {monthlyRevenue.length > 0 ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -298,9 +300,9 @@ export default function AgenceFinances() {
         )}
       </div>
 
-      {/* Transaction History Table */}
+      {/* Transaction History — Header */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-        <div className="px-5 py-4 border-b border-border-dark flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-4 border-b border-border-dark flex items-center justify-between">
           <h2 className="font-bold text-white">
             Historique des transactions
             {sortedTransactions.length > 0 && (
@@ -318,94 +320,143 @@ export default function AgenceFinances() {
             <p className="text-xs text-slate-600 mt-1">Les transactions apparaîtront ici une fois les premières commandes traitées.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
-                  <th className="px-5 py-3 text-left font-semibold">Type</th>
-                  <th className="px-5 py-3 text-left font-semibold">Description</th>
-                  <th className="px-5 py-3 text-right font-semibold">Montant</th>
-                  <th className="px-5 py-3 text-right font-semibold">Commission (10%)</th>
-                  <th className="px-5 py-3 text-right font-semibold">Net</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date</th>
-                  <th className="px-5 py-3 text-left font-semibold">Statut</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedTransactions.map((tx) => {
-                  const typeMeta = TX_TYPE_META[tx.type] ?? TX_TYPE_META.vente;
-                  const statusMeta = TX_STATUS_META[tx.status];
-                  const absAmount = Math.abs(tx.amount);
-                  const commission = COMMISSION_FLAT;
-                  const net = absAmount - commission;
+          <>
+            {/* Mobile card layout */}
+            <div className="md:hidden divide-y divide-border-dark/50">
+              {sortedTransactions.map((tx) => {
+                const typeMeta = TX_TYPE_META[tx.type] ?? TX_TYPE_META.vente;
+                const statusMeta = TX_STATUS_META[tx.status];
+                const amt = tx.amount ?? 0;
+                const absAmount = Math.abs(amt);
+                const commission = COMMISSION_FLAT;
+                const net = absAmount - commission;
 
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors"
-                    >
-                      {/* Type */}
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm", typeMeta.color)}>
-                            <span className="material-symbols-outlined text-base">{typeMeta.icon}</span>
-                          </div>
-                          <span className="text-xs font-semibold text-slate-300 capitalize">{tx.type}</span>
-                        </div>
-                      </td>
-
-                      {/* Description */}
-                      <td className="px-5 py-3">
-                        <p className="text-sm text-white truncate max-w-[200px]">{tx.description}</p>
-                        {tx.method && (
-                          <p className="text-xs text-slate-500 mt-0.5">{tx.method}</p>
-                        )}
-                      </td>
-
-                      {/* Montant */}
-                      <td className="px-5 py-3 text-right">
-                        <span className={cn("text-sm font-bold", tx.amount >= 0 ? "text-emerald-400" : "text-red-400")}>
-                          {tx.amount >= 0 ? "+" : "-"}{fmtEur(absAmount)}
-                        </span>
-                      </td>
-
-                      {/* Commission */}
-                      <td className="px-5 py-3 text-right">
-                        <span className="text-sm text-amber-400">{fmtEur(commission)}</span>
-                      </td>
-
-                      {/* Net */}
-                      <td className="px-5 py-3 text-right">
-                        <span className="text-sm font-semibold text-white">{fmtEur(net)}</span>
-                      </td>
-
-                      {/* Date */}
-                      <td className="px-5 py-3">
-                        <span className="text-sm text-slate-400">{fmtDate(tx.date)}</span>
-                      </td>
-
-                      {/* Statut */}
-                      <td className="px-5 py-3">
+                return (
+                  <div key={tx.id} className="p-4 space-y-2">
+                    {/* Top row: type icon + description + amount */}
+                    <div className="flex items-start gap-3">
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0", typeMeta.color)}>
+                        <span className="material-symbols-outlined text-base">{typeMeta.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white truncate">{tx.description}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 capitalize">{tx.type}{tx.method ? ` \u00B7 ${tx.method}` : ""}</p>
+                      </div>
+                      <span className={cn("text-sm font-bold flex-shrink-0", amt >= 0 ? "text-emerald-400" : "text-red-400")}>
+                        {amt >= 0 ? "+" : "-"}{fmtEur(absAmount)}
+                      </span>
+                    </div>
+                    {/* Bottom row: date + status + net */}
+                    <div className="flex items-center justify-between text-xs pl-11">
+                      <span className="text-slate-500">{fmtDate(tx.date)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500">Net: <span className="text-white font-semibold">{fmtEur(net)}</span></span>
                         <span
                           className={cn(
-                            "text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap",
+                            "text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
                             statusMeta?.cls ?? "bg-slate-500/20 text-slate-400",
                           )}
                         >
                           {statusMeta?.label ?? tx.status}
                         </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-[10px] text-slate-500 uppercase tracking-wider border-b border-border-dark">
+                    <th className="px-5 py-3 text-left font-semibold">Type</th>
+                    <th className="px-5 py-3 text-left font-semibold">Description</th>
+                    <th className="px-5 py-3 text-right font-semibold">Montant</th>
+                    <th className="px-5 py-3 text-right font-semibold">Commission (10%)</th>
+                    <th className="px-5 py-3 text-right font-semibold">Net</th>
+                    <th className="px-5 py-3 text-left font-semibold">Date</th>
+                    <th className="px-5 py-3 text-left font-semibold">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTransactions.map((tx) => {
+                    const typeMeta = TX_TYPE_META[tx.type] ?? TX_TYPE_META.vente;
+                    const statusMeta = TX_STATUS_META[tx.status];
+                    const amt = tx.amount ?? 0;
+                    const absAmount = Math.abs(amt);
+                    const commission = COMMISSION_FLAT;
+                    const net = absAmount - commission;
+
+                    return (
+                      <tr
+                        key={tx.id}
+                        className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors"
+                      >
+                        {/* Type */}
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm", typeMeta.color)}>
+                              <span className="material-symbols-outlined text-base">{typeMeta.icon}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-slate-300 capitalize">{tx.type}</span>
+                          </div>
+                        </td>
+
+                        {/* Description */}
+                        <td className="px-5 py-3">
+                          <p className="text-sm text-white truncate max-w-[200px]">{tx.description}</p>
+                          {tx.method && (
+                            <p className="text-xs text-slate-500 mt-0.5">{tx.method}</p>
+                          )}
+                        </td>
+
+                        {/* Montant */}
+                        <td className="px-5 py-3 text-right">
+                          <span className={cn("text-sm font-bold", amt >= 0 ? "text-emerald-400" : "text-red-400")}>
+                            {amt >= 0 ? "+" : "-"}{fmtEur(absAmount)}
+                          </span>
+                        </td>
+
+                        {/* Commission */}
+                        <td className="px-5 py-3 text-right">
+                          <span className="text-sm text-amber-400">{fmtEur(commission)}</span>
+                        </td>
+
+                        {/* Net */}
+                        <td className="px-5 py-3 text-right">
+                          <span className="text-sm font-semibold text-white">{fmtEur(net)}</span>
+                        </td>
+
+                        {/* Date */}
+                        <td className="px-5 py-3">
+                          <span className="text-sm text-slate-400">{fmtDate(tx.date)}</span>
+                        </td>
+
+                        {/* Statut */}
+                        <td className="px-5 py-3">
+                          <span
+                            className={cn(
+                              "text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap",
+                              statusMeta?.cls ?? "bg-slate-500/20 text-slate-400",
+                            )}
+                          >
+                            {statusMeta?.label ?? tx.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* Wallet Transactions (from /api/wallet) */}
-      {walletTransactions.length > 0 && (
+      {(walletTransactions || []).length > 0 && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
           <div className="px-5 py-4 border-b border-border-dark">
             <h2 className="font-bold text-white flex items-center gap-2">
@@ -415,8 +466,9 @@ export default function AgenceFinances() {
             </h2>
           </div>
           <div className="divide-y divide-border-dark/50">
-            {walletTransactions.map((wtx) => {
-              const isPositive = wtx.amount >= 0;
+            {(walletTransactions || []).map((wtx) => {
+              const wtxAmount = wtx.amount ?? 0;
+              const isPositive = wtxAmount >= 0;
               const statusLabel = wtx.status === "WALLET_COMPLETED" ? "Complete" : wtx.status === "WALLET_PENDING" ? "En attente" : wtx.status;
               const statusCls = wtx.status === "WALLET_COMPLETED" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400";
               return (
@@ -435,7 +487,7 @@ export default function AgenceFinances() {
                     {statusLabel}
                   </span>
                   <span className={cn("text-sm font-bold", isPositive ? "text-emerald-400" : "text-red-400")}>
-                    {isPositive ? "+" : ""}{fmtEur(Math.abs(wtx.amount))}
+                    {isPositive ? "+" : ""}{fmtEur(Math.abs(wtxAmount))}
                   </span>
                 </div>
               );
@@ -457,7 +509,7 @@ export default function AgenceFinances() {
               Demande de retrait
             </h3>
             <p className="text-xs text-slate-500 mb-5">
-              Solde disponible : {fmtEur(financeSummary?.available)}
+              Solde disponible : {fmtEur(available)}
             </p>
 
             <div className="space-y-4">

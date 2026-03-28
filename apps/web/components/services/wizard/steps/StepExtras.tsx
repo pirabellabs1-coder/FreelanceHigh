@@ -4,6 +4,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useServiceWizardStore, type ServiceOptionDraft } from "@/store/service-wizard";
 import { OPTIONS_LIMITS } from "@/lib/validations/service";
+import { useDashboardStore } from "@/store/dashboard";
+import { normalizePlanName } from "@/lib/plans";
 import {
   DndContext,
   closestCenter,
@@ -88,8 +90,9 @@ export function StepExtras({ role }: { role: string }) {
   const [formData, setFormData] = useState({ title: "", description: "", extraPrice: 0, extraDays: 0 });
   const [formError, setFormError] = useState("");
 
-  const userPlan = "GRATUIT";
-  const limit = OPTIONS_LIMITS[userPlan] || 3;
+  const rawPlan = useDashboardStore((s) => s.currentPlan);
+  const planName = normalizePlanName(rawPlan);
+  const limit = OPTIONS_LIMITS[planName] || OPTIONS_LIMITS.DECOUVERTE || 3;
   const canAdd = store.options.length < limit;
 
   const sensors = useSensors(
@@ -267,7 +270,7 @@ export function StepExtras({ role }: { role: string }) {
       {!canAdd && (
         <p className="text-xs text-amber-400 flex items-center gap-1.5">
           <span className="material-symbols-outlined text-sm">info</span>
-          Vous avez atteint la limite de {limit} options pour le plan {userPlan}. Passez au plan Pro pour en ajouter jusqu&apos;à 10.
+          Vous avez atteint la limite de {limit} options pour le plan {planName.charAt(0) + planName.slice(1).toLowerCase()}. Passez au plan Ascension pour en ajouter jusqu&apos;a 10.
         </p>
       )}
 

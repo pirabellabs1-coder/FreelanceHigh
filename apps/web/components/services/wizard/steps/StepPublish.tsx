@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useServiceWizardStore } from "@/store/service-wizard";
 import { useDashboardStore } from "@/store/dashboard";
 import { COMMISSION_RATES } from "@/lib/validations/service";
+import { normalizePlanName, getCommissionLabel } from "@/lib/plans";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
@@ -26,13 +27,14 @@ function getMarkdownText(content: Record<string, unknown> | null): string {
 export function StepPublish({ role }: { role: string }) {
   const store = useServiceWizardStore();
   const apiCreateService = useDashboardStore((s) => s.apiCreateService);
+  const rawPlan = useDashboardStore((s) => s.currentPlan);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
 
-  const userPlan = "GRATUIT";
-  const commissionRate = COMMISSION_RATES[userPlan] || 0.2;
+  const planName = normalizePlanName(rawPlan);
+  const commissionRate = COMMISSION_RATES[planName] || COMMISSION_RATES.DECOUVERTE || 0.12;
   const netAmount = store.basePrice >= 10
     ? Math.round(store.basePrice * (1 - commissionRate) * 100) / 100
     : 0;
@@ -366,7 +368,7 @@ export function StepPublish({ role }: { role: string }) {
             {/* Commission info */}
             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
               <p className="text-sm text-slate-300">
-                Commission FreelanceHigh : <strong>{commissionRate * 100}%</strong> (Plan {userPlan})
+                Commission FreelanceHigh : <strong>{getCommissionLabel(planName)}</strong> (Plan {planName.charAt(0) + planName.slice(1).toLowerCase()})
               </p>
               {netAmount > 0 && (
                 <p className="text-sm mt-1">

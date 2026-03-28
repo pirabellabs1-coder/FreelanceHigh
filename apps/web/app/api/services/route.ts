@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       const activeServices = serviceStore.getByUser(session.user.id)
         .filter((s) => s.status === "actif" || s.status === "en_attente");
       if (!canCreateService(userPlan, activeServices.length)) {
-        const limit = userPlan === "GRATUIT" ? 7 : "illimite";
+        const limit = userPlan === "DECOUVERTE" ? 5 : "illimite";
         return NextResponse.json(
           {
             error: `Limite de services atteinte pour votre plan (${limit}). Passez a un plan superieur pour publier plus de services.`,

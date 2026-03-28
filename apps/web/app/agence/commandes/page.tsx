@@ -57,6 +57,7 @@ function formatAmount(amount: number): string {
 
 function isOverdue(order: ApiOrder): boolean {
   if (["termine", "annule", "livre", "litige"].includes(order.status)) return false;
+  if (!order.deadline) return false;
   return new Date(order.deadline) < new Date();
 }
 
@@ -83,13 +84,13 @@ function generateCsv(orders: ApiOrder[]): void {
 
   const rows = orders.map((o) => [
     o.id,
-    o.clientName,
-    o.serviceTitle,
-    o.amount.toString(),
+    o.clientName || "",
+    o.serviceTitle || "",
+    (o.amount ?? 0).toString(),
     STATUS_MAP[o.status]?.label || o.status,
-    o.deadline,
-    o.progress.toString(),
-    o.createdAt,
+    o.deadline || "",
+    (o.progress ?? 0).toString(),
+    o.createdAt || "",
   ]);
 
   const csvContent = [
@@ -153,9 +154,9 @@ export default function AgenceCommandes() {
       const q = orderSearch.toLowerCase().trim();
       result = result.filter(
         (o) =>
-          o.clientName.toLowerCase().includes(q) ||
-          o.id.toLowerCase().includes(q) ||
-          o.serviceTitle.toLowerCase().includes(q)
+          (o.clientName || "").toLowerCase().includes(q) ||
+          (o.id || "").toLowerCase().includes(q) ||
+          (o.serviceTitle || "").toLowerCase().includes(q)
       );
     }
 
@@ -294,9 +295,101 @@ export default function AgenceCommandes() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Orders — Mobile card layout */}
       {!isLoading && paginatedOrders.length > 0 && (
-        <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
+        <div className="md:hidden space-y-3">
+          {paginatedOrders.map((order) => {
+            const overdue = isOverdue(order);
+            const statusInfo = STATUS_MAP[order.status] || {
+              label: order.status,
+              cls: "bg-slate-500/20 text-slate-400",
+            };
+            return (
+              <Link
+                key={order.id}
+                href={`/agence/commandes/${order.id}`}
+                className="block bg-neutral-dark rounded-xl border border-border-dark p-4 hover:border-border-dark/80 transition-colors"
+              >
+                {/* Top row: client + status */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {order.clientAvatar ? (
+                      <Image
+                        src={order.clientAvatar}
+                        alt={order.clientName}
+                        width={28}
+                        height={28}
+                        className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold flex-shrink-0">
+                        {(order.clientName || "??")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </div>
+                    )}
+                    <span className="text-sm text-slate-300 font-medium truncate">
+                      {order.clientName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span
+                      className={cn(
+                        "text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
+                        statusInfo.cls
+                      )}
+                    >
+                      {statusInfo.label}
+                    </span>
+                    {overdue && (
+                      <span className="material-symbols-outlined text-red-400 text-[14px]">warning</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Service title */}
+                <p className="text-sm text-white font-semibold truncate mb-2">
+                  {order.serviceTitle || "Sans titre"}
+                </p>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Montant</span>
+                    <span className="text-white font-semibold">{formatAmount(order.amount ?? 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Deadline</span>
+                    <span className={cn(overdue ? "text-red-400 font-medium" : "text-slate-400")}>
+                      {order.deadline ? formatDate(order.deadline) : "\u2014"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex-1 h-1.5 bg-background-dark rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all", getProgressColor(order.progress ?? 0))}
+                      style={{ width: `${Math.min(100, order.progress ?? 0)}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono w-8 text-right">
+                    {order.progress ?? 0}%
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Orders — Desktop table */}
+      {!isLoading && paginatedOrders.length > 0 && (
+        <div className="hidden md:block bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -366,14 +459,14 @@ export default function AgenceCommandes() {
                       {/* Service */}
                       <td className="px-5 py-3">
                         <span className="text-sm text-white font-semibold truncate block max-w-[200px]">
-                          {order.serviceTitle}
+                          {order.serviceTitle || "Sans titre"}
                         </span>
                       </td>
 
                       {/* Amount */}
                       <td className="px-5 py-3">
                         <span className="text-sm font-semibold text-white">
-                          {formatAmount(order.amount)}
+                          {formatAmount(order.amount ?? 0)}
                         </span>
                       </td>
 
@@ -404,7 +497,7 @@ export default function AgenceCommandes() {
                             overdue ? "text-red-400 font-medium" : "text-slate-500"
                           )}
                         >
-                          {formatDate(order.deadline)}
+                          {order.deadline ? formatDate(order.deadline) : "\u2014"}
                         </span>
                       </td>
 
@@ -415,13 +508,13 @@ export default function AgenceCommandes() {
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all",
-                                getProgressColor(order.progress)
+                                getProgressColor(order.progress ?? 0)
                               )}
-                              style={{ width: `${Math.min(100, order.progress)}%` }}
+                              style={{ width: `${Math.min(100, order.progress ?? 0)}%` }}
                             />
                           </div>
                           <span className="text-xs text-slate-400 font-mono w-8 text-right">
-                            {order.progress}%
+                            {order.progress ?? 0}%
                           </span>
                         </div>
                       </td>
@@ -444,86 +537,86 @@ export default function AgenceCommandes() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-border-dark">
-              <p className="text-xs text-slate-500">
-                {filteredOrders.length} commande{filteredOrders.length > 1 ? "s" : ""} —
-                page {currentPage} sur {totalPages}
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    currentPage === 1
-                      ? "text-slate-600 cursor-not-allowed"
-                      : "text-slate-400 hover:text-white hover:bg-background-dark"
-                  )}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    chevron_left
+      {/* Pagination */}
+      {!isLoading && paginatedOrders.length > 0 && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-slate-500">
+            {filteredOrders.length} commande{filteredOrders.length > 1 ? "s" : ""} —
+            page {currentPage} sur {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors",
+                currentPage === 1
+                  ? "text-slate-600 cursor-not-allowed"
+                  : "text-slate-400 hover:text-white hover:bg-background-dark"
+              )}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                chevron_left
+              </span>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((page) => {
+                if (totalPages <= 7) return true;
+                if (page === 1 || page === totalPages) return true;
+                if (Math.abs(page - currentPage) <= 1) return true;
+                return false;
+              })
+              .reduce<(number | "ellipsis")[]>((acc, page, idx, arr) => {
+                if (idx > 0) {
+                  const prev = arr[idx - 1];
+                  if (page - prev > 1) acc.push("ellipsis");
+                }
+                acc.push(page);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === "ellipsis" ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-1 text-slate-600 text-xs"
+                  >
+                    ...
                   </span>
-                </button>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item)}
+                    className={cn(
+                      "w-8 h-8 rounded-lg text-xs font-semibold transition-colors",
+                      currentPage === item
+                        ? "bg-primary text-background-dark"
+                        : "text-slate-400 hover:text-white hover:bg-background-dark"
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((page) => {
-                    if (totalPages <= 7) return true;
-                    if (page === 1 || page === totalPages) return true;
-                    if (Math.abs(page - currentPage) <= 1) return true;
-                    return false;
-                  })
-                  .reduce<(number | "ellipsis")[]>((acc, page, idx, arr) => {
-                    if (idx > 0) {
-                      const prev = arr[idx - 1];
-                      if (page - prev > 1) acc.push("ellipsis");
-                    }
-                    acc.push(page);
-                    return acc;
-                  }, [])
-                  .map((item, idx) =>
-                    item === "ellipsis" ? (
-                      <span
-                        key={`ellipsis-${idx}`}
-                        className="px-1 text-slate-600 text-xs"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <button
-                        key={item}
-                        onClick={() => setCurrentPage(item)}
-                        className={cn(
-                          "w-8 h-8 rounded-lg text-xs font-semibold transition-colors",
-                          currentPage === item
-                            ? "bg-primary text-background-dark"
-                            : "text-slate-400 hover:text-white hover:bg-background-dark"
-                        )}
-                      >
-                        {item}
-                      </button>
-                    )
-                  )}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors",
-                    currentPage === totalPages
-                      ? "text-slate-600 cursor-not-allowed"
-                      : "text-slate-400 hover:text-white hover:bg-background-dark"
-                  )}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    chevron_right
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors",
+                currentPage === totalPages
+                  ? "text-slate-600 cursor-not-allowed"
+                  : "text-slate-400 hover:text-white hover:bg-background-dark"
+              )}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                chevron_right
+              </span>
+            </button>
+          </div>
         </div>
       )}
     </div>

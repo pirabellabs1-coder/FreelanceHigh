@@ -50,6 +50,7 @@ export default function AdminDisputes() {
   const [resolveId, setResolveId] = useState<string | null>(null);
   const [verdict, setVerdict] = useState<"freelance" | "client" | "partiel">("freelance");
   const [verdictNote, setVerdictNote] = useState("");
+  const [partialPercent, setPartialPercent] = useState(50);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { addToast } = useToastStore();
   const { disputes, disputeSummary, loading, syncDisputes, examineDispute, resolveDispute } = useAdminStore();
@@ -68,7 +69,7 @@ export default function AdminDisputes() {
     en_examen: disputes.filter(d => d.status === "en_examen").length,
     resolu: disputes.filter(d => d.status === "resolu").length,
     total: disputeSummary?.total ?? disputes.length,
-    totalAmount: disputeSummary?.totalAmountInDispute ?? disputes.filter(d => d.status !== "resolu").reduce((s, d) => s + d.amount, 0),
+    totalAmount: disputeSummary?.totalAmountInDispute ?? disputes.filter(d => d.status !== "resolu").reduce((s, d) => s + (d.amount ?? 0), 0),
   }), [disputes, disputeSummary]);
 
   const dispute = disputes.find(d => d.id === resolveId);
@@ -91,14 +92,15 @@ export default function AdminDisputes() {
       return;
     }
     setActionLoading(resolveId);
-    const ok = await resolveDispute(resolveId, verdict, verdictNote);
+    const resolution = verdict === "partiel" ? `${verdictNote} [partialPercent:${partialPercent}]` : verdictNote;
+    const ok = await resolveDispute(resolveId, verdict, resolution);
     setActionLoading(null);
 
     if (ok) {
       const d = disputes.find(x => x.id === resolveId);
-      if (verdict === "client") addToast("success", `Litige résolu — ${d?.amount.toLocaleString()} € remboursé au client`);
+      if (verdict === "client") addToast("success", `Litige résolu — ${(d?.amount ?? 0).toLocaleString()} € remboursé au client`);
       else if (verdict === "freelance") addToast("success", `Litige résolu — fonds libérés au freelance`);
-      else if (verdict === "partiel") addToast("success", `Litige résolu — remboursement partiel`);
+      else if (verdict === "partiel") addToast("success", `Litige résolu — remboursement partiel (${partialPercent}%)`);
     } else {
       addToast("error", "Erreur lors de la résolution du litige");
     }
@@ -106,6 +108,7 @@ export default function AdminDisputes() {
     setResolveId(null);
     setVerdictNote("");
     setVerdict("freelance");
+    setPartialPercent(50);
   }
 
   if (loading.disputes) {
@@ -130,7 +133,7 @@ export default function AdminDisputes() {
           <span className="material-symbols-outlined text-primary">gavel</span>
           Litiges
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Gérez les litiges entre clients et freelances. {stats.totalAmount.toLocaleString()} € en jeu.</p>
+        <p className="text-slate-400 text-sm mt-1">Gérez les litiges entre clients et freelances. {(stats.totalAmount ?? 0).toLocaleString()} &euro; en jeu.</p>
       </div>
 
       {/* Stats */}
@@ -139,7 +142,7 @@ export default function AdminDisputes() {
           { label: "Ouverts", value: stats.ouvert, color: "text-red-400", icon: "error" },
           { label: "En examen", value: stats.en_examen, color: "text-amber-400", icon: "pending" },
           { label: "Résolus", value: disputeSummary?.resolved ?? stats.resolu, color: "text-emerald-400", icon: "check_circle" },
-          { label: "Montant en jeu", value: `EUR${stats.totalAmount.toLocaleString()}`, color: "text-blue-400", icon: "payments" },
+          { label: "Montant en jeu", value: `${stats.totalAmount.toLocaleString()} \u20AC`, color: "text-blue-400", icon: "payments" },
         ].map(s => (
           <div key={s.label} className="bg-neutral-dark rounded-xl p-4 border border-border-dark">
             <div className="flex items-center gap-2 mb-1">
@@ -176,7 +179,8 @@ export default function AdminDisputes() {
                   <span className="text-sm font-mono font-bold text-primary">{d.id}</span>
                   <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[d.status]?.cls)}>{STATUS_MAP[d.status]?.label}</span>
                 </div>
-                <p className="font-semibold text-white mb-2">{d.serviceTitle}</p>
+                <p className="font-semibold text-white mb-1">{d.serviceTitle || "Service inconnu"}</p>
+                {d.reason && <p className="text-xs text-slate-400 mb-2 line-clamp-2">{d.reason}</p>}
 
                 {/* Parties */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -185,7 +189,7 @@ export default function AdminDisputes() {
                     <p className="text-xs text-slate-400">ID : {d.clientId}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
-                    <p className="text-xs font-bold text-primary mb-1">Freelance : {d.freelanceName}</p>
+                    <p className="text-xs font-bold text-primary mb-1">Freelance : {d.freelanceName || "Inconnu"}</p>
                     <p className="text-xs text-slate-400">ID : {d.freelanceId}</p>
                   </div>
                 </div>
@@ -193,11 +197,11 @@ export default function AdminDisputes() {
                 {/* Timeline */}
                 {d.timeline && d.timeline.length > 0 && (
                   <div className="mb-3 space-y-1">
-                    {d.timeline.slice(0, 3).map(t => (
-                      <div key={t.id} className="flex items-center gap-2 text-xs text-slate-400">
+                    {d.timeline.slice(0, 3).map((t, idx) => (
+                      <div key={t.id || idx} className="flex items-center gap-2 text-xs text-slate-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
-                        <span className="font-semibold text-slate-300">{t.title}</span>
-                        <span>{new Date(t.timestamp).toLocaleDateString("fr-FR")}</span>
+                        <span className="font-semibold text-slate-300">{t.title || "Evénement"}</span>
+                        <span>{t.timestamp ? new Date(t.timestamp).toLocaleDateString("fr-FR") : ""}</span>
                       </div>
                     ))}
                     {d.timeline.length > 3 && (
@@ -208,23 +212,23 @@ export default function AdminDisputes() {
 
                 <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
                   <span className="font-bold text-primary">{(d.amount ?? 0).toLocaleString()} €</span>
-                  <span>Ouvert le {new Date(d.createdAt).toLocaleDateString("fr-FR")}</span>
-                  {d.updatedAt !== d.createdAt && <span className="text-slate-500">Mis à jour le {new Date(d.updatedAt).toLocaleDateString("fr-FR")}</span>}
+                  <span>{d.createdAt ? `Ouvert le ${new Date(d.createdAt).toLocaleDateString("fr-FR")}` : ""}</span>
+                  {d.updatedAt && d.updatedAt !== d.createdAt && <span className="text-slate-500">Mis à jour le {new Date(d.updatedAt).toLocaleDateString("fr-FR")}</span>}
                 </div>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                 {d.status === "ouvert" && (
                   <>
                     <button
                       onClick={() => handleStartExamine(d.id)}
                       disabled={actionLoading === d.id}
-                      className="px-4 py-2 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                      className="px-4 py-2 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 w-full sm:w-auto"
                     >
                       {actionLoading === d.id ? "..." : "Examiner"}
                     </button>
                     <button
                       onClick={() => { setResolveId(d.id); setVerdict("freelance"); }}
-                      className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                      className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors w-full sm:w-auto"
                     >
                       Résoudre
                     </button>
@@ -233,7 +237,7 @@ export default function AdminDisputes() {
                 {d.status === "en_examen" && (
                   <button
                     onClick={() => { setResolveId(d.id); setVerdict("freelance"); }}
-                    className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors"
+                    className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors w-full sm:w-auto"
                   >
                     Rendre le verdict
                   </button>
@@ -252,17 +256,36 @@ export default function AdminDisputes() {
 
       {/* Modal Resolution */}
       {resolveId && dispute && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setResolveId(null)}>
-          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-6 w-full max-w-lg border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setResolveId(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-neutral-dark rounded-2xl p-5 sm:p-6 w-full max-w-lg border border-border-dark shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-lg text-white mb-4">Résoudre le litige {dispute.id}</h3>
 
             {/* Resume */}
             <div className="bg-background-dark rounded-xl p-4 mb-4 border border-border-dark/50 space-y-2">
               <p className="text-sm text-slate-300"><b className="text-white">Service :</b> {dispute.serviceTitle}</p>
               <p className="text-sm text-slate-300"><b className="text-white">Montant :</b> <span className="text-primary font-bold">{(dispute.amount ?? 0).toLocaleString()} €</span></p>
-              <p className="text-sm text-slate-300"><b className="text-white">Client :</b> {dispute.clientName}</p>
-              <p className="text-sm text-slate-300"><b className="text-white">Freelance :</b> {dispute.freelanceName}</p>
+              <p className="text-sm text-slate-300"><b className="text-white">Client :</b> {dispute.clientName || "—"}</p>
+              <p className="text-sm text-slate-300"><b className="text-white">Freelance :</b> {dispute.freelanceName || "Inconnu"}</p>
+              {dispute.reason && <p className="text-sm text-slate-300"><b className="text-white">Raison :</b> {dispute.reason}</p>}
             </div>
+
+            {/* Arguments des parties */}
+            {(dispute.clientArgument || dispute.freelanceArgument) && (
+              <div className="grid grid-cols-1 gap-2 mb-4">
+                {dispute.clientArgument && (
+                  <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-blue-400 mb-1">Argument du client</p>
+                    <p className="text-xs text-slate-300 line-clamp-4">{dispute.clientArgument}</p>
+                  </div>
+                )}
+                {dispute.freelanceArgument && (
+                  <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-primary mb-1">Argument du freelance</p>
+                    <p className="text-xs text-slate-300 line-clamp-4">{dispute.freelanceArgument}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Choix du verdict */}
             <label className="text-xs font-semibold text-slate-400 mb-2 block">Verdict</label>
@@ -281,6 +304,29 @@ export default function AdminDisputes() {
                 </button>
               ))}
             </div>
+
+            {/* Partial percentage */}
+            {verdict === "partiel" && (
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-slate-400 mb-2 block">Pourcentage remboursé au client : {partialPercent}%</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={5}
+                    max={95}
+                    step={5}
+                    value={partialPercent}
+                    onChange={e => setPartialPercent(Number(e.target.value))}
+                    className="flex-1 accent-amber-500"
+                  />
+                  <span className="text-sm font-bold text-amber-400 w-12 text-right">{partialPercent}%</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                  <span>Client : {((dispute.amount ?? 0) * partialPercent / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &euro;</span>
+                  <span>Freelance : {((dispute.amount ?? 0) * (100 - partialPercent) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &euro;</span>
+                </div>
+              </div>
+            )}
 
             {/* Note */}
             <textarea value={verdictNote} onChange={e => setVerdictNote(e.target.value)} rows={3} placeholder="Commentaire du verdict (obligatoire)..." className="w-full px-4 py-2.5 rounded-lg border border-border-dark bg-background-dark text-sm text-white placeholder:text-slate-500 outline-none resize-none mb-4 focus:ring-2 focus:ring-primary/30" />

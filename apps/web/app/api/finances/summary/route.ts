@@ -8,18 +8,17 @@ import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user && process.env.DEV_MODE !== "true") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
-    const devUserId = session?.user?.id || "dev-user";
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
-      const summary = transactionStore.getSummary(devUserId);
+      const summary = transactionStore.getSummary(session.user.id);
 
       return NextResponse.json(summary);
     } else {
       const userId = session.user.id;
-      const userRole = session.user.role;
+      const userRole = (session.user as Record<string, unknown>).role as string;
 
       if (userRole === "CLIENT") {
         // Client: show spending summary

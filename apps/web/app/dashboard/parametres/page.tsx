@@ -161,7 +161,7 @@ export default function ParametresPage() {
                     onMouseEnter={() => setAvatarHover(true)}
                     onMouseLeave={() => setAvatarHover(false)}
                   >
-                    {(profile.firstName || "")[0] || ""}{(profile.lastName || "")[0] || ""}
+                    {(profile?.firstName || "")[0] || ""}{(profile?.lastName || "")[0] || ""}
                     {avatarHover && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
@@ -246,21 +246,32 @@ export default function ParametresPage() {
                   <span className="material-symbols-outlined text-primary">lock</span>
                   Securite du compte
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <input type="password" placeholder="Mot de passe actuel" value={passwordForm.current}
-                    onChange={(e) => setPasswordForm((f) => ({ ...f, current: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
-                  <input type="password" placeholder="Nouveau mot de passe" value={passwordForm.new}
-                    onChange={(e) => setPasswordForm((f) => ({ ...f, new: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
-                  <button onClick={handlePasswordChange} disabled={saving}
-                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 transition-all">
-                    {saving ? "Modification..." : "Mettre a jour"}
-                  </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Mot de passe actuel</label>
+                    <input type="password" placeholder="--------" value={passwordForm.current}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, current: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Nouveau mot de passe</label>
+                    <input type="password" placeholder="--------" value={passwordForm.new}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, new: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Confirmer le mot de passe</label>
+                    <input type="password" placeholder="--------" value={passwordForm.confirm}
+                      onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={handlePasswordChange} disabled={saving}
+                      className="w-full px-5 py-2.5 bg-primary text-white font-bold rounded-lg text-sm hover:bg-primary/90 disabled:opacity-50 transition-all">
+                      {saving ? "Modification..." : "Mettre a jour"}
+                    </button>
+                  </div>
                 </div>
-                <input type="password" placeholder="Confirmer le nouveau mot de passe" value={passwordForm.confirm}
-                  onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))}
-                  className="w-full md:w-1/3 px-4 py-2.5 bg-neutral-dark border border-border-dark rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary" />
               </div>
 
               {/* 2FA Quick Toggle */}
@@ -269,7 +280,7 @@ export default function ParametresPage() {
                   <span className="material-symbols-outlined text-primary">verified_user</span>
                   Double authentification (2FA)
                 </h3>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-sm">
                       {settings.twoFactorEnabled ? "2FA active" : "2FA desactive"}
@@ -285,7 +296,7 @@ export default function ParametresPage() {
                       updateSettings({ twoFactorEnabled: !settings.twoFactorEnabled });
                       addToast("success", settings.twoFactorEnabled ? "2FA desactive" : "2FA active !");
                     }}
-                      className={cn("relative w-11 h-6 rounded-full transition-colors",
+                      className={cn("relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
                         settings.twoFactorEnabled ? "bg-primary" : "bg-border-dark"
                       )}>
                       <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow"
@@ -345,17 +356,19 @@ export default function ParametresPage() {
                 <div className="space-y-3">
                   {PAYMENT_METHODS.map((method) => (
                     <div key={method.id}
-                      className="flex items-center gap-4 p-4 bg-neutral-dark border border-border-dark rounded-lg hover:border-primary/30 transition-all">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-primary">{method.icon}</span>
+                      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-neutral-dark border border-border-dark rounded-lg hover:border-primary/30 transition-all">
+                      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <span className="material-symbols-outlined text-primary">{method.icon}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{method.label}</p>
+                          {method.default && (
+                            <span className="text-[10px] font-bold text-primary uppercase">Par defaut</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold">{method.label}</p>
-                        {method.default && (
-                          <span className="text-[10px] font-bold text-primary uppercase">Par defaut</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ml-[52px] sm:ml-0">
                         {!method.default && (
                           <button onClick={() => addToast("success", "Methode definie par defaut")}
                             className="text-xs text-primary font-semibold hover:underline">
@@ -384,18 +397,18 @@ export default function ParametresPage() {
                     { id: "INV-2026-002", date: "01/02/2026", amount: 15, status: "payee" },
                     { id: "INV-2026-001", date: "01/01/2026", amount: 15, status: "payee" },
                   ].map((inv) => (
-                    <div key={inv.id} className="flex items-center justify-between py-3">
-                      <div>
+                    <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-2">
+                      <div className="flex items-center justify-between sm:block">
                         <p className="text-sm font-semibold">{inv.id}</p>
                         <p className="text-xs text-slate-500">{inv.date}</p>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full",
                           inv.status === "payee" ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10"
                         )}>
                           {inv.status === "payee" ? "Payee" : "En attente"}
                         </span>
-                        <span className="text-sm font-bold">&euro;{inv.amount}</span>
+                        <span className="text-sm font-bold ml-auto sm:ml-0">&euro;{inv.amount}</span>
                         <button className="p-1.5 rounded-lg text-slate-500 hover:text-primary hover:bg-primary/10 transition-all">
                           <span className="material-symbols-outlined text-lg">download</span>
                         </button>

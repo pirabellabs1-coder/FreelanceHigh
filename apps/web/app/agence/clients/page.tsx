@@ -69,16 +69,26 @@ function ClientDetailPanel({
     setLocalNotes(client.notes);
   }, [client.id, client.notes]);
 
-  const handleNotesBlur = useCallback(() => {
+  const handleNotesBlur = useCallback(async () => {
     if (localNotes === client.notes) return;
     setSaving(true);
-    // Simulate save — in production this would call an API
-    const timer = setTimeout(() => {
+    try {
+      const res = await fetch("/api/agence/clients/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: client.id, note: localNotes }),
+      });
+      if (res.ok) {
+        addToast("success", "Notes sauvegardées");
+      } else {
+        addToast("error", "Erreur lors de la sauvegarde");
+      }
+    } catch {
+      addToast("error", "Erreur réseau");
+    } finally {
       setSaving(false);
-      addToast("success", "Notes sauvegardées");
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [localNotes, client.notes, addToast]);
+    }
+  }, [localNotes, client.notes, client.id, addToast]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -235,10 +245,15 @@ export default function AgenceClients() {
   const [sortKey, setSortKey] = useState<SortKey>("lastOrderAt");
   const [sortAsc, setSortAsc] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [clientNotes, setClientNotes] = useState<Record<string, string>>({});
 
-  // Sync on mount
+  // Sync on mount + load notes
   useEffect(() => {
     syncAll();
+    fetch("/api/agence/clients/notes")
+      .then((r) => r.ok ? r.json() : { notes: {} })
+      .then((d) => setClientNotes(d.notes || {}))
+      .catch(() => {});
   }, [syncAll]);
 
   // Filtered + sorted clients
@@ -250,8 +265,8 @@ export default function AgenceClients() {
     if (q) {
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q)
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.email || "").toLowerCase().includes(q)
       );
     }
 
@@ -279,10 +294,11 @@ export default function AgenceClients() {
     return result;
   }, [clients, search, sortKey, sortAsc]);
 
-  const selectedClient = useMemo(
-    () => clients.find((c) => c.id === selectedId) ?? null,
-    [clients, selectedId]
-  );
+  const selectedClient = useMemo(() => {
+    const c = clients.find((c) => c.id === selectedId);
+    if (!c) return null;
+    return { ...c, notes: clientNotes[c.id] || c.notes || "" };
+  }, [clients, selectedId, clientNotes]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -322,8 +338,8 @@ export default function AgenceClients() {
         </div>
 
         {/* Sort buttons */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-xs text-slate-500 font-semibold mr-1">Trier :</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0 overflow-x-auto w-full sm:w-auto">
+          <span className="text-xs text-slate-500 font-semibold mr-1 flex-shrink-0">Trier :</span>
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.key}
@@ -450,40 +466,58 @@ export default function AgenceClients() {
               </div>
 
               {/* Email */}
-              <p className="text-sm text-slate-400 truncate">
+              <p className="text-sm text-slate-400 truncate hidden md:block">
                 {client.email || "—"}
               </p>
 
               {/* Country */}
-              <p className="text-sm text-slate-400 truncate">
+              <p className="text-sm text-slate-400 truncate hidden md:block">
                 {client.country || "—"}
               </p>
 
               {/* First order date */}
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-400 hidden md:block">
                 {client.firstOrderAt ? formatDate(client.firstOrderAt) : "—"}
               </p>
 
               {/* Last order date */}
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-400 hidden md:block">
                 {client.lastOrderAt ? formatDate(client.lastOrderAt) : "—"}
               </p>
 
               {/* Total orders */}
-              <p className="text-sm text-white font-medium text-right">
+              <p className="text-sm text-white font-medium text-right hidden md:block">
                 {client.totalOrders}
               </p>
 
               {/* Total revenue */}
-              <p className="text-sm text-white font-bold text-right">
+              <p className="text-sm text-white font-bold text-right hidden md:block">
                 {formatAmount(client.totalRevenue)}
               </p>
 
               {/* Status badge */}
-              <div className="flex justify-center">
+              <div className="flex justify-center hidden md:flex">
                 <span
                   className={cn(
                     "px-2.5 py-0.5 rounded-full text-[11px] font-semibold",
+                    client.status === "actif"
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : "bg-slate-500/15 text-slate-400"
+                  )}
+                >
+                  {client.status === "actif" ? "Actif" : "Inactif"}
+                </span>
+              </div>
+
+              {/* Mobile-only summary */}
+              <div className="flex md:hidden items-center justify-between w-full mt-1">
+                <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <span>{client.totalOrders} cmd</span>
+                  <span className="font-semibold text-white">{formatAmount(client.totalRevenue)}</span>
+                </div>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-semibold",
                     client.status === "actif"
                       ? "bg-emerald-500/15 text-emerald-400"
                       : "bg-slate-500/15 text-slate-400"

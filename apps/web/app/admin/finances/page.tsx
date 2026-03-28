@@ -96,12 +96,12 @@ export default function AdminFinances() {
   const isLoading = loading.finances;
 
   const filteredTransactions = useMemo(() => {
-    let list = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+    let list = [...(transactions || [])].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     if (typeFilter) list = list.filter(t => t.type === typeFilter);
     if (statusFilter) list = list.filter(t => t.status === statusFilter);
     return list.map(t => ({
       ...t,
-      displayAmount: t.type === "retrait" || t.type === "remboursement" ? -t.amount : t.amount,
+      displayAmount: t.type === "retrait" || t.type === "remboursement" ? -(t.amount ?? 0) : (t.amount ?? 0),
     }));
   }, [transactions, typeFilter, statusFilter]);
 
@@ -145,19 +145,19 @@ export default function AdminFinances() {
   const subscriptionRevenue = financeSummary?.byType?.abonnement ?? 0;
   const totalPayments = financeSummary?.totalPayments ?? 0;
   const totalRefunded = financeSummary?.totalRefunded ?? 0;
-  const blockedCount = transactions.filter(t => t.status === "bloque").length;
+  const blockedCount = (transactions || []).filter(t => t.status === "bloque").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white flex items-center gap-2 sm:gap-3">
             <span className="material-symbols-outlined text-primary">payments</span>
             Finances
           </h1>
           <p className="text-slate-400 text-sm mt-1">Suivi des transactions et revenus de la plateforme.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={handleManualRefresh}
             disabled={loading.finances}
@@ -172,9 +172,10 @@ export default function AdminFinances() {
               MAJ {new Date(lastRefreshedAt.finances).toLocaleTimeString("fr-FR")}
             </span>
           )}
-          <button onClick={() => addToast("success", "Rapport financier exporté (CSV)")} className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors">
+          <button onClick={() => addToast("success", "Rapport financier exporté (CSV)")} className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors">
             <span className="material-symbols-outlined text-sm">download</span>
-            Exporter
+            <span className="hidden sm:inline">Exporter</span>
+            <span className="sm:hidden">CSV</span>
           </button>
         </div>
       </div>
@@ -209,7 +210,7 @@ export default function AdminFinances() {
             <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-emerald-500/20">
               <span className="material-symbols-outlined text-emerald-400">account_balance</span>
             </div>
-            <p className="text-2xl font-bold text-white">{adminWallet.totalFeesReleased.toLocaleString()} &euro;</p>
+            <p className="text-2xl font-bold text-white">{(adminWallet.totalFeesReleased ?? 0).toLocaleString()} &euro;</p>
             <p className="text-xs text-slate-500 mt-1">Commissions liberees</p>
             <p className="text-[10px] text-slate-600 mt-0.5">20% sur chaque vente + boosts</p>
           </div>
@@ -217,7 +218,7 @@ export default function AdminFinances() {
             <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-500/20">
               <span className="material-symbols-outlined text-blue-400">lock</span>
             </div>
-            <p className="text-2xl font-bold text-white">{adminWallet.totalFeesHeld.toLocaleString()} &euro;</p>
+            <p className="text-2xl font-bold text-white">{(adminWallet.totalFeesHeld ?? 0).toLocaleString()} &euro;</p>
             <p className="text-xs text-slate-500 mt-1">Commissions en escrow</p>
             <p className="text-[10px] text-slate-600 mt-0.5">Bloquees jusqu&apos;a livraison</p>
           </div>
@@ -225,7 +226,7 @@ export default function AdminFinances() {
             <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-purple-500/20">
               <span className="material-symbols-outlined text-purple-400">analytics</span>
             </div>
-            <p className="text-2xl font-bold text-white">{(adminWallet.totalFeesHeld + adminWallet.totalFeesReleased).toLocaleString()} &euro;</p>
+            <p className="text-2xl font-bold text-white">{((adminWallet.totalFeesHeld ?? 0) + (adminWallet.totalFeesReleased ?? 0)).toLocaleString()} &euro;</p>
             <p className="text-xs text-slate-500 mt-1">Total commissions</p>
             <p className="text-[10px] text-slate-600 mt-0.5">Held + Released</p>
           </div>
@@ -247,7 +248,7 @@ export default function AdminFinances() {
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-0.5">Remboursements</p>
             </div>
             <div className="bg-neutral-dark rounded-xl p-4 border border-border-dark">
-              <p className="text-sm font-bold text-white">{transactions.length}</p>
+              <p className="text-sm font-bold text-white">{(transactions || []).length}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-0.5">Total transactions</p>
             </div>
             <div className="bg-neutral-dark rounded-xl p-4 border border-border-dark">
@@ -279,7 +280,7 @@ export default function AdminFinances() {
 
       {/* Tableau */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-        <div className="p-5 border-b border-border-dark flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-border-dark flex items-center justify-between">
           <h2 className="font-bold text-white">Transactions ({filteredTransactions.length})</h2>
         </div>
         <div className="overflow-x-auto">
@@ -307,19 +308,19 @@ export default function AdminFinances() {
                     <td className="px-5 py-3 text-sm text-white max-w-[200px] truncate">{t.description || `${t.type} ${t.orderId || ""}`}</td>
                     <td className="px-5 py-3 text-sm text-slate-300">{t.userId}</td>
                     <td className="px-5 py-3">
-                      <span className={cn("text-xs font-semibold flex items-center gap-1", TYPE_MAP[t.type]?.cls)}>
-                        <span className="material-symbols-outlined text-sm">{TYPE_MAP[t.type]?.icon}</span>
-                        {TYPE_MAP[t.type]?.label}
+                      <span className={cn("text-xs font-semibold flex items-center gap-1", TYPE_MAP[t.type]?.cls ?? "text-slate-400")}>
+                        <span className="material-symbols-outlined text-sm">{TYPE_MAP[t.type]?.icon ?? "receipt"}</span>
+                        {TYPE_MAP[t.type]?.label ?? t.type}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-sm text-slate-400">{t.method ?? "—"}</td>
-                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(t.date).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{t.date ? new Date(t.date).toLocaleDateString("fr-FR") : "—"}</td>
                     <td className={cn("px-5 py-3 text-sm font-bold text-right", t.displayAmount > 0 ? "text-emerald-400" : "text-red-400")}>
                       {t.displayAmount > 0 ? "+" : ""}&euro;{Math.abs(t.displayAmount).toLocaleString("fr-FR")}
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[t.status]?.cls)}>
-                        {STATUS_MAP[t.status]?.label}
+                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", STATUS_MAP[t.status]?.cls ?? "bg-slate-500/20 text-slate-400")}>
+                        {STATUS_MAP[t.status]?.label ?? t.status}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -371,12 +372,12 @@ export default function AdminFinances() {
       </div>
 
       {/* Admin Commission Transactions (from Wallet API) */}
-      {adminTransactions.length > 0 && (
+      {(adminTransactions || []).length > 0 && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-          <div className="p-5 border-b border-border-dark">
+          <div className="p-4 sm:p-5 border-b border-border-dark">
             <h2 className="font-bold text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-400 text-lg">receipt_long</span>
-              Commissions plateforme ({adminTransactions.length})
+              Commissions plateforme ({(adminTransactions || []).length})
             </h2>
             <p className="text-xs text-slate-500 mt-1">Revenus automatiques : 20% sur chaque vente + frais de boost</p>
           </div>
@@ -392,7 +393,7 @@ export default function AdminFinances() {
                 </tr>
               </thead>
               <tbody>
-                {adminTransactions.map(t => (
+                {(adminTransactions || []).map(t => (
                   <tr key={t.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
                     <td className="px-5 py-3">
                       <span className={cn("text-xs font-semibold flex items-center gap-1", t.type === "BOOST_FEE" ? "text-purple-400" : "text-emerald-400")}>
@@ -401,7 +402,7 @@ export default function AdminFinances() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-sm text-slate-300 max-w-[300px] truncate">{t.description}</td>
-                    <td className="px-5 py-3 text-sm font-bold text-emerald-400 text-right">+{t.amount.toLocaleString("fr-FR")} &euro;</td>
+                    <td className="px-5 py-3 text-sm font-bold text-emerald-400 text-right">+{(t.amount ?? 0).toLocaleString("fr-FR")} &euro;</td>
                     <td className="px-5 py-3 text-center">
                       <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
                         t.status === "CONFIRMED" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"
@@ -409,7 +410,7 @@ export default function AdminFinances() {
                         {t.status === "CONFIRMED" ? "Confirme" : t.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(t.createdAt).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{t.createdAt ? new Date(t.createdAt).toLocaleDateString("fr-FR") : "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -420,11 +421,11 @@ export default function AdminFinances() {
 
       {/* Admin Payouts */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark overflow-hidden">
-        <div className="p-5 border-b border-border-dark flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-border-dark flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-bold text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-blue-400 text-lg">account_balance_wallet</span>
-              Versements ({adminPayouts.length})
+              Versements ({(adminPayouts || []).length})
             </h2>
             <p className="text-xs text-slate-500 mt-1">Retraits des commissions vers le compte du fondateur</p>
           </div>
@@ -433,11 +434,15 @@ export default function AdminFinances() {
               const amount = prompt("Montant du versement (EUR) :");
               if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
               const method = prompt("Methode (virement, paypal, wise) :") || "virement";
-              const ok = await createAdminPayout(Number(amount), method);
-              if (ok) {
-                addToast("success", `Versement de ${amount}€ cree`);
-              } else {
-                addToast("error", "Erreur lors de la creation du versement");
+              try {
+                const ok = await createAdminPayout(Number(amount), method);
+                if (ok) {
+                  addToast("success", `Versement de ${amount}€ cree`);
+                } else {
+                  addToast("error", "Erreur lors de la creation du versement");
+                }
+              } catch {
+                addToast("error", "Erreur inattendue lors de la creation du versement");
               }
             }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors"
@@ -446,7 +451,7 @@ export default function AdminFinances() {
             Nouveau versement
           </button>
         </div>
-        {adminPayouts.length === 0 ? (
+        {(adminPayouts || []).length === 0 ? (
           <div className="text-center py-12">
             <span className="material-symbols-outlined text-4xl text-slate-600">account_balance_wallet</span>
             <p className="text-slate-500 mt-2">Aucun versement pour le moment</p>
@@ -463,10 +468,10 @@ export default function AdminFinances() {
                 </tr>
               </thead>
               <tbody>
-                {adminPayouts.map(p => (
+                {(adminPayouts || []).map(p => (
                   <tr key={p.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
-                    <td className="px-5 py-3 text-sm font-bold text-white">{p.amount.toLocaleString("fr-FR")} &euro;</td>
-                    <td className="px-5 py-3 text-sm text-slate-400 capitalize">{p.method}</td>
+                    <td className="px-5 py-3 text-sm font-bold text-white">{(p.amount ?? 0).toLocaleString("fr-FR")} &euro;</td>
+                    <td className="px-5 py-3 text-sm text-slate-400 capitalize">{p.method ?? "—"}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
                         p.status === "PAYOUT_COMPLETED" ? "bg-emerald-500/20 text-emerald-400" :
@@ -476,7 +481,7 @@ export default function AdminFinances() {
                         {p.status === "PAYOUT_COMPLETED" ? "Complete" : p.status === "PROCESSING" ? "En cours" : "En attente"}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-400">{new Date(p.createdAt).toLocaleDateString("fr-FR")}</td>
+                    <td className="px-5 py-3 text-sm text-slate-400">{p.createdAt ? new Date(p.createdAt).toLocaleDateString("fr-FR") : "—"}</td>
                   </tr>
                 ))}
               </tbody>

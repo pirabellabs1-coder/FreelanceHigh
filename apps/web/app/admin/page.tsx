@@ -78,29 +78,35 @@ export default function AdminDashboard() {
 
   const { users, orders, services, finances, disputes, crossSpace, monthlyRevenue, recentOrders, recentUsers, traffic } = dashboardStats;
 
+  const usersData = users ?? { totalUsers: 0, freelances: 0, clients: 0, agencies: 0 };
+  const ordersData = orders ?? { total: 0, active: 0, completed: 0, gmv: 0, byStatus: {} };
+  const servicesData = services ?? { total: 0, pendingModeration: 0, active: 0, paused: 0, refused: 0 };
+  const financesData = finances ?? { platformRevenue: 0, escrowFunds: 0, pendingWithdrawals: 0, totalTransactions: 0 };
+  const disputesData = disputes ?? { total: 0 };
+
   const STATS = [
-    { label: "Utilisateurs", value: users.totalUsers.toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
-    { label: "GMV", value: `€${(orders.gmv ?? 0).toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
-    { label: "Commandes actives", value: orders.active.toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
-    { label: "Commissions", value: `€${finances.platformRevenue.toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
-    { label: "Litiges", value: disputes.total.toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },
-    { label: "Modération", value: services.pendingModeration.toString(), icon: "pending", color: "text-purple-400", link: "/admin/services" },
+    { label: "Utilisateurs", value: (usersData.totalUsers ?? 0).toLocaleString(), icon: "people", color: "text-primary", trend: "+8.2%", link: "/admin/utilisateurs" },
+    { label: "GMV", value: `€${(ordersData.gmv ?? 0).toLocaleString()}`, icon: "payments", color: "text-blue-400", trend: "+12.5%", link: "/admin/finances" },
+    { label: "Commandes actives", value: (ordersData.active ?? 0).toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
+    { label: "Commissions", value: `€${(financesData.platformRevenue ?? 0).toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
+    { label: "Litiges", value: (disputesData.total ?? 0).toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },
+    { label: "Modération", value: (servicesData.pendingModeration ?? 0).toString(), icon: "pending", color: "text-purple-400", link: "/admin/services" },
   ];
 
   const roleCounts = [
-    { role: "Freelances", count: users.freelances, pct: users.totalUsers > 0 ? Math.round((users.freelances / users.totalUsers) * 100) : 0 },
-    { role: "Clients", count: users.clients, pct: users.totalUsers > 0 ? Math.round((users.clients / users.totalUsers) * 100) : 0 },
-    { role: "Agences", count: users.agencies, pct: users.totalUsers > 0 ? Math.round((users.agencies / users.totalUsers) * 100) : 0 },
+    { role: "Freelances", count: usersData.freelances ?? 0, pct: usersData.totalUsers > 0 ? Math.round(((usersData.freelances ?? 0) / usersData.totalUsers) * 100) : 0 },
+    { role: "Clients", count: usersData.clients ?? 0, pct: usersData.totalUsers > 0 ? Math.round(((usersData.clients ?? 0) / usersData.totalUsers) * 100) : 0 },
+    { role: "Agences", count: usersData.agencies ?? 0, pct: usersData.totalUsers > 0 ? Math.round(((usersData.agencies ?? 0) / usersData.totalUsers) * 100) : 0 },
   ];
 
   const rolePie = [
-    { name: "Freelances", value: users.freelances, color: "#6C2BD9" },
-    { name: "Clients", value: users.clients, color: "#0EA5E9" },
-    { name: "Agences", value: users.agencies, color: "#10B981" },
+    { name: "Freelances", value: usersData.freelances ?? 0, color: "#6C2BD9" },
+    { name: "Clients", value: usersData.clients ?? 0, color: "#0EA5E9" },
+    { name: "Agences", value: usersData.agencies ?? 0, color: "#10B981" },
   ];
 
   // Chart data: map monthlyRevenue to recharts format
-  const chartData = monthlyRevenue.map(m => ({
+  const chartData = (monthlyRevenue ?? []).map(m => ({
     month: m.month,
     revenue: m.revenue,
     commissions: m.commission,
@@ -110,14 +116,14 @@ export default function AdminDashboard() {
   const activities = (() => {
     const acts: { text: string; time: string; icon: string; color: string; link: string }[] = [];
 
-    recentOrders.forEach(o => {
+    (recentOrders ?? []).forEach(o => {
       if (o.status === "en_cours") acts.push({ text: `Commande ${o.id} en cours — ${o.serviceTitle}`, time: o.createdAt, icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" });
       else if (o.status === "termine") acts.push({ text: `Commande ${o.id} terminée — €${o.amount}`, time: o.createdAt, icon: "check_circle", color: "text-emerald-400", link: "/admin/commandes" });
       else if (o.status === "litige") acts.push({ text: `Litige ouvert sur ${o.id}`, time: o.createdAt, icon: "gavel", color: "text-red-400", link: "/admin/litiges" });
       else acts.push({ text: `Commande ${o.id} — ${o.serviceTitle} (${o.status})`, time: o.createdAt, icon: "shopping_cart", color: "text-slate-400", link: "/admin/commandes" });
     });
 
-    recentUsers.forEach(u => acts.push({ text: `${u.name} inscrit comme ${u.role}`, time: u.createdAt, icon: "person_add", color: "text-primary", link: "/admin/utilisateurs" }));
+    (recentUsers ?? []).forEach(u => acts.push({ text: `${u.name} inscrit comme ${u.role}`, time: u.createdAt, icon: "person_add", color: "text-primary", link: "/admin/utilisateurs" }));
 
     return acts.slice(0, 8);
   })();
@@ -125,15 +131,15 @@ export default function AdminDashboard() {
   // Dynamic alerts computed from dashboardStats
   const alerts = (() => {
     const list: { title: string; description: string; severity: "haute" | "moyenne"; icon: string; link: string }[] = [];
-    if (disputes.total > 0) list.push({ title: `${disputes.total} litige(s) ouvert(s)`, description: "Des litiges nécessitent votre attention", severity: "haute", icon: "gavel", link: "/admin/litiges" });
-    if (services.pendingModeration > 0) list.push({ title: `${services.pendingModeration} service(s) en attente`, description: "Des services attendent votre approbation", severity: "moyenne", icon: "pending", link: "/admin/services" });
-    if (finances.pendingWithdrawals > 0) list.push({ title: `€${finances.pendingWithdrawals.toLocaleString()} en retraits`, description: "Retraits en attente de traitement", severity: "moyenne", icon: "account_balance_wallet", link: "/admin/finances" });
+    if (disputesData.total > 0) list.push({ title: `${disputesData.total} litige(s) ouvert(s)`, description: "Des litiges nécessitent votre attention", severity: "haute", icon: "gavel", link: "/admin/litiges" });
+    if (servicesData.pendingModeration > 0) list.push({ title: `${servicesData.pendingModeration} service(s) en attente`, description: "Des services attendent votre approbation", severity: "moyenne", icon: "pending", link: "/admin/services" });
+    if (financesData.pendingWithdrawals > 0) list.push({ title: `€${financesData.pendingWithdrawals.toLocaleString()} en retraits`, description: "Retraits en attente de traitement", severity: "moyenne", icon: "account_balance_wallet", link: "/admin/finances" });
     return list;
   })();
 
   // Key metrics
-  const completionRate = orders.total > 0 ? Math.round((orders.completed / orders.total) * 100) : 0;
-  const avgOrderValue = orders.total > 0 ? Math.round(orders.gmv / orders.total) : 0;
+  const completionRate = ordersData.total > 0 ? Math.round(((ordersData.completed ?? 0) / ordersData.total) * 100) : 0;
+  const avgOrderValue = ordersData.total > 0 ? Math.round((ordersData.gmv ?? 0) / ordersData.total) : 0;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -189,23 +195,23 @@ export default function AdminDashboard() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div>
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-emerald-400">{traffic.activeSessions}</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-black text-emerald-400">{traffic.activeSessions ?? 0}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Sessions actives</p>
             </div>
             <div>
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-white">{traffic.todayPageViews.toLocaleString()}</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-black text-white">{(traffic.todayPageViews ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Pages vues (24h)</p>
             </div>
             <div>
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-blue-400">{traffic.todayUniques.toLocaleString()}</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-black text-blue-400">{(traffic.todayUniques ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Visiteurs uniques</p>
             </div>
             <div>
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-amber-400">{traffic.avgSessionDuration}s</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-black text-amber-400">{traffic.avgSessionDuration ?? 0}s</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Durée moy. session</p>
             </div>
           </div>
-          {traffic.topPages.length > 0 && (
+          {(traffic.topPages ?? []).length > 0 && (
             <div className="mt-3 pt-3 border-t border-border-dark">
               <p className="text-xs text-slate-500 mb-2">Pages populaires aujourd&apos;hui</p>
               <div className="flex flex-wrap gap-2">
@@ -322,9 +328,9 @@ export default function AdminDashboard() {
           {[
             { label: "Taux de complétion", value: `${completionRate}%` },
             { label: "Panier moyen", value: `€${avgOrderValue}` },
-            { label: "Escrow en cours", value: `€${finances.escrowFunds.toLocaleString()}` },
-            { label: "Services actifs", value: `${services.active}` },
-            { label: "Transactions totales", value: `${finances.totalTransactions}` },
+            { label: "Escrow en cours", value: `€${(financesData.escrowFunds ?? 0).toLocaleString()}` },
+            { label: "Services actifs", value: `${servicesData.active ?? 0}` },
+            { label: "Transactions totales", value: `${financesData.totalTransactions ?? 0}` },
           ].map(m => (
             <div key={m.label} className="flex items-center justify-between py-1.5">
               <span className="text-sm text-slate-500">{m.label}</span>

@@ -80,7 +80,7 @@ export function AudioCallModal({ remoteStream, onHangup, onSwitchToVideo, onTogg
       {/* Hidden audio element for remote stream playback */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
-      <div className="bg-background-dark border border-border-dark rounded-3xl p-8 w-full max-w-sm mx-4 shadow-2xl">
+      <div className="bg-background-dark border border-border-dark rounded-3xl p-4 sm:p-8 w-full max-w-sm mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Avatar */}
         <div className="flex flex-col items-center mb-8">
           <div className={cn(

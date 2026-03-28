@@ -60,37 +60,38 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ orders });
     } else {
-      // Production: Prisma
+      // Production: Prisma — session guaranteed non-null here
+      const user = session!.user;
       let where: Record<string, unknown>;
 
       // For agencies, also include orders linked to the agency profile
       let agencyProfileId: string | null = null;
-      const userRole = (session.user as Record<string, unknown>).role as string;
+      const userRole = (user as Record<string, unknown>).role as string;
       if (userRole === "AGENCE" || userRole === "agence") {
         const agencyProfile = await prisma.agencyProfile.findUnique({
-          where: { userId: session.user.id },
+          where: { userId: user.id },
           select: { id: true },
         });
         if (agencyProfile) agencyProfileId = agencyProfile.id;
       }
 
       if (sideFilter === "buyer") {
-        where = { clientId: session.user.id };
+        where = { clientId: user.id };
       } else if (sideFilter === "seller") {
         if (agencyProfileId) {
           // Agency seller view: only agency orders, not personal freelance orders
           where = { agencyId: agencyProfileId };
         } else {
-          where = { freelanceId: session.user.id };
+          where = { freelanceId: user.id };
         }
-      } else if (session.user.role === "client" || userRole === "CLIENT") {
-        where = { clientId: session.user.id };
+      } else if (user.role === "client" || userRole === "CLIENT") {
+        where = { clientId: user.id };
       } else if (agencyProfileId) {
         // Agency default view: agency orders + orders as buyer (not personal freelance)
-        where = { OR: [{ agencyId: agencyProfileId }, { clientId: session.user.id }] };
+        where = { OR: [{ agencyId: agencyProfileId }, { clientId: user.id }] };
       } else {
         // Freelance/admin: both buyer and seller
-        where = { OR: [{ freelanceId: session.user.id }, { clientId: session.user.id }] };
+        where = { OR: [{ freelanceId: user.id }, { clientId: user.id }] };
       }
 
       if (statusFilter) {
@@ -317,7 +318,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (service.status !== "ACTIF") {
+      if (service.status !== "ACTIF" && service.status !== "VEDETTE") {
         return NextResponse.json(
           { error: "Ce service n'est pas disponible" },
           { status: 400 }
@@ -351,7 +352,7 @@ export async function POST(request: NextRequest) {
       const deliveryDays = pkg.deliveryDays ?? service.deliveryDays;
       const deadlineDate = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
 
-      // Calculate platformFee (20%) and freelancerPayout (80%)
+      // platformFee = commission (plan-based: 12%/5%/1EUR/0%) — freelancerPayout = rest
       const platformFee = commission;
       const freelancerPayout = amount - platformFee;
 
@@ -364,6 +365,7 @@ export async function POST(request: NextRequest) {
               serviceId,
               clientId: session.user.id,
               freelanceId: service.userId,
+              agencyId: service.agencyId || undefined,
               status: "EN_ATTENTE",
               escrowStatus: "HELD",
               amount,
@@ -480,10 +482,13 @@ export async function POST(request: NextRequest) {
             serviceId,
             clientId: session.user.id,
             freelanceId: service.userId,
+            agencyId: service.agencyId || undefined,
             status: "EN_ATTENTE",
             amount,
             currency: "EUR",
             commission,
+            platformFee,
+            freelancerPayout,
             title: service.title,
             description: service.descriptionText || null,
             deliveryDays,

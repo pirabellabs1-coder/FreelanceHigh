@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import prisma from "@freelancehigh/db";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendFormationRejectedEmail } from "@/lib/email/formations";
 import { logAuditAction, getRequestIp } from "@/lib/formations/audit";
@@ -20,7 +20,7 @@ export async function POST(
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 

@@ -35,8 +35,11 @@ const ROLE_TABS: { key: string; label: string }[] = [
 // ── Helpers ──
 
 function getInitials(name: string): string {
+  if (!name?.trim()) return "??";
   return name
+    .trim()
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
@@ -67,7 +70,7 @@ function formatDate(dateStr: string): string {
 // ── Component ──
 
 export default function AgenceEquipe() {
-  const { members, syncAll, isLoading } = useAgencyStore();
+  const { members, syncAll, syncMembers, inviteMember, updateMemberRole, removeMember, isLoading } = useAgencyStore();
   const { addToast } = useToastStore();
 
   const [roleFilter, setRoleFilter] = useState("tous");
@@ -76,6 +79,8 @@ export default function AgenceEquipe() {
   const [inviteRole, setInviteRole] = useState<AgencyMember["role"]>("freelance");
   const [confirmRemove, setConfirmRemove] = useState<AgencyMember | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [removeLoading, setRemoveLoading] = useState(false);
 
   // Sync on mount
   useEffect(() => {
@@ -92,62 +97,92 @@ export default function AgenceEquipe() {
 
   // ── Computed values ──
 
-  const filteredMembers = useMemo(() => {
-    if (roleFilter === "tous") return members;
-    return members.filter((m) => m.role === roleFilter);
-  }, [members, roleFilter]);
+  const safeMembers = members || [];
 
-  const totalMembers = members.length;
-  const activeMembers = members.filter((m) => m.status === "actif").length;
-  const totalRevenue = members.reduce((sum, m) => sum + m.revenue, 0);
-  const totalActiveOrders = members.reduce((sum, m) => sum + m.activeOrders, 0);
+  const filteredMembers = useMemo(() => {
+    if (roleFilter === "tous") return safeMembers;
+    return safeMembers.filter((m) => m.role === roleFilter);
+  }, [safeMembers, roleFilter]);
+
+  const totalMembers = safeMembers.length;
+  const activeMembers = safeMembers.filter((m) => m.status === "actif").length;
+  const totalRevenue = safeMembers.reduce((sum, m) => sum + (m.revenue ?? 0), 0);
+  const totalActiveOrders = safeMembers.reduce((sum, m) => sum + (m.activeOrders ?? 0), 0);
 
   // Tab counts
   const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = { tous: members.length };
-    for (const m of members) {
+    const counts: Record<string, number> = { tous: safeMembers.length };
+    for (const m of safeMembers) {
       counts[m.role] = (counts[m.role] || 0) + 1;
     }
     return counts;
-  }, [members]);
+  }, [safeMembers]);
 
   // ── Handlers ──
 
   async function handleInvite() {
-    if (!inviteEmail.trim()) {
+    const trimmedEmail = inviteEmail.trim();
+    if (!trimmedEmail) {
       addToast("warning", "Veuillez entrer une adresse email.");
       return;
     }
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      addToast("warning", "Veuillez entrer une adresse email valide.");
+      return;
+    }
+    setInviteLoading(true);
     try {
-      const res = await fetch("/api/agence/equipe/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        addToast("error", data.error || "Erreur lors de l'envoi");
+      const success = await inviteMember(trimmedEmail, inviteRole);
+      if (!success) {
+        addToast("error", "Erreur lors de l'envoi de l'invitation.");
         return;
       }
-      addToast("success", `Invitation envoyée à ${inviteEmail} en tant que ${ROLE_MAP[inviteRole].label}.`);
+      addToast("success", `Invitation envoyée à ${trimmedEmail} en tant que ${ROLE_MAP[inviteRole]?.label ?? inviteRole}.`);
       setInviteEmail("");
       setInviteRole("freelance");
       setShowInvite(false);
     } catch {
       addToast("error", "Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setInviteLoading(false);
     }
   }
 
-  function handleRemoveMember(member: AgencyMember) {
-    // In production this would call an API to remove the member
-    addToast("success", `${member.name} a été retiré de l'agence.`);
-    setConfirmRemove(null);
+  async function handleRemoveMember(member: AgencyMember) {
+    setRemoveLoading(true);
+    try {
+      const success = await removeMember(member.id);
+      if (success) {
+        addToast("success", `${member.name} a été retiré de l'agence.`);
+      } else {
+        addToast("error", `Impossible de retirer ${member.name}. Veuillez réessayer.`);
+      }
+    } catch {
+      addToast("error", "Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setRemoveLoading(false);
+      setConfirmRemove(null);
+    }
   }
 
-  function handleChangeRole(member: AgencyMember) {
-    // In production this would open a role change modal / call API
-    addToast("info", `Modification du rôle de ${member.name}...`);
+  async function handleChangeRole(member: AgencyMember) {
+    // Cycle through roles: freelance -> commercial -> manager -> proprietaire -> freelance
+    const roleOrder: AgencyMember["role"][] = ["freelance", "commercial", "manager", "proprietaire"];
+    const currentIndex = roleOrder.indexOf(member.role);
+    const nextRole = roleOrder[(currentIndex + 1) % roleOrder.length];
     setOpenMenuId(null);
+    try {
+      const success = await updateMemberRole(member.id, nextRole);
+      if (success) {
+        addToast("success", `Rôle de ${member.name} modifié en ${ROLE_MAP[nextRole]?.label ?? nextRole}.`);
+      } else {
+        addToast("error", `Impossible de modifier le rôle de ${member.name}.`);
+      }
+    } catch {
+      addToast("error", "Erreur réseau. Veuillez réessayer.");
+    }
   }
 
   // ── Stats cards ──
@@ -191,7 +226,7 @@ export default function AgenceEquipe() {
               </span>
             </div>
             <p className="text-xl font-black text-white">
-              {isLoading && members.length === 0 ? "..." : s.value}
+              {isLoading && safeMembers.length === 0 ? "..." : s.value}
             </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-1">
               {s.label}
@@ -231,7 +266,7 @@ export default function AgenceEquipe() {
       </div>
 
       {/* Loading state */}
-      {isLoading && members.length === 0 && (
+      {isLoading && safeMembers.length === 0 && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-3">
           <span className="material-symbols-outlined text-4xl text-primary animate-spin">
             progress_activity
@@ -241,7 +276,7 @@ export default function AgenceEquipe() {
       )}
 
       {/* Empty state */}
-      {!isLoading && members.length === 0 && (
+      {!isLoading && safeMembers.length === 0 && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-4">
           <span className="material-symbols-outlined text-5xl text-slate-600">
             group_off
@@ -265,7 +300,7 @@ export default function AgenceEquipe() {
       )}
 
       {/* Filtered empty state */}
-      {!isLoading && members.length > 0 && filteredMembers.length === 0 && (
+      {!isLoading && safeMembers.length > 0 && filteredMembers.length === 0 && (
         <div className="bg-neutral-dark rounded-xl border border-border-dark p-12 flex flex-col items-center justify-center gap-3">
           <span className="material-symbols-outlined text-5xl text-slate-600">
             filter_list_off
@@ -286,8 +321,8 @@ export default function AgenceEquipe() {
       {!isLoading && filteredMembers.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredMembers.map((member) => {
-            const role = ROLE_MAP[member.role];
-            const status = STATUS_INDICATOR[member.status];
+            const role = ROLE_MAP[member.role] ?? { label: member.role, cls: "bg-slate-500/20 text-slate-400" };
+            const status = STATUS_INDICATOR[member.status] ?? { label: member.status, dotCls: "bg-slate-500", textCls: "text-slate-500" };
 
             return (
               <div
@@ -383,15 +418,15 @@ export default function AgenceEquipe() {
                 <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border-dark/50">
                   <div>
                     <p className="text-xs text-slate-500 mb-0.5">Commandes</p>
-                    <p className="text-sm font-bold text-white">{member.activeOrders}</p>
+                    <p className="text-sm font-bold text-white">{member.activeOrders ?? 0}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 mb-0.5">CA généré</p>
-                    <p className="text-sm font-bold text-white">{formatCurrency(member.revenue)}</p>
+                    <p className="text-sm font-bold text-white">{formatCurrency(member.revenue ?? 0)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 mb-0.5">Depuis le</p>
-                    <p className="text-sm font-bold text-white">{formatDate(member.joinedAt)}</p>
+                    <p className="text-sm font-bold text-white">{member.joinedAt ? formatDate(member.joinedAt) : "—"}</p>
                   </div>
                 </div>
               </div>
@@ -460,10 +495,11 @@ export default function AgenceEquipe() {
                 </button>
                 <button
                   onClick={handleInvite}
-                  className="flex-1 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                  disabled={inviteLoading}
+                  className="flex-1 py-2.5 bg-primary text-background-dark text-sm font-bold rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined text-lg">send</span>
-                  Envoyer l&apos;invitation
+                  <span className="material-symbols-outlined text-lg">{inviteLoading ? "progress_activity" : "send"}</span>
+                  {inviteLoading ? "Envoi..." : "Envoyer l\u0027invitation"}
                 </button>
               </div>
             </div>
@@ -501,9 +537,10 @@ export default function AgenceEquipe() {
                 </button>
                 <button
                   onClick={() => handleRemoveMember(confirmRemove)}
-                  className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-colors"
+                  disabled={removeLoading}
+                  className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Retirer
+                  {removeLoading ? "Retrait..." : "Retirer"}
                 </button>
               </div>
             </div>

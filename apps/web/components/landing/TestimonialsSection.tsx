@@ -25,7 +25,7 @@ export function TestimonialsSection() {
               key={i}
               className="bg-white dark:bg-slate-800 p-5 sm:p-7 lg:p-10 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl transition-shadow"
             >
-              <div className="flex gap-1 mb-6">
+              <div className="flex gap-1 mb-4 sm:mb-6">
                 {Array.from({ length: 5 }).map((_, j) => (
                   <span
                     key={j}
@@ -36,11 +36,11 @@ export function TestimonialsSection() {
                   </span>
                 ))}
               </div>
-              <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed mb-8 italic">
+              <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-5 sm:mb-8 italic">
                 &ldquo;{t(`items.${i}.quote`)}&rdquo;
               </p>
               <div>
-                <p className="font-bold text-lg">{t(`items.${i}.name`)}</p>
+                <p className="font-bold text-base sm:text-lg">{t(`items.${i}.name`)}</p>
                 <p className="text-sm text-slate-500">{t(`items.${i}.role`)}</p>
               </div>
             </div>
