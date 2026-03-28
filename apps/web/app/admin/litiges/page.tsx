@@ -92,8 +92,7 @@ export default function AdminDisputes() {
       return;
     }
     setActionLoading(resolveId);
-    const resolution = verdict === "partiel" ? `${verdictNote} [partialPercent:${partialPercent}]` : verdictNote;
-    const ok = await resolveDispute(resolveId, verdict, resolution);
+    const ok = await resolveDispute(resolveId, verdict, verdictNote, verdict === "partiel" ? partialPercent : undefined);
     setActionLoading(null);
 
     if (ok) {

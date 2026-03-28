@@ -273,6 +273,17 @@ export const DEMO_PLANS: SubscriptionPlan[] = [
     current: false,
   },
   {
+    id: "agence_starter",
+    name: "Agence Starter",
+    price: 20,
+    commission: 5,
+    features: ["Services illimites", "Candidatures illimitees", "Commission 5%", "5 boosts/mois", "Jusqu'a 5 membres", "CRM clients", "10 GB stockage", "Support prioritaire"],
+    servicesLimit: null,
+    candidaturesLimit: null,
+    boostLimit: 5,
+    current: false,
+  },
+  {
     id: "empire",
     name: "Empire",
     price: 65,

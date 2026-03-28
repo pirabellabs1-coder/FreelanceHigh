@@ -267,13 +267,13 @@ export default function SeoPage() {
             Selectionner un service a optimiser
           </label>
           <select
-            className="w-full bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer"
+            className="w-full bg-neutral-dark text-white border border-border-dark rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer"
             value={selectedServiceId}
             onChange={(e) => setSelectedServiceId(e.target.value)}
           >
-            <option value="">-- Choisir un service --</option>
+            <option className="bg-neutral-dark text-white" value="">-- Choisir un service --</option>
             {activeServices.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option className="bg-neutral-dark text-white" key={s.id} value={s.id}>
                 {formatServiceTitle(s.title)} ({s.status === "actif" ? "Actif" : "En pause"})
               </option>
             ))}

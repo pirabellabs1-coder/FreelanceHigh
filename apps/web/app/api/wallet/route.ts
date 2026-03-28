@@ -61,7 +61,29 @@ export async function GET(request: NextRequest) {
         take: section === "transactions" ? 100 : 10,
       });
 
-      return NextResponse.json({ wallet, transactions });
+      // FALLBACK: If wallet has all zeros, supplement from Order data.
+      // This covers orders completed before the wallet-credit-on-TERMINE fix
+      // was deployed. Primary wallet population now happens at order completion
+      // time in /api/orders/[id] PATCH handler.
+      let walletData: { id: string; balance: number; pending: number; totalEarned: number; createdAt: Date; updatedAt: Date } = wallet;
+      if (wallet.balance === 0 && wallet.pending === 0 && wallet.totalEarned === 0) {
+        const [completedOrdersAgg, pendingOrdersAgg] = await Promise.all([
+          prisma.order.aggregate({ where: { agencyId: agencyProfile.id, status: "TERMINE" }, _sum: { freelancerPayout: true, amount: true } }),
+          prisma.order.aggregate({ where: { agencyId: agencyProfile.id, status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION"] } }, _sum: { amount: true } }),
+        ]);
+        const orderEarned = Math.round((completedOrdersAgg._sum.freelancerPayout ?? completedOrdersAgg._sum.amount ?? 0) * 100) / 100;
+        const orderPending = Math.round((pendingOrdersAgg._sum.amount ?? 0) * 100) / 100;
+        if (orderEarned > 0 || orderPending > 0) {
+          walletData = {
+            ...wallet,
+            balance: orderEarned,
+            pending: orderPending,
+            totalEarned: orderEarned,
+          };
+        }
+      }
+
+      return NextResponse.json({ wallet: walletData, transactions });
     }
 
     // Freelance (default)
@@ -80,7 +102,10 @@ export async function GET(request: NextRequest) {
       take: section === "transactions" ? 100 : 10,
     });
 
-    // If wallet has 0 values, supplement from Order/Payment data
+    // FALLBACK: If wallet has all zeros, supplement from Order/Payment data.
+    // This covers orders completed before the wallet-credit-on-TERMINE fix
+    // was deployed. Primary wallet population now happens at order completion
+    // time in /api/orders/[id] PATCH handler.
     let walletData: { id: string; balance: number; pending: number; totalEarned: number; createdAt: Date; updatedAt: Date } = wallet;
     if (wallet.balance === 0 && wallet.pending === 0 && wallet.totalEarned === 0) {
       const [completedOrdersAgg, pendingOrdersAgg, paymentAgg] = await Promise.all([

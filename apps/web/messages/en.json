@@ -98,7 +98,10 @@
       "reviews_count": "Based on {count} verified reviews",
       "no_reviews": "No reviews yet",
       "projects_label": "Projects delivered",
-      "secure_payments": "100% secure payments"
+      "secure_payments": "100% secure payments",
+      "countries_label": "Countries covered",
+      "global_reach": "International reach",
+      "join_first": "Join us!"
     },
     "categories": {
       "title": "Explore our categories",

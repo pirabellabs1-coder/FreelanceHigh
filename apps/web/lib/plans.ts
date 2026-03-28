@@ -61,6 +61,25 @@ export const PLAN_RULES = {
     apiAccess: true,
     supportLevel: "dedie" as const,
   },
+  AGENCE_STARTER: {
+    name: "Agence Starter",
+    nameEn: "Agency Starter",
+    commissionType: "percentage" as const,
+    commissionValue: 5, // 5%
+    priceMonthly: 20,
+    priceAnnual: 180, // 20 × 12 × 0.75
+    serviceLimit: Infinity,
+    applicationLimit: Infinity,
+    boostLimit: 5,
+    scenarioLimit: 3,
+    certificationLimit: 1,
+    productiviteAccess: false,
+    teamLimit: 5,
+    crmAccess: true,
+    cloudStorageGB: 10,
+    apiAccess: false,
+    supportLevel: "prioritaire" as const,
+  },
   EMPIRE: {
     name: "Empire",
     nameEn: "Empire",
@@ -85,16 +104,17 @@ export const PLAN_RULES = {
 export type PlanName = keyof typeof PLAN_RULES;
 
 /** Lowercase plan IDs for client-side / JWT usage */
-export type PlanId = "decouverte" | "ascension" | "sommet" | "empire";
+export type PlanId = "decouverte" | "ascension" | "sommet" | "agence_starter" | "empire";
 
 /** Ordered list of plan IDs (for UI iteration) */
-export const PLAN_ORDER: PlanName[] = ["DECOUVERTE", "ASCENSION", "SOMMET", "EMPIRE"];
+export const PLAN_ORDER: PlanName[] = ["DECOUVERTE", "ASCENSION", "SOMMET", "AGENCE_STARTER", "EMPIRE"];
 
 /** Display names for each plan */
 export const PLAN_DISPLAY_NAMES: Record<PlanName, { fr: string; en: string }> = {
   DECOUVERTE: { fr: "Découverte", en: "Discovery" },
   ASCENSION: { fr: "Ascension", en: "Ascension" },
   SOMMET: { fr: "Sommet", en: "Summit" },
+  AGENCE_STARTER: { fr: "Agence Starter", en: "Agency Starter" },
   EMPIRE: { fr: "Empire", en: "Empire" },
 };
 
@@ -128,6 +148,16 @@ export const PLAN_FEATURES: Record<PlanName, string[]> = {
     "Clés API & Webhooks",
     "Support dédié",
   ],
+  AGENCE_STARTER: [
+    "Services illimités",
+    "Candidatures illimitées",
+    "Commission 5%",
+    "5 boosts/mois",
+    "Jusqu'à 5 membres",
+    "CRM clients",
+    "10 GB stockage",
+    "Support prioritaire",
+  ],
   EMPIRE: [
     "Services illimités",
     "Candidatures illimitées",
@@ -156,6 +186,8 @@ const LEGACY_TO_NEW: Record<string, PlanName> = {
   DECOUVERTE: "DECOUVERTE",
   ASCENSION: "ASCENSION",
   SOMMET: "SOMMET",
+  AGENCE_STARTER: "AGENCE_STARTER",
+  AGENCY_STARTER: "AGENCE_STARTER",
   EMPIRE: "EMPIRE",
 };
 
@@ -164,7 +196,14 @@ export const NEW_TO_DB: Record<PlanName, string> = {
   DECOUVERTE: "GRATUIT",
   ASCENSION: "PRO",
   SOMMET: "BUSINESS",
+  AGENCE_STARTER: "AGENCE_STARTER",
   EMPIRE: "AGENCE",
+};
+
+/** Which plans are visible to each role */
+export const PLAN_VISIBILITY: Record<string, PlanName[]> = {
+  freelance: ["DECOUVERTE", "ASCENSION", "SOMMET"],
+  agence: ["AGENCE_STARTER", "EMPIRE"],
 };
 
 /**

@@ -190,6 +190,44 @@ export default function ClientOrderDetailPage() {
     }
   }
 
+  async function handleCancelDispute() {
+    setActionLoading(true);
+    try {
+      // The dispute ID is the order ID in dev mode, or the actual dispute ID in production.
+      // We use the order ID as the identifier and let the API figure it out.
+      const res = await fetch(`/api/disputes/${id}/cancel`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        addToast("success", "Litige annule. La commande reprend son cours normal.");
+        syncOrders();
+      } else {
+        addToast("error", data.error || "Erreur lors de l'annulation du litige");
+      }
+    } catch {
+      addToast("error", "Erreur lors de l'annulation du litige");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleSettleDispute() {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/disputes/${id}/settle`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        addToast("success", `Accord 50/50 applique. ${data.refundAmount?.toFixed(2) ?? ""} EUR rembourses.`);
+        syncOrders();
+      } else {
+        addToast("error", data.error || "Erreur lors de l'accord 50/50");
+      }
+    } catch {
+      addToast("error", "Erreur lors de l'accord 50/50");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleSubmitReview() {
     setReviewSubmitting(true);
     try {
@@ -562,9 +600,37 @@ export default function ClientOrderDetailPage() {
                 </div>
               )}
               {order.status === "litige" && (
-                <div className="flex items-center gap-2 text-red-400 text-sm font-semibold">
-                  <span className="material-symbols-outlined">gavel</span>
-                  Litige en cours d&apos;examen
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-red-400 text-sm font-semibold">
+                    <span className="material-symbols-outlined">gavel</span>
+                    Litige en cours d&apos;examen
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleCancelDispute}
+                      disabled={actionLoading}
+                      className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-slate-700 text-white text-sm font-bold rounded-xl hover:bg-slate-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading ? (
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-lg">cancel</span>
+                      )}
+                      Annuler le litige
+                    </button>
+                    <button
+                      onClick={handleSettleDispute}
+                      disabled={actionLoading}
+                      className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-amber-500/10 text-amber-400 text-sm font-bold rounded-xl hover:bg-amber-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading ? (
+                        <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-lg">handshake</span>
+                      )}
+                      Proposer un accord 50/50
+                    </button>
+                  </div>
                 </div>
               )}
               {order.status === "revision" && (

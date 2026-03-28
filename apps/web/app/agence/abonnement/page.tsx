@@ -10,11 +10,14 @@ import {
   PLAN_RULES,
   PLAN_ORDER,
   PLAN_FEATURES,
+  PLAN_VISIBILITY,
   getCommissionLabel,
   formatLimit,
   normalizePlanName,
   type PlanName,
 } from "@/lib/plans";
+
+const agencyPlans = PLAN_ORDER.filter((k) => PLAN_VISIBILITY.agence.includes(k));
 
 // ---------------------------------------------------------------------------
 // Plan data — derived from centralized PLAN_RULES
@@ -30,7 +33,7 @@ interface Plan {
   highlight?: boolean;
 }
 
-const PLANS: Plan[] = PLAN_ORDER.map((key) => {
+const PLANS: Plan[] = agencyPlans.map((key) => {
   const r = PLAN_RULES[key];
   return {
     id: key.toLowerCase(),
@@ -44,17 +47,17 @@ const PLANS: Plan[] = PLAN_ORDER.map((key) => {
   };
 });
 
-// Feature comparison rows — derived from PLAN_RULES
+// Feature comparison rows — derived from PLAN_RULES (agency plans only)
 const COMPARISON_ROWS = [
-  { label: "Services actifs", values: PLAN_ORDER.map((k) => formatLimit(PLAN_RULES[k].serviceLimit)) },
-  { label: "Candidatures/mois", values: PLAN_ORDER.map((k) => formatLimit(PLAN_RULES[k].applicationLimit)) },
-  { label: "Boost publicitaire", values: PLAN_ORDER.map((k) => PLAN_RULES[k].boostLimit === 0 ? "Non" : `${PLAN_RULES[k].boostLimit}/mois`) },
-  { label: "Commission", values: PLAN_ORDER.map((k) => getCommissionLabel(k)) },
-  { label: "Certification IA", values: PLAN_ORDER.map((k) => PLAN_RULES[k].certificationLimit === 0 ? "Non" : PLAN_RULES[k].certificationLimit === Infinity ? "Illimité" : `${PLAN_RULES[k].certificationLimit}/mois`) },
-  { label: "Clés API", values: PLAN_ORDER.map((k) => PLAN_RULES[k].apiAccess ? "Oui" : "Non") },
-  { label: "Membres équipe", values: PLAN_ORDER.map((k) => PLAN_RULES[k].teamLimit > 0 ? `${PLAN_RULES[k].teamLimit} max` : "-") },
-  { label: "Stockage ressources", values: PLAN_ORDER.map((k) => PLAN_RULES[k].cloudStorageGB > 0 ? `${PLAN_RULES[k].cloudStorageGB} GB` : "-") },
-  { label: "Support", values: PLAN_ORDER.map((k) => ({ email: "Email", prioritaire: "Prioritaire", dedie: "Dédié", vip: "VIP dédié" })[PLAN_RULES[k].supportLevel] || PLAN_RULES[k].supportLevel) },
+  { label: "Services actifs", values: agencyPlans.map((k) => formatLimit(PLAN_RULES[k].serviceLimit)) },
+  { label: "Candidatures/mois", values: agencyPlans.map((k) => formatLimit(PLAN_RULES[k].applicationLimit)) },
+  { label: "Boost publicitaire", values: agencyPlans.map((k) => PLAN_RULES[k].boostLimit === 0 ? "Non" : `${PLAN_RULES[k].boostLimit}/mois`) },
+  { label: "Commission", values: agencyPlans.map((k) => getCommissionLabel(k)) },
+  { label: "Certification IA", values: agencyPlans.map((k) => PLAN_RULES[k].certificationLimit === 0 ? "Non" : PLAN_RULES[k].certificationLimit === Infinity ? "Illimité" : `${PLAN_RULES[k].certificationLimit}/mois`) },
+  { label: "Clés API", values: agencyPlans.map((k) => PLAN_RULES[k].apiAccess ? "Oui" : "Non") },
+  { label: "Membres équipe", values: agencyPlans.map((k) => PLAN_RULES[k].teamLimit > 0 ? `${PLAN_RULES[k].teamLimit} max` : "-") },
+  { label: "Stockage ressources", values: agencyPlans.map((k) => PLAN_RULES[k].cloudStorageGB > 0 ? `${PLAN_RULES[k].cloudStorageGB} GB` : "-") },
+  { label: "Support", values: agencyPlans.map((k) => ({ email: "Email", prioritaire: "Prioritaire", dedie: "Dédié", vip: "VIP dédié" })[PLAN_RULES[k].supportLevel] || PLAN_RULES[k].supportLevel) },
 ];
 
 // ---------------------------------------------------------------------------
@@ -78,7 +81,7 @@ interface SubscriptionData {
 
 // Plan limits for usage stats display — derived from PLAN_RULES
 const PLAN_LIMITS: Record<string, { members: number | null; storage: number; services: number | null; boosts: number | null }> = Object.fromEntries(
-  PLAN_ORDER.map((k) => {
+  agencyPlans.map((k) => {
     const r = PLAN_RULES[k];
     return [k.toLowerCase(), {
       members: r.teamLimit || 0,
@@ -468,14 +471,14 @@ export default function AgenceAbonnement() {
             >
               Annuel
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                -{Math.round((1 - PLAN_RULES.ASCENSION.priceAnnual / (PLAN_RULES.ASCENSION.priceMonthly * 12)) * 100)}%
+                -{Math.round((1 - PLAN_RULES.AGENCE_STARTER.priceAnnual / (PLAN_RULES.AGENCE_STARTER.priceMonthly * 12)) * 100)}%
               </span>
             </button>
           </div>
         </div>
 
         {/* Plan cards row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {PLANS.map((plan) => {
             const isCurrent = plan.id === currentPlanId;
             return (

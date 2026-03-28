@@ -62,7 +62,10 @@ export async function GET() {
     try {
       const now = new Date();
       const allBoosts = await prisma.boost.findMany({
-        include: { service: { select: { title: true, userId: true } } },
+        include: {
+          service: { select: { title: true, userId: true } },
+          user: { select: { name: true, email: true } },
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
       });
@@ -71,22 +74,33 @@ export async function GET() {
         const isActive = b.endedAt ? b.endedAt > now : false;
         return {
           ...b,
+          serviceTitle: b.service?.title ?? "Service supprime",
           serviceName: b.service?.title ?? "Service supprime",
+          freelanceName: b.user?.name ?? b.user?.email ?? "Utilisateur inconnu",
+          tier: b.type ?? "FEATURED",
+          totalCost: b.totalCost ?? 0,
+          viewsGenerated: b.actualImpressions ?? 0,
+          clicksGenerated: b.actualClicks ?? 0,
+          ordersGenerated: b.actualOrders ?? 0,
           isActive,
         };
       });
 
       const activeCount = enrichedBoosts.filter((b) => b.isActive).length;
       const totalRevenue = allBoosts.reduce((sum, b) => sum + (b.totalCost ?? 0), 0);
+      const totalViews = allBoosts.reduce((sum, b) => sum + (b.actualImpressions ?? 0), 0);
+      const totalClicks = allBoosts.reduce((sum, b) => sum + (b.actualClicks ?? 0), 0);
+      const totalOrders = allBoosts.reduce((sum, b) => sum + (b.actualOrders ?? 0), 0);
 
       return NextResponse.json({
         boosts: enrichedBoosts,
         stats: {
-          total: allBoosts.length,
-          active: activeCount,
+          totalBoosts: allBoosts.length,
+          activeBoosts: activeCount,
           totalRevenue: Math.round(totalRevenue * 100) / 100,
-          totalViews: 0,
-          cleaned: 0,
+          totalViews,
+          totalClicks,
+          totalOrders,
         },
         tiers: BOOST_TIERS,
       });

@@ -11,13 +11,6 @@ import { useDashboardStore, useToastStore } from "@/store/dashboard";
 
 type BoostTier = "standard" | "premium" | "ultime";
 
-interface TierConfig {
-  name: string;
-  duration: number;
-  price: number;
-  estimatedViews: number;
-}
-
 interface BoostRecord {
   id: string;
   serviceId: string;
@@ -42,73 +35,15 @@ interface BoostApiResponse {
   activeBoost: BoostRecord | null;
   history: BoostRecord[];
   stats: BoostStats;
-  availableTiers: Record<BoostTier, TierConfig>;
 }
 
 // ============================================================
-// Tier display data (for the cards — values aligned with API)
+// Budget model constants
 // ============================================================
 
-const TIER_CARDS: {
-  tier: BoostTier;
-  name: string;
-  price: number;
-  duration: number;
-  estimatedViews: string;
-  recommended: boolean;
-  icon: string;
-  color: string;
-  features: string[];
-}[] = [
-  {
-    tier: "standard",
-    name: "Standard",
-    price: 9.99,
-    duration: 3,
-    estimatedViews: "~500 vues",
-    recommended: false,
-    icon: "bolt",
-    color: "text-blue-400",
-    features: [
-      "Mise en avant dans le marketplace",
-      "Badge \"Booste\" sur le service",
-      "Statistiques de boost basiques",
-    ],
-  },
-  {
-    tier: "premium",
-    name: "Premium",
-    price: 24.99,
-    duration: 7,
-    estimatedViews: "~2 000 vues",
-    recommended: true,
-    icon: "rocket_launch",
-    color: "text-primary",
-    features: [
-      "Position prioritaire dans les resultats",
-      "Badge \"Booste\" premium dore",
-      "Statistiques detaillees en temps reel",
-      "Mise en avant sur la page d'accueil",
-    ],
-  },
-  {
-    tier: "ultime",
-    name: "Ultime",
-    price: 79.99,
-    duration: 30,
-    estimatedViews: "~10 000 vues",
-    recommended: false,
-    icon: "diamond",
-    color: "text-amber-400",
-    features: [
-      "Visibilite maximale pendant 30 jours",
-      "Placement en tete du marketplace",
-      "Badge \"Ultime\" exclusif anime",
-      "Recommandation IA prioritaire",
-      "Statistiques avancees avec ROI",
-    ],
-  },
-];
+const MIN_BUDGET = 5;
+const COST_PER_DAY = 1; // 1 EUR per day
+const VIEWS_PER_EUR = 50; // estimated views per euro spent
 
 // ============================================================
 // Helpers
@@ -173,10 +108,14 @@ export default function BoostPage() {
 
   // State
   const [selectedServiceId, setSelectedServiceId] = useState("");
-  const [selectedTier, setSelectedTier] = useState<BoostTier>("premium");
+  const [budget, setBudget] = useState(MIN_BUDGET);
   const [isLoading, setIsLoading] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [boostData, setBoostData] = useState<BoostApiResponse | null>(null);
+
+  // Budget-derived values
+  const durationDays = Math.floor(budget / COST_PER_DAY);
+  const estimatedViews = budget * VIEWS_PER_EUR;
 
   // Set default service when active services load
   useEffect(() => {
@@ -214,7 +153,7 @@ export default function BoostPage() {
 
   // Activate boost
   const handleActivateBoost = async () => {
-    if (!selectedServiceId || !selectedTier) return;
+    if (!selectedServiceId || budget < MIN_BUDGET) return;
     if (boostData?.activeBoost) {
       addToast("warning", "Ce service a deja un boost actif. Attendez son expiration.");
       return;
@@ -225,7 +164,14 @@ export default function BoostPage() {
       const res = await fetch(`/api/services/${selectedServiceId}/boost`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: selectedTier }),
+        body: JSON.stringify({
+          budget,
+          costPerDay: COST_PER_DAY,
+          durationDays,
+          totalCost: budget,
+          // Send a tier for backward compatibility with the API
+          tier: durationDays >= 30 ? "ultime" : durationDays >= 7 ? "premium" : "standard",
+        }),
       });
 
       const data = await res.json();
@@ -336,12 +282,12 @@ export default function BoostPage() {
               Choisir un service a booster
             </h3>
             <select
-              className="w-full bg-primary/10 border-none rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-primary outline-none"
+              className="w-full bg-neutral-dark text-white border border-border-dark rounded-lg py-3 px-4 text-sm focus:ring-2 focus:ring-primary outline-none"
               value={selectedServiceId}
               onChange={(e) => setSelectedServiceId(e.target.value)}
             >
               {activeServices.map((s) => (
-                <option key={s.id} value={s.id}>
+                <option className="bg-neutral-dark text-white" key={s.id} value={s.id}>
                   {s.title} ({s.price} EUR)
                 </option>
               ))}
@@ -403,69 +349,104 @@ export default function BoostPage() {
             </div>
           )}
 
-          {/* Tier Cards */}
+          {/* Budget-based Boost */}
           {!isLoading && !activeBoost && (
             <>
-              <div>
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">local_offer</span>
-                  Choisir un plan de boost
+              <div className="bg-primary/5 rounded-2xl border border-primary/10 p-6">
+                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">payments</span>
+                  Definir votre budget
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {TIER_CARDS.map((card) => (
-                    <button
-                      key={card.tier}
-                      onClick={() => setSelectedTier(card.tier)}
-                      className={cn(
-                        "relative bg-primary/5 rounded-2xl border-2 p-6 text-left transition-all hover:scale-[1.02]",
-                        selectedTier === card.tier
-                          ? "border-primary shadow-lg shadow-primary/10"
-                          : "border-primary/10 hover:border-primary/30"
-                      )}
-                    >
-                      {/* Recommended badge */}
-                      {card.recommended && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                          Recommande
-                        </span>
-                      )}
 
-                      {/* Icon */}
-                      <div className={cn("size-12 rounded-xl flex items-center justify-center mb-4", card.tier === "standard" ? "bg-blue-500/10" : card.tier === "premium" ? "bg-primary/10" : "bg-amber-500/10")}>
-                        <span className={cn("material-symbols-outlined text-2xl", card.color)}>
-                          {card.icon}
-                        </span>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Budget Input */}
+                  <div>
+                    <label className="block text-sm font-bold mb-2">
+                      Budget (min. {MIN_BUDGET} EUR)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min={MIN_BUDGET}
+                        step={1}
+                        value={budget}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || MIN_BUDGET;
+                          setBudget(Math.max(MIN_BUDGET, val));
+                        }}
+                        className="w-full bg-neutral-dark text-white border border-border-dark rounded-lg py-3 px-4 pr-12 text-lg font-bold focus:ring-2 focus:ring-primary outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">
+                        EUR
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      Cout : {COST_PER_DAY} EUR / jour. Ajustez le budget pour une duree plus longue.
+                    </p>
 
-                      {/* Info */}
-                      <h4 className="text-lg font-bold mb-1">{card.name}</h4>
-                      <div className="flex items-baseline gap-1 mb-1">
-                        <span className="text-2xl font-black">{card.price} EUR</span>
-                      </div>
-                      <p className="text-xs text-slate-400 mb-4">
-                        {card.duration} jour{card.duration > 1 ? "s" : ""} — {card.estimatedViews} estimees
-                      </p>
+                    {/* Quick budget presets */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {[5, 10, 15, 30, 50].map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() => setBudget(preset)}
+                          className={cn(
+                            "px-4 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                            budget === preset
+                              ? "bg-primary text-white"
+                              : "bg-primary/10 text-slate-300 hover:bg-primary/20"
+                          )}
+                        >
+                          {preset} EUR
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                      {/* Features */}
-                      <ul className="space-y-2">
-                        {card.features.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-slate-400">
-                            <span className="material-symbols-outlined text-primary text-sm mt-0.5 shrink-0">
-                              check_circle
-                            </span>
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* Selected indicator */}
-                      {selectedTier === card.tier && (
-                        <div className="absolute top-4 right-4 size-6 rounded-full bg-primary flex items-center justify-center">
-                          <span className="material-symbols-outlined text-white text-sm">check</span>
+                  {/* Live Preview */}
+                  <div className="space-y-4">
+                    <div className="bg-primary/10 rounded-xl p-5 border border-primary/20">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="size-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-primary">calendar_month</span>
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Duree estimee</p>
+                          <p className="text-xl font-black text-white">
+                            {durationDays} jour{durationDays > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-blue-400">visibility</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Vues estimees</p>
+                          <p className="text-xl font-black text-white">
+                            ~{estimatedViews.toLocaleString("fr-FR")} vues
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* What you get */}
+                    <ul className="space-y-2">
+                      {[
+                        "Mise en avant dans le marketplace",
+                        "Badge \"Booste\" sur le service",
+                        "Statistiques de performance en temps reel",
+                        "Position prioritaire dans les resultats",
+                      ].map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-slate-400">
+                          <span className="material-symbols-outlined text-primary text-sm mt-0.5 shrink-0">
+                            check_circle
+                          </span>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
 
@@ -476,13 +457,12 @@ export default function BoostPage() {
                     {selectedService?.title ?? "Service selectionne"}
                   </p>
                   <p className="text-xs text-slate-400">
-                    Boost {tierLabel(selectedTier)} — {TIER_CARDS.find((c) => c.tier === selectedTier)?.price} EUR pour{" "}
-                    {TIER_CARDS.find((c) => c.tier === selectedTier)?.duration} jours
+                    {budget} EUR — {durationDays} jour{durationDays > 1 ? "s" : ""} — ~{estimatedViews.toLocaleString("fr-FR")} vues estimees
                   </p>
                 </div>
                 <button
                   onClick={handleActivateBoost}
-                  disabled={!selectedServiceId || isActivating}
+                  disabled={!selectedServiceId || isActivating || budget < MIN_BUDGET}
                   className="flex items-center gap-2 px-8 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold transition-colors disabled:opacity-40 shadow-lg shadow-primary/20"
                 >
                   {isActivating ? (

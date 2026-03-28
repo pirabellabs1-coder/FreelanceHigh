@@ -448,6 +448,29 @@ export async function POST(request: NextRequest) {
             data: { orderCount: { increment: 1 } },
           });
 
+          // Track order for active boost (if service is boosted)
+          if (service.isBoosted) {
+            try {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const activeBoost = await tx.boost.findFirst({
+                where: { serviceId, status: "ACTIVE" },
+              });
+              if (activeBoost) {
+                await tx.boost.update({
+                  where: { id: activeBoost.id },
+                  data: { actualOrders: { increment: 1 } },
+                });
+                await tx.boostDailyStat.updateMany({
+                  where: { boostId: activeBoost.id, date: today },
+                  data: { orders: { increment: 1 } },
+                });
+              }
+            } catch {
+              // Boost tracking is best-effort
+            }
+          }
+
           const conversation = await tx.conversation.create({
             data: {
               type: "ORDER",

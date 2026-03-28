@@ -170,6 +170,29 @@ export async function POST(request: NextRequest) {
       console.error("[Proposition] notification failed:", e);
     }
 
+    // Track contact for active boost (if service is boosted)
+    if (service.isBoosted) {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activeBoost = await prisma.boost.findFirst({
+          where: { serviceId, status: "ACTIVE" },
+        });
+        if (activeBoost) {
+          await prisma.boost.update({
+            where: { id: activeBoost.id },
+            data: { actualContacts: { increment: 1 } },
+          });
+          await prisma.boostDailyStat.updateMany({
+            where: { boostId: activeBoost.id, date: today },
+            data: { contacts: { increment: 1 } },
+          });
+        }
+      } catch {
+        // Boost tracking is best-effort
+      }
+    }
+
     return NextResponse.json({ proposition }, { status: 201 });
   } catch (error) {
     console.error("[API /propositions POST]", error);

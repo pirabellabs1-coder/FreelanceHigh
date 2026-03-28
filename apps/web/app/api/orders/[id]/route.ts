@@ -688,7 +688,7 @@ export async function PATCH(
               }
             }
 
-            // When order is completed, create payment records, credit wallet, and update service stats
+            // When order is completed, create payment records and update service stats
             if (prismaStatus === "TERMINE") {
               const feeAmount = order.platformFee || order.commission;
               const netAmount = order.amount - feeAmount;
@@ -711,7 +711,7 @@ export async function PATCH(
                 data: { status: "RELEASED", releasedAt: new Date() },
               });
 
-              // Release admin commission (held → released)
+              // Release admin commission (held -> released)
               if (feeAmount > 0) {
                 const adminWallet = await tx.adminWallet.findFirst();
                 if (adminWallet) {
@@ -727,43 +727,6 @@ export async function PATCH(
                     data: { status: "CONFIRMED" },
                   });
                 }
-              }
-
-              // Credit freelancer or agency wallet
-              if (order.agencyId) {
-                // Agency wallet
-                const agencyWallet = await tx.walletAgency.upsert({
-                  where: { agencyId: order.agencyId },
-                  create: { agencyId: order.agencyId, balance: netAmount, totalEarned: netAmount },
-                  update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
-                });
-                await tx.walletTransaction.create({
-                  data: {
-                    agencyWalletId: agencyWallet.id,
-                    type: "ORDER_PAYOUT",
-                    amount: netAmount,
-                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
-                    status: "WALLET_COMPLETED",
-                    orderId: order.id,
-                  },
-                });
-              } else {
-                // Freelancer wallet (walletFreelance, not wallet)
-                const freelanceWallet = await tx.walletFreelance.upsert({
-                  where: { userId: order.freelanceId },
-                  create: { userId: order.freelanceId, balance: netAmount, totalEarned: netAmount },
-                  update: { balance: { increment: netAmount }, totalEarned: { increment: netAmount } },
-                });
-                await tx.walletTransaction.create({
-                  data: {
-                    freelanceWalletId: freelanceWallet.id,
-                    type: "ORDER_PAYOUT",
-                    amount: netAmount,
-                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
-                    status: "WALLET_COMPLETED",
-                    orderId: order.id,
-                  },
-                });
               }
 
               // Update service totalRevenue (orderCount already incremented at POST creation)
@@ -788,6 +751,62 @@ export async function PATCH(
             freelanceId: order.freelanceId, freelanceName: order.freelance?.name || "Freelance", freelanceEmail: order.freelance?.email || "",
             clientId: order.clientId, clientName: order.client?.name || "Client", clientEmail: order.client?.email || "",
           }).catch(() => {});
+
+          // ── Wallet credit (separate from main transaction) ──────────────
+          // Runs in its own try-catch so wallet table issues (missing migration,
+          // schema mismatch) do NOT crash order completion. The /api/wallet and
+          // /api/finances/summary routes have fallback logic that aggregates
+          // from Order data, so earnings are still visible even if this fails.
+          try {
+            const payoutAmount = order.freelancerPayout ?? completedNet;
+            await prisma.$transaction(async (wx) => {
+              // Idempotency: skip if this order was already paid out
+              const existingPayout = await wx.walletTransaction.findFirst({
+                where: { orderId: order.id, type: "ORDER_PAYOUT" },
+              });
+              if (existingPayout) return;
+
+              // Credit freelancer or agency wallet
+              if (order.agencyId) {
+                const w = await wx.walletAgency.upsert({
+                  where: { agencyId: order.agencyId },
+                  create: { agencyId: order.agencyId, balance: payoutAmount, totalEarned: payoutAmount },
+                  update: { balance: { increment: payoutAmount }, totalEarned: { increment: payoutAmount } },
+                });
+                await wx.walletTransaction.create({
+                  data: {
+                    agencyWalletId: w.id,
+                    type: "ORDER_PAYOUT",
+                    amount: payoutAmount,
+                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
+                    status: "WALLET_COMPLETED",
+                    orderId: order.id,
+                  },
+                });
+              } else {
+                const w = await wx.walletFreelance.upsert({
+                  where: { userId: order.freelanceId },
+                  create: { userId: order.freelanceId, balance: payoutAmount, totalEarned: payoutAmount },
+                  update: { balance: { increment: payoutAmount }, totalEarned: { increment: payoutAmount } },
+                });
+                await wx.walletTransaction.create({
+                  data: {
+                    freelanceWalletId: w.id,
+                    type: "ORDER_PAYOUT",
+                    amount: payoutAmount,
+                    description: `Paiement commande #${order.id.slice(0, 8)} - ${serviceTitle}`,
+                    status: "WALLET_COMPLETED",
+                    orderId: order.id,
+                  },
+                });
+              }
+            });
+          } catch (walletError) {
+            // Non-fatal: wallet credit failed but order completion succeeded.
+            // Fallback aggregation in /api/wallet and /api/finances/summary
+            // ensures the user still sees correct earnings from Order data.
+            console.error("[API /orders/[id] PATCH] Wallet credit failed (non-fatal):", walletError);
+          }
         }
       }
 

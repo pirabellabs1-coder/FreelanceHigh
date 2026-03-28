@@ -98,7 +98,10 @@
       "reviews_count": "Basé sur {count} avis vérifiés",
       "no_reviews": "Aucun avis pour le moment",
       "projects_label": "Projets livrés",
-      "secure_payments": "Paiements 100% sécurisés"
+      "secure_payments": "Paiements 100% sécurisés",
+      "countries_label": "Pays couverts",
+      "global_reach": "Portée internationale",
+      "join_first": "Rejoignez-nous !"
     },
     "categories": {
       "title": "Explorez nos catégories",

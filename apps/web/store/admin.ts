@@ -352,7 +352,7 @@ interface AdminState {
 
   // Dispute actions
   examineDispute: (orderId: string) => Promise<boolean>;
-  resolveDispute: (orderId: string, verdict: string, resolution?: string) => Promise<boolean>;
+  resolveDispute: (orderId: string, verdict: string, resolution?: string, partialPercent?: number) => Promise<boolean>;
 
   // Blog actions
   createArticle: (data: Record<string, unknown>) => Promise<boolean>;
@@ -508,7 +508,7 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     set({ loading: { ...get().loading, kyc: true } });
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await fetchAdmin<{ queue: any[]; summary: { total: number; byLevel: Record<string, number> } }>("/api/admin/kyc");
+      const data = await fetchAdmin<{ queue: any[]; summary: any }>("/api/admin/kyc");
       // Map queue to include requestId + document metadata
       const queue: AdminKycRequest[] = (data.queue || []).map((r) => ({
         userId: r.userId,
@@ -526,7 +526,17 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
         requestId: r.requestId,
         metadata: r.metadata,
       }));
-      set({ kycRequests: queue, kycSummary: data.summary, loading: { ...get().loading, kyc: false }, error: { ...get().error, kyc: null } });
+      // Normalize summary: support both { byLevel: {...} } and legacy { level0, level1, ... } formats
+      const rawSummary = data.summary || {};
+      const byLevel: Record<string, number> = rawSummary.byLevel ?? {
+        "0": rawSummary.level0 ?? 0,
+        "1": rawSummary.level1 ?? 0,
+        "2": rawSummary.level2 ?? 0,
+        "3": rawSummary.level3 ?? 0,
+        "4": rawSummary.level4 ?? 0,
+      };
+      const kycSummary = { total: rawSummary.total ?? queue.length, byLevel };
+      set({ kycRequests: queue, kycSummary, loading: { ...get().loading, kyc: false }, error: { ...get().error, kyc: null } });
     } catch (e: unknown) {
       set({ loading: { ...get().loading, kyc: false }, error: { ...get().error, kyc: (e as Error).message } });
     }
@@ -806,9 +816,9 @@ export const useAdminStore = create<AdminState>()((set, get) => ({
     } catch { return false; }
   },
 
-  resolveDispute: async (orderId, verdict, resolution) => {
+  resolveDispute: async (orderId, verdict, resolution, partialPercent?) => {
     try {
-      await fetchAdmin("/api/admin/disputes", { method: "POST", body: JSON.stringify({ action: "resolve", orderId, verdict, resolution }) });
+      await fetchAdmin("/api/admin/disputes", { method: "POST", body: JSON.stringify({ action: "resolve", orderId, verdict, resolution, partialPercent }) });
       await get().syncDisputes();
       return true;
     } catch { return false; }

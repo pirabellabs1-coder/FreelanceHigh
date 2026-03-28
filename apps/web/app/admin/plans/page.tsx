@@ -5,16 +5,16 @@ import { useAdminStore } from "@/store/admin";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
-const PLAN_KEYS = ["decouverte", "ascension", "sommet", "empire"] as const;
-const PLAN_LABELS: Record<string, string> = { decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", empire: "Empire", gratuit: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire" };
-const PLAN_COLORS = ["border-slate-500", "border-amber-500", "border-primary", "border-emerald-500"];
+const PLAN_KEYS = ["decouverte", "ascension", "sommet", "agence_starter", "empire"] as const;
+const PLAN_LABELS: Record<string, string> = { decouverte: "Découverte", ascension: "Ascension", sommet: "Sommet", agence_starter: "Agence Starter", empire: "Empire", gratuit: "Découverte", pro: "Ascension", business: "Sommet", agence: "Empire" };
+const PLAN_COLORS = ["border-slate-500", "border-amber-500", "border-primary", "border-blue-500", "border-emerald-500"];
 
 function PlansSkeleton() {
   return (
     <div className="space-y-6">
       <div className="h-8 w-64 bg-neutral-dark rounded-lg animate-pulse" />
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-neutral-dark rounded-xl p-5 border border-border-dark animate-pulse">
             <div className="h-5 w-24 bg-border-dark rounded mb-3" />
             <div className="h-8 w-32 bg-border-dark rounded mb-4" />
@@ -142,7 +142,7 @@ export default function AdminPlans() {
       </h1>
 
       {/* Plan cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         {plans.map((p, i) => (
           <div key={p.key} className={cn("bg-neutral-dark rounded-xl p-5 border-2", PLAN_COLORS[i] || "border-border-dark")}>
             <h3 className="font-bold text-lg text-white">{p.name}</h3>

@@ -9,15 +9,19 @@ import {
   PLAN_RULES,
   PLAN_ORDER,
   PLAN_FEATURES,
+  PLAN_VISIBILITY,
   getCommissionLabel,
   normalizePlanName,
   type PlanName,
 } from "@/lib/plans";
 
+const visiblePlans = PLAN_ORDER.filter((k) => PLAN_VISIBILITY.freelance.includes(k));
+
 const PLAN_STYLES: Record<PlanName, { icon: string; color: string; bg: string; border: string }> = {
   DECOUVERTE: { icon: "explore", color: "text-slate-400", bg: "bg-slate-500/10", border: "border-border-dark" },
   ASCENSION: { icon: "trending_up", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/40" },
   SOMMET: { icon: "bolt", color: "text-primary", bg: "bg-primary/10", border: "border-primary" },
+  AGENCE_STARTER: { icon: "apartment", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/40" },
   EMPIRE: { icon: "workspace_premium", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/40" },
 };
 
@@ -36,7 +40,7 @@ export default function AbonnementPage() {
   const currentPlanKey = normalizePlanName(rawPlan);
   const currentRules = PLAN_RULES[currentPlanKey] ?? PLAN_RULES.DECOUVERTE;
   const style = PLAN_STYLES[currentPlanKey] ?? PLAN_STYLES.DECOUVERTE;
-  const currentIndex = PLAN_ORDER.indexOf(currentPlanKey);
+  const currentIndex = visiblePlans.indexOf(currentPlanKey);
 
   function handleSelectPlan(planKey: PlanName) {
     const planId = planKey.toLowerCase();
@@ -150,8 +154,8 @@ export default function AbonnementPage() {
       </div>
 
       {/* Plans grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        {PLAN_ORDER.map((planKey, idx) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {visiblePlans.map((planKey, idx) => {
           const rules = PLAN_RULES[planKey];
           const features = PLAN_FEATURES[planKey];
           const isCurrent = planKey === currentPlanKey;

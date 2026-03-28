@@ -41,14 +41,16 @@ export async function GET() {
         };
       });
 
-      // Summary stats
+      // Summary stats — use byLevel format expected by the frontend store
       const summary = {
         total: kycQueue.length,
-        level0: users.filter((u) => u.role !== "admin" && u.kyc === 0).length,
-        level1: users.filter((u) => u.role !== "admin" && u.kyc === 1).length,
-        level2: users.filter((u) => u.role !== "admin" && u.kyc === 2).length,
-        level3: users.filter((u) => u.role !== "admin" && u.kyc === 3).length,
-        level4: users.filter((u) => u.role !== "admin" && u.kyc === 4).length,
+        byLevel: {
+          "0": users.filter((u) => u.role !== "admin" && u.kyc === 0).length,
+          "1": users.filter((u) => u.role !== "admin" && u.kyc === 1).length,
+          "2": users.filter((u) => u.role !== "admin" && u.kyc === 2).length,
+          "3": users.filter((u) => u.role !== "admin" && u.kyc === 3).length,
+          "4": users.filter((u) => u.role !== "admin" && u.kyc === 4).length,
+        },
       };
 
       return NextResponse.json({
@@ -111,14 +113,16 @@ export async function GET() {
       };
     });
 
-    // Summary from all users
+    // Summary from all users — use byLevel format expected by the frontend store
     const summary = {
       total: queue.length,
-      level0: await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 0 } }),
-      level1: await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 1 } }),
-      level2: await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 2 } }),
-      level3: await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 3 } }),
-      level4: await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 4 } }),
+      byLevel: {
+        "0": await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 0 } }),
+        "1": await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 1 } }),
+        "2": await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 2 } }),
+        "3": await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 3 } }),
+        "4": await prisma.user.count({ where: { role: { not: "ADMIN" }, kyc: 4 } }),
+      },
     };
 
     return NextResponse.json({ queue, summary });

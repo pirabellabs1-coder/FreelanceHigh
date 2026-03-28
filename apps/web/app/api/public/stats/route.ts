@@ -17,6 +17,11 @@ export async function GET() {
       const agences = users.filter((u) => u.role === "agence" && u.status === "ACTIF");
       // Les agences sont aussi des prestataires — les compter dans le total freelances pour les stats publiques
       const freelances = [...freelancesOnly, ...agences];
+
+      // Count distinct countries from active users
+      const activeUsers = users.filter((u) => u.status === "ACTIF");
+      const countries = new Set(activeUsers.map((u) => u.country).filter(Boolean));
+      const countriesCount = countries.size;
       const activeServices = services.filter((s) => s.status === "actif");
       const completedOrders = orders.filter((o) => o.status === "livre" || o.status === "termine");
 
@@ -46,6 +51,7 @@ export async function GET() {
         averageRating: avgRating,
         totalReviews,
         newUsersThisMonth,
+        countriesCount,
       });
     }
 
@@ -61,8 +67,8 @@ export async function GET() {
       totalPaidResult,
       reviewStats,
       newUsersThisMonth,
+      countriesRaw,
     ] = await Promise.all([
-      // Freelances + Agences comptés ensemble comme "prestataires" pour les stats publiques
       prisma.user.count({ where: { role: { in: ["FREELANCE", "AGENCE"] }, status: "ACTIF" } }),
       prisma.user.count({ where: { role: "CLIENT", status: "ACTIF" } }),
       prisma.user.count({ where: { role: "AGENCE", status: "ACTIF" } }),
@@ -85,7 +91,14 @@ export async function GET() {
           },
         },
       }),
+      prisma.user.findMany({
+        where: { status: "ACTIF", country: { not: null } },
+        select: { country: true },
+        distinct: ["country"],
+      }),
     ]);
+
+    const countriesCount = countriesRaw.length;
 
     return NextResponse.json({
       freelances: freelanceCount,
@@ -100,6 +113,7 @@ export async function GET() {
         : 0,
       totalReviews: reviewStats._count.id,
       newUsersThisMonth,
+      countriesCount,
     });
   } catch (error) {
     console.error("[API /public/stats GET]", error);

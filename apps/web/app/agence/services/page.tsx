@@ -65,6 +65,9 @@ export default function AgenceServicesPage() {
   const [deleteTarget, setDeleteTarget] = useState<ApiService | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [seoService, setSeoService] = useState<{ id: string; title: string } | null>(null);
+  const [boostTarget, setBoostTarget] = useState<{ id: string; title: string } | null>(null);
+  const [boostBudget, setBoostBudget] = useState(5);
+  const [boostLoading, setBoostLoading] = useState(false);
 
   useEffect(() => {
     syncServices();
@@ -120,6 +123,33 @@ export default function AgenceServicesPage() {
   function handleDuplicate(s: ApiService) {
     addToast("info", `Duplication de "${s.title}" — redirection vers le wizard`);
     // Future: navigate to /agence/services/creer?duplicate=ID
+  }
+
+  async function handleBoostSubmit() {
+    if (!boostTarget || boostBudget < 5) return;
+    setBoostLoading(true);
+    try {
+      const durationDays = Math.floor(boostBudget / 1);
+      const tier = durationDays >= 30 ? "ultime" : durationDays >= 7 ? "premium" : "standard";
+      const res = await fetch(`/api/services/${boostTarget.id}/boost`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ budget: boostBudget, costPerDay: 1, durationDays, totalCost: boostBudget, tier }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        addToast("error", data.error || "Erreur lors de l'activation du boost");
+      } else {
+        addToast("success", data.message || `Boost active pour "${boostTarget.title}" !`);
+        syncServices();
+        setBoostTarget(null);
+        setBoostBudget(5);
+      }
+    } catch {
+      addToast("error", "Erreur reseau. Veuillez reessayer.");
+    } finally {
+      setBoostLoading(false);
+    }
   }
 
   // ── Render ──
@@ -342,6 +372,15 @@ export default function AgenceServicesPage() {
                   </button>
 
                   <button
+                    onClick={() => { setBoostTarget({ id: s.id, title: s.title }); setBoostBudget(5); }}
+                    disabled={s.status !== "actif" || !!s.isBoosted}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={s.isBoosted ? "Deja booste" : s.status !== "actif" ? "Service inactif" : "Booster"}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">bolt</span>
+                  </button>
+
+                  <button
                     onClick={() => handleToggle(s)}
                     disabled={actionLoading === s.id}
                     className={cn(
@@ -401,6 +440,104 @@ export default function AgenceServicesPage() {
           serviceTitle={seoService.title}
           onClose={() => setSeoService(null)}
         />
+      )}
+
+      {/* Boost Modal */}
+      {boostTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setBoostTarget(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-neutral-dark rounded-2xl p-6 w-full max-w-md border border-border-dark shadow-2xl"
+          >
+            <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-400">bolt</span>
+              Booster un service
+            </h3>
+            <p className="text-sm text-slate-400 mb-5 truncate">
+              {boostTarget.title}
+            </p>
+
+            {/* Budget input */}
+            <label className="block text-sm font-bold mb-2">Budget (min. 5 EUR)</label>
+            <div className="relative mb-4">
+              <input
+                type="number"
+                min={5}
+                step={1}
+                value={boostBudget}
+                onChange={(e) => setBoostBudget(Math.max(5, parseInt(e.target.value) || 5))}
+                className="w-full bg-background-dark text-white border border-border-dark rounded-lg py-3 px-4 pr-12 text-lg font-bold focus:ring-2 focus:ring-primary outline-none"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">
+                EUR
+              </span>
+            </div>
+
+            {/* Quick presets */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {[5, 10, 15, 30, 50].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setBoostBudget(v)}
+                  className={cn(
+                    "px-3 py-1 rounded-lg text-xs font-bold transition-colors",
+                    boostBudget === v
+                      ? "bg-primary text-white"
+                      : "bg-background-dark text-slate-400 border border-border-dark hover:text-white",
+                  )}
+                >
+                  {v} EUR
+                </button>
+              ))}
+            </div>
+
+            {/* Preview */}
+            <div className="bg-background-dark rounded-xl p-4 border border-border-dark mb-5 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Duree estimee</span>
+                <span className="text-white font-bold">{Math.floor(boostBudget / 1)} jour{Math.floor(boostBudget / 1) > 1 ? "s" : ""}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Vues estimees</span>
+                <span className="text-white font-bold">~{(boostBudget * 50).toLocaleString("fr-FR")}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Cout total</span>
+                <span className="text-primary font-bold">{boostBudget} EUR</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBoostTarget(null)}
+                className="flex-1 py-2.5 border border-border-dark rounded-lg text-sm font-semibold text-slate-300 hover:bg-background-dark/50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleBoostSubmit}
+                disabled={boostLoading || boostBudget < 5}
+                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {boostLoading ? (
+                  <>
+                    <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Activation...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                    Booster
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

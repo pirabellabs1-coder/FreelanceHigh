@@ -55,7 +55,14 @@ export default function AdminBoostsPage() {
     return boosts;
   }, [boosts, filter]);
 
-  const safeStats = stats || { totalBoosts: 0, activeBoosts: 0, totalRevenue: 0, totalViews: 0, totalClicks: 0, totalOrders: 0 };
+  const safeStats: BoostStats = {
+    totalBoosts: stats?.totalBoosts ?? (stats as any)?.total ?? 0,
+    activeBoosts: stats?.activeBoosts ?? (stats as any)?.active ?? 0,
+    totalRevenue: stats?.totalRevenue ?? 0,
+    totalViews: stats?.totalViews ?? 0,
+    totalClicks: stats?.totalClicks ?? 0,
+    totalOrders: stats?.totalOrders ?? 0,
+  };
 
   if (loading) {
     return (
@@ -83,12 +90,12 @@ export default function AdminBoostsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: "Total Boosts", value: safeStats.totalBoosts, icon: "rocket_launch", color: "text-primary" },
-          { label: "Actifs", value: safeStats.activeBoosts, icon: "play_circle", color: "text-emerald-400" },
-          { label: "Revenus", value: format(safeStats.totalRevenue), icon: "payments", color: "text-amber-400" },
-          { label: "Vues generees", value: safeStats.totalViews.toLocaleString(), icon: "visibility", color: "text-blue-400" },
-          { label: "Clics generes", value: safeStats.totalClicks.toLocaleString(), icon: "ads_click", color: "text-purple-400" },
-          { label: "Commandes", value: safeStats.totalOrders, icon: "shopping_cart", color: "text-pink-400" },
+          { label: "Total Boosts", value: (safeStats.totalBoosts ?? 0).toLocaleString(), icon: "rocket_launch", color: "text-primary" },
+          { label: "Actifs", value: (safeStats.activeBoosts ?? 0).toLocaleString(), icon: "play_circle", color: "text-emerald-400" },
+          { label: "Revenus", value: format(safeStats.totalRevenue ?? 0), icon: "payments", color: "text-amber-400" },
+          { label: "Vues generees", value: (safeStats.totalViews ?? 0).toLocaleString(), icon: "visibility", color: "text-blue-400" },
+          { label: "Clics generes", value: (safeStats.totalClicks ?? 0).toLocaleString(), icon: "ads_click", color: "text-purple-400" },
+          { label: "Commandes", value: (safeStats.totalOrders ?? 0).toLocaleString(), icon: "shopping_cart", color: "text-pink-400" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -148,23 +155,23 @@ export default function AdminBoostsPage() {
             <tbody className="divide-y divide-white/5">
               {filtered.map((b) => (
                 <tr key={b.id} className="hover:bg-white/5 transition-colors">
-                  <td className="py-3 font-semibold max-w-[200px] truncate">{b.serviceTitle}</td>
-                  <td className="py-3 text-slate-400">{b.freelanceName}</td>
+                  <td className="py-3 font-semibold max-w-[200px] truncate">{b.serviceTitle || (b as any).serviceName || "—"}</td>
+                  <td className="py-3 text-slate-400">{b.freelanceName || (b as any).userName || "Inconnu"}</td>
                   <td className="py-3">
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
-                      b.tier === "ultime" ? "text-amber-400 bg-amber-500/10" :
-                      b.tier === "premium" ? "text-purple-400 bg-purple-500/10" :
+                      b.tier === "ultime" || b.tier === "ULTIMATE" ? "text-amber-400 bg-amber-500/10" :
+                      b.tier === "premium" || b.tier === "PREMIUM" ? "text-purple-400 bg-purple-500/10" :
                       "text-blue-400 bg-blue-500/10"
                     )}>
                       {b.tier}
                     </span>
                   </td>
-                  <td className="py-3 font-semibold">{format(b.totalCost)}</td>
+                  <td className="py-3 font-semibold">{format(b.totalCost ?? 0)}</td>
                   <td className="py-3 text-slate-400">{b.startedAt ? new Date(b.startedAt).toLocaleDateString("fr-FR") : "—"}</td>
                   <td className="py-3 text-slate-400">{b.endedAt ? new Date(b.endedAt).toLocaleDateString("fr-FR") : "—"}</td>
-                  <td className="py-3">{b.viewsGenerated.toLocaleString()}</td>
-                  <td className="py-3">{b.clicksGenerated.toLocaleString()}</td>
-                  <td className="py-3">{b.ordersGenerated}</td>
+                  <td className="py-3">{(b.viewsGenerated ?? 0).toLocaleString()}</td>
+                  <td className="py-3">{(b.clicksGenerated ?? 0).toLocaleString()}</td>
+                  <td className="py-3">{(b.ordersGenerated ?? 0).toLocaleString()}</td>
                   <td className="py-3">
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
                       b.isActive ? "text-emerald-400 bg-emerald-500/10" : "text-slate-400 bg-slate-500/10"
