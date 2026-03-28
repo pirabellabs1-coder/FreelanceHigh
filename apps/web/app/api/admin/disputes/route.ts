@@ -237,16 +237,26 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // 2. Update order status + escrow
+        // 2. Update order status + escrow + adjust freelancerPayout based on verdict
         const orderStatus = verdict === "client" ? "ANNULE" : "TERMINE";
         const escrowStatus = verdict === "client" ? "REFUNDED" : "RELEASED";
+        const orderUpdateData: Record<string, unknown> = {
+          status: orderStatus as "ANNULE" | "TERMINE",
+          escrowStatus,
+          completedAt: orderStatus === "TERMINE" ? new Date() : null,
+        };
+        // Adjust freelancerPayout so wallet fallback aggregation shows correct amounts
+        if (verdict === "client") {
+          orderUpdateData.freelancerPayout = 0; // Full refund — freelance gets nothing
+        } else if (verdict === "partiel") {
+          const refundAmt = Math.round(orderAmount * (pct / 100) * 100) / 100;
+          const freelanceAmt = Math.round((orderAmount - refundAmt - orderCommission * ((100 - pct) / 100)) * 100) / 100;
+          orderUpdateData.freelancerPayout = Math.max(0, freelanceAmt);
+        }
+        // verdict === "freelance" → keep original freelancerPayout (full payout)
         await tx.order.update({
           where: { id: dispute.orderId },
-          data: {
-            status: orderStatus as "ANNULE" | "TERMINE",
-            escrowStatus,
-            completedAt: orderStatus === "TERMINE" ? new Date() : null,
-          },
+          data: orderUpdateData,
         });
 
         // 3. Release/refund escrow record
