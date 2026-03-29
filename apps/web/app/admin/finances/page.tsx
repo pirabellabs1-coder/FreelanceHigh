@@ -143,7 +143,7 @@ export default function AdminFinances() {
   const platformRevenue = financeSummary?.platformRevenue ?? 0;
   const escrowFunds = financeSummary?.escrowFunds ?? 0;
   const pendingWithdrawals = financeSummary?.pendingWithdrawals ?? 0;
-  const subscriptionRevenue = financeSummary?.byType?.abonnement ?? 0;
+  const subscriptionRevenue = financeSummary?.subscriptionRevenue ?? 0;
   const totalPayments = financeSummary?.totalPayments ?? 0;
   const totalRefunded = financeSummary?.totalRefunded ?? 0;
   const blockedCount = (transactions || []).filter(t => t.status === "bloque").length;

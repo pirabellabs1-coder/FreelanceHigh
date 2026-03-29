@@ -131,30 +131,34 @@ export async function GET() {
       },
     });
 
-    // Summary aggregations
+    // Get or create AdminWallet (source of truth for platform commissions)
+    let adminWallet = await prisma.adminWallet.findFirst();
+    if (!adminWallet) {
+      adminWallet = await prisma.adminWallet.create({ data: {} });
+    }
+
+    // Summary aggregations — using correct data sources
     const [
-      commissionTotal,
-      escrowResult,
+      escrowHeldResult,
       pendingWithdrawalsResult,
-      totalPaymentsResult,
+      totalOrdersResult,
       withdrawnResult,
       refundedResult,
+      subscriptionResult,
       totalCount,
     ] = await Promise.all([
-      prisma.payment.aggregate({
-        where: { type: "commission", status: "COMPLETE" },
-        _sum: { amount: true },
-      }),
-      prisma.order.aggregate({
-        where: { status: { in: ["EN_ATTENTE", "EN_COURS", "REVISION", "LIVRE"] } },
+      // Escrow: use Escrow table (HELD status) — real funds in sequester
+      prisma.escrow.aggregate({
+        where: { status: "HELD" },
         _sum: { amount: true },
       }),
       prisma.payment.aggregate({
         where: { type: "retrait", status: "EN_ATTENTE" },
         _sum: { amount: true },
       }),
-      prisma.payment.aggregate({
-        where: { type: "paiement", status: "COMPLETE" },
+      // Total payments: real order volume (not cancelled/refunded)
+      prisma.order.aggregate({
+        where: { status: { notIn: ["ANNULE"] } },
         _sum: { amount: true },
       }),
       prisma.payment.aggregate({
@@ -163,6 +167,11 @@ export async function GET() {
       }),
       prisma.payment.aggregate({
         where: { type: "remboursement", status: "COMPLETE" },
+        _sum: { amount: true },
+      }),
+      // Subscription revenue: sum of subscription payments
+      prisma.payment.aggregate({
+        where: { type: "abonnement", status: "COMPLETE" },
         _sum: { amount: true },
       }),
       prisma.payment.count(),
@@ -235,13 +244,18 @@ export async function GET() {
         orderId: p.orderId,
       })),
       summary: {
-        platformRevenue: Math.round(Math.abs(commissionTotal._sum.amount ?? 0) * 100) / 100,
-        escrowFunds: Math.round((escrowResult._sum.amount ?? 0) * 100) / 100,
+        // platformRevenue = AdminWallet released commissions (source of truth)
+        platformRevenue: Math.round((adminWallet.totalFeesReleased ?? 0) * 100) / 100,
+        // escrowFunds = Escrow table HELD amount (real funds in sequester)
+        escrowFunds: Math.round((escrowHeldResult._sum.amount ?? 0) * 100) / 100,
         pendingWithdrawals: Math.round(Math.abs(pendingWithdrawalsResult._sum.amount ?? 0) * 100) / 100,
-        totalPayments: Math.round((totalPaymentsResult._sum.amount ?? 0) * 100) / 100,
+        // totalPayments = real order volume
+        totalPayments: Math.round((totalOrdersResult._sum.amount ?? 0) * 100) / 100,
         totalWithdrawn: Math.round(Math.abs(withdrawnResult._sum.amount ?? 0) * 100) / 100,
         totalRefunded: Math.round((refundedResult._sum.amount ?? 0) * 100) / 100,
         totalTransactions: totalCount,
+        // subscriptionRevenue = sum of abonnement payments
+        subscriptionRevenue: Math.round((subscriptionResult._sum.amount ?? 0) * 100) / 100,
       },
       byType: {
         vente: typeVente,

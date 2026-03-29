@@ -89,6 +89,7 @@ export interface AdminFinanceSummary {
   totalPayments: number;
   totalWithdrawn: number;
   totalRefunded: number;
+  subscriptionRevenue?: number;
   byType: Record<string, number>;
   byStatus: Record<string, number>;
   monthlyBreakdown: { month: string; revenue: number; commission: number; orders: number }[];

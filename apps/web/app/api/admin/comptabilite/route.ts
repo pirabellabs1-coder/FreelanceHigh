@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { requireAdminPermission } from "@/lib/admin-permissions";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
-import { orderStore, boostStore, transactionStore } from "@/lib/dev/data-store";
+import { orderStore, boostStore } from "@/lib/dev/data-store";
 import { prisma } from "@/lib/prisma";
 
 function getPeriodDates(period: string, startDate?: string, endDate?: string): { start: Date; end: Date } {
@@ -158,29 +158,35 @@ async function buildPrismaResponse(start: Date, end: Date, period: string) {
   const dateFilter = { gte: start, lte: end };
 
   const [ordersAgg, refundsAgg, boostsAgg, orders, boosts] = await Promise.all([
-    (prisma as any).order.aggregate({
-      where: { createdAt: dateFilter, status: { not: "REFUNDED" } },
+    prisma.order.aggregate({
+      where: { createdAt: dateFilter, status: { notIn: ["ANNULE"] } },
       _sum: { amount: true, platformFee: true },
       _count: true,
     }),
-    (prisma as any).order.aggregate({
-      where: { createdAt: dateFilter, status: "REFUNDED" },
+    prisma.order.aggregate({
+      where: { createdAt: dateFilter, escrowStatus: "REFUNDED" },
       _sum: { amount: true },
     }),
-    (prisma as any).boost.aggregate({
+    prisma.boost.aggregate({
       where: { startedAt: dateFilter },
-      _sum: { price: true },
+      _sum: { totalCost: true },
       _count: true,
     }),
-    (prisma as any).order.findMany({
+    prisma.order.findMany({
       where: { createdAt: dateFilter },
-      select: { id: true, createdAt: true, amount: true, platformFee: true, status: true, clientId: true },
+      select: {
+        id: true, createdAt: true, amount: true, platformFee: true, status: true, escrowStatus: true,
+        client: { select: { name: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
-    (prisma as any).boost.findMany({
+    prisma.boost.findMany({
       where: { startedAt: dateFilter },
-      select: { id: true, startedAt: true, price: true, userId: true, type: true },
+      select: {
+        id: true, startedAt: true, totalCost: true, type: true,
+        user: { select: { name: true } },
+      },
       orderBy: { startedAt: "desc" },
       take: 200,
     }),
@@ -188,28 +194,28 @@ async function buildPrismaResponse(start: Date, end: Date, period: string) {
 
   const revenueServices = Math.round((ordersAgg._sum.amount ?? 0) * 100) / 100;
   const totalCommissions = Math.round((ordersAgg._sum.platformFee ?? 0) * 100) / 100;
-  const revenueBoosts = Math.round((boostsAgg._sum.price ?? 0) * 100) / 100;
+  const revenueBoosts = Math.round((boostsAgg._sum.totalCost ?? 0) * 100) / 100;
   const totalRefunds = Math.round((refundsAgg._sum.amount ?? 0) * 100) / 100;
 
   const operations: AccountingOperation[] = [
-    ...orders.map((o: any) => ({
+    ...orders.map((o) => ({
       id: o.id,
       date: o.createdAt.toISOString(),
-      type: o.status === "REFUNDED" ? "remboursement" as const : "achat" as const,
+      type: o.escrowStatus === "REFUNDED" ? "remboursement" as const : "achat" as const,
       reference: `FH-${o.id.slice(-8).toUpperCase()}`,
-      payer: o.clientId || "Client",
+      payer: o.client?.name || "Client",
       amount: o.amount || 0,
       commission: o.platformFee || 0,
-      status: o.status === "TERMINE" ? "paye" : o.status === "REFUNDED" ? "rembourse" : "en_attente",
+      status: o.status === "TERMINE" ? "paye" : o.escrowStatus === "REFUNDED" ? "rembourse" : "en_attente",
     })),
-    ...boosts.map((b: any) => ({
+    ...boosts.map((b) => ({
       id: b.id,
-      date: b.startedAt.toISOString(),
+      date: b.startedAt ? b.startedAt.toISOString() : new Date().toISOString(),
       type: "boost" as const,
       reference: `BST-${b.id.slice(-6).toUpperCase()}`,
-      payer: b.userId || "Freelance",
-      amount: b.price || 0,
-      commission: b.price || 0,
+      payer: b.user?.name || "Freelance",
+      amount: b.totalCost || 0,
+      commission: b.totalCost || 0,
       status: "paye",
     })),
   ].sort((a, b) => b.date.localeCompare(a.date));
