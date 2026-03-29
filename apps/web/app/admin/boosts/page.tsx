@@ -155,8 +155,8 @@ export default function AdminBoostsPage() {
             <tbody className="divide-y divide-white/5">
               {filtered.map((b) => (
                 <tr key={b.id} className="hover:bg-white/5 transition-colors">
-                  <td className="py-3 font-semibold max-w-[200px] truncate">{b.serviceTitle || (b as any).serviceName || "—"}</td>
-                  <td className="py-3 text-slate-400">{b.freelanceName || (b as any).userName || "Inconnu"}</td>
+                  <td className="py-3 font-semibold max-w-[200px] truncate">{b.serviceTitle || "—"}</td>
+                  <td className="py-3 text-slate-400">{b.freelanceName || "Inconnu"}</td>
                   <td className="py-3">
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
                       b.tier === "ultime" || b.tier === "ULTIMATE" ? "text-amber-400 bg-amber-500/10" :

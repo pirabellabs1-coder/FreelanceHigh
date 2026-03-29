@@ -16,40 +16,85 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ invoices: [] });
     }
 
-    // Prisma: map completed orders to invoice shape
-    // Falls back to empty array if the invoice table is not yet available
+    // Prisma: build invoices from Orders + Boosts + Subscription Payments
     try {
       const { prisma } = await import("@/lib/prisma");
 
+      // 1. Completed orders
       const orders = await prisma.order.findMany({
         where: {
           OR: [{ clientId: userId }, { freelanceId: userId }],
           status: { in: ["TERMINE", "LIVRE"] },
         },
         include: {
-          service: true,
-          client: true,
-          freelance: true,
+          service: { select: { title: true } },
+          client: { select: { name: true } },
+          freelance: { select: { name: true } },
         },
         orderBy: { createdAt: "desc" },
+        take: 100,
       });
 
-      const invoices = orders.map((o) => ({
-        id: `INV-${o.id.slice(0, 8).toUpperCase()}`,
-        orderId: o.id,
-        label: o.service?.title || o.title || "Commande",
-        amount: o.amount,
-        currency: o.currency || "EUR",
-        status: o.status.toLowerCase(),
-        issuedAt: o.completedAt?.toISOString() || o.updatedAt.toISOString(),
-        clientName: o.client?.name || "",
-        freelanceName: o.freelance?.name || "",
-      }));
+      // 2. Paid boosts (for freelances/agencies)
+      const boosts = await prisma.boost.findMany({
+        where: { userId, paidAt: { not: null } },
+        include: { service: { select: { title: true } } },
+        orderBy: { paidAt: "desc" },
+        take: 50,
+      });
+
+      // 3. Subscription payments
+      const subscriptions = await prisma.payment.findMany({
+        where: { payerId: userId, type: "abonnement", status: "COMPLETE" },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      const invoices = [
+        ...orders.map((o) => ({
+          id: `INV-${o.id.slice(0, 8).toUpperCase()}`,
+          orderId: o.id,
+          type: "commande" as const,
+          label: o.service?.title || o.title || "Commande",
+          amount: o.amount,
+          commission: o.platformFee || 0,
+          currency: o.currency || "EUR",
+          status: "paye",
+          issuedAt: o.completedAt?.toISOString() || o.updatedAt.toISOString(),
+          clientName: o.client?.name || "",
+          freelanceName: o.freelance?.name || "",
+        })),
+        ...boosts.map((b) => ({
+          id: `BST-${b.id.slice(0, 8).toUpperCase()}`,
+          orderId: null,
+          type: "boost" as const,
+          label: `Boost ${b.type} - ${b.service?.title || "Service"}`,
+          amount: b.totalCost,
+          commission: b.totalCost,
+          currency: "EUR",
+          status: "paye",
+          issuedAt: b.paidAt?.toISOString() || b.createdAt.toISOString(),
+          clientName: "",
+          freelanceName: "",
+        })),
+        ...subscriptions.map((p) => ({
+          id: `ABO-${p.id.slice(0, 8).toUpperCase()}`,
+          orderId: null,
+          type: "abonnement" as const,
+          label: p.description || "Abonnement FreelanceHigh",
+          amount: p.amount,
+          commission: 0,
+          currency: p.currency || "EUR",
+          status: "paye",
+          issuedAt: p.createdAt.toISOString(),
+          clientName: "",
+          freelanceName: "",
+        })),
+      ].sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime());
 
       return NextResponse.json({ invoices });
     } catch (prismaError) {
-      // Graceful fallback if schema is not yet fully migrated
-      console.warn("[API /billing/invoices GET] Prisma query failed, returning empty list:", prismaError);
+      console.warn("[API /billing/invoices GET] Prisma query failed:", prismaError);
       return NextResponse.json({ invoices: [] });
     }
   } catch (error) {

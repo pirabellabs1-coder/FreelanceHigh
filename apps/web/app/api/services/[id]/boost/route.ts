@@ -156,8 +156,35 @@ export async function POST(
     const now = new Date();
     const endDate = new Date(now.getTime() + tierConfig.duration * 24 * 60 * 60 * 1000);
 
-    // Create boost + escrow + admin transaction in a transaction
+    // Validate wallet balance before boost payment
+    let wallet = await prisma.walletFreelance.findUnique({ where: { userId: session.user.id } });
+    if (!wallet) {
+      wallet = await prisma.walletFreelance.create({ data: { userId: session.user.id } });
+    }
+    if (wallet.balance < tierConfig.price) {
+      return NextResponse.json(
+        { error: "Solde insuffisant. Votre solde est de " + wallet.balance.toFixed(2) + " EUR, le boost coute " + tierConfig.price.toFixed(2) + " EUR.", code: "INSUFFICIENT_BALANCE" },
+        { status: 400 }
+      );
+    }
+
+    // Create boost + escrow + admin transaction + wallet debit in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Debit wallet
+      await tx.walletFreelance.update({
+        where: { userId: session.user.id },
+        data: { balance: { decrement: tierConfig.price } },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          freelanceWalletId: wallet!.id,
+          type: "COMMISSION_INTERNAL",
+          amount: -tierConfig.price,
+          description: `Boost ${tierConfig.name} - ${service.title} (${tierConfig.duration}j)`,
+          status: "WALLET_COMPLETED",
+        },
+      });
+
       const boost = await tx.boost.create({
         data: {
           serviceId: id,
@@ -235,6 +262,29 @@ export async function POST(
 
       return boost;
     });
+
+    // Send invoice email (non-blocking)
+    try {
+      const { sendInvoiceEmail } = await import("@/lib/email/invoice-email");
+      const userEmail = session.user.email || service.user?.email;
+      if (userEmail) {
+        sendInvoiceEmail({
+          to: userEmail,
+          userName: session.user.name || "Freelance",
+          invoice: {
+            id: `BST-${result.id.slice(0, 8).toUpperCase()}`,
+            date: now.toISOString(),
+            amount: tierConfig.price,
+            description: `Boost ${tierConfig.name} - ${service.title} (${tierConfig.duration}j)`,
+            status: "payee",
+            customerName: session.user.name || "",
+            customerEmail: userEmail,
+          },
+        }).catch((e: unknown) => console.error("[Boost] Invoice email error:", e));
+      }
+    } catch {
+      // Invoice email is best-effort
+    }
 
     return NextResponse.json({
       boost: result,

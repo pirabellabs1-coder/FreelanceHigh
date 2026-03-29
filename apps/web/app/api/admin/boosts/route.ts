@@ -80,14 +80,18 @@ export async function GET() {
       });
 
       const enrichedBoosts = allBoosts.map((b) => {
-        const isActive = b.endedAt ? b.endedAt > now : false;
+        // Active if status is ACTIVE or PENDING_PAYMENT, OR endedAt is in the future
+        const isActive = b.status === "ACTIVE" || (b.endedAt ? b.endedAt > now : false);
         return {
-          ...b,
+          id: b.id,
+          serviceId: b.serviceId,
           serviceTitle: b.service?.title ?? "Service supprime",
-          serviceName: b.service?.title ?? "Service supprime",
           freelanceName: b.user?.name ?? b.user?.email ?? "Utilisateur inconnu",
           tier: b.type ?? "FEATURED",
+          status: b.status,
           totalCost: b.totalCost ?? 0,
+          startedAt: b.startedAt?.toISOString() ?? null,
+          endedAt: b.endedAt?.toISOString() ?? null,
           viewsGenerated: b.actualImpressions ?? 0,
           clicksGenerated: b.actualClicks ?? 0,
           ordersGenerated: b.actualOrders ?? 0,

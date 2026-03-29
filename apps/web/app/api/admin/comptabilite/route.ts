@@ -157,21 +157,34 @@ function buildDevResponse(start: Date, end: Date, period: string) {
 async function buildPrismaResponse(start: Date, end: Date, period: string) {
   const dateFilter = { gte: start, lte: end };
 
-  const [ordersAgg, refundsAgg, boostsAgg, orders, boosts] = await Promise.all([
+  const [ordersAgg, commissionsAgg, refundsAgg, boostsAgg, abonnementsAgg, orders, boosts, abonnements] = await Promise.all([
+    // Total order revenue (all non-cancelled)
     prisma.order.aggregate({
       where: { createdAt: dateFilter, status: { notIn: ["ANNULE"] } },
-      _sum: { amount: true, platformFee: true },
+      _sum: { amount: true },
       _count: true,
+    }),
+    // Commissions from completed orders (TERMINE + LIVRE)
+    prisma.order.aggregate({
+      where: { createdAt: dateFilter, status: { in: ["TERMINE", "LIVRE"] } },
+      _sum: { platformFee: true },
     }),
     prisma.order.aggregate({
       where: { createdAt: dateFilter, escrowStatus: "REFUNDED" },
       _sum: { amount: true },
     }),
+    // Boost revenue (paid boosts only)
     prisma.boost.aggregate({
-      where: { startedAt: dateFilter },
+      where: { paidAt: dateFilter },
       _sum: { totalCost: true },
       _count: true,
     }),
+    // Subscription revenue
+    prisma.payment.aggregate({
+      where: { type: "abonnement", status: "COMPLETE", createdAt: dateFilter },
+      _sum: { amount: true },
+    }),
+    // Individual orders for operations table
     prisma.order.findMany({
       where: { createdAt: dateFilter },
       select: {
@@ -181,20 +194,32 @@ async function buildPrismaResponse(start: Date, end: Date, period: string) {
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
+    // Individual boosts for operations table
     prisma.boost.findMany({
-      where: { startedAt: dateFilter },
+      where: { paidAt: dateFilter },
       select: {
-        id: true, startedAt: true, totalCost: true, type: true,
+        id: true, paidAt: true, startedAt: true, totalCost: true, type: true,
         user: { select: { name: true } },
       },
-      orderBy: { startedAt: "desc" },
+      orderBy: { paidAt: "desc" },
       take: 200,
+    }),
+    // Individual subscription payments for operations table
+    prisma.payment.findMany({
+      where: { type: "abonnement", status: "COMPLETE", createdAt: dateFilter },
+      select: {
+        id: true, createdAt: true, amount: true, description: true,
+        payer: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
     }),
   ]);
 
   const revenueServices = Math.round((ordersAgg._sum.amount ?? 0) * 100) / 100;
-  const totalCommissions = Math.round((ordersAgg._sum.platformFee ?? 0) * 100) / 100;
+  const totalCommissions = Math.round((commissionsAgg._sum.platformFee ?? 0) * 100) / 100;
   const revenueBoosts = Math.round((boostsAgg._sum.totalCost ?? 0) * 100) / 100;
+  const revenueAbonnements = Math.round((abonnementsAgg._sum.amount ?? 0) * 100) / 100;
   const totalRefunds = Math.round((refundsAgg._sum.amount ?? 0) * 100) / 100;
 
   const operations: AccountingOperation[] = [
@@ -206,16 +231,26 @@ async function buildPrismaResponse(start: Date, end: Date, period: string) {
       payer: o.client?.name || "Client",
       amount: o.amount || 0,
       commission: o.platformFee || 0,
-      status: o.status === "TERMINE" ? "paye" : o.escrowStatus === "REFUNDED" ? "rembourse" : "en_attente",
+      status: o.status === "TERMINE" || o.status === "LIVRE" ? "paye" : o.escrowStatus === "REFUNDED" ? "rembourse" : "en_attente",
     })),
     ...boosts.map((b) => ({
       id: b.id,
-      date: b.startedAt ? b.startedAt.toISOString() : new Date().toISOString(),
+      date: b.paidAt ? b.paidAt.toISOString() : b.startedAt ? b.startedAt.toISOString() : new Date().toISOString(),
       type: "boost" as const,
       reference: `BST-${b.id.slice(-6).toUpperCase()}`,
       payer: b.user?.name || "Freelance",
       amount: b.totalCost || 0,
       commission: b.totalCost || 0,
+      status: "paye",
+    })),
+    ...abonnements.map((p) => ({
+      id: p.id,
+      date: p.createdAt.toISOString(),
+      type: "abonnement" as const,
+      reference: `ABO-${p.id.slice(-6).toUpperCase()}`,
+      payer: p.payer?.name || "Utilisateur",
+      amount: p.amount || 0,
+      commission: p.amount || 0,
       status: "paye",
     })),
   ].sort((a, b) => b.date.localeCompare(a.date));
@@ -225,9 +260,9 @@ async function buildPrismaResponse(start: Date, end: Date, period: string) {
       revenueServices,
       totalCommissions,
       revenueBoosts,
-      revenueAbonnements: 0,
+      revenueAbonnements,
       totalRefunds,
-      netResult: totalCommissions + revenueBoosts - totalRefunds,
+      netResult: totalCommissions + revenueBoosts + revenueAbonnements - totalRefunds,
       operationsCount: operations.length,
     },
     operations,

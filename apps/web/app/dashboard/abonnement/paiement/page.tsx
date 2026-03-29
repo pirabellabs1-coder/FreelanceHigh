@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -60,13 +60,16 @@ interface PaymentMethod {
   disabledReason?: string;
 }
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "balance", label: "Solde plateforme", sublabel: "Solde : 0,00 EUR", icon: "account_balance_wallet", disabled: true, disabledReason: "Solde insuffisant" },
-  { id: "card", label: "Carte bancaire", sublabel: "Visa / Mastercard", icon: "credit_card" },
-  { id: "mobile_money", label: "Mobile Money", sublabel: "Orange Money, Wave, MTN MoMo", icon: "smartphone" },
-  { id: "paypal", label: "PayPal", sublabel: "Paiement securise", icon: "account_balance" },
-  { id: "bank_transfer", label: "Virement bancaire", sublabel: "SEPA / Virement international", icon: "account_balance" },
-];
+function buildPaymentMethods(walletBalance: number): PaymentMethod[] {
+  const balanceLabel = walletBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return [
+    { id: "balance", label: "Solde plateforme", sublabel: `Solde : ${balanceLabel} EUR`, icon: "account_balance_wallet", disabled: walletBalance <= 0, disabledReason: walletBalance <= 0 ? "Solde insuffisant" : undefined },
+    { id: "card", label: "Carte bancaire", sublabel: "Visa / Mastercard", icon: "credit_card" },
+    { id: "mobile_money", label: "Mobile Money", sublabel: "Bientot disponible", icon: "smartphone", disabled: true, disabledReason: "Bientot disponible" },
+    { id: "paypal", label: "PayPal", sublabel: "Bientot disponible", icon: "account_balance", disabled: true, disabledReason: "Bientot disponible" },
+    { id: "bank_transfer", label: "Virement bancaire", sublabel: "Bientot disponible", icon: "account_balance", disabled: true, disabledReason: "Bientot disponible" },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Inner component that uses useSearchParams
@@ -87,6 +90,17 @@ function PaiementContent() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  // Fetch real wallet balance
+  useEffect(() => {
+    fetch("/api/wallet/balance")
+      .then((r) => r.json())
+      .then((data) => { if (typeof data.balance === "number") setWalletBalance(data.balance); })
+      .catch(() => {});
+  }, []);
+
+  const PAYMENT_METHODS = buildPaymentMethods(walletBalance);
 
   const handlePayment = useCallback(async () => {
     if (!selectedMethod || loading) return;

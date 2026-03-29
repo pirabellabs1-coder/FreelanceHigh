@@ -64,9 +64,40 @@ export async function GET() {
     return NextResponse.json({ methods: userMethods });
   }
 
-  // Production: payment methods are stored in Stripe / CinetPay — not in local DB
-  // This endpoint will proxy to Stripe's PaymentMethod list in V1
-  return NextResponse.json({ methods: [] });
+  // Production: return available payment methods with wallet balance
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const role = (session.user as any).role?.toLowerCase();
+
+    let walletBalance = 0;
+    if (role === "agence" || role === "agency") {
+      const agencyProfile = await prisma.agencyProfile.findFirst({
+        where: { OR: [{ userId }, { members: { some: { userId, role: "PROPRIETAIRE" } } }] },
+        select: { id: true },
+      });
+      if (agencyProfile) {
+        const wallet = await prisma.walletAgency.findUnique({ where: { agencyId: agencyProfile.id } });
+        walletBalance = wallet?.balance ?? 0;
+      }
+    } else {
+      const wallet = await prisma.walletFreelance.findUnique({ where: { userId } });
+      walletBalance = wallet?.balance ?? 0;
+    }
+
+    const balanceLabel = walletBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    return NextResponse.json({
+      methods: [
+        { id: "wallet", type: "wallet", label: `Solde FreelanceHigh (${balanceLabel} EUR)`, balance: walletBalance, available: walletBalance > 0, isDefault: false, createdAt: new Date().toISOString() },
+        { id: "card", type: "card", label: "Carte bancaire (Visa / Mastercard)", provider: "stripe", available: true, isDefault: true, createdAt: new Date().toISOString() },
+        { id: "mobile_money", type: "momo", label: "Mobile Money", provider: "cinetpay", available: false, isDefault: false, createdAt: new Date().toISOString() },
+        { id: "paypal", type: "paypal", label: "PayPal", available: false, isDefault: false, createdAt: new Date().toISOString() },
+        { id: "bank_transfer", type: "bank", label: "Virement bancaire (SEPA)", available: false, isDefault: false, createdAt: new Date().toISOString() },
+      ],
+    });
+  } catch {
+    return NextResponse.json({ methods: [] });
+  }
 }
 
 export async function POST(req: NextRequest) {
