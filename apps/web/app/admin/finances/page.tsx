@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useToastStore } from "@/store/toast";
 import { useAdminStore } from "@/store/admin";
+import { AdminPermissionGuard } from "@/components/admin/AdminPermissionGuard";
 import { cn } from "@/lib/utils";
 
 const TYPE_MAP: Record<string, { label: string; cls: string; icon: string }> = {
@@ -148,6 +149,7 @@ export default function AdminFinances() {
   const blockedCount = (transactions || []).filter(t => t.status === "bloque").length;
 
   return (
+    <AdminPermissionGuard permission="finances.view">
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -490,5 +492,6 @@ export default function AdminFinances() {
         )}
       </div>
     </div>
+    </AdminPermissionGuard>
   );
 }

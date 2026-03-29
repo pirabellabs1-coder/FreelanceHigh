@@ -3,11 +3,17 @@
 import { useEffect, useState } from "react";
 import { useAdminStore } from "@/store/admin";
 import { useToastStore } from "@/store/toast";
-import { ADMIN_ROLE_LABELS, ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
+import { ADMIN_ROLE_LABELS, ALL_ADMIN_ROLES, hasPermission, type AdminRole } from "@/lib/admin-permissions";
+import { useAdminPermission } from "@/lib/use-admin-permission";
+import Link from "next/link";
 
 export default function AdminTeamPage() {
   const { teamMembers, loading, syncTeam, inviteMember, updateMemberRole, removeMember } = useAdminStore();
   const { addToast } = useToastStore();
+  const { role: myAdminRole, isLoading: permLoading } = useAdminPermission();
+  const canManageTeam = myAdminRole ? hasPermission(myAdminRole, "team.manage") : false;
+  const canViewTeam = myAdminRole ? hasPermission(myAdminRole, "team.view") : false;
+  const isSuperAdmin = myAdminRole === "super_admin";
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", name: "", adminRole: "moderateur" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -63,8 +69,37 @@ export default function AdminTeamPage() {
     return colors[role] || "bg-slate-500/10 text-slate-400 border-slate-500/30";
   };
 
+  // Access denied for roles without team.view
+  if (!permLoading && !canViewTeam) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-5">
+          <span className="material-symbols-outlined text-3xl text-red-400">lock</span>
+        </div>
+        <h2 className="text-xl font-bold text-white mb-2">Acces non autorise</h2>
+        <p className="text-sm text-slate-400 max-w-md mb-6">
+          Votre role <span className="font-bold text-white">{ADMIN_ROLE_LABELS[myAdminRole!] || myAdminRole}</span> ne permet pas d&apos;acceder a la gestion de l&apos;equipe.
+          Contactez un super administrateur si vous pensez que c&apos;est une erreur.
+        </p>
+        <Link href="/admin" className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors">
+          Retour au dashboard
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Read-only banner for users with team.view but not team.manage */}
+      {canViewTeam && !canManageTeam && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400">info</span>
+          <p className="text-sm text-amber-300">
+            <span className="font-bold">Lecture seule</span> — votre role {ADMIN_ROLE_LABELS[myAdminRole!] || myAdminRole} ne permet pas de gerer l&apos;equipe.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -73,13 +108,15 @@ export default function AdminTeamPage() {
             Gérez les membres et les rôles de l&apos;équipe admin
           </p>
         </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
-        >
-          <span className="material-symbols-outlined text-lg">person_add</span>
-          Inviter un membre
-        </button>
+        {canManageTeam && (
+          <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
+            Inviter un membre
+          </button>
+        )}
       </div>
 
       {/* Role legend */}
@@ -125,7 +162,7 @@ export default function AdminTeamPage() {
                   onChange={(e) => setInviteForm({ ...inviteForm, adminRole: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg bg-background-dark border border-border-dark text-white text-sm focus:outline-none focus:border-primary"
                 >
-                  {ALL_ADMIN_ROLES.filter((r) => r !== "super_admin").map((role) => (
+                  {ALL_ADMIN_ROLES.filter((r) => isSuperAdmin ? true : r !== "super_admin").map((role) => (
                     <option key={role} value={role}>
                       {ADMIN_ROLE_LABELS[role as AdminRole]}
                     </option>
@@ -192,7 +229,7 @@ export default function AdminTeamPage() {
                           onChange={(e) => setEditRole(e.target.value)}
                           className="px-2 py-1 rounded-lg bg-background-dark border border-border-dark text-white text-xs focus:outline-none focus:border-primary"
                         >
-                          {ALL_ADMIN_ROLES.map((role) => (
+                          {ALL_ADMIN_ROLES.filter((r) => isSuperAdmin ? true : r !== "super_admin").map((role) => (
                             <option key={role} value={role}>
                               {ADMIN_ROLE_LABELS[role as AdminRole]}
                             </option>
@@ -235,7 +272,7 @@ export default function AdminTeamPage() {
                       : "Jamais"}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {member.adminRole !== "super_admin" && (
+                    {canManageTeam && member.adminRole !== "super_admin" && (
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => { setEditingId(member.id); setEditRole(member.adminRole); }}
@@ -252,6 +289,9 @@ export default function AdminTeamPage() {
                           <span className="material-symbols-outlined text-sm">person_remove</span>
                         </button>
                       </div>
+                    )}
+                    {!canManageTeam && (
+                      <span className="text-xs text-slate-600">—</span>
                     )}
                   </td>
                 </tr>

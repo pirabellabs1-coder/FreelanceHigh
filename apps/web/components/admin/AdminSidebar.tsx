@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { hasPermission, ADMIN_NAV_PERMISSIONS, ADMIN_ROLE_LABELS, type AdminRole, type AdminPermission } from "@/lib/admin-permissions";
 
-// Current admin role — in production this would come from session/JWT
+// Read admin role from session JWT instead of hard-coding
 function useAdminRole(): AdminRole {
-  return "super_admin";
+  const { data: session } = useSession();
+  return (session?.user?.adminRole as AdminRole) || "super_admin";
 }
 
 const NAV_ITEMS = [
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { label: "Commandes", href: "/admin/commandes", icon: "shopping_cart" },
   { label: "Litiges", href: "/admin/litiges", icon: "gavel" },
   { label: "Finances", href: "/admin/finances", icon: "payments" },
+  { label: "Comptabilité", href: "/admin/comptabilite", icon: "account_balance" },
   { label: "Plans", href: "/admin/plans", icon: "workspace_premium" },
   { label: "Formations", href: "/formations/admin/dashboard", icon: "school" },
   { label: "Blog", href: "/admin/blog", icon: "article" },

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useToastStore } from "@/store/toast";
+import { AdminPermissionGuard } from "@/components/admin/AdminPermissionGuard";
 import { useAdminStore, type AdminUser } from "@/store/admin";
 import { cn } from "@/lib/utils";
 
@@ -166,6 +167,7 @@ export default function AdminUsers() {
   }), [users]);
 
   return (
+    <AdminPermissionGuard permission="users.view">
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
@@ -416,5 +418,6 @@ export default function AdminUsers() {
         </div>
       )}
     </div>
+    </AdminPermissionGuard>
   );
 }

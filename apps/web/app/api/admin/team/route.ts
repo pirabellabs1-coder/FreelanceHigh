@@ -5,7 +5,7 @@ import { prisma as _prisma } from "@/lib/prisma";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { devStore } from "@/lib/dev/dev-store";
 import { notificationStore } from "@/lib/dev/data-store";
-import { ALL_ADMIN_ROLES, type AdminRole } from "@/lib/admin-permissions";
+import { ALL_ADMIN_ROLES, requireAdminPermission, type AdminRole } from "@/lib/admin-permissions";
 import { sendAdminTeamInviteEmail } from "@/lib/admin/admin-emails";
 import crypto from "crypto";
 
@@ -19,6 +19,8 @@ export async function GET() {
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
+    const teamViewCheck = requireAdminPermission(session, "team.view");
+    if (!teamViewCheck.allowed) return teamViewCheck.errorResponse;
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
       const allUsers = devStore.getAll();
@@ -84,9 +86,16 @@ export async function POST(request: NextRequest) {
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
+    const teamManageCheck = requireAdminPermission(session, "team.manage");
+    if (!teamManageCheck.allowed) return teamManageCheck.errorResponse;
 
     const body = await request.json();
     const { email, name, adminRole } = body;
+
+    // Only super_admin can assign super_admin role
+    if (adminRole === "super_admin" && teamManageCheck.role !== "super_admin") {
+      return NextResponse.json({ error: "Seul un super admin peut assigner le role super admin" }, { status: 403 });
+    }
 
     if (!email || !name || !adminRole) {
       return NextResponse.json({ error: "Email, nom et role sont requis" }, { status: 400 });
@@ -172,9 +181,16 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
+    const patchCheck = requireAdminPermission(session, "team.manage");
+    if (!patchCheck.allowed) return patchCheck.errorResponse;
 
     const body = await request.json();
     const { memberId, adminRole } = body;
+
+    // Only super_admin can assign super_admin role
+    if (adminRole === "super_admin" && patchCheck.role !== "super_admin") {
+      return NextResponse.json({ error: "Seul un super admin peut assigner le role super admin" }, { status: 403 });
+    }
 
     if (!memberId || !adminRole) {
       return NextResponse.json({ error: "memberId et adminRole sont requis" }, { status: 400 });
@@ -213,6 +229,8 @@ export async function DELETE(request: NextRequest) {
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
     }
+    const deleteCheck = requireAdminPermission(session, "team.manage");
+    if (!deleteCheck.allowed) return deleteCheck.errorResponse;
 
     const { searchParams } = new URL(request.url);
     const memberId = searchParams.get("id");

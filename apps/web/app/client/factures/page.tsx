@@ -48,6 +48,7 @@ export default function ClientInvoices() {
     loading,
     invoicePeriod,
     financeSummary,
+    credits,
     setInvoicePeriod,
     syncInvoices,
     syncOrders,
@@ -219,7 +220,7 @@ export default function ClientInvoices() {
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Credits disponibles</p>
-            <p className="text-xl font-black text-white">{(useClientStore.getState().credits || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;</p>
+            <p className="text-xl font-black text-white">{(credits || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} &euro;</p>
           </div>
         </div>
         <button

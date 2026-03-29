@@ -41,7 +41,8 @@ export type AdminPermission =
   | "config.view"
   | "config.edit"
   | "team.view"
-  | "team.manage";
+  | "team.manage"
+  | "comptabilite.view";
 
 const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
   super_admin: [
@@ -61,6 +62,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "audit.view",
     "config.view", "config.edit",
     "team.view", "team.manage",
+    "comptabilite.view",
   ],
   moderateur: [
     "dashboard.view",
@@ -99,6 +101,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
     "plans.view", "plans.edit",
     "analytics.view",
     "audit.view",
+    "comptabilite.view",
   ],
 };
 
@@ -128,6 +131,7 @@ export const ADMIN_NAV_PERMISSIONS: Record<string, AdminPermission> = {
   "/admin/audit-log": "audit.view",
   "/admin/configuration": "config.view",
   "/admin/equipe": "team.view",
+  "/admin/comptabilite": "comptabilite.view",
 };
 
 export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
@@ -147,3 +151,38 @@ export const ALL_ADMIN_ROLES: AdminRole[] = [
   "support",
   "financier",
 ];
+
+// ============================================================
+// Server-side helper for API routes
+// ============================================================
+
+/**
+ * Check if an admin session has a specific permission.
+ * Returns an object with `allowed` and an optional 403 JSON response to send.
+ * Usage in API routes:
+ *   const check = requireAdminPermission(session, "team.manage");
+ *   if (!check.allowed) return check.errorResponse;
+ */
+export function requireAdminPermission(
+  session: { user?: { role?: string; adminRole?: string } } | null,
+  permission: AdminPermission
+): { allowed: boolean; role: AdminRole; errorResponse?: Response } {
+  const role = ((session?.user?.adminRole as string) || "super_admin") as AdminRole;
+  const allowed = hasPermission(role, permission);
+  if (!allowed) {
+    const label = ADMIN_ROLE_LABELS[role] || role;
+    // Return a NextResponse-compatible object
+    const body = JSON.stringify({
+      error: `Vous n'etes pas autorise a effectuer cette action. Votre role ${label} ne dispose pas de la permission "${permission}".`,
+      code: "ADMIN_PERMISSION_DENIED",
+      requiredPermission: permission,
+      currentRole: role,
+    });
+    return {
+      allowed: false,
+      role,
+      errorResponse: new Response(body, { status: 403, headers: { "Content-Type": "application/json" } }),
+    };
+  }
+  return { allowed: true, role };
+}

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import { useMessagingStore } from "@/store/messaging";
 
 interface Offre {
   id: string;
   client: string;
-  clientEmail: string;
+  clientId?: string;
   title: string;
   amount: number;
   delay: string;
@@ -36,7 +37,7 @@ const TABS = [
 
 type NewOffer = {
   client: string;
-  clientEmail: string;
+  clientId: string;
   title: string;
   amount: string;
   delay: string;
@@ -47,7 +48,7 @@ type NewOffer = {
 
 const EMPTY_FORM: NewOffer = {
   client: "",
-  clientEmail: "",
+  clientId: "",
   title: "",
   amount: "",
   delay: "",
@@ -58,6 +59,7 @@ const EMPTY_FORM: NewOffer = {
 
 export default function OffresPage() {
   const addToast = useToastStore((s) => s.addToast);
+  const { conversations, syncFromApi: syncMessages } = useMessagingStore();
   const [activeTab, setActiveTab] = useState("Toutes");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -65,6 +67,28 @@ export default function OffresPage() {
   const [offres, setOffres] = useState<Offre[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Extract unique client contacts from messaging conversations
+  const clientContacts = useMemo(() => {
+    const seen = new Set<string>();
+    const contacts: { id: string; name: string; avatar?: string }[] = [];
+    (conversations || []).forEach((conv) => {
+      (conv.participants || []).forEach((p) => {
+        if ((p.role === "client" || p.role === "CLIENT") && !seen.has(p.id)) {
+          seen.add(p.id);
+          contacts.push({ id: p.id, name: p.name, avatar: p.avatar });
+        }
+      });
+    });
+    return contacts;
+  }, [conversations]);
+
+  // Load messaging contacts on mount
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) {
+      syncMessages();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchOffres = useCallback(async () => {
     setLoading(true);
@@ -98,7 +122,7 @@ export default function OffresPage() {
   }
 
   async function handleSubmit() {
-    if (!form.client || !form.title || !form.amount || !form.delay || !form.description) {
+    if (!form.clientId || !form.client || !form.title || !form.amount || !form.delay || !form.description) {
       addToast("warning", "Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -109,7 +133,7 @@ export default function OffresPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           client: form.client,
-          clientEmail: form.clientEmail,
+          clientId: form.clientId,
           title: form.title,
           amount: Number(form.amount),
           delay: form.delay,
@@ -185,25 +209,27 @@ export default function OffresPage() {
         <div className="bg-background-dark/50 rounded-2xl border border-border-dark p-6">
           <h3 className="text-base font-black text-slate-100 mb-5">Créer une offre personnalisée</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-400 mb-1.5">Client *</label>
-              <input
-                type="text"
-                value={form.client}
-                onChange={(e) => handleChange("client", e.target.value)}
-                placeholder="Nom du client"
-                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1.5">Email du client</label>
-              <input
-                type="email"
-                value={form.clientEmail}
-                onChange={(e) => handleChange("clientEmail", e.target.value)}
-                placeholder="email@client.com"
-                className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-slate-500"
-              />
+              {clientContacts.length > 0 ? (
+                <select
+                  value={form.clientId}
+                  onChange={(e) => {
+                    const contact = clientContacts.find((c) => c.id === e.target.value);
+                    setForm((prev) => ({ ...prev, clientId: e.target.value, client: contact?.name || "" }));
+                  }}
+                  className="w-full bg-background-dark border border-border-dark rounded-xl px-3 py-2.5 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Sélectionner un client...</option>
+                  {clientContacts.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="w-full bg-background-dark border border-amber-500/30 rounded-xl px-3 py-2.5 text-sm text-amber-400">
+                  Aucun contact — démarrez une conversation avec un client d&apos;abord
+                </div>
+              )}
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-400 mb-1.5">Titre de l&apos;offre *</label>

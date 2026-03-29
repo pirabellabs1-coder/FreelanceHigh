@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { transactionStore } from "@/lib/dev/data-store";
+import { transactionStore, orderStore } from "@/lib/dev/data-store";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 
@@ -13,8 +13,32 @@ export async function GET() {
     }
 
     if (IS_DEV && !USE_PRISMA_FOR_DATA) {
-      const summary = transactionStore.getSummary(session.user.id);
+      const userRole = ((session.user as Record<string, unknown>).role as string || "").toLowerCase();
 
+      // Client in dev mode: calculate from orders
+      if (userRole === "client") {
+        const allOrders = orderStore.getAll();
+        const clientOrders = allOrders.filter((o: Record<string, unknown>) => o.clientId === session.user.id);
+        let totalSpent = 0;
+        let pending = 0;
+        for (const o of clientOrders) {
+          const amount = Number((o as Record<string, unknown>).amount) || 0;
+          const status = ((o as Record<string, unknown>).status as string || "").toLowerCase();
+          if (status === "termine" || status === "livre") totalSpent += amount;
+          else if (["en_attente", "en_cours", "revision"].includes(status)) pending += amount;
+        }
+        return NextResponse.json({
+          available: 0,
+          pending: Math.round(pending * 100) / 100,
+          totalEarned: 0,
+          totalSpent: Math.round(totalSpent * 100) / 100,
+          commissionThisMonth: 0,
+          credits: 0,
+        });
+      }
+
+      // Freelance/Agence: existing logic
+      const summary = transactionStore.getSummary(session.user.id);
       return NextResponse.json(summary);
     } else {
       const userId = session.user.id;

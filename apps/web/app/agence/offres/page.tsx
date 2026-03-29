@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useToastStore } from "@/store/toast";
 import { useAgencyStore } from "@/store/agency";
+import { useMessagingStore } from "@/store/messaging";
 import { cn } from "@/lib/utils";
 
 type OfferStatus = "en_attente" | "acceptee" | "refusee" | "expiree";
@@ -90,19 +91,75 @@ export default function AgenceOffres() {
     ];
   }, [offers]);
 
-  const clientNames = useMemo(() => clients.map((c) => c.name), [clients]);
+  // Messaging contacts (clients from conversations)
+  const { conversations, syncFromApi: syncMessages } = useMessagingStore();
+  const messagingContacts = useMemo(() => {
+    const seen = new Set<string>();
+    const contacts: { id: string; name: string }[] = [];
+    (conversations || []).forEach((conv) => {
+      (conv.participants || []).forEach((p) => {
+        if ((p.role === "client" || p.role === "CLIENT") && !seen.has(p.id)) {
+          seen.add(p.id);
+          contacts.push({ id: p.id, name: p.name });
+        }
+      });
+    });
+    return contacts;
+  }, [conversations]);
+
+  // Merge agency clients + messaging contacts (deduplicated)
+  const allClientOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const opts: { id: string; name: string }[] = [];
+    messagingContacts.forEach((c) => { seen.add(c.name.toLowerCase()); opts.push(c); });
+    clients.forEach((c) => { if (!seen.has(c.name.toLowerCase())) { opts.push({ id: c.id || c.name, name: c.name }); } });
+    return opts;
+  }, [messagingContacts, clients]);
+
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) syncMessages();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [formClientId, setFormClientId] = useState("");
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   function resetForm() {
-    setFormClient(""); setFormTitle(""); setFormDescription(""); setFormAmount(""); setFormDeadline("");
+    setFormClient(""); setFormClientId(""); setFormTitle(""); setFormDescription(""); setFormAmount(""); setFormDeadline("");
   }
 
-  function submitCreate() {
+  async function submitCreate() {
     if (!formClient.trim()) { addToast("error", "Sélectionnez un client."); return; }
     if (!formTitle.trim()) { addToast("error", "Saisissez un titre."); return; }
     if (!formAmount.trim()) { addToast("error", "Saisissez un montant."); return; }
-    addToast("success", `Offre "${formTitle}" envoyée à ${formClient} !`);
-    resetForm();
-    setShowCreate(false);
+    setSubmitLoading(true);
+    try {
+      const res = await fetch("/api/offres", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client: formClient,
+          clientId: formClientId,
+          title: formTitle,
+          description: formDescription,
+          amount: Number(formAmount),
+          delay: formDeadline,
+          revisions: 1,
+          validityDays: 14,
+        }),
+      });
+      if (res.ok) {
+        addToast("success", `Offre "${formTitle}" envoyée à ${formClient} !`);
+        resetForm();
+        setShowCreate(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        addToast("error", err.error || "Erreur lors de l'envoi de l'offre");
+      }
+    } catch {
+      addToast("error", "Erreur réseau");
+    } finally {
+      setSubmitLoading(false);
+    }
   }
 
   return (
@@ -240,15 +297,20 @@ export default function AgenceOffres() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-slate-400 font-semibold mb-1.5 block">Client</label>
-                {clientNames.length > 0 ? (
-                  <select value={formClient} onChange={(e) => setFormClient(e.target.value)}
+                {allClientOptions.length > 0 ? (
+                  <select value={formClientId} onChange={(e) => {
+                    const opt = allClientOptions.find((c) => c.id === e.target.value);
+                    setFormClientId(e.target.value);
+                    setFormClient(opt?.name || "");
+                  }}
                     className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white outline-none focus:border-primary/50">
                     <option value="">Sélectionner un client...</option>
-                    {clientNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {allClientOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 ) : (
-                  <input value={formClient} onChange={(e) => setFormClient(e.target.value)} placeholder="Nom du client..."
-                    className="w-full px-4 py-2.5 bg-background-dark border border-border-dark rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary/50" />
+                  <div className="w-full px-4 py-2.5 bg-background-dark border border-amber-500/30 rounded-xl text-sm text-amber-400">
+                    Aucun contact — démarrez une conversation d&apos;abord
+                  </div>
                 )}
               </div>
               <div>

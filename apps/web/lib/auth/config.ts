@@ -26,6 +26,7 @@ declare module "next-auth" {
     kyc?: number;
     plan?: string;
     formationsRole?: string;
+    adminRole?: string;
   }
   interface Session {
     user: {
@@ -36,6 +37,7 @@ declare module "next-auth" {
       kyc: number;
       plan: string;
       formationsRole?: string;
+      adminRole?: string;
       image?: string | null;
     };
   }
@@ -48,6 +50,7 @@ declare module "next-auth/jwt" {
     kyc: number;
     plan: string;
     formationsRole?: string;
+    adminRole?: string;
     twoFactorEnabled?: boolean;
   }
 }
@@ -427,6 +430,10 @@ export const authOptions: NextAuthOptions = {
         if (user.formationsRole) {
           token.formationsRole = user.formationsRole as string;
         }
+        // Admin sub-role: default to super_admin for backward compatibility
+        if (token.role === "admin") {
+          token.adminRole = (user.adminRole as string) || "super_admin";
+        }
       }
 
       // Refresh KYC level from DB when session is updated or periodically
@@ -443,16 +450,22 @@ export const authOptions: NextAuthOptions = {
               if (dbUser) {
                 token.kyc = dbUser.kyc;
                 token.plan = mapPlanName(dbUser.plan);
+                if (token.role === "admin") {
+                  token.adminRole = dbUser.adminRole || "super_admin";
+                }
               }
             } else if (token.id) {
               const { prisma } = await import("@freelancehigh/db");
               const dbUser = await prisma.user.findUnique({
                 where: { id: token.id },
-                select: { kyc: true, plan: true },
+                select: { kyc: true, plan: true, adminRole: true },
               });
               if (dbUser) {
                 token.kyc = dbUser.kyc;
                 token.plan = mapPlanName(dbUser.plan.toLowerCase());
+                if (token.role === "admin") {
+                  token.adminRole = (dbUser as Record<string, unknown>).adminRole as string || "super_admin";
+                }
               }
             }
             (token as Record<string, unknown>).kycRefreshedAt = now;
@@ -471,6 +484,9 @@ export const authOptions: NextAuthOptions = {
       session.user.plan = token.plan;
       if (token.formationsRole) {
         session.user.formationsRole = token.formationsRole;
+      }
+      if (token.adminRole) {
+        session.user.adminRole = token.adminRole;
       }
       return session;
     },

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useToastStore } from "@/store/toast";
 import { useAdminStore, type AdminConfig } from "@/store/admin";
+import { AdminPermissionGuard } from "@/components/admin/AdminPermissionGuard";
 import { cn } from "@/lib/utils";
 
 const ALL_CURRENCIES = [
@@ -147,6 +148,7 @@ export default function AdminConfiguration() {
   if (loading.config || !draft) return <ConfigSkeleton />;
 
   return (
+    <AdminPermissionGuard permission="config.view">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -538,5 +540,6 @@ export default function AdminConfiguration() {
         </div>
       )}
     </div>
+    </AdminPermissionGuard>
   );
 }

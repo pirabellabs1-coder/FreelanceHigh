@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { z } from "zod";
+import { requireAdminPermission } from "@/lib/admin-permissions";
 
 const inviteSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
     if (!session?.user || !["admin", "ADMIN"].includes(session.user.role)) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
+    const inviteCheck = requireAdminPermission(session, "team.manage");
+    if (!inviteCheck.allowed) return inviteCheck.errorResponse;
 
     const body = await req.json();
     const { email, name, adminRole } = inviteSchema.parse(body);
