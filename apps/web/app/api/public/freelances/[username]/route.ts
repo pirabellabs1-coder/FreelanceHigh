@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IS_DEV, USE_PRISMA_FOR_DATA } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { computeBadges, computeTopBadge } from "@/lib/badges";
 
 export async function GET(
   _req: NextRequest,
@@ -92,10 +93,8 @@ async function handleProductionMode(username: string) {
     : 0;
 
   // Determine badge
-  let badge = "";
-  if (avgRating >= 4.5 && completedOrders >= 5) badge = "ELITE";
-  else if (avgRating >= 4.0) badge = "TOP RATED";
-  else if (completedOrders >= 1) badge = "RISING TALENT";
+  const badgeInput = { role: user.role, plan: (user as { plan?: string }).plan ?? "free", kyc: 0, avgRating, completedOrders, createdAt: user.createdAt };
+  const badge = computeTopBadge(badgeInput);
 
   // Certificates
   let certificates: { id: string; code: string; formationTitle: string; instructorName: string; score: number; issuedAt: string }[] = [];
@@ -218,10 +217,8 @@ async function handleDevMode(username: string) {
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
-  let badge = "";
-  if (avgRating >= 4.5 && completedOrders >= 5) badge = "ELITE";
-  else if (avgRating >= 4.0) badge = "TOP RATED";
-  else if (completedOrders >= 1) badge = "RISING TALENT";
+  const badgeInput = { role: user.role, plan: (user as { plan?: string }).plan ?? "free", kyc: 0, avgRating, completedOrders, createdAt: user.createdAt };
+  const badge = computeTopBadge(badgeInput);
 
   const portfolio = profile?.portfolio ?? [];
 

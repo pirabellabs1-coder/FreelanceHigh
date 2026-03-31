@@ -2,26 +2,24 @@
 
 import { cn } from "@/lib/utils";
 
-interface Badge {
+interface BadgeConfig {
   name: string;
   icon: string;
   color: string;
 }
 
-const BADGE_CONFIG: Record<string, Badge> = {
+// Single source of truth — Title Case, no accents, no duplicates
+const BADGE_CONFIG: Record<string, BadgeConfig> = {
   "Rising Talent": { name: "Rising Talent", icon: "auto_awesome", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
-  "RISING TALENT": { name: "Rising Talent", icon: "auto_awesome", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
   "Top Rated": { name: "Top Rated", icon: "star", color: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
-  "TOP RATED": { name: "Top Rated", icon: "star", color: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
-  "Vérifié": { name: "Verifie", icon: "verified", color: "text-blue-400 bg-blue-400/10 border-blue-400/20" },
+  "Elite": { name: "Elite", icon: "diamond", color: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
   "Verifie": { name: "Verifie", icon: "verified", color: "text-blue-400 bg-blue-400/10 border-blue-400/20" },
   "Pro": { name: "Pro", icon: "workspace_premium", color: "text-purple-400 bg-purple-400/10 border-purple-400/20" },
-  "Elite": { name: "Elite", icon: "diamond", color: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
-  "ELITE": { name: "Elite", icon: "diamond", color: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
-  "High Seller": { name: "High Seller", icon: "local_fire_department", color: "text-red-400 bg-red-400/10 border-red-400/20" },
-  "Instructeur Certifié": { name: "Instructeur", icon: "school", color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20" },
-  "Agence Vérifiée": { name: "Agence Verifiee", icon: "domain", color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20" },
+  "Business": { name: "Business", icon: "workspace_premium", color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20" },
   "Agence": { name: "Agence", icon: "domain", color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20" },
+  "High Seller": { name: "High Seller", icon: "local_fire_department", color: "text-red-400 bg-red-400/10 border-red-400/20" },
+  "Instructeur Certifie": { name: "Instructeur", icon: "school", color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20" },
+  "Agence Verifiee": { name: "Agence Verifiee", icon: "domain", color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20" },
 };
 
 interface BadgeDisplayProps {

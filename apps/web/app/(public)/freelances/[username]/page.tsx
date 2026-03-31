@@ -11,6 +11,7 @@ import { useToastStore } from "@/store/toast";
 import { formatServiceTitle } from "@/lib/format-service-title";
 import { analytics } from "@/lib/analytics";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
+import { BadgeDisplay } from "@/components/ui/BadgeDisplay";
 
 // ============================================================
 // Types
@@ -114,20 +115,7 @@ interface FreelancerData {
   };
 }
 
-// ============================================================
-// Badge config
-// ============================================================
-
-const BADGE_CONFIG: Record<string, { labelKey: string; icon: string; color: string }> = {
-  verified: { labelKey: "badge_verified", icon: "verified", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  top_rated: { labelKey: "badge_top_rated", icon: "bolt", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  pro: { labelKey: "badge_pro", icon: "workspace_premium", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
-  elite: { labelKey: "badge_elite", icon: "diamond", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  rising_talent: { labelKey: "badge_rising_talent", icon: "trending_up", color: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20" },
-  ELITE: { labelKey: "badge_elite", icon: "diamond", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  "TOP RATED": { labelKey: "badge_top_rated", icon: "bolt", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  "RISING TALENT": { labelKey: "badge_rising_talent", icon: "trending_up", color: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20" },
-};
+// Badge config removed — using shared BadgeDisplay component
 
 // ============================================================
 // Category colors
@@ -519,22 +507,9 @@ export default function FreelanceProfilePage() {
                   </div>
                 ) : null}
                 {/* Badges */}
-                {allBadges.map((b) => {
-                  const cfg = BADGE_CONFIG[b];
-                  if (!cfg) return null;
-                  return (
-                    <span
-                      key={b}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border",
-                        cfg.color
-                      )}
-                    >
-                      <span className="material-symbols-outlined text-xs fill-icon">{cfg.icon}</span>
-                      {t(cfg.labelKey)}
-                    </span>
-                  );
-                })}
+                {allBadges.length > 0 && (
+                  <BadgeDisplay badges={allBadges} size="md" maxDisplay={3} />
+                )}
               </div>
               <p className="text-primary text-lg font-semibold">{profile?.title || t("freelance")}</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-slate-500 dark:text-slate-400 text-sm">
@@ -542,12 +517,6 @@ export default function FreelanceProfilePage() {
                   <span className="flex items-center gap-1">
                     <span className="material-symbols-outlined text-base">location_on</span>
                     {[profile?.city, profile?.country].filter(Boolean).join(", ")}
-                  </span>
-                )}
-                {(stats.completedOrders ?? 0) > 0 && (
-                  <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-base">work_history</span>
-                    {stats.completedOrders} {t("completed_orders")}
                   </span>
                 )}
                 {memberDate && (

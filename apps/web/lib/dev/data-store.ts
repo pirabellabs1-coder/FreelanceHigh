@@ -487,7 +487,7 @@ const SEED_VENDORS = [
 ];
 
 function getDefaultServices(): StoredService[] {
-  return _getDefaultServicesOriginal();
+  return []; // Clean slate — no seed data
 }
 
 function _getDefaultServicesOriginal(): StoredService[] {
@@ -837,7 +837,7 @@ function calculateSeoScore(service: Partial<StoredService>): number {
 const ORDERS_FILE = "orders.json";
 
 function getDefaultOrders(): StoredOrder[] {
-  return _getDefaultOrdersLegacy();
+  return []; // Clean slate
 }
 
 function _getDefaultOrdersLegacy(): StoredOrder[] {
@@ -1641,6 +1641,10 @@ export function calculateStats(userId: string) {
 const REVIEWS_FILE = "reviews.json";
 
 function getDefaultReviews(): StoredReview[] {
+  return []; // Clean slate
+}
+
+function _getDefaultReviewsLegacy(): StoredReview[] {
   return [
     { id: "rev-seed-001", orderId: "ORD-1008", serviceId: "srv-seed-007", clientId: "dev-client-1", clientName: "Marie Dupont", clientAvatar: "MD", clientCountry: "FR", freelanceId: "user-freelance-007", serviceTitle: "Rédaction d'articles SEO optimisés en français", qualite: 5, communication: 5, delai: 4, rating: 4.7, comment: "Travail excellent, articles bien structurés et optimisés. Je recommande vivement !", reply: "Merci Marie, ce fut un plaisir de travailler avec vous !", repliedAt: "2026-01-20T10:00:00", helpful: 12, reported: false, createdAt: "2026-01-19T14:00:00" },
     { id: "rev-seed-002", orderId: "ORD-1024", serviceId: "srv-seed-005", clientId: "dev-client-2", clientName: "TechCorp Inc.", clientAvatar: "TC", clientCountry: "FR", freelanceId: "user-freelance-005", serviceTitle: "Design UI/UX complet pour application mobile", qualite: 5, communication: 5, delai: 5, rating: 5.0, comment: "Design incroyable, exactement ce qu'on cherchait pour notre application. Professionnel et réactif.", reply: null, repliedAt: null, helpful: 8, reported: false, createdAt: "2026-02-25T09:00:00" },

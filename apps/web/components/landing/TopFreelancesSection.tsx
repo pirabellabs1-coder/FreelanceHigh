@@ -66,13 +66,12 @@ export function TopFreelancesSection() {
                 {/* Motif decoratif */}
                 <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
                 <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/10" />
-                {/* Badge — fond blanc opaque pour contraster avec le gradient vert */}
-                {(f.badges && f.badges.length > 0) || f.badge ? (
-                  <div className="absolute top-3 right-3 z-10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-                    {f.badges?.[0] || f.badge}
+                {/* Badge — wrapper blanc pour contraste sur gradient vert */}
+                {((f.badges && f.badges.length > 0) || f.badge) && (
+                  <div className="absolute top-3 right-3 z-10 bg-white dark:bg-slate-900 rounded-full shadow-lg px-1 py-0.5">
+                    <BadgeDisplay badges={f.badges && f.badges.length > 0 ? f.badges : f.badge ? [f.badge] : []} size="sm" maxDisplay={1} />
                   </div>
-                ) : null}
+                )}
                 {/* Location */}
                 {f.location && (
                   <div className="absolute top-3 left-3 z-10 bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-white/30">

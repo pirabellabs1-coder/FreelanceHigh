@@ -9,6 +9,7 @@ import {
   hourlyHash,
   weightedRandomPick,
 } from "@/lib/ranking";
+import { computeBadges, computeTopBadge } from "@/lib/badges";
 
 export async function GET(request: NextRequest) {
   try {
@@ -119,14 +120,9 @@ export async function GET(request: NextRequest) {
       }
 
       const top = selected.map((item) => {
-        // Pick the single most important badge
-        const topBadge = item.isRising
-          ? "RISING TALENT"
-          : item.avgRating >= 4.5 && item.completedOrders >= 5
-            ? "ELITE"
-            : item.avgRating >= 4.0
-              ? "TOP RATED"
-              : "";
+        const badgeInput = { role: item.user.role, plan: item.user.plan ?? "free", kyc: 0, avgRating: item.avgRating, completedOrders: item.completedOrders, createdAt: item.user.createdAt };
+        const badges = computeBadges(badgeInput);
+        const topBadge = computeTopBadge(badgeInput);
         return {
           id: item.user.id,
           username: item.user.id,
@@ -138,7 +134,7 @@ export async function GET(request: NextRequest) {
           completedOrders: item.completedOrders,
           reviewCount: item.reviewCount,
           badge: topBadge,
-          badges: topBadge ? [topBadge] : [],
+          badges,
           image: `https://i.pravatar.cc/400?u=${item.user.id}`,
           location: "",
         };
@@ -243,13 +239,9 @@ export async function GET(request: NextRequest) {
     }
 
     const top = selected.map((item) => {
-      const topBadge = item.isRising
-        ? "RISING TALENT"
-        : item.avgRating >= 4.5 && item.completedOrders >= 5
-          ? "ELITE"
-          : item.avgRating >= 4.0
-            ? "TOP RATED"
-            : "";
+      const badgeInput = { role: item.user.role?.toLowerCase(), plan: item.user.plan ?? "free", kyc: item.user.kyc ?? 0, avgRating: item.avgRating, completedOrders: item.completedOrders, createdAt: item.user.createdAt };
+      const badges = computeBadges(badgeInput);
+      const topBadge = computeTopBadge(badgeInput);
       return {
         id: item.user.id,
         username: item.user.id,
@@ -261,7 +253,7 @@ export async function GET(request: NextRequest) {
         completedOrders: item.completedOrders,
         reviewCount: item.reviewCount,
         badge: topBadge,
-        badges: topBadge ? [topBadge] : [],
+        badges,
         image: item.user.image || item.user.avatar || `https://i.pravatar.cc/400?u=${item.user.id}`,
         location: item.user.country ?? "",
       };
@@ -277,11 +269,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper: pick the single best badge for a freelance
-function pickTopBadge(item: { isRising: boolean; avgRating: number; completedOrders: number }): string {
-  // Priority order: Rising Talent > Elite > Top Rated
-  if (item.isRising) return "RISING TALENT";
-  if (item.avgRating >= 4.5 && item.completedOrders >= 5) return "ELITE";
-  if (item.avgRating >= 4.0) return "TOP RATED";
-  return "";
-}

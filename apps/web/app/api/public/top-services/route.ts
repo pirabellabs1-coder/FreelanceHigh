@@ -10,6 +10,7 @@ import {
   weightedRandomPick,
   enforceCategoryDiversity,
 } from "@/lib/ranking";
+import { computeBadges } from "@/lib/badges";
 
 interface ScoredService {
   id: string;
@@ -261,15 +262,7 @@ export async function GET(request: NextRequest) {
     const merged: ScoredService[] = [];
 
     function buildBadges(user: { plan?: string | null; kyc?: number | null } | null, agency: { id: string } | null): string[] {
-      const badges: string[] = [];
-      if (agency) badges.push("Agence");
-      if (user?.kyc && user.kyc >= 3) badges.push("Verifie");
-      if (user?.plan) {
-        const plan = user.plan.toUpperCase();
-        if (plan === "PRO") badges.push("Pro");
-        else if (plan === "BUSINESS") badges.push("Business");
-      }
-      return badges;
+      return computeBadges({ role: agency ? "agence" : "freelance", plan: user?.plan, kyc: user?.kyc, avgRating: 0, completedOrders: 0 });
     }
 
     function addPrismaToMerged(

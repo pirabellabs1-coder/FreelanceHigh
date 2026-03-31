@@ -7,6 +7,7 @@ import {
   weightedRandomPick,
   interleave,
 } from "@/lib/ranking";
+import { computeBadges } from "@/lib/badges";
 
 export async function GET(req: NextRequest) {
   try {
@@ -74,16 +75,7 @@ export async function GET(req: NextRequest) {
 
     // Build vendor badges
     function buildBadges(user: { plan?: string | null; kyc?: number | null } | null, agency: { id: string } | null): string[] {
-      const badges: string[] = [];
-      if (agency) badges.push("Agence");
-      if (user?.kyc && user.kyc >= 3) badges.push("Verifie");
-      if (user?.plan) {
-        const plan = user.plan.toUpperCase();
-        if (plan === "PRO") badges.push("Pro");
-        else if (plan === "BUSINESS") badges.push("Business");
-        else if (plan === "AGENCE") badges.push("Agence");
-      }
-      return badges;
+      return computeBadges({ role: agency ? "agence" : "freelance", plan: user?.plan, kyc: user?.kyc, avgRating: 0, completedOrders: 0 });
     }
 
     function mapService(s: typeof allServices[0], isSponsored = false) {

@@ -1,136 +1,73 @@
 /**
- * Dynamic badge computation based on freelancer metrics.
- * Badges are computed at runtime, never hardcoded in profiles.
+ * Unified badge computation for FreelanceHigh.
+ * Single source of truth — ALL APIs must use this.
+ * Format: Title Case, no accents.
  */
 
 export interface BadgeInput {
+  role?: string;       // "freelance" | "client" | "agence" | "admin"
+  plan?: string | null; // "free" | "pro" | "business" | "agence"
+  kyc?: number | null;  // 0-4
+  avgRating: number;    // 0-5
   completedOrders: number;
-  completionRate: number; // 0-100
-  avgRating: number; // 0-5
-  kycLevel: number; // 1-4
-  plan: string; // "free" | "pro" | "business" | "agence"
-  role?: string; // "freelance" | "client" | "agence"
-  isInstructor?: boolean;
-  totalRevenue?: number; // Revenus totaux en EUR
+  createdAt?: string | Date | null; // account creation date
 }
 
-export interface Badge {
-  id: string;
-  label: string;
-  icon: string;
-  color: string;
-  description: string;
-}
-
-const BADGE_DEFINITIONS: Badge[] = [
-  {
-    id: "rising-talent",
-    label: "Rising Talent",
-    icon: "trending_up",
-    color: "text-blue-400",
-    description: "Freelance prometteur avec un excellent taux de complétion",
-  },
-  {
-    id: "top-rated",
-    label: "Top Rated",
-    icon: "star",
-    color: "text-amber-400",
-    description: "Freelance parmi les mieux notés de la plateforme",
-  },
-  {
-    id: "verifie",
-    label: "Vérifié",
-    icon: "verified",
-    color: "text-emerald-400",
-    description: "Identité vérifiée par FreelanceHigh",
-  },
-  {
-    id: "pro",
-    label: "Pro",
-    icon: "workspace_premium",
-    color: "text-primary",
-    description: "Abonné au plan Pro ou supérieur",
-  },
-  {
-    id: "elite",
-    label: "Elite",
-    icon: "diamond",
-    color: "text-amber-300",
-    description: "Freelance d'élite avec une expertise reconnue",
-  },
-  {
-    id: "high-seller",
-    label: "High Seller",
-    icon: "local_fire_department",
-    color: "text-orange-400",
-    description: "Vendeur avec un volume de ventes eleve",
-  },
-  {
-    id: "certified-instructor",
-    label: "Instructeur Certifié",
-    icon: "school",
-    color: "text-indigo-400",
-    description: "Instructeur verifie et certifie par la plateforme",
-  },
-  {
-    id: "verified-agency",
-    label: "Agence Vérifiée",
-    icon: "domain",
-    color: "text-cyan-400",
-    description: "Agence avec des documents de verification valides",
-  },
-];
-
+/**
+ * Compute all earned badges for a user.
+ * Returns Title Case labels without accents.
+ */
 export function computeBadges(input: BadgeInput): string[] {
   const badges: string[] = [];
+  const kyc = input.kyc ?? 0;
+  const plan = (input.plan ?? "free").toUpperCase();
+  const role = (input.role ?? "freelance").toLowerCase();
 
-  // Rising Talent: ≥5 commandes terminées, ≥90% complétion
-  if (input.completedOrders >= 5 && input.completionRate >= 90) {
-    badges.push("Rising Talent");
-  }
-
-  // Top Rated: ≥50 commandes terminées, ≥4.5 note moyenne
-  if (input.completedOrders >= 50 && input.avgRating >= 4.5) {
+  // Performance badges (mutually exclusive tiers — take the highest + Rising Talent if new)
+  if (input.avgRating >= 4.5 && input.completedOrders >= 10) {
+    badges.push("Elite");
+  } else if (input.avgRating >= 4.0 && input.completedOrders >= 3) {
     badges.push("Top Rated");
   }
 
-  // Vérifié: KYC niveau ≥ 3
-  if (input.kycLevel >= 3) {
-    badges.push("Vérifié");
+  // Rising Talent: new account (< 90 days), at least 1 order, good rating
+  if (input.createdAt) {
+    const created = new Date(input.createdAt);
+    const daysSinceCreation = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceCreation < 90 && input.completedOrders >= 1 && input.avgRating >= 4.0) {
+      badges.push("Rising Talent");
+    }
   }
 
-  // Pro: plan pro, business ou agence
-  if (["pro", "business", "agence"].includes(input.plan)) {
+  // KYC badge
+  if (kyc >= 3) {
+    badges.push("Verifie");
+  }
+
+  // Plan badges
+  if (plan === "PRO") {
     badges.push("Pro");
+  } else if (plan === "BUSINESS") {
+    badges.push("Business");
   }
 
-  // Elite: KYC ≥ 4 ET ≥100 commandes terminées ET ≥4.5 note
-  if (input.kycLevel >= 4 && input.completedOrders >= 100 && input.avgRating >= 4.5) {
-    badges.push("Elite");
-  }
-
-  // High Seller: ≥200 commandes ou ≥10 000€ de CA
-  if (input.completedOrders >= 200 || (input.totalRevenue && input.totalRevenue >= 10000)) {
-    badges.push("High Seller");
-  }
-
-  // Instructeur Certifié: est instructeur avec KYC ≥ 3
-  if (input.isInstructor && input.kycLevel >= 3) {
-    badges.push("Instructeur Certifié");
-  }
-
-  // Agence Vérifiée: role agence avec KYC ≥ 3
-  if (input.role === "agence" && input.kycLevel >= 3) {
-    badges.push("Agence Vérifiée");
+  // Agency badge
+  if (role === "agence" || plan === "AGENCE") {
+    badges.push("Agence");
   }
 
   return badges;
 }
 
-export function getBadgeDefinition(label: string): Badge | undefined {
-  return BADGE_DEFINITIONS.find((b) => b.label === label);
-}
-
-export function getAllBadgeDefinitions(): Badge[] {
-  return BADGE_DEFINITIONS;
+/**
+ * Returns the single most important badge (for cards with maxDisplay=1).
+ * Priority: Elite > Top Rated > Rising Talent > Verifie > Pro > Business > Agence
+ */
+export function computeTopBadge(input: BadgeInput): string {
+  const badges = computeBadges(input);
+  const priority = ["Elite", "Top Rated", "Rising Talent", "Verifie", "Pro", "Business", "Agence"];
+  for (const p of priority) {
+    if (badges.includes(p)) return p;
+  }
+  return "";
 }
