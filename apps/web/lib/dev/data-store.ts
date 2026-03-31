@@ -466,24 +466,24 @@ export function getSubCategoryName(catId: string, subId: string): string {
 const SERVICES_FILE = "services.json";
 
 const SEED_VENDORS = [
-  { name: "Moussa Diallo", avatar: "/images/avatars/default.png", username: "moussa-diallo", country: "SN" },
-  { name: "Aminata Koné", avatar: "/images/avatars/default.png", username: "aminata-kone", country: "CI" },
-  { name: "Jean-Baptiste Nguema", avatar: "/images/avatars/default.png", username: "jb-nguema", country: "CM" },
-  { name: "Fatou Sow", avatar: "/images/avatars/default.png", username: "fatou-sow", country: "SN" },
-  { name: "Kofi Asante", avatar: "/images/avatars/default.png", username: "kofi-asante", country: "GH" },
-  { name: "Claire Dubois", avatar: "/images/avatars/default.png", username: "claire-dubois", country: "FR" },
-  { name: "Ibrahim Traoré", avatar: "/images/avatars/default.png", username: "ibrahim-traore", country: "BF" },
-  { name: "Nadia Benali", avatar: "/images/avatars/default.png", username: "nadia-benali", country: "MA" },
-  { name: "Ousmane Barry", avatar: "/images/avatars/default.png", username: "ousmane-barry", country: "GN" },
-  { name: "Awa Diop", avatar: "/images/avatars/default.png", username: "awa-diop", country: "SN" },
-  { name: "Pierre Kamga", avatar: "/images/avatars/default.png", username: "pierre-kamga", country: "CM" },
-  { name: "Mariame Coulibaly", avatar: "/images/avatars/default.png", username: "mariame-coulibaly", country: "ML" },
-  { name: "Yves Mensah", avatar: "/images/avatars/default.png", username: "yves-mensah", country: "TG" },
-  { name: "Léa Fontaine", avatar: "/images/avatars/default.png", username: "lea-fontaine", country: "FR" },
-  { name: "Abdoulaye Ndiaye", avatar: "/images/avatars/default.png", username: "abdoulaye-ndiaye", country: "SN" },
-  { name: "Rachida El Amrani", avatar: "/images/avatars/default.png", username: "rachida-elamrani", country: "MA" },
-  { name: "Sékou Camara", avatar: "/images/avatars/default.png", username: "sekou-camara", country: "GN" },
-  { name: "Bintou Sangaré", avatar: "/images/avatars/default.png", username: "bintou-sangare", country: "CI" },
+  { name: "Moussa Diallo", avatar: "https://i.pravatar.cc/200?u=moussa-diallo", username: "moussa-diallo", country: "SN" },
+  { name: "Aminata Koné", avatar: "https://i.pravatar.cc/200?u=aminata-kone", username: "aminata-kone", country: "CI" },
+  { name: "Jean-Baptiste Nguema", avatar: "https://i.pravatar.cc/200?u=jb-nguema", username: "jb-nguema", country: "CM" },
+  { name: "Fatou Sow", avatar: "https://i.pravatar.cc/200?u=fatou-sow", username: "fatou-sow", country: "SN" },
+  { name: "Kofi Asante", avatar: "https://i.pravatar.cc/200?u=kofi-asante", username: "kofi-asante", country: "GH" },
+  { name: "Claire Dubois", avatar: "https://i.pravatar.cc/200?u=claire-dubois", username: "claire-dubois", country: "FR" },
+  { name: "Ibrahim Traoré", avatar: "https://i.pravatar.cc/200?u=ibrahim-traore", username: "ibrahim-traore", country: "BF" },
+  { name: "Nadia Benali", avatar: "https://i.pravatar.cc/200?u=nadia-benali", username: "nadia-benali", country: "MA" },
+  { name: "Ousmane Barry", avatar: "https://i.pravatar.cc/200?u=ousmane-barry", username: "ousmane-barry", country: "GN" },
+  { name: "Awa Diop", avatar: "https://i.pravatar.cc/200?u=awa-diop", username: "awa-diop", country: "SN" },
+  { name: "Pierre Kamga", avatar: "https://i.pravatar.cc/200?u=pierre-kamga", username: "pierre-kamga", country: "CM" },
+  { name: "Mariame Coulibaly", avatar: "https://i.pravatar.cc/200?u=mariame-coulibaly", username: "mariame-coulibaly", country: "ML" },
+  { name: "Yves Mensah", avatar: "https://i.pravatar.cc/200?u=yves-mensah", username: "yves-mensah", country: "TG" },
+  { name: "Léa Fontaine", avatar: "https://i.pravatar.cc/200?u=lea-fontaine", username: "lea-fontaine", country: "FR" },
+  { name: "Abdoulaye Ndiaye", avatar: "https://i.pravatar.cc/200?u=abdoulaye-ndiaye", username: "abdoulaye-ndiaye", country: "SN" },
+  { name: "Rachida El Amrani", avatar: "https://i.pravatar.cc/200?u=rachida-elamrani", username: "rachida-elamrani", country: "MA" },
+  { name: "Sékou Camara", avatar: "https://i.pravatar.cc/200?u=sekou-camara", username: "sekou-camara", country: "GN" },
+  { name: "Bintou Sangaré", avatar: "https://i.pravatar.cc/200?u=bintou-sangare", username: "bintou-sangare", country: "CI" },
 ];
 
 function getDefaultServices(): StoredService[] {
@@ -624,13 +624,20 @@ function _getDefaultServicesOriginal(): StoredService[] {
       200, 7, "actif", 1600, 55, 55 * 200,
       "/images/placeholder-service.jpg"
     ),
-  ].map((svc, i) => ({
-    ...svc,
-    vendorName: SEED_VENDORS[i % SEED_VENDORS.length].name,
-    vendorAvatar: SEED_VENDORS[i % SEED_VENDORS.length].avatar,
-    vendorUsername: SEED_VENDORS[i % SEED_VENDORS.length].username,
-    vendorCountry: SEED_VENDORS[i % SEED_VENDORS.length].country,
-  }));
+  ].map((svc, i) => {
+    const vendor = SEED_VENDORS[i % SEED_VENDORS.length];
+    // Assign a single badge per vendor based on index for variety
+    const badgePool = ["Verifie", "Pro", "Top Rated", "Elite", "Verifie", "Pro"];
+    const vendorBadge = badgePool[i % badgePool.length];
+    return {
+      ...svc,
+      vendorName: vendor.name,
+      vendorAvatar: vendor.avatar,
+      vendorUsername: vendor.username,
+      vendorCountry: vendor.country,
+      vendorBadges: [vendorBadge],
+    };
+  });
 }
 
 function createSeedService(
@@ -665,8 +672,8 @@ function createSeedService(
     expressDaysReduction: 0,
     instructionsRequired: false,
     instructionsContent: null,
-    images: [image],
-    mainImage: image,
+    images: [image || `https://picsum.photos/seed/${id}/800/500`],
+    mainImage: image || `https://picsum.photos/seed/${id}/800/500`,
     videoUrl: "",
     status,
     views,
@@ -687,7 +694,7 @@ function createSeedService(
     vendorAvatar: "",
     vendorUsername: "",
     vendorCountry: "CI",
-    vendorBadges: ["Vérifié", "Pro"],
+    vendorBadges: [],
     vendorRating: 4.8,
     vendorPlan: "pro",
     createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),

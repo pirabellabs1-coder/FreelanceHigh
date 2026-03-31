@@ -137,7 +137,7 @@ async function handleProductionMode(username: string) {
       profile: {
         title: fp?.title || "",
         bio: fp?.bio || "",
-        photo: user.image || null,
+        photo: user.image || user.avatar || `https://i.pravatar.cc/400?u=${user.id}`,
         coverPhoto: fp?.coverPhoto || null,
         city: fp?.city || user.city || "",
         country: fp?.country || user.country || "",
@@ -236,7 +236,7 @@ async function handleDevMode(username: string) {
       profile: {
         title: profile?.title || "",
         bio: profile?.bio || "",
-        photo: profile?.photo || null,
+        photo: profile?.photo || `https://i.pravatar.cc/400?u=${user.id}`,
         coverPhoto: profile?.coverPhoto || null,
         city: profile?.city || user.country || "",
         country: profile?.country || user.country || "",

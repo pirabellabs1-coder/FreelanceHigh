@@ -81,7 +81,7 @@ export function TopFreelancesSection() {
                 )}
                 {f.badges && f.badges.length > 0 ? (
                   <div className="absolute top-4 right-4">
-                    <BadgeDisplay badges={f.badges} size="sm" maxDisplay={2} />
+                    <BadgeDisplay badges={f.badges} size="sm" maxDisplay={1} />
                   </div>
                 ) : f.badge ? (
                   <div className="absolute top-4 right-4 bg-accent text-slate-900 text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
