@@ -10,11 +10,11 @@ import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
-  { href: "/formations/explorer", labelKey: "explore" },
-  { href: "/formations/categories", labelKey: "categories" },
-  { href: "/formations/produits", labelKey: "digital_products" },
-  { href: "/formations/inscription?role=instructeur", labelKey: "become_instructor" },
+const BASE_NAV_LINKS = [
+  { href: "/formations/explorer", labelKey: "explore", hideWhen: null },
+  { href: "/formations/categories", labelKey: "categories", hideWhen: null },
+  { href: "/formations/produits", labelKey: "digital_products", hideWhen: null },
+  { href: "/formations/inscription?role=instructeur", labelKey: "become_instructor", hideWhen: "authenticated" as const },
 ] as const;
 
 export function FormationsHeader() {
@@ -23,7 +23,16 @@ export function FormationsHeader() {
   const t = useTranslations("formations_nav");
   const pathname = usePathname();
   const { data: session } = useSession();
-  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  const user = session?.user as { role?: string; formationsRole?: string } | undefined;
+  const userRole = user?.role;
+  const isInstructeur = user?.formationsRole === "instructeur";
+  const isAuthenticated = !!session?.user;
+
+  // Filter nav links based on auth state
+  const navLinks = BASE_NAV_LINKS.filter((link) => {
+    if (link.hideWhen === "authenticated" && isAuthenticated) return false;
+    return true;
+  });
 
   function isActive(href: string) {
     return pathname.startsWith(href);
@@ -47,7 +56,7 @@ export function FormationsHeader() {
 
         {/* Nav desktop */}
         <nav className="hidden lg:flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -108,10 +117,10 @@ export function FormationsHeader() {
                   </Link>
                 )}
                 <Link
-                  href="/formations/mes-formations"
+                  href={isInstructeur ? "/formations/instructeur" : "/formations/mes-formations"}
                   className="text-sm font-bold hover:text-primary transition-colors px-2 py-2"
                 >
-                  {t("my_courses")}
+                  {isInstructeur ? t("my_dashboard") : t("my_courses")}
                 </Link>
                 <Link
                   href="/formations/panier"
@@ -152,7 +161,7 @@ export function FormationsHeader() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-primary/20 mt-4 pt-4 pb-4 px-4 space-y-4">
           <nav className="flex flex-col gap-2">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -208,8 +217,8 @@ export function FormationsHeader() {
                     Admin Formations
                   </Link>
                 )}
-                <Link href="/formations/mes-formations" className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>
-                  {t("my_courses")}
+                <Link href={isInstructeur ? "/formations/instructeur" : "/formations/mes-formations"} className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>
+                  {isInstructeur ? t("my_dashboard") : t("my_courses")}
                 </Link>
               </>
             ) : (

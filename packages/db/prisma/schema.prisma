@@ -340,6 +340,7 @@ model User {
   certificates       Certificate[]       @relation("UserCertificates")
   formationReviews   FormationReview[]   @relation("UserFormationReviews")
   cartItems          CartItem[]          @relation("UserCartItems")
+  formationFavorites FormationFavorite[] @relation("UserFormationFavorites")
   productPurchases   DigitalProductPurchase[] @relation("UserProductPurchases")
   productReviews     DigitalProductReview[]   @relation("UserProductReviews")
   abandonedCarts     AbandonedCart[]          @relation("UserAbandonedCarts")
@@ -1620,6 +1621,7 @@ model Formation {
   reviews         FormationReview[]
   certificates    Certificate[]
   cartItems       CartItem[]
+  favorites       FormationFavorite[] @relation("FormationFavorites")
   flashPromotions FlashPromotion[]    @relation("FormationFlashPromos")
   marketingEvents MarketingEvent[]    @relation("FormationMarketingEvents")
   discussions     CourseDiscussion[]
@@ -1851,6 +1853,20 @@ model CartItem {
 
   @@unique([userId, formationId])
   @@index([userId])
+}
+
+model FormationFavorite {
+  id          String    @id @default(cuid())
+  userId      String
+  formationId String
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation("UserFormationFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  formation   Formation @relation("FormationFavorites", fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, formationId])
+  @@index([userId])
+  @@index([formationId])
 }
 
 model PromoCode {

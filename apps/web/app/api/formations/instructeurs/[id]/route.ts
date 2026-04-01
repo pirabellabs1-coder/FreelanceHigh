@@ -88,6 +88,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({
       instructeur: {
         ...instructeur,
+        bio: instructeur.bioFr || instructeur.bioEn || null,
         avgRating: Math.round(avgRating * 10) / 10,
         totalStudents,
         completionRate,

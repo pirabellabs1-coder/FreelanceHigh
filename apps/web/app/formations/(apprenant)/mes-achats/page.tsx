@@ -623,8 +623,18 @@ export default function MesAchatsPage() {
                   </div>
                 </div>
 
-                {/* Amount + Status + Refund button */}
+                {/* Amount + Status + Receipt + Refund button */}
                 <div className="flex items-center gap-3 flex-shrink-0">
+                  {purchase.type === "formation" && purchase.status === "COMPLETED" && (
+                    <a
+                      href={`/api/apprenant/receipts/${purchase.id}`}
+                      download
+                      className="text-xs font-medium text-primary hover:text-primary/80 bg-primary/5 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      {fr ? "Reçu" : "Receipt"}
+                    </a>
+                  )}
                   {isRefundEligible(purchase) && (
                     <button
                       onClick={() => {

@@ -95,52 +95,7 @@ export async function GET(_req: NextRequest) {
       }
     }
 
-    // ── weeklyHours: hours per week for last 8 weeks ──
-    const eightWeeksAgo = new Date();
-    eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
-
-    const progressWithDuration = await prisma.lessonProgress.findMany({
-      where: {
-        enrollment: { userId },
-        completed: true,
-        completedAt: { not: null, gte: eightWeeksAgo },
-      },
-      select: {
-        completedAt: true,
-        lesson: { select: { duration: true } },
-      },
-      orderBy: { completedAt: "asc" },
-    });
-
-    // Build weekly buckets
-    const weeklyMap = new Map<string, number>();
     const now = new Date();
-    for (let i = 7; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay() - i * 7);
-      const key = weekStart.toISOString().split("T")[0];
-      weeklyMap.set(key, 0);
-    }
-
-    for (const p of progressWithDuration) {
-      if (!p.completedAt) continue;
-      const date = new Date(p.completedAt);
-      // Find the Monday of that week
-      const day = date.getDay();
-      const mondayOffset = day === 0 ? -6 : 1 - day;
-      const monday = new Date(date);
-      monday.setDate(monday.getDate() + mondayOffset);
-      const key = monday.toISOString().split("T")[0];
-
-      const lessonMinutes = p.lesson?.duration ?? 0;
-      const hours = lessonMinutes / 60;
-      weeklyMap.set(key, (weeklyMap.get(key) ?? 0) + hours);
-    }
-
-    const weeklyHours = Array.from(weeklyMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-8)
-      .map(([week, hours]) => ({ week, hours: Math.round(hours * 10) / 10 }));
 
     // ── skillRadar: average progress per category ──
     const categoryProgressMap = new Map<string, { total: number; count: number; name: string }>();
@@ -170,16 +125,18 @@ export async function GET(_req: NextRequest) {
       }
     }
 
-    const skillRadar = Array.from(categoryProgressMap.values()).map((v) => ({
-      category: v.name,
-      progress: Math.round(v.total / v.count),
-    }));
+    const skillRadar = Array.from(categoryProgressMap.values())
+      .filter((v) => v.name)
+      .map((v) => ({
+        category: v.name,
+        value: Math.round(v.total / v.count),
+      }));
 
-    // ── weeklyGoalProgress: hours this week / 5 hours goal * 100 ──
+    // ── dailyHours: hours per day for the current week (Mon-Sun) ──
     const startOfWeek = new Date(now);
     const dayOfWeek = startOfWeek.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    startOfWeek.setDate(startOfWeek.getDate() + mondayOffset);
+    const mondayOffset2 = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    startOfWeek.setDate(startOfWeek.getDate() + mondayOffset2);
     startOfWeek.setHours(0, 0, 0, 0);
 
     const thisWeekProgress = await prisma.lessonProgress.findMany({
@@ -189,10 +146,31 @@ export async function GET(_req: NextRequest) {
         completedAt: { not: null, gte: startOfWeek },
       },
       select: {
+        completedAt: true,
         lesson: { select: { duration: true } },
       },
     });
 
+    // Build daily buckets for the current week
+    const dayLabels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+    const dailyMap = new Map<number, number>(); // 0=Mon ... 6=Sun
+    for (let i = 0; i < 7; i++) dailyMap.set(i, 0);
+
+    for (const p of thisWeekProgress) {
+      if (!p.completedAt) continue;
+      const d = new Date(p.completedAt).getDay();
+      // Convert JS Sunday=0 to Mon=0 format
+      const dayIndex = d === 0 ? 6 : d - 1;
+      const minutes = p.lesson?.duration ?? 0;
+      dailyMap.set(dayIndex, (dailyMap.get(dayIndex) ?? 0) + minutes / 60);
+    }
+
+    const dailyHoursArray = dayLabels.map((day, i) => ({
+      day,
+      hours: Math.round((dailyMap.get(i) ?? 0) * 10) / 10,
+    }));
+
+    // Weekly goal: actual hours this week / 5 hours goal * 100
     const thisWeekMinutes = thisWeekProgress.reduce(
       (sum, p) => sum + (p.lesson?.duration ?? 0),
       0
@@ -221,7 +199,7 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({
       enrollments: enriched,
       stats: { inProgress, completed, certificates, totalHours, streak },
-      weeklyHours,
+      weeklyHours: dailyHoursArray,
       skillRadar,
       recommendations,
       weeklyGoalProgress,
