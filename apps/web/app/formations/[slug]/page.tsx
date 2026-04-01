@@ -20,6 +20,12 @@ import DynamicIcon from "@/components/ui/DynamicIcon";
 import FormationCard from "@/components/formations/FormationCard";
 import type { FormationCardData } from "@/components/formations/FormationCard";
 import FreeLessonPreviewModal from "@/components/formations/FreeLessonPreviewModal";
+import {
+  getFormationFavorites,
+  toggleFormationFavorite,
+  addFavoriteServer,
+  removeFavoriteServer,
+} from "@/lib/formations/favorites";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -200,10 +206,38 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
   useEffect(() => {
     if (!session?.user || !formation) return;
     fetch(`/api/formations/${formation.id}/progress`)
-      .then((r) => r.json())
-      .then((d) => setIsEnrolled(!!d.enrollment))
+      .then((r) => {
+        if (r.status === 404) { setIsEnrolled(false); return; }
+        if (!r.ok) return;
+        return r.json();
+      })
+      .then((d) => {
+        if (d && d.id) setIsEnrolled(true);
+      })
       .catch(() => {});
   }, [session, formation]);
+
+  // Init favorite status from localStorage
+  useEffect(() => {
+    if (!formation) return;
+    const favs = getFormationFavorites();
+    setIsFavorite(favs.includes(formation.id));
+  }, [formation]);
+
+  // Toggle favorite handler
+  const handleToggleFavorite = () => {
+    if (!formation) return;
+    const nowFavorite = toggleFormationFavorite(formation.id);
+    setIsFavorite(nowFavorite);
+    // Sync to server if authenticated
+    if (session?.user) {
+      if (nowFavorite) {
+        addFavoriteServer(formation.id);
+      } else {
+        removeFavoriteServer(formation.id);
+      }
+    }
+  };
 
   // Fetch similar formations
   useEffect(() => {
@@ -899,7 +933,7 @@ export default function FormationDetailPage({ params }: { params: Promise<{ slug
                         {t("add_to_cart")}
                       </button>
                       <button
-                        onClick={() => setIsFavorite(!isFavorite)}
+                        onClick={handleToggleFavorite}
                         className={`w-full border py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors ${
                           isFavorite ? "border-red-300 text-red-500 bg-red-50" : "border-slate-300 text-slate-600 hover:bg-slate-50 dark:bg-slate-800/50"
                         }`}

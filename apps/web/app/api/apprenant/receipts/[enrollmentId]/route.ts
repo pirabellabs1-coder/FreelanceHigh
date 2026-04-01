@@ -9,15 +9,15 @@ import { jsPDF } from "jspdf";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { enrollmentId: string } }
+  { params }: { params: Promise<{ enrollmentId: string }> }
 ) {
   try {
+    const { enrollmentId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const { enrollmentId } = params;
     const userId = session.user.id;
 
     const enrollment = await prisma.enrollment.findFirst({

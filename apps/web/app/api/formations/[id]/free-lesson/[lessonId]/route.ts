@@ -7,10 +7,10 @@ import prisma from "@freelancehigh/db";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   try {
-    const { id: formationId, lessonId } = params;
+    const { id: formationId, lessonId } = await params;
 
     // Fetch the lesson with its section to verify it belongs to this formation
     const lesson = await prisma.lesson.findFirst({

@@ -117,7 +117,7 @@ export function FormationsHeader() {
                   </Link>
                 )}
                 <Link
-                  href={isInstructeur ? "/formations/instructeur" : "/formations/mes-formations"}
+                  href={isInstructeur ? "/formations/instructeur/dashboard" : "/formations/mes-formations"}
                   className="text-sm font-bold hover:text-primary transition-colors px-2 py-2"
                 >
                   {isInstructeur ? t("my_dashboard") : t("my_courses")}
@@ -217,7 +217,7 @@ export function FormationsHeader() {
                     Admin Formations
                   </Link>
                 )}
-                <Link href={isInstructeur ? "/formations/instructeur" : "/formations/mes-formations"} className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>
+                <Link href={isInstructeur ? "/formations/instructeur/dashboard" : "/formations/mes-formations"} className="block text-center text-sm font-bold hover:text-primary py-2" onClick={() => setMobileOpen(false)}>
                   {isInstructeur ? t("my_dashboard") : t("my_courses")}
                 </Link>
               </>
