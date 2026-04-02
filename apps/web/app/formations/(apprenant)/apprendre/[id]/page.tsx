@@ -471,7 +471,7 @@ export default function CoursePlayerPage({ params }: { params: Promise<{ id: str
                     {fr ? `Score minimum : ${currentLesson.quiz.passingScore}%` : `Passing score: ${currentLesson.quiz.passingScore}%`}
                   </p>
                   <Link
-                    href={`/formations/apprendre/${id}/quiz/${currentLesson.quiz.id}`}
+                    href={`/formations/apprendre/${id}/quiz?quizId=${currentLesson.quiz.id}`}
                     className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-3 rounded-xl transition-colors"
                   >
                     {fr ? "Commencer le quiz" : "Start quiz"}
