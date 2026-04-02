@@ -179,7 +179,7 @@ export async function POST(
                 studentName: session.user.name ?? "Apprenant",
                 formationTitle: formation.title,
                 instructorName: formation.instructeur?.user?.name ?? "Instructeur",
-                score,
+                startDate: enrollment.createdAt,
                 completionDate: new Date(),
                 certificateCode,
                 locale: "fr",

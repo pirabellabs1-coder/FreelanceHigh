@@ -41,10 +41,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const certificate = {
       id: raw.id,
       code: raw.code,
-      score: raw.score,
       issuedAt: raw.issuedAt,
       pdfUrl: raw.pdfUrl,
       formationId: raw.formationId,
+      enrolledAt: raw.enrollment.createdAt,
       user: raw.user,
       formation: {
         title: raw.enrollment.formation.title,

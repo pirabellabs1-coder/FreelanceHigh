@@ -1,4 +1,6 @@
-// Certificate PDF generator — Premium design with FreelanceHigh branding & QR code
+// Certificate PDF generator — "Sovereign Gilt" premium design
+// Inspired by diplomatic seals, central bank notes, and royal charters.
+// No score displayed. Shows start date, completion date, 5-year validity.
 
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
@@ -7,7 +9,7 @@ interface CertificateData {
   studentName: string;
   formationTitle: string;
   instructorName: string;
-  score: number;
+  startDate: Date;
   completionDate: Date;
   certificateCode: string;
   locale: "fr" | "en";
@@ -16,428 +18,413 @@ interface CertificateData {
 const LABELS = {
   fr: {
     brand: "FreelanceHigh",
-    brandSub: "Formations & Certifications",
-    title: "CERTIFICAT DE RÉUSSITE",
+    brandSub: "FORMATIONS  &  CERTIFICATIONS  PROFESSIONNELLES",
+    title: "CERTIFICAT DE REUSSITE",
     subtitle: "Ce certificat atteste que",
-    completed: "a complété avec succès la formation",
-    score: "Score obtenu",
-    date: "Date de complétion",
-    instructor: "Instructeur",
-    verify: "Vérifier ce certificat",
-    platform: "FreelanceHigh — La plateforme freelance qui élève votre carrière au plus haut niveau",
-    code: "Code du certificat",
-    signedBy: "Délivré et signé par",
-    rights: "Tous droits réservés.",
-    verifyAt: "Vérifiable sur",
+    completed: "a complete avec succes la formation",
+    startDate: "DATE DE DEBUT",
+    endDate: "DATE DE FIN",
+    validUntil: "VALIDE JUSQU'AU",
+    instructor: "DELIVRE PAR L'INSTRUCTEUR",
+    certId: "IDENTIFIANT UNIQUE DU CERTIFICAT",
+    verify: "SCANNER POUR VERIFIER",
+    verifyAt: "Verifiable sur",
+    platform: "FreelanceHigh \u2014 La plateforme freelance qui eleve votre carriere au plus haut niveau",
+    rights: "Tous droits reserves.",
+    validityNote: "Ce certificat est valide 5 ans a compter de la date de delivrance.",
   },
   en: {
     brand: "FreelanceHigh",
-    brandSub: "Formations & Certifications",
+    brandSub: "PROFESSIONAL  TRAINING  &  CERTIFICATIONS",
     title: "CERTIFICATE OF COMPLETION",
     subtitle: "This certifies that",
     completed: "has successfully completed the course",
-    score: "Score achieved",
-    date: "Completion date",
-    instructor: "Instructor",
-    verify: "Verify this certificate",
-    platform: "FreelanceHigh — The freelance platform that elevates your career to the highest level",
-    code: "Certificate code",
-    signedBy: "Issued and signed by",
-    rights: "All rights reserved.",
+    startDate: "START DATE",
+    endDate: "COMPLETION DATE",
+    validUntil: "VALID UNTIL",
+    instructor: "ISSUED BY INSTRUCTOR",
+    certId: "UNIQUE CERTIFICATE IDENTIFIER",
+    verify: "SCAN TO VERIFY",
     verifyAt: "Verifiable at",
+    platform: "FreelanceHigh \u2014 The freelance platform that elevates your career to the highest level",
+    rights: "All rights reserved.",
+    validityNote: "This certificate is valid for 5 years from the date of issuance.",
   },
 };
 
-// Brand colors
-const VIOLET = { r: 108, g: 43, b: 217 };  // #6C2BD9 — primary
-const BLUE = { r: 14, g: 165, b: 233 };     // #0EA5E9 — accent blue
-const GREEN = { r: 16, g: 185, b: 129 };    // #10B981 — accent green
-const GOLD = { r: 212, g: 175, b: 55 };     // #D4AF37 — decorative gold
-const DARK = { r: 30, g: 30, b: 30 };       // near-black text
-const MUTED = { r: 140, g: 140, b: 140 };   // muted text
-const LIGHT_MUTED = { r: 180, g: 180, b: 180 };
+// Sovereign Gilt palette
+const NAVY = { r: 26, g: 31, b: 58 };
+const GOLD = { r: 201, g: 168, b: 76 };
+const GOLD_LIGHT = { r: 218, g: 195, b: 130 };
+const GOLD_DARK = { r: 160, g: 130, b: 50 };
+const IVORY = { r: 250, g: 246, b: 238 };
+const VIOLET = { r: 91, g: 61, b: 143 };
+const MUTED = { r: 140, g: 135, b: 125 };
+const LIGHT_MUTED = { r: 180, g: 175, b: 165 };
 
-// ── Helper: draw a filled diamond at (cx, cy) ──────────────────────
+// ── Helpers ──
+
 function drawDiamond(doc: jsPDF, cx: number, cy: number, size: number) {
   doc.triangle(cx, cy - size, cx + size, cy, cx, cy + size, "F");
   doc.triangle(cx, cy - size, cx - size, cy, cx, cy + size, "F");
 }
 
-// ── Helper: draw decorative corner bracket ──────────────────────────
-function drawCornerBrackets(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  len: number,
-  flipX: boolean,
-  flipY: boolean
-) {
+function drawCornerBrackets(doc: jsPDF, x: number, y: number, len: number, flipX: boolean, flipY: boolean) {
   const dx = flipX ? -1 : 1;
   const dy = flipY ? -1 : 1;
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setLineWidth(0.6);
   doc.line(x, y, x + dx * len, y);
   doc.line(x, y, x, y + dy * len);
-  // Small inner accent line
-  doc.line(x + dx * 3, y + dy * 3, x + dx * (len - 4), y + dy * 3);
-  doc.line(x + dx * 3, y + dy * 3, x + dx * 3, y + dy * (len - 4));
+  doc.setLineWidth(0.25);
+  doc.line(x + dx * 2, y + dy * 2, x + dx * (len - 3), y + dy * 2);
+  doc.line(x + dx * 2, y + dy * 2, x + dx * 2, y + dy * (len - 3));
 }
 
-// ── Helper: draw a horizontal ornamental divider ────────────────────
-function drawOrnamentalDivider(doc: jsPDF, cx: number, y: number, halfWidth: number) {
-  // Center diamond
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-  drawDiamond(doc, cx, y, 1.8);
-  // Two smaller diamonds on each side
-  drawDiamond(doc, cx - 12, y, 1.0);
-  drawDiamond(doc, cx + 12, y, 1.0);
-  // Lines connecting them
+function drawGuillocheBorder(doc: jsPDF, x: number, y: number, w: number, h: number) {
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setLineWidth(0.15);
+  doc.rect(x, y, w, h);
+  doc.rect(x + 1.5, y + 1.5, w - 3, h - 3);
+
+  const density = 2.5;
+  // Top & bottom guilloche wave
+  for (let px = x + 4; px < x + w - 4; px += density) {
+    const cyT = y + 0.75;
+    doc.line(px, cyT - 0.4, px + density * 0.5, cyT + 0.4);
+    doc.line(px + density * 0.5, cyT + 0.4, px + density, cyT - 0.4);
+    const cyB = y + h - 0.75;
+    doc.line(px, cyB - 0.4, px + density * 0.5, cyB + 0.4);
+    doc.line(px + density * 0.5, cyB + 0.4, px + density, cyB - 0.4);
+  }
+  // Left & right
+  for (let py = y + 4; py < y + h - 4; py += density) {
+    const cxL = x + 0.75;
+    doc.line(cxL - 0.4, py, cxL + 0.4, py + density * 0.5);
+    doc.line(cxL + 0.4, py + density * 0.5, cxL - 0.4, py + density);
+    const cxR = x + w - 0.75;
+    doc.line(cxR - 0.4, py, cxR + 0.4, py + density * 0.5);
+    doc.line(cxR + 0.4, py + density * 0.5, cxR - 0.4, py + density);
+  }
+}
+
+function drawDivider(doc: jsPDF, cx: number, y: number, halfWidth: number) {
   doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
   doc.setLineWidth(0.3);
-  doc.line(cx - halfWidth, y, cx - 14, y);
-  doc.line(cx - 10, y, cx - 3, y);
-  doc.line(cx + 3, y, cx + 10, y);
-  doc.line(cx + 14, y, cx + halfWidth, y);
+  doc.line(cx - halfWidth, y, cx - 5, y);
+  doc.line(cx + 5, y, cx + halfWidth, y);
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  drawDiamond(doc, cx, y, 1.5);
+  doc.setFillColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b);
+  drawDiamond(doc, cx - 8, y, 0.7);
+  drawDiamond(doc, cx + 8, y, 0.7);
 }
 
-// ── Helper: draw a gradient-like colored strip ──────────────────────
-function drawTopStrip(doc: jsPDF, w: number) {
-  // Violet strip at the very top
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.rect(0, 0, w, 3, "F");
-  // Blue accent line below
-  doc.setFillColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.rect(0, 3, w, 1.2, "F");
-  // Green thin accent
-  doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  doc.rect(0, 4.2, w, 0.6, "F");
+function drawSeal(doc: jsPDF, cx: number, cy: number, radius: number) {
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setLineWidth(1.2);
+  doc.circle(cx, cy, radius);
+  doc.setLineWidth(0.3);
+  doc.circle(cx, cy, radius - 1.5);
+  doc.circle(cx, cy, radius - 3);
+
+  // Notches
+  doc.setLineWidth(0.2);
+  const notches = 48;
+  for (let i = 0; i < notches; i++) {
+    const angle = (i / notches) * Math.PI * 2;
+    const r1 = radius - 1.5;
+    const r2 = radius - 2.8;
+    doc.line(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1, cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+  }
+
+  // Inner fill
+  doc.setFillColor(IVORY.r, IVORY.g, IVORY.b);
+  doc.circle(cx, cy, radius - 4, "F");
+  doc.setDrawColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.setLineWidth(0.2);
+  doc.circle(cx, cy, radius - 4);
+
+  // Star
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  const starR = 3;
+  const starInner = 1.2;
+  for (let i = 0; i < 10; i++) {
+    const a1 = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 1) / 10) * Math.PI * 2 - Math.PI / 2;
+    const r1 = i % 2 === 0 ? starR : starInner;
+    const r2 = (i + 1) % 2 === 0 ? starR : starInner;
+    doc.triangle(cx, cy, cx + Math.cos(a1) * r1, cy + Math.sin(a1) * r1, cx + Math.cos(a2) * r2, cy + Math.sin(a2) * r2, "F");
+  }
+
+  // Micro text
+  doc.setFontSize(3.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  const arcText = "FREELANCEHIGH  ·  CERTIFIE  ·  AUTHENTIQUE  ·";
+  const arcRadius = radius - 2.2;
+  const startAngle = -Math.PI * 0.75;
+  const arcLen = Math.PI * 1.5;
+  for (let i = 0; i < arcText.length; i++) {
+    const angle = startAngle + (i / arcText.length) * arcLen;
+    const x = cx + Math.cos(angle) * arcRadius;
+    const y = cy + Math.sin(angle) * arcRadius;
+    doc.text(arcText[i], x, y, { angle: -(angle * 180 / Math.PI) - 90, align: "center" });
+  }
 }
 
-function drawBottomStrip(doc: jsPDF, w: number, h: number) {
-  doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  doc.rect(0, h - 4.8, w, 0.6, "F");
-  doc.setFillColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.rect(0, h - 4.2, w, 1.2, "F");
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.rect(0, h - 3, w, 3, "F");
+function formatDate(date: Date, locale: "fr" | "en"): string {
+  return date.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export async function generateCertificatePDF(data: CertificateData): Promise<Buffer> {
-  const {
-    studentName,
-    formationTitle,
-    instructorName,
-    score,
-    completionDate,
-    certificateCode,
-    locale,
-  } = data;
+  const { studentName, formationTitle, instructorName, startDate, completionDate, certificateCode, locale } = data;
   const t = LABELS[locale];
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();  // 297
   const h = doc.internal.pageSize.getHeight(); // 210
 
-  // ── 1. White background ─────────────────────────────────────────
-  doc.setFillColor(255, 255, 255);
+  // 5-year validity
+  const validUntil = new Date(completionDate);
+  validUntil.setFullYear(validUntil.getFullYear() + 5);
+
+  // ── Background ──
+  doc.setFillColor(IVORY.r, IVORY.g, IVORY.b);
   doc.rect(0, 0, w, h, "F");
 
-  // ── 2. Branded color strips at top and bottom ───────────────────
-  drawTopStrip(doc, w);
-  drawBottomStrip(doc, w, h);
-
-  // ── 3. Subtle background pattern (faint watermark grid) ─────────
-  doc.setGState(doc.GState({ opacity: 0.02 }));
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  for (let px = 20; px < w - 20; px += 15) {
-    for (let py = 20; py < h - 20; py += 15) {
-      doc.circle(px, py, 0.4, "F");
+  // Subtle paper texture
+  doc.setGState(doc.GState({ opacity: 0.012 }));
+  doc.setFillColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  for (let px = 8; px < w - 8; px += 6) {
+    for (let py = 8; py < h - 8; py += 6) {
+      doc.circle(px, py, 0.2, "F");
     }
   }
   doc.setGState(doc.GState({ opacity: 1 }));
 
-  // ── 4. Decorative outer border (gold) ───────────────────────────
-  const m = 10; // margin from edge
+  // ── Guilloche border ──
+  drawGuillocheBorder(doc, 8, 6, w - 16, h - 12);
+
+  // Inner gold frame
   doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
-  doc.setLineWidth(1.2);
-  doc.rect(m, m, w - 2 * m, h - 2 * m);
+  doc.setLineWidth(0.5);
+  doc.rect(14, 11, w - 28, h - 22);
+  doc.setLineWidth(0.15);
+  doc.rect(16, 13, w - 32, h - 26);
 
-  // Inner border (violet, thinner)
-  const mi = 13;
-  doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.setLineWidth(0.3);
-  doc.rect(mi, mi, w - 2 * mi, h - 2 * mi);
+  // ── Corner ornaments ──
+  const cLen = 18;
+  drawCornerBrackets(doc, 14, 11, cLen, false, false);
+  drawCornerBrackets(doc, w - 14, 11, cLen, true, false);
+  drawCornerBrackets(doc, 14, h - 11, cLen, false, true);
+  drawCornerBrackets(doc, w - 14, h - 11, cLen, true, true);
 
-  // ── 5. Corner ornaments ─────────────────────────────────────────
-  const cornerLen = 20;
-  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
-  doc.setLineWidth(1.0);
-
-  // Top-left
-  drawCornerBrackets(doc, m, m, cornerLen, false, false);
-  // Top-right
-  drawCornerBrackets(doc, w - m, m, cornerLen, true, false);
-  // Bottom-left
-  drawCornerBrackets(doc, m, h - m, cornerLen, false, true);
-  // Bottom-right
-  drawCornerBrackets(doc, w - m, h - m, cornerLen, true, true);
-
-  // Corner diamonds
   doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-  drawDiamond(doc, m, m, 2.2);
-  drawDiamond(doc, w - m, m, 2.2);
-  drawDiamond(doc, m, h - m, 2.2);
-  drawDiamond(doc, w - m, h - m, 2.2);
+  const cd = 2;
+  [[14, 11], [w - 14, 11], [14, h - 11], [w - 14, h - 11]].forEach(([cx, cy]) => {
+    drawDiamond(doc, cx, cy, cd);
+  });
 
-  // ── 6. Side decorative accents (small violet dots along edges) ──
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.setGState(doc.GState({ opacity: 0.15 }));
-  for (let sy = 30; sy < h - 30; sy += 8) {
-    doc.circle(mi + 2, sy, 0.5, "F");
-    doc.circle(w - mi - 2, sy, 0.5, "F");
+  // Side dots
+  doc.setGState(doc.GState({ opacity: 0.1 }));
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  for (let sy = 25; sy < h - 25; sy += 6) {
+    doc.circle(16.5, sy, 0.35, "F");
+    doc.circle(w - 16.5, sy, 0.35, "F");
   }
   doc.setGState(doc.GState({ opacity: 1 }));
 
-  // ── 7. HEADER: FreelanceHigh brand ──────────────────────────────
-  // Brand name — large and prominent
-  doc.setFontSize(22);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.text(t.brand, w / 2, 24, { align: "center" });
-
-  // "Formations & Certifications" subtitle
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.text(t.brandSub, w / 2, 30, { align: "center" });
-
-  // Ornamental divider below brand
-  drawOrnamentalDivider(doc, w / 2, 35, 60);
-
-  // ── 8. CERTIFICATE TITLE ────────────────────────────────────────
-  doc.setFontSize(32);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(DARK.r, DARK.g, DARK.b);
-  doc.text(t.title, w / 2, 48, { align: "center" });
-
-  // Gold underline below title
-  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
-  doc.setLineWidth(0.8);
-  doc.line(w / 2 - 55, 52, w / 2 + 55, 52);
-  // Thinner secondary line
-  doc.setLineWidth(0.3);
-  doc.line(w / 2 - 40, 54, w / 2 + 40, 54);
-
-  // ── 9. "This certifies that" ────────────────────────────────────
-  doc.setFontSize(12);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.setFont("helvetica", "italic");
-  doc.text(t.subtitle, w / 2, 63, { align: "center" });
-
-  // ── 10. STUDENT NAME (prominent) ────────────────────────────────
-  doc.setFontSize(30);
-  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.setFont("helvetica", "bold");
-  doc.text(studentName, w / 2, 77, { align: "center" });
-
-  // Decorative line under name
-  const nameWidth = doc.getTextWidth(studentName);
-  doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.setLineWidth(0.5);
-  doc.line(w / 2 - nameWidth / 2 - 8, 80, w / 2 + nameWidth / 2 + 8, 80);
-  // Small green accent dots at line ends
-  doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  doc.circle(w / 2 - nameWidth / 2 - 8, 80, 0.8, "F");
-  doc.circle(w / 2 + nameWidth / 2 + 8, 80, 0.8, "F");
-
-  // ── 11. "has completed the course" ──────────────────────────────
-  doc.setFontSize(12);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.completed, w / 2, 89, { align: "center" });
-
-  // ── 12. FORMATION TITLE ─────────────────────────────────────────
-  doc.setFontSize(18);
-  doc.setTextColor(DARK.r, DARK.g, DARK.b);
-  doc.setFont("helvetica", "bold");
-  const titleLines = doc.splitTextToSize(formationTitle, w - 110);
-  doc.text(titleLines, w / 2, 100, { align: "center" });
-
-  // ── 13. Ornamental divider between title and details ────────────
-  const dividerY = titleLines.length > 1 ? 112 : 108;
-  drawOrnamentalDivider(doc, w / 2, dividerY, 50);
-
-  // ── 14. DETAILS: 3-column layout ───────────────────────────────
-  const detailsY = dividerY + 8;
-  const colWidth = (w - 100) / 3;
-  const col1X = 50 + colWidth / 2;
-  const col2X = w / 2;
-  const col3X = w - 50 - colWidth / 2;
-  const boxH = 24;
-  const boxR = 3;
-
-  // --- Score box ---
-  // Background
-  doc.setFillColor(248, 245, 255); // very light violet
-  doc.roundedRect(col1X - colWidth / 2, detailsY - 4, colWidth, boxH, boxR, boxR, "F");
-  // Left accent bar
-  doc.setFillColor(GREEN.r, GREEN.g, GREEN.b);
-  doc.rect(col1X - colWidth / 2, detailsY - 4, 1.5, boxH, "F");
-  // Label
-  doc.setFontSize(8);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.score.toUpperCase(), col1X, detailsY + 2, { align: "center" });
-  // Value
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  // Color the score based on performance
-  if (score >= 90) {
-    doc.setTextColor(GREEN.r, GREEN.g, GREEN.b);
-  } else if (score >= 70) {
-    doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-  } else {
-    doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  }
-  doc.text(`${score}%`, col1X, detailsY + 14, { align: "center" });
-
-  // --- Date box ---
-  doc.setFillColor(248, 245, 255);
-  doc.roundedRect(col2X - colWidth / 2, detailsY - 4, colWidth, boxH, boxR, boxR, "F");
-  doc.setFillColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.rect(col2X - colWidth / 2, detailsY - 4, 1.5, boxH, "F");
-  doc.setFontSize(8);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.date.toUpperCase(), col2X, detailsY + 2, { align: "center" });
-  doc.setFontSize(13);
-  doc.setTextColor(DARK.r, DARK.g, DARK.b);
-  doc.setFont("helvetica", "bold");
-  const formattedDate = completionDate.toLocaleDateString(
-    locale === "fr" ? "fr-FR" : "en-US",
-    { day: "numeric", month: "long", year: "numeric" }
-  );
-  doc.text(formattedDate, col2X, detailsY + 14, { align: "center" });
-
-  // --- Instructor box ---
-  doc.setFillColor(248, 245, 255);
-  doc.roundedRect(col3X - colWidth / 2, detailsY - 4, colWidth, boxH, boxR, boxR, "F");
+  // Top/bottom accent lines
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.rect(14, 6, w - 28, 0.8, "F");
   doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.rect(col3X - colWidth / 2, detailsY - 4, 1.5, boxH, "F");
-  doc.setFontSize(8);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.instructor.toUpperCase(), col3X, detailsY + 2, { align: "center" });
-  doc.setFontSize(13);
-  doc.setTextColor(DARK.r, DARK.g, DARK.b);
+  doc.rect(14, 6.8, w - 28, 0.3, "F");
+  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
+  doc.rect(14, h - 7.1, w - 28, 0.3, "F");
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.rect(14, h - 6.8, w - 28, 0.8, "F");
+
+  // ══════════════════════ CONTENT ══════════════════════
+
+  // Brand
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(instructorName, col3X, detailsY + 14, { align: "center" });
+  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
+  doc.text(t.brand, w / 2, 23, { align: "center" });
 
-  // ── 15. SIGNATURE SECTION ───────────────────────────────────────
-  const sigY = detailsY + boxH + 12;
-
-  // Signature line
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.4);
-  doc.line(w / 2 - 35, sigY, w / 2 + 35, sigY);
-
-  // Signed by text
-  doc.setFontSize(8);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
-  doc.text(t.signedBy, w / 2, sigY + 5, { align: "center" });
+  doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.text(t.brandSub, w / 2, 28, { align: "center" });
+
+  drawDivider(doc, w / 2, 33, 55);
+
+  // Title
+  doc.setFontSize(28);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(t.title, w / 2, 46, { align: "center" });
+
+  // Double underline
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setLineWidth(0.6);
+  doc.line(w / 2 - 60, 49, w / 2 + 60, 49);
+  doc.setLineWidth(0.2);
+  doc.line(w / 2 - 45, 51, w / 2 + 45, 51);
+
+  // "This certifies that"
   doc.setFontSize(10);
-  doc.setTextColor(DARK.r, DARK.g, DARK.b);
-  doc.setFont("helvetica", "bold");
-  doc.text(instructorName, w / 2, sigY + 11, { align: "center" });
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+  doc.text(t.subtitle, w / 2, 60, { align: "center" });
 
-  // ── 16. QR CODE (bottom-left) ───────────────────────────────────
-  const verifyUrl = `https://freelancehigh.com/formations/verification/${certificateCode}`;
+  // Student name
+  doc.setFontSize(34);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(studentName, w / 2, 74, { align: "center" });
+
+  const nameW = doc.getTextWidth(studentName);
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setLineWidth(0.4);
+  doc.line(w / 2 - nameW / 2 - 10, 77, w / 2 + nameW / 2 + 10, 77);
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.circle(w / 2 - nameW / 2 - 10, 77, 0.6, "F");
+  doc.circle(w / 2 + nameW / 2 + 10, 77, 0.6, "F");
+
+  // "Has completed"
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+  doc.text(t.completed, w / 2, 86, { align: "center" });
+
+  // Formation title
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  const titleLines = doc.splitTextToSize(formationTitle, w - 120);
+  doc.text(titleLines, w / 2, 97, { align: "center" });
+
+  const divY = titleLines.length > 1 ? 107 : 104;
+  drawDivider(doc, w / 2, divY, 45);
+
+  // ── Details: Start | Completion | Valid Until ──
+  const detY = divY + 10;
+  const col1 = w * 0.25;
+  const col2 = w * 0.5;
+  const col3 = w * 0.75;
+
+  // Start date
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.text(t.startDate, col1, detY, { align: "center" });
+  doc.setFontSize(11);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(formatDate(startDate, locale), col1, detY + 7, { align: "center" });
+
+  // Completion date
+  doc.setFontSize(6.5);
+  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.text(t.endDate, col2, detY, { align: "center" });
+  doc.setFontSize(11);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(formatDate(completionDate, locale), col2, detY + 7, { align: "center" });
+
+  // Valid until
+  doc.setFontSize(6.5);
+  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.text(t.validUntil, col3, detY, { align: "center" });
+  doc.setFontSize(11);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(formatDate(validUntil, locale), col3, detY + 7, { align: "center" });
+
+  // Separators
+  doc.setDrawColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b);
+  doc.setLineWidth(0.15);
+  doc.line((col1 + col2) / 2, detY - 3, (col1 + col2) / 2, detY + 10);
+  doc.line((col2 + col3) / 2, detY - 3, (col2 + col3) / 2, detY + 10);
+
+  // ── Instructor + signature ──
+  const instrY = detY + 20;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.text(t.instructor, w / 2, instrY, { align: "center" });
+  doc.setFontSize(13);
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(instructorName, w / 2, instrY + 7, { align: "center" });
+  doc.setDrawColor(200, 195, 185);
+  doc.setLineWidth(0.3);
+  doc.line(w / 2 - 30, instrY + 10, w / 2 + 30, instrY + 10);
+
+  // ── Seal ──
+  drawSeal(doc, w - 50, h - 42, 14);
+
+  // ── QR Code ──
   const qrX = 22;
   const qrY = h - 48;
-  const qrSize = 24;
+  const qrSize = 22;
+  const verifyUrl = `https://freelancehigh.com/formations/verification/${certificateCode}`;
 
   try {
     const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-      width: 250,
+      width: 300,
       margin: 1,
-      color: { dark: "#6C2BD9", light: "#FFFFFF" },
+      color: { dark: "#1a1f3a", light: "#faf6ee" },
     });
     doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
   } catch {
-    // QR generation failed — draw a placeholder box
-    doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
+    // Fallback: draw placeholder box
+    doc.setDrawColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b);
     doc.setLineWidth(0.3);
     doc.rect(qrX, qrY, qrSize, qrSize);
-    doc.setFontSize(7);
-    doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
-    doc.setFont("helvetica", "bold");
-    doc.text("QR Code", qrX + qrSize / 2, qrY + qrSize / 2 - 1, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5);
-    doc.text(verifyUrl, qrX + qrSize / 2, qrY + qrSize / 2 + 3, {
-      align: "center",
-      maxWidth: qrSize - 2,
-    });
+    doc.setFontSize(6);
+    doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    doc.text("QR", qrX + qrSize / 2, qrY + qrSize / 2, { align: "center" });
   }
 
-  // QR caption
-  doc.setFontSize(6);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+  doc.setFontSize(4.5);
   doc.setFont("helvetica", "normal");
-  doc.text(t.verify, qrX + qrSize / 2, qrY + qrSize + 4, { align: "center" });
+  doc.setTextColor(LIGHT_MUTED.r, LIGHT_MUTED.g, LIGHT_MUTED.b);
+  doc.text(t.verify, qrX + qrSize / 2, qrY + qrSize + 3.5, { align: "center" });
+
+  // ── Certificate code ──
+  const codeY = h - 28;
+  doc.setFontSize(5.5);
+  doc.setTextColor(LIGHT_MUTED.r, LIGHT_MUTED.g, LIGHT_MUTED.b);
+  doc.text(t.certId, w / 2, codeY, { align: "center" });
+
+  doc.setFontSize(11);
+  doc.setFont("courier", "bold");
+  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.text(certificateCode, w / 2, codeY + 6, { align: "center" });
+
+  const codeW = doc.getTextWidth(certificateCode) + 10;
+  doc.setDrawColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b);
+  doc.setLineWidth(0.2);
+  doc.line(w / 2 - codeW / 2, codeY + 8, w / 2 + codeW / 2, codeY + 8);
+
+  // Verify URL
   doc.setFontSize(5);
-  doc.setTextColor(LIGHT_MUTED.r, LIGHT_MUTED.g, LIGHT_MUTED.b);
-  doc.text(
-    `freelancehigh.com/verify/${certificateCode}`,
-    qrX + qrSize / 2,
-    qrY + qrSize + 8,
-    { align: "center" }
-  );
-
-  // ── 17. CERTIFICATE CODE (bottom-center) ────────────────────────
-  doc.setFontSize(7);
-  doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
   doc.setFont("helvetica", "normal");
-  doc.text(t.code.toUpperCase(), w / 2, h - 30, { align: "center" });
-  doc.setFontSize(12);
-  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.setFont("helvetica", "bold");
-  doc.text(certificateCode, w / 2, h - 24, { align: "center" });
-
-  // Unique ID underline
-  const codeWidth = doc.getTextWidth(certificateCode);
-  doc.setDrawColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.setLineWidth(0.3);
-  doc.line(w / 2 - codeWidth / 2 - 3, h - 22.5, w / 2 + codeWidth / 2 + 3, h - 22.5);
-
-  // ── 18. VERIFICATION URL (bottom-right) ─────────────────────────
-  const vrX = w - 22;
-  doc.setFontSize(6);
   doc.setTextColor(LIGHT_MUTED.r, LIGHT_MUTED.g, LIGHT_MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.verifyAt, vrX, h - 32, { align: "right" });
-  doc.setFontSize(7);
-  doc.setTextColor(BLUE.r, BLUE.g, BLUE.b);
-  doc.setFont("helvetica", "bold");
-  doc.text("freelancehigh.com/formations/verification", vrX, h - 28, { align: "right" });
+  doc.text(`${t.verifyAt} freelancehigh.com/formations/verification`, w / 2, codeY + 13, { align: "center" });
 
-  // ── 19. PLATFORM FOOTER ─────────────────────────────────────────
-  doc.setFontSize(7);
-  doc.setTextColor(LIGHT_MUTED.r, LIGHT_MUTED.g, LIGHT_MUTED.b);
-  doc.setFont("helvetica", "normal");
-  doc.text(t.platform, w / 2, h - 14, { align: "center" });
-  doc.setFontSize(6);
-  doc.text(
-    `\u00A9 ${new Date().getFullYear()} FreelanceHigh. ${t.rights}`,
-    w / 2,
-    h - 10,
-    { align: "center" }
-  );
+  // ── Footer ──
+  doc.setFontSize(4.5);
+  doc.text(t.platform, w / 2, h - 15, { align: "center" });
+  doc.setFontSize(4);
+  doc.text(`\u00A9 ${new Date().getFullYear()} FreelanceHigh. ${t.rights} ${t.validityNote}`, w / 2, h - 12, { align: "center" });
 
-  // Return as buffer
   return Buffer.from(doc.output("arraybuffer"));
 }
 
-// Generate a unique certificate code (format: FH-XXXX-XXXX-XXXX)
 export function generateCertificateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const segments: string[] = [];

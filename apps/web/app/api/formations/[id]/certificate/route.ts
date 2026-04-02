@@ -1,4 +1,4 @@
-// GET /api/formations/[id]/certificate — Télécharger le certificat PDF
+// GET /api/formations/[id]/certificate — Telecharger le certificat PDF
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -16,7 +16,7 @@ export async function GET(
     const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
     await ensureUserInDb(session as { user: { id: string; email: string; name: string } });
 
@@ -42,7 +42,7 @@ export async function GET(
 
     const cert = Array.isArray(enrollment.certificate) ? enrollment.certificate[0] : enrollment.certificate;
     if (!cert || cert.revokedAt) {
-      return NextResponse.json({ error: "Certificat révoqué ou introuvable" }, { status: 404 });
+      return NextResponse.json({ error: "Certificat revoque ou introuvable" }, { status: 404 });
     }
 
     // If stored in Supabase Storage, redirect to signed URL
@@ -65,12 +65,12 @@ export async function GET(
       });
     }
 
-    // Otherwise generate on-the-fly
+    // Generate on-the-fly with premium "Sovereign Gilt" design
     const pdfBuffer = await generateCertificatePDF({
       studentName: session.user.name ?? "Apprenant",
       formationTitle: enrollment.formation.title,
       instructorName: enrollment.formation.instructeur?.user?.name ?? "Instructeur",
-      score: cert.score ?? 100,
+      startDate: enrollment.createdAt,
       completionDate: cert.issuedAt,
       certificateCode: cert.code,
       locale: "fr",

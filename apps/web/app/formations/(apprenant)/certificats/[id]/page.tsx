@@ -9,21 +9,19 @@ import {
   Award,
   Download,
   Linkedin,
-  CheckCircle,
   Share2,
   Printer,
   ArrowLeft,
   ShieldCheck,
-  QrCode,
 } from "lucide-react";
 
 interface CertificateDetail {
   id: string;
   code: string;
-  score: number;
   issuedAt: string;
   pdfUrl: string | null;
   formationId: string;
+  enrolledAt: string;
   user: { name: string };
   formation: {
     title: string;
@@ -108,18 +106,10 @@ export default function CertificatDetailPage({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
-      alert(
-        fr
-          ? "Erreur lors du telechargement"
-          : "Error downloading certificate"
-      );
+      alert(fr ? "Erreur lors du telechargement" : "Error downloading certificate");
     } finally {
       setDownloading(false);
     }
-  };
-
-  const printCertificate = () => {
-    window.print();
   };
 
   if (loading) {
@@ -141,10 +131,7 @@ export default function CertificatDetailPage({
           <p className="text-slate-500 dark:text-slate-400 mb-4 text-lg">
             {fr ? "Certificat introuvable" : "Certificate not found"}
           </p>
-          <Link
-            href="/formations/certificats"
-            className="text-primary hover:underline text-sm"
-          >
+          <Link href="/formations/certificats" className="text-primary hover:underline text-sm">
             {fr ? "Mes certifications" : "My Certifications"}
           </Link>
         </div>
@@ -153,19 +140,22 @@ export default function CertificatDetailPage({
   }
 
   const formation = cert.formation;
-  const instructorName =
-    cert.enrollment.formation.instructeur?.user?.name ?? "Instructeur";
-  const formattedDate = new Date(cert.issuedAt).toLocaleDateString(
-    fr ? "fr-FR" : "en-US",
-    { day: "numeric", month: "long", year: "numeric" }
-  );
-  const durationHours = Math.round(formation.duration / 60);
-  const scoreColor =
-    cert.score >= 90
-      ? "text-emerald-600"
-      : cert.score >= 70
-        ? "text-blue-600"
-        : "text-violet-600";
+  const instructorName = cert.enrollment.formation.instructeur?.user?.name ?? "Instructeur";
+
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString(fr ? "fr-FR" : "en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+  const validUntil = new Date(cert.issuedAt);
+  validUntil.setFullYear(validUntil.getFullYear() + 5);
+  const fmtValidUntil = validUntil.toLocaleDateString(fr ? "fr-FR" : "en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="max-w-5xl mx-auto py-4">
@@ -178,189 +168,215 @@ export default function CertificatDetailPage({
         {fr ? "Mes certifications" : "My Certifications"}
       </Link>
 
-      {/* ==================== CERTIFICATE VISUAL ==================== */}
+      {/* ==================== SOVEREIGN GILT CERTIFICATE ==================== */}
       <div
         id="certificate-visual"
-        className="relative bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-2 border-amber-300/60 dark:border-amber-500/30 rounded-sm overflow-hidden shadow-2xl aspect-[297/210]"
+        className="relative bg-[#faf6ee] dark:bg-[#1e1e2a] overflow-hidden shadow-2xl"
+        style={{ aspectRatio: "297 / 210" }}
       >
-        {/* Outer gold border frame */}
-        <div className="absolute inset-3 border-2 border-amber-400/40 dark:border-amber-500/20 rounded-sm pointer-events-none" />
-        <div className="absolute inset-5 border border-amber-300/30 dark:border-amber-500/15 rounded-sm pointer-events-none" />
+        {/* Outer gold border */}
+        <div className="absolute inset-[8px] border-[2px] border-[#c9a84c]/60 dark:border-[#c9a84c]/30" />
+        {/* Inner border */}
+        <div className="absolute inset-[12px] border border-[#c9a84c]/30 dark:border-[#c9a84c]/20" />
+        {/* Innermost frame */}
+        <div className="absolute inset-[16px] border-[0.5px] border-[#c9a84c]/20 dark:border-[#c9a84c]/15" />
 
-        {/* Top color strip */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-blue-500 to-emerald-500" />
-
-        {/* Bottom color strip */}
-        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-600" />
+        {/* Top accent strip */}
+        <div className="absolute top-0 left-[14px] right-[14px] h-[3px] bg-gradient-to-r from-[#c9a84c] via-[#5b3d8f] to-[#c9a84c]" />
+        {/* Bottom accent strip */}
+        <div className="absolute bottom-0 left-[14px] right-[14px] h-[3px] bg-gradient-to-r from-[#c9a84c] via-[#5b3d8f] to-[#c9a84c]" />
 
         {/* Corner ornaments */}
-        <div className="absolute top-6 left-6 w-8 h-8 border-t-2 border-l-2 border-amber-400/50 dark:border-amber-500/30" />
-        <div className="absolute top-6 right-6 w-8 h-8 border-t-2 border-r-2 border-amber-400/50 dark:border-amber-500/30" />
-        <div className="absolute bottom-6 left-6 w-8 h-8 border-b-2 border-l-2 border-amber-400/50 dark:border-amber-500/30" />
-        <div className="absolute bottom-6 right-6 w-8 h-8 border-b-2 border-r-2 border-amber-400/50 dark:border-amber-500/30" />
+        {[
+          "top-[12px] left-[12px] border-t-2 border-l-2",
+          "top-[12px] right-[12px] border-t-2 border-r-2",
+          "bottom-[12px] left-[12px] border-b-2 border-l-2",
+          "bottom-[12px] right-[12px] border-b-2 border-r-2",
+        ].map((cls, i) => (
+          <div key={i} className={`absolute w-[30px] h-[30px] ${cls} border-[#c9a84c]/50 dark:border-[#c9a84c]/30`} />
+        ))}
+        {/* Inner corner accents */}
+        {[
+          "top-[16px] left-[16px] border-t border-l",
+          "top-[16px] right-[16px] border-t border-r",
+          "bottom-[16px] left-[16px] border-b border-l",
+          "bottom-[16px] right-[16px] border-b border-r",
+        ].map((cls, i) => (
+          <div key={i} className={`absolute w-[18px] h-[18px] ${cls} border-[#c9a84c]/30 dark:border-[#c9a84c]/20`} />
+        ))}
 
-        {/* Subtle watermark pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 30px, #6C2BD9 30px, #6C2BD9 31px)`,
-          }}
-        />
+        {/* Subtle texture overlay */}
+        <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]" style={{
+          backgroundImage: `radial-gradient(circle, #c9a84c 0.3px, transparent 0.3px)`,
+          backgroundSize: "12px 12px",
+        }} />
 
-        {/* Certificate content */}
-        <div className="relative h-full flex flex-col items-center justify-between px-8 py-8 sm:px-12 sm:py-10 md:px-16 md:py-12">
-          {/* Header: Brand */}
+        {/* Side decorative dots */}
+        <div className="absolute left-[18px] top-[40px] bottom-[40px] flex flex-col justify-between opacity-10">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="w-[3px] h-[3px] rounded-full bg-[#c9a84c]" />
+          ))}
+        </div>
+        <div className="absolute right-[18px] top-[40px] bottom-[40px] flex flex-col justify-between opacity-10">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="w-[3px] h-[3px] rounded-full bg-[#c9a84c]" />
+          ))}
+        </div>
+
+        {/* ── Content ── */}
+        <div className="relative h-full flex flex-col items-center justify-between px-[10%] py-[5%]">
+
+          {/* Brand */}
           <div className="text-center">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-violet-700 to-violet-500 dark:from-violet-400 dark:to-violet-300 bg-clip-text text-transparent tracking-wide">
+            <h2 className="text-[clamp(14px,2.2vw,22px)] font-bold tracking-[0.1em] text-[#5b3d8f] dark:text-[#a78bfa]">
               FreelanceHigh
             </h2>
-            <p className="text-[10px] sm:text-xs text-blue-500/70 dark:text-blue-400/60 tracking-[0.2em] uppercase mt-0.5">
-              Formations & Certifications
+            <p className="text-[clamp(6px,0.8vw,8px)] tracking-[0.25em] uppercase text-[#c9a84c] dark:text-[#c9a84c]/70 mt-0.5 font-medium">
+              {fr ? "Formations & Certifications Professionnelles" : "Professional Training & Certifications"}
             </p>
-
-            {/* Decorative divider */}
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <div className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent to-amber-400/50" />
-              <div className="w-1.5 h-1.5 bg-amber-400/60 rotate-45" />
-              <div className="w-2 h-2 bg-amber-400/80 rotate-45" />
-              <div className="w-1.5 h-1.5 bg-amber-400/60 rotate-45" />
-              <div className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent to-amber-400/50" />
+            {/* Divider */}
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <div className="h-px w-[clamp(30px,6vw,60px)] bg-gradient-to-r from-transparent to-[#c9a84c]/40" />
+              <div className="w-1 h-1 bg-[#c9a84c]/50 rotate-45" />
+              <div className="w-1.5 h-1.5 bg-[#c9a84c]/70 rotate-45" />
+              <div className="w-1 h-1 bg-[#c9a84c]/50 rotate-45" />
+              <div className="h-px w-[clamp(30px,6vw,60px)] bg-gradient-to-l from-transparent to-[#c9a84c]/40" />
             </div>
           </div>
 
           {/* Title */}
           <div className="text-center -mt-1">
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-[0.15em] text-slate-800 dark:text-slate-100 uppercase">
+            <h1 className="text-[clamp(16px,3vw,32px)] font-bold tracking-[0.2em] text-[#1a1f3a] dark:text-[#e8e4dc] uppercase">
               {fr ? "Certificat de Reussite" : "Certificate of Completion"}
             </h1>
-            {/* Double underline */}
-            <div className="mt-2 flex flex-col items-center gap-1">
-              <div className="h-0.5 w-40 sm:w-56 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-              <div className="h-px w-28 sm:w-40 bg-gradient-to-r from-transparent via-amber-300/60 to-transparent" />
+            <div className="mt-1.5 flex flex-col items-center gap-0.5">
+              <div className="h-[2px] w-[clamp(80px,18vw,140px)] bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent" />
+              <div className="h-px w-[clamp(60px,12vw,100px)] bg-gradient-to-r from-transparent via-[#c9a84c]/40 to-transparent" />
             </div>
           </div>
 
           {/* Subtitle + Name */}
           <div className="text-center -mt-1">
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 italic">
+            <p className="text-[clamp(8px,1.1vw,12px)] italic text-[#8c877d] dark:text-[#8c877d]">
               {fr ? "Ce certificat atteste que" : "This certifies that"}
             </p>
-            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-violet-700 dark:text-violet-400 mt-2 font-serif">
+            <h3 className="text-[clamp(20px,3.8vw,42px)] font-bold text-[#1a1f3a] dark:text-[#e8e4dc] mt-1 font-serif leading-tight">
               {cert.user.name}
             </h3>
-            {/* Decorative line under name */}
-            <div className="mt-1.5 flex items-center justify-center gap-1">
-              <div className="w-1 h-1 rounded-full bg-emerald-500/60" />
-              <div className="h-px w-24 sm:w-48 bg-violet-400/30" />
-              <div className="w-1 h-1 rounded-full bg-emerald-500/60" />
+            <div className="mt-1 flex items-center justify-center gap-1">
+              <div className="w-1 h-1 rounded-full bg-[#c9a84c]/50" />
+              <div className="h-px w-[clamp(60px,16vw,200px)] bg-[#c9a84c]/30" />
+              <div className="w-1 h-1 rounded-full bg-[#c9a84c]/50" />
             </div>
           </div>
 
-          {/* "Has completed" + Formation Title */}
+          {/* "Has completed" + Formation */}
           <div className="text-center -mt-1">
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              {fr
-                ? "a complete avec succes la formation"
-                : "has successfully completed the course"}
+            <p className="text-[clamp(8px,1.1vw,12px)] italic text-[#8c877d]">
+              {fr ? "a complete avec succes la formation" : "has successfully completed the course"}
             </p>
-            <h4 className="text-base sm:text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1.5 max-w-lg mx-auto leading-tight">
+            <h4 className="text-[clamp(12px,2vw,20px)] font-bold text-[#1a1f3a] dark:text-[#e8e4dc] mt-1 max-w-[80%] mx-auto leading-snug">
               {formation.title}
             </h4>
           </div>
 
-          {/* Details row: Score | Date | Duration | Instructor */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 -mt-1">
-            <div className="text-center px-3 sm:px-5 py-2 bg-white/60 dark:bg-slate-700/40 rounded-lg border border-slate-200/50 dark:border-slate-600/30">
-              <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
-                Score
-              </p>
-              <p
-                className={`text-lg sm:text-2xl font-bold ${scoreColor} dark:${scoreColor.replace("600", "400")}`}
-              >
-                {cert.score}%
-              </p>
-            </div>
-            <div className="text-center px-3 sm:px-5 py-2 bg-white/60 dark:bg-slate-700/40 rounded-lg border border-slate-200/50 dark:border-slate-600/30">
-              <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
-                Date
-              </p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {formattedDate}
-              </p>
-            </div>
-            <div className="text-center px-3 sm:px-5 py-2 bg-white/60 dark:bg-slate-700/40 rounded-lg border border-slate-200/50 dark:border-slate-600/30">
-              <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
-                {fr ? "Duree" : "Duration"}
-              </p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {durationHours}h
-              </p>
-            </div>
-            <div className="text-center px-3 sm:px-5 py-2 bg-white/60 dark:bg-slate-700/40 rounded-lg border border-slate-200/50 dark:border-slate-600/30">
-              <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">
-                {fr ? "Instructeur" : "Instructor"}
-              </p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {instructorName}
-              </p>
-            </div>
+          {/* Divider */}
+          <div className="flex items-center justify-center gap-1.5 -mt-1">
+            <div className="h-px w-[clamp(25px,5vw,50px)] bg-gradient-to-r from-transparent to-[#c9a84c]/30" />
+            <div className="w-1 h-1 bg-[#c9a84c]/40 rotate-45" />
+            <div className="w-1.5 h-1.5 bg-[#c9a84c]/60 rotate-45" />
+            <div className="w-1 h-1 bg-[#c9a84c]/40 rotate-45" />
+            <div className="h-px w-[clamp(25px,5vw,50px)] bg-gradient-to-l from-transparent to-[#c9a84c]/30" />
           </div>
 
-          {/* Signature + Seal + QR */}
-          <div className="w-full flex items-end justify-between -mt-1">
-            {/* QR Code area */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-md flex items-center justify-center p-1">
-                <QrCode className="w-full h-full text-violet-600 dark:text-violet-400 opacity-60" />
+          {/* Dates: Start | Completion | Valid Until */}
+          <div className="flex items-center justify-center gap-[clamp(12px,4vw,40px)] -mt-1">
+            {[
+              { label: fr ? "DATE DE DEBUT" : "START DATE", value: fmtDate(cert.enrolledAt) },
+              { label: fr ? "DATE DE FIN" : "COMPLETION DATE", value: fmtDate(cert.issuedAt) },
+              { label: fr ? "VALIDE JUSQU'AU" : "VALID UNTIL", value: fmtValidUntil },
+            ].map((col, i, arr) => (
+              <div key={i} className="flex items-center gap-[clamp(12px,4vw,40px)]">
+                <div className="text-center">
+                  <p className="text-[clamp(5px,0.7vw,7px)] tracking-[0.15em] uppercase text-[#a0966c] dark:text-[#a0966c]/70 font-medium">
+                    {col.label}
+                  </p>
+                  <p className="text-[clamp(9px,1.2vw,13px)] font-semibold text-[#1a1f3a] dark:text-[#e8e4dc] mt-0.5">
+                    {col.value}
+                  </p>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="w-px h-[clamp(16px,3vw,30px)] bg-[#c9a84c]/20" />
+                )}
               </div>
-              <Link
-                href={`/formations/verification/${cert.code}`}
-                target="_blank"
-                className="text-[8px] sm:text-[9px] text-violet-500/70 hover:text-violet-600 transition-colors"
-              >
-                {fr ? "Verifier" : "Verify"}
-              </Link>
+            ))}
+          </div>
+
+          {/* Instructor + Signature + Seal */}
+          <div className="w-full flex items-end justify-between -mt-1">
+            {/* QR code area (left) */}
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="w-[clamp(40px,6vw,56px)] h-[clamp(40px,6vw,56px)] border border-[#c9a84c]/30 dark:border-[#c9a84c]/20 rounded-sm flex items-center justify-center bg-white dark:bg-[#2a2a3a] p-1">
+                <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-[1px]">
+                  {/* Simplified QR pattern */}
+                  {[1,1,1,0,1, 1,0,1,1,0, 1,1,1,0,1, 0,1,0,1,0, 1,0,1,1,1].map((v, i) => (
+                    <div key={i} className={`${v ? "bg-[#1a1f3a] dark:bg-[#e8e4dc]" : "bg-transparent"} rounded-[0.5px]`} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-[clamp(4px,0.5vw,5px)] tracking-[0.1em] uppercase text-[#b4afa5] dark:text-[#b4afa5]/60">
+                {fr ? "Scanner pour verifier" : "Scan to verify"}
+              </p>
             </div>
 
-            {/* Center: Signature */}
+            {/* Center: Instructor signature */}
             <div className="text-center flex-1 px-4">
-              {/* Signature line */}
-              <div className="border-b border-slate-300 dark:border-slate-600 w-36 sm:w-48 mx-auto mb-1" />
-              <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500">
-                {fr ? "Delivre et signe par" : "Issued and signed by"}
+              <p className="text-[clamp(5px,0.7vw,7px)] tracking-[0.15em] uppercase text-[#a0966c] dark:text-[#a0966c]/70 font-medium">
+                {fr ? "Delivre par l'instructeur" : "Issued by instructor"}
               </p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+              <p className="text-[clamp(10px,1.4vw,15px)] font-semibold text-[#1a1f3a] dark:text-[#e8e4dc] mt-1">
                 {instructorName}
               </p>
+              <div className="border-b border-[#c8c3b5] dark:border-[#4a4a5a] w-[clamp(80px,14vw,140px)] mx-auto mt-1" />
             </div>
 
-            {/* Official seal */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                <div className="absolute inset-0 rounded-full border-2 border-amber-400/60 dark:border-amber-500/40" />
-                <div className="absolute inset-1.5 rounded-full border border-amber-300/40 dark:border-amber-500/25" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 dark:text-amber-400" />
-                  <span className="text-[6px] sm:text-[7px] font-bold text-amber-600 dark:text-amber-400 tracking-wider uppercase mt-0.5">
-                    {fr ? "Certifie" : "Certified"}
-                  </span>
-                </div>
+            {/* Official seal (right) */}
+            <div className="relative w-[clamp(44px,7vw,64px)] h-[clamp(44px,7vw,64px)]">
+              <div className="absolute inset-0 rounded-full border-2 border-[#c9a84c]/50 dark:border-[#c9a84c]/30" />
+              <div className="absolute inset-[3px] rounded-full border border-[#c9a84c]/30 dark:border-[#c9a84c]/20" />
+              <div className="absolute inset-[6px] rounded-full border-[0.5px] border-[#c9a84c]/20 dark:border-[#c9a84c]/15" />
+              {/* Notch marks */}
+              <div className="absolute inset-0 rounded-full" style={{
+                background: `conic-gradient(from 0deg, ${Array.from({ length: 48 }).map((_, i) => `${i % 2 === 0 ? "transparent" : "rgba(201,168,76,0.1)"} ${(i / 48) * 100}% ${((i + 1) / 48) * 100}%`).join(", ")})`,
+              }} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <ShieldCheck className="w-[clamp(12px,1.8vw,18px)] h-[clamp(12px,1.8vw,18px)] text-[#c9a84c] dark:text-[#c9a84c]/80" />
+                <span className="text-[clamp(4px,0.5vw,6px)] font-bold text-[#c9a84c] dark:text-[#c9a84c]/80 tracking-wider uppercase mt-[1px]">
+                  {fr ? "Certifie" : "Certified"}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Footer: Code + Platform */}
           <div className="text-center -mt-1">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <CheckCircle className="w-3 h-3 text-emerald-500" />
-              <span className="font-mono text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 tracking-wider">
-                {cert.code}
-              </span>
-            </div>
-            <p className="text-[8px] sm:text-[9px] text-slate-400/60 dark:text-slate-500/60">
-              FreelanceHigh — {fr
+            <p className="text-[clamp(4px,0.6vw,6px)] tracking-[0.15em] uppercase text-[#b4afa5]/70 dark:text-[#b4afa5]/40">
+              {fr ? "Identifiant unique du certificat" : "Unique certificate identifier"}
+            </p>
+            <p className="font-mono text-[clamp(8px,1.1vw,12px)] font-semibold tracking-[0.15em] text-[#1a1f3a] dark:text-[#e8e4dc] mt-0.5">
+              {cert.code}
+            </p>
+            <div className="h-px w-[clamp(80px,14vw,160px)] mx-auto mt-1 bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
+            <p className="text-[clamp(4px,0.5vw,5.5px)] text-[#b4afa5]/50 dark:text-[#b4afa5]/30 mt-1">
+              FreelanceHigh &mdash; {fr
                 ? "La plateforme freelance qui eleve votre carriere au plus haut niveau"
                 : "The freelance platform that elevates your career to the highest level"
+              }
+            </p>
+            <p className="text-[clamp(3.5px,0.45vw,5px)] text-[#b4afa5]/40 dark:text-[#b4afa5]/25 mt-0.5">
+              &copy; {new Date().getFullYear()} FreelanceHigh. {fr
+                ? "Ce certificat est valide 5 ans a compter de la date de delivrance."
+                : "This certificate is valid for 5 years from the date of issuance."
               }
             </p>
           </div>
@@ -370,67 +386,52 @@ export default function CertificatDetailPage({
       {/* ==================== ACTION BUTTONS ==================== */}
       <div className="mt-8 print:hidden">
         <div className="flex flex-wrap gap-3 justify-center">
-          {/* Download PDF — always available */}
           <button
             onClick={downloadPdf}
             disabled={downloading}
-            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-700 hover:to-violet-600 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-lg shadow-violet-500/20 text-sm"
+            className="flex items-center gap-2 bg-gradient-to-r from-[#1a1f3a] to-[#2a2f4a] hover:from-[#0f1328] hover:to-[#1a1f3a] disabled:opacity-50 text-white font-semibold px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-[#1a1f3a]/20 text-sm"
           >
             <Download className="w-4 h-4" />
             {downloading
-              ? fr
-                ? "Telechargement..."
-                : "Downloading..."
-              : fr
-                ? "Telecharger le PDF"
-                : "Download PDF"}
+              ? fr ? "Telechargement..." : "Downloading..."
+              : fr ? "Telecharger le PDF" : "Download PDF"}
           </button>
 
-          {/* Print */}
           <button
-            onClick={printCertificate}
-            className="flex items-center gap-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-medium px-5 py-3 rounded-xl transition-colors text-sm"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-[#c9a84c] hover:bg-[#b8963f] text-white font-medium px-6 py-3.5 rounded-xl transition-colors text-sm"
           >
             <Printer className="w-4 h-4" />
             {fr ? "Imprimer" : "Print"}
           </button>
 
-          {/* LinkedIn */}
           <button
             onClick={shareLinkedIn}
-            className="flex items-center gap-2 bg-[#0077B5] hover:bg-[#006699] text-white font-medium px-5 py-3 rounded-xl transition-colors text-sm"
+            className="flex items-center gap-2 bg-[#0077B5] hover:bg-[#006699] text-white font-medium px-6 py-3.5 rounded-xl transition-colors text-sm"
           >
             <Linkedin className="w-4 h-4" />
             LinkedIn
           </button>
 
-          {/* Copy verification link */}
           <button
             onClick={copyLink}
-            className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium px-5 py-3 rounded-xl transition-colors text-sm"
+            className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium px-6 py-3.5 rounded-xl transition-colors text-sm"
           >
             <Share2 className="w-4 h-4" />
             {copied
-              ? fr
-                ? "Lien copie !"
-                : "Link Copied!"
-              : fr
-                ? "Copier le lien"
-                : "Copy Link"}
+              ? fr ? "Lien copie !" : "Link Copied!"
+              : fr ? "Copier le lien" : "Copy Link"}
           </button>
         </div>
 
-        {/* Verification info */}
         <div className="mt-6 text-center">
           <Link
             href={`/formations/verification/${cert.code}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm text-[#c9a84c] hover:text-[#b8963f] transition-colors"
           >
             <ShieldCheck className="w-4 h-4" />
-            {fr
-              ? "Page de verification publique"
-              : "Public verification page"}
+            {fr ? "Page de verification publique" : "Public verification page"}
           </Link>
         </div>
       </div>
@@ -438,27 +439,17 @@ export default function CertificatDetailPage({
       {/* Print styles */}
       <style jsx global>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          #certificate-visual,
-          #certificate-visual * {
-            visibility: visible;
-          }
+          body * { visibility: hidden; }
+          #certificate-visual, #certificate-visual * { visibility: visible; }
           #certificate-visual {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 297mm;
-            height: 210mm;
+            top: 0; left: 0;
+            width: 297mm; height: 210mm;
             border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
           }
-          @page {
-            size: A4 landscape;
-            margin: 0;
-          }
+          @page { size: A4 landscape; margin: 0; }
         }
       `}</style>
     </div>
