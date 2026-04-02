@@ -294,7 +294,8 @@ model User {
   twoFactorSecret  String?
 
   // Formations
-  formationsRole   String?  // "apprenant" ou "instructeur"
+  formationsRole     String?  // "apprenant" ou "instructeur"
+  registrationSource String?  // "marketplace" ou "formations" — tracks where user registered
 
   // Tracking
   lastLoginAt     DateTime?

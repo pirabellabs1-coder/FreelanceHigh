@@ -129,10 +129,11 @@ export default function FormationsLandingPage() {
       {/* ── HERO ────────────────────────────────────────────────── */}
       <section className="relative px-3 sm:px-6 lg:px-20 pt-6 sm:pt-12 pb-10 sm:pb-20">
         <div className="max-w-7xl mx-auto">
-          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 min-h-[400px] sm:min-h-[560px] flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-8 sm:py-12">
-            {/* Decorative blurs */}
-            <div className="absolute -top-24 -right-24 size-96 bg-primary/20 blur-[150px] rounded-full" />
-            <div className="absolute -bottom-24 -left-24 size-96 bg-accent/10 blur-[150px] rounded-full" />
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 min-h-[400px] sm:min-h-[560px] flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-8 sm:py-12">
+            {/* Decorative blurs — brand indigo/violet */}
+            <div className="absolute -top-24 -right-24 size-96 bg-indigo-500/20 blur-[150px] rounded-full" />
+            <div className="absolute -bottom-24 -left-24 size-96 bg-violet-500/15 blur-[150px] rounded-full" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] bg-indigo-600/5 blur-[200px] rounded-full" />
 
             {/* Content */}
             <div className="relative z-10 max-w-3xl space-y-4 sm:space-y-6 lg:space-y-8">
@@ -141,7 +142,7 @@ export default function FormationsLandingPage() {
               </span>
 
               <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.1] tracking-tight">
-                <span className="bg-gradient-to-r from-white via-primary/90 to-accent bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent">
                   {t("hero_title")}
                 </span>
               </h1>
@@ -172,13 +173,13 @@ export default function FormationsLandingPage() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2">
                 <Link
                   href="/formations/explorer"
-                  className="bg-primary hover:bg-primary/90 text-white px-5 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg shadow-primary/30 transition-all text-xs sm:text-sm text-center"
+                  className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all text-xs sm:text-sm text-center"
                 >
                   {t("hero_cta_explore")}
                 </Link>
                 <Link
                   href="/formations/inscription?role=instructeur"
-                  className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-3 rounded-xl font-bold transition-all backdrop-blur-sm text-sm text-center"
+                  className="bg-white/5 hover:bg-white/10 text-white border border-white/15 px-8 py-3.5 rounded-xl font-bold transition-all backdrop-blur-sm text-sm text-center"
                 >
                   {t("hero_cta_instructor")}
                 </Link>
@@ -190,7 +191,7 @@ export default function FormationsLandingPage() {
         {/* Stats */}
         <div className="max-w-5xl mx-auto -mt-8 relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
           {STATS.map((stat) => (
-            <div key={stat.label} className="text-center bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-xl border border-slate-200 dark:border-slate-700">
+            <div key={stat.label} className="text-center bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg rounded-2xl p-5 shadow-xl border border-indigo-100/50 dark:border-indigo-500/10 hover:shadow-2xl hover:border-indigo-200/50 dark:hover:border-indigo-500/20 transition-all duration-300">
               <div className="text-2xl font-extrabold text-primary mb-1">
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} decimals={stat.decimals ?? 0} />
               </div>
@@ -226,10 +227,12 @@ export default function FormationsLandingPage() {
                   <Link
                     key={cat.id}
                     href={`/formations/categories/${cat.slug}`}
-                    className={`group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-primary/30 transition-all duration-300 text-center flex flex-col items-center gap-3 relative overflow-hidden${index >= 6 ? " hidden sm:flex" : ""}`}
-                    style={{ borderLeftWidth: 3, borderLeftColor: cat.color ?? "#0e7c66" }}
+                    className={`group bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:border-indigo-200/50 dark:hover:border-indigo-500/20 transition-all duration-300 text-center flex flex-col items-center gap-3 relative overflow-hidden${index >= 6 ? " hidden sm:flex" : ""}`}
+                    style={{ borderTopWidth: 3, borderTopColor: cat.color ?? "#6366f1" }}
                   >
-                    <DynamicIcon name={cat.icon ?? "library_books"} className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: (cat.color ?? "#6366f1") + "15" }}>
+                      <DynamicIcon name={cat.icon ?? "library_books"} className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" style={{ color: cat.color ?? "#6366f1" }} />
+                    </div>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">
                         {cat.name}
@@ -262,10 +265,13 @@ export default function FormationsLandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-extrabold">{t("featured_title")}</h2>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">{t("featured_title")}</h2>
+              <div className="mt-2 h-1 w-12 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
+            </div>
             <Link
               href="/formations/explorer"
-              className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"
+              className="text-indigo-500 hover:text-indigo-600 font-semibold text-sm flex items-center gap-1"
             >
               {t("see_all")}
             </Link>

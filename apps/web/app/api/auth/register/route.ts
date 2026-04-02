@@ -128,6 +128,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Un compte avec cet email existe deja" }, { status: 409 });
     }
 
+    const isFormationsRegistration = !!formationsRole;
     const upperRole = role.toUpperCase() as "FREELANCE" | "CLIENT" | "AGENCE";
     const user = await prisma.user.create({
       data: {
@@ -140,27 +141,30 @@ export async function POST(request: Request) {
         kyc: 1,
         ...(country ? { country } : {}),
         ...(formationsRole ? { formationsRole } : {}),
+        registrationSource: isFormationsRegistration ? "formations" : "marketplace",
       },
       select: { id: true, email: true, name: true, role: true },
     });
 
-    // Auto-create role-specific profile
-    try {
-      if (upperRole === "FREELANCE") {
-        await prisma.freelancerProfile.create({
-          data: { userId: user.id },
-        });
-      } else if (upperRole === "CLIENT") {
-        await prisma.clientProfile.create({
-          data: { userId: user.id },
-        });
-      } else if (upperRole === "AGENCE") {
-        await prisma.agencyProfile.create({
-          data: { userId: user.id, agencyName: name },
-        });
+    // Auto-create role-specific profile — skip for formations-only users
+    if (!isFormationsRegistration) {
+      try {
+        if (upperRole === "FREELANCE") {
+          await prisma.freelancerProfile.create({
+            data: { userId: user.id },
+          });
+        } else if (upperRole === "CLIENT") {
+          await prisma.clientProfile.create({
+            data: { userId: user.id },
+          });
+        } else if (upperRole === "AGENCE") {
+          await prisma.agencyProfile.create({
+            data: { userId: user.id, agencyName: name },
+          });
+        }
+      } catch (profileErr) {
+        console.error("[REGISTER] Auto-create profile error:", profileErr);
       }
-    } catch (profileErr) {
-      console.error("[REGISTER] Auto-create profile error:", profileErr);
     }
 
     // Emit welcome + verification events

@@ -1235,8 +1235,8 @@ async function main() {
   for (const inst of INSTRUCTEUR_USERS) {
     const user = await prisma.user.upsert({
       where: { email: inst.email },
-      update: { name: inst.name, formationsRole: "instructeur", country: inst.country, countryFlag: inst.countryFlag, avatar: inst.avatar, kyc: 3, status: "ACTIF" },
-      create: { id: inst.id, email: inst.email, passwordHash, name: inst.name, role: "FREELANCE", plan: "PRO", kyc: 3, status: "ACTIF", formationsRole: "instructeur", country: inst.country, countryFlag: inst.countryFlag, avatar: inst.avatar },
+      update: { name: inst.name, formationsRole: "instructeur", registrationSource: "formations", country: inst.country, countryFlag: inst.countryFlag, avatar: inst.avatar, kyc: 3, status: "ACTIF" },
+      create: { id: inst.id, email: inst.email, passwordHash, name: inst.name, role: "CLIENT", plan: "PRO", kyc: 3, status: "ACTIF", formationsRole: "instructeur", registrationSource: "formations", country: inst.country, countryFlag: inst.countryFlag, avatar: inst.avatar },
     });
     instructeurUsers.push(user);
 
@@ -1265,8 +1265,8 @@ async function main() {
     const user = await prisma.user.create({
       data: {
         id: app.id, email: app.email, passwordHash, name: app.name,
-        role: "FREELANCE", plan: randomItem(["GRATUIT", "GRATUIT", "GRATUIT", "PRO"] as const),
-        kyc: randomInt(1, 3), status: "ACTIF", formationsRole: "apprenant",
+        role: "CLIENT", plan: randomItem(["GRATUIT", "GRATUIT", "GRATUIT", "PRO"] as const),
+        kyc: randomInt(1, 3), status: "ACTIF", formationsRole: "apprenant", registrationSource: "formations",
         country: app.country, countryFlag: app.countryFlag,
       },
     });
@@ -1667,6 +1667,21 @@ async function main() {
   console.log(`  Promo Codes:         ${promoCodes.length}`);
   console.log(`  Cart Items:          ${cartItemCount}`);
   console.log(`  Favorites:           ${favCount}`);
+  // ── Data Migration: tag existing formation-only users ──
+  console.log("\nMigrating existing formation-only users...");
+  const migratedCount = await prisma.user.updateMany({
+    where: {
+      formationsRole: { not: null },
+      registrationSource: null,
+      role: "FREELANCE",
+    },
+    data: {
+      registrationSource: "formations",
+      role: "CLIENT",
+    },
+  });
+  console.log(`  Migrated ${migratedCount.count} formation-only users (FREELANCE → CLIENT)`);
+
   console.log(`\nAll test users password: TestPassword123! (SHA-256 hash)`);
   console.log("Note: In production, use bcryptjs for password hashing.\n");
 }

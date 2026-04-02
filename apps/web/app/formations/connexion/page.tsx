@@ -14,11 +14,16 @@ export default function FormationsConnexionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get("role") === "instructeur" ? "instructeur" : "apprenant";
+  const oauthError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<FormationsRole>(initialRole);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    oauthError === "Callback"
+      ? "Vous ne pouvez pas etre instructeur et apprenant avec le meme compte. Utilisez un autre email."
+      : ""
+  );
 
   // 2FA challenge state
   const [show2FA, setShow2FA] = useState(false);

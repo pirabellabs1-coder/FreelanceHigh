@@ -292,8 +292,10 @@ export const authOptions: NextAuthOptions = {
             const { devStore } = await import("./../../lib/dev/dev-store");
             const existing = devStore.findByEmail(email);
             if (!existing) {
-              // Create a new user for OAuth with role from cookie (default: client)
-              const oauthRole = (pendingRole || "client") as "freelance" | "client" | "agence" | "admin";
+              // Create a new user for OAuth — formations users get role "client" to avoid marketplace pollution
+              const oauthRole = pendingFormationsRole
+                ? ("client" as const)
+                : ((pendingRole || "client") as "freelance" | "client" | "agence" | "admin");
               const newUser = devStore.create({
                 email,
                 passwordHash: "", // OAuth users don't have a password
@@ -322,10 +324,17 @@ export const authOptions: NextAuthOptions = {
               user.kyc = existing.kyc;
               user.plan = existing.plan;
               const existingRecord = existing as unknown as Record<string, unknown>;
-              // Use pending role if no formationsRole set yet, or update to new role
-              const effectiveRole = pendingFormationsRole || (existingRecord.formationsRole as string | undefined);
+              const currentFormationsRole = existingRecord.formationsRole as string | undefined;
+
+              // Reject if user has a DIFFERENT formationsRole (can't be both instructeur and apprenant)
+              if (pendingFormationsRole && currentFormationsRole && currentFormationsRole !== pendingFormationsRole) {
+                console.warn(`[AUTH OAuth DEV] Role conflict: ${email} is ${currentFormationsRole}, tried ${pendingFormationsRole}`);
+                return false;
+              }
+
+              const effectiveRole = pendingFormationsRole || currentFormationsRole;
               user.formationsRole = effectiveRole;
-              if (pendingFormationsRole && existingRecord.formationsRole !== pendingFormationsRole) {
+              if (pendingFormationsRole && !currentFormationsRole) {
                 devStore.update(existing.id, { formationsRole: pendingFormationsRole } as Record<string, unknown>);
               }
             }
@@ -338,8 +347,9 @@ export const authOptions: NextAuthOptions = {
             let dbUser = await prisma.user.findUnique({ where: { email } });
 
             if (!dbUser) {
-              // Create user with role + formationsRole from cookies
-              const oauthRole = pendingRole || "client";
+              // Create user — formations users get role CLIENT to avoid marketplace pollution
+              const isFormations = !!pendingFormationsRole;
+              const oauthRole = isFormations ? "client" : (pendingRole || "client");
               const upperRole = oauthRole.toUpperCase() as "FREELANCE" | "CLIENT" | "AGENCE";
               dbUser = await prisma.user.create({
                 data: {
@@ -350,20 +360,23 @@ export const authOptions: NextAuthOptions = {
                   image: user.image,
                   emailVerified: new Date(),
                   ...(pendingFormationsRole ? { formationsRole: pendingFormationsRole as string } : {}),
+                  registrationSource: isFormations ? "formations" : "marketplace",
                 },
               });
 
-              // Auto-create role-specific profile
-              try {
-                if (upperRole === "FREELANCE") {
-                  await prisma.freelancerProfile.create({ data: { userId: dbUser.id } });
-                } else if (upperRole === "CLIENT") {
-                  await prisma.clientProfile.create({ data: { userId: dbUser.id } });
-                } else if (upperRole === "AGENCE") {
-                  await prisma.agencyProfile.create({ data: { userId: dbUser.id, agencyName: user.name || email.split("@")[0] } });
+              // Auto-create role-specific profile — skip for formations-only users
+              if (!isFormations) {
+                try {
+                  if (upperRole === "FREELANCE") {
+                    await prisma.freelancerProfile.create({ data: { userId: dbUser.id } });
+                  } else if (upperRole === "CLIENT") {
+                    await prisma.clientProfile.create({ data: { userId: dbUser.id } });
+                  } else if (upperRole === "AGENCE") {
+                    await prisma.agencyProfile.create({ data: { userId: dbUser.id, agencyName: user.name || email.split("@")[0] } });
+                  }
+                } catch (profileErr) {
+                  console.error("[AUTH OAuth] Auto-create profile error:", profileErr);
                 }
-              } catch (profileErr) {
-                console.error("[AUTH OAuth] Auto-create profile error:", profileErr);
               }
 
               // Send welcome email for new OAuth users
@@ -372,12 +385,19 @@ export const authOptions: NextAuthOptions = {
                   console.error("[AUTH OAuth] Erreur envoi email bienvenue:", err)
                 );
               });
-            } else if (pendingFormationsRole && dbUser.formationsRole !== pendingFormationsRole) {
-              // Update formationsRole if user exists but role is different
-              dbUser = await prisma.user.update({
-                where: { id: dbUser.id },
-                data: { formationsRole: pendingFormationsRole },
-              });
+            } else if (pendingFormationsRole) {
+              // Reject if user has a DIFFERENT formationsRole (can't be both instructeur and apprenant)
+              if (dbUser.formationsRole && dbUser.formationsRole !== pendingFormationsRole) {
+                console.warn(`[AUTH OAuth] Role conflict: ${email} is ${dbUser.formationsRole}, tried ${pendingFormationsRole}`);
+                return false;
+              }
+              // Set formationsRole if not yet set
+              if (!dbUser.formationsRole) {
+                dbUser = await prisma.user.update({
+                  where: { id: dbUser.id },
+                  data: { formationsRole: pendingFormationsRole },
+                });
+              }
             }
 
             // Upsert account link

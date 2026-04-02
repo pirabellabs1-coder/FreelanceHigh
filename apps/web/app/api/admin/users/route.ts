@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
       const allOrders = orderStore.getAll();
       const allTransactions = transactionStore.getAll();
 
-      let filtered = allUsers.filter((u) => u.role !== "admin");
+      // Exclude formation-only users from marketplace admin
+      let filtered = allUsers.filter((u) => u.role !== "admin" && (u as unknown as Record<string, unknown>).registrationSource !== "formations");
 
       // Apply filters
       if (roleFilter) filtered = filtered.filter((u) => u.role.toLowerCase() === roleFilter.toLowerCase());
@@ -61,8 +62,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users, total: filtered.length });
     }
 
-    // Production: Prisma with server-side filtering
-    const where: Record<string, unknown> = { role: { not: "ADMIN" } };
+    // Production: Prisma with server-side filtering — exclude formation-only users
+    const where: Record<string, unknown> = {
+      role: { not: "ADMIN" },
+      registrationSource: { not: "formations" },
+    };
 
     if (roleFilter) where.role = roleFilter.toUpperCase();
     if (statusFilter) where.status = statusFilter.toUpperCase();

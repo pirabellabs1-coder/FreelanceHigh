@@ -1,11 +1,12 @@
-// Certificate PDF generator — "Sovereign Gilt" premium design
-// Inspired by diplomatic seals, central bank notes, and royal charters.
+// Certificate PDF generator — FreelanceHigh brand design
+// Premium certificate using the FreelanceHigh brand palette:
+// Primary indigo, accent violet, gold prestige accents, clean white background.
 // No score displayed. Shows start date, completion date, 5-year validity.
 
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
 
-interface CertificateData {
+export interface CertificateData {
   studentName: string;
   formationTitle: string;
   instructorName: string;
@@ -52,15 +53,16 @@ const LABELS = {
   },
 };
 
-// Sovereign Gilt palette
-const NAVY = { r: 26, g: 31, b: 58 };
-const GOLD = { r: 201, g: 168, b: 76 };
-const GOLD_LIGHT = { r: 218, g: 195, b: 130 };
-const GOLD_DARK = { r: 160, g: 130, b: 50 };
-const IVORY = { r: 250, g: 246, b: 238 };
-const VIOLET = { r: 91, g: 61, b: 143 };
-const MUTED = { r: 140, g: 135, b: 125 };
-const LIGHT_MUTED = { r: 180, g: 175, b: 165 };
+// FreelanceHigh brand palette
+const PRIMARY = { r: 99, g: 102, b: 241 };    // indigo-500 #6366f1
+const VIOLET = { r: 139, g: 92, b: 246 };      // violet-500 #8b5cf6
+const DEEP = { r: 30, g: 27, b: 75 };          // indigo-950 #1e1b4b (text)
+const GOLD = { r: 212, g: 168, b: 67 };        // prestige gold #d4a843
+const GOLD_LIGHT = { r: 228, g: 200, b: 130 }; // light gold
+const GOLD_DARK = { r: 170, g: 135, b: 50 };   // dark gold
+const BG = { r: 250, g: 250, b: 250 };         // near-white #fafafa
+const MUTED = { r: 107, g: 114, b: 128 };      // gray-500
+const LIGHT_MUTED = { r: 156, g: 163, b: 175 };// gray-400
 
 // ── Helpers ──
 
@@ -72,7 +74,7 @@ function drawDiamond(doc: jsPDF, cx: number, cy: number, size: number) {
 function drawCornerBrackets(doc: jsPDF, x: number, y: number, len: number, flipX: boolean, flipY: boolean) {
   const dx = flipX ? -1 : 1;
   const dy = flipY ? -1 : 1;
-  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
   doc.setLineWidth(0.6);
   doc.line(x, y, x + dx * len, y);
   doc.line(x, y, x, y + dy * len);
@@ -82,11 +84,12 @@ function drawCornerBrackets(doc: jsPDF, x: number, y: number, len: number, flipX
 }
 
 function drawGuillocheBorder(doc: jsPDF, x: number, y: number, w: number, h: number) {
-  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setDrawColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.setLineWidth(0.15);
   doc.rect(x, y, w, h);
   doc.rect(x + 1.5, y + 1.5, w - 3, h - 3);
 
+  doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
   const density = 2.5;
   // Top & bottom guilloche wave
   for (let px = x + 4; px < x + w - 4; px += density) {
@@ -113,9 +116,9 @@ function drawDivider(doc: jsPDF, cx: number, y: number, halfWidth: number) {
   doc.setLineWidth(0.3);
   doc.line(cx - halfWidth, y, cx - 5, y);
   doc.line(cx + 5, y, cx + halfWidth, y);
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   drawDiamond(doc, cx, y, 1.5);
-  doc.setFillColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b);
+  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
   drawDiamond(doc, cx - 8, y, 0.7);
   drawDiamond(doc, cx + 8, y, 0.7);
 }
@@ -124,11 +127,14 @@ function drawSeal(doc: jsPDF, cx: number, cy: number, radius: number) {
   doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
   doc.setLineWidth(1.2);
   doc.circle(cx, cy, radius);
+  doc.setDrawColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.setLineWidth(0.3);
   doc.circle(cx, cy, radius - 1.5);
+  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
   doc.circle(cx, cy, radius - 3);
 
   // Notches
+  doc.setDrawColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.setLineWidth(0.2);
   const notches = 48;
   for (let i = 0; i < notches; i++) {
@@ -139,14 +145,14 @@ function drawSeal(doc: jsPDF, cx: number, cy: number, radius: number) {
   }
 
   // Inner fill
-  doc.setFillColor(IVORY.r, IVORY.g, IVORY.b);
+  doc.setFillColor(BG.r, BG.g, BG.b);
   doc.circle(cx, cy, radius - 4, "F");
-  doc.setDrawColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.setDrawColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.setLineWidth(0.2);
   doc.circle(cx, cy, radius - 4);
 
   // Star
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   const starR = 3;
   const starInner = 1.2;
   for (let i = 0; i < 10; i++) {
@@ -160,7 +166,7 @@ function drawSeal(doc: jsPDF, cx: number, cy: number, radius: number) {
   // Micro text
   doc.setFontSize(3.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   const arcText = "FREELANCEHIGH  ·  CERTIFIE  ·  AUTHENTIQUE  ·";
   const arcRadius = radius - 2.2;
   const startAngle = -Math.PI * 0.75;
@@ -194,12 +200,12 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   validUntil.setFullYear(validUntil.getFullYear() + 5);
 
   // ── Background ──
-  doc.setFillColor(IVORY.r, IVORY.g, IVORY.b);
+  doc.setFillColor(BG.r, BG.g, BG.b);
   doc.rect(0, 0, w, h, "F");
 
   // Subtle paper texture
-  doc.setGState(doc.GState({ opacity: 0.012 }));
-  doc.setFillColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
+  doc.setGState(doc.GState({ opacity: 0.015 }));
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   for (let px = 8; px < w - 8; px += 6) {
     for (let py = 8; py < h - 8; py += 6) {
       doc.circle(px, py, 0.2, "F");
@@ -210,8 +216,8 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   // ── Guilloche border ──
   drawGuillocheBorder(doc, 8, 6, w - 16, h - 12);
 
-  // Inner gold frame
-  doc.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
+  // Inner frame
+  doc.setDrawColor(VIOLET.r, VIOLET.g, VIOLET.b);
   doc.setLineWidth(0.5);
   doc.rect(14, 11, w - 28, h - 22);
   doc.setLineWidth(0.15);
@@ -224,29 +230,29 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   drawCornerBrackets(doc, 14, h - 11, cLen, false, true);
   drawCornerBrackets(doc, w - 14, h - 11, cLen, true, true);
 
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   const cd = 2;
   [[14, 11], [w - 14, 11], [14, h - 11], [w - 14, h - 11]].forEach(([cx, cy]) => {
     drawDiamond(doc, cx, cy, cd);
   });
 
   // Side dots
-  doc.setGState(doc.GState({ opacity: 0.1 }));
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setGState(doc.GState({ opacity: 0.08 }));
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   for (let sy = 25; sy < h - 25; sy += 6) {
     doc.circle(16.5, sy, 0.35, "F");
     doc.circle(w - 16.5, sy, 0.35, "F");
   }
   doc.setGState(doc.GState({ opacity: 1 }));
 
-  // Top/bottom accent lines
-  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  // Top/bottom accent lines (indigo + gold)
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.rect(14, 6, w - 28, 0.8, "F");
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.rect(14, 6.8, w - 28, 0.3, "F");
-  doc.setFillColor(VIOLET.r, VIOLET.g, VIOLET.b);
-  doc.rect(14, h - 7.1, w - 28, 0.3, "F");
   doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.rect(14, 6.8, w - 28, 0.3, "F");
+  doc.setFillColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.rect(14, h - 7.1, w - 28, 0.3, "F");
+  doc.setFillColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.rect(14, h - 6.8, w - 28, 0.8, "F");
 
   // ══════════════════════ CONTENT ══════════════════════
@@ -254,12 +260,12 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   // Brand
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
+  doc.setTextColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
   doc.text(t.brand, w / 2, 23, { align: "center" });
 
   doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(GOLD.r, GOLD.g, GOLD.b);
+  doc.setTextColor(VIOLET.r, VIOLET.g, VIOLET.b);
   doc.text(t.brandSub, w / 2, 28, { align: "center" });
 
   drawDivider(doc, w / 2, 33, 55);
@@ -267,7 +273,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   // Title
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(t.title, w / 2, 46, { align: "center" });
 
   // Double underline
@@ -286,7 +292,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   // Student name
   doc.setFontSize(34);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(studentName, w / 2, 74, { align: "center" });
 
   const nameW = doc.getTextWidth(studentName);
@@ -306,7 +312,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   // Formation title
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   const titleLines = doc.splitTextToSize(formationTitle, w - 120);
   doc.text(titleLines, w / 2, 97, { align: "center" });
 
@@ -325,7 +331,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
   doc.text(t.startDate, col1, detY, { align: "center" });
   doc.setFontSize(11);
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(formatDate(startDate, locale), col1, detY + 7, { align: "center" });
 
   // Completion date
@@ -333,7 +339,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
   doc.text(t.endDate, col2, detY, { align: "center" });
   doc.setFontSize(11);
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(formatDate(completionDate, locale), col2, detY + 7, { align: "center" });
 
   // Valid until
@@ -341,7 +347,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
   doc.text(t.validUntil, col3, detY, { align: "center" });
   doc.setFontSize(11);
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(formatDate(validUntil, locale), col3, detY + 7, { align: "center" });
 
   // Separators
@@ -357,7 +363,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   doc.setTextColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b);
   doc.text(t.instructor, w / 2, instrY, { align: "center" });
   doc.setFontSize(13);
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(instructorName, w / 2, instrY + 7, { align: "center" });
   doc.setDrawColor(200, 195, 185);
   doc.setLineWidth(0.3);
@@ -376,7 +382,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
     const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
       width: 300,
       margin: 1,
-      color: { dark: "#1a1f3a", light: "#faf6ee" },
+      color: { dark: "#1e1b4b", light: "#fafafa" },
     });
     doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
   } catch {
@@ -385,7 +391,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
     doc.setLineWidth(0.3);
     doc.rect(qrX, qrY, qrSize, qrSize);
     doc.setFontSize(6);
-    doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+    doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
     doc.text("QR", qrX + qrSize / 2, qrY + qrSize / 2, { align: "center" });
   }
 
@@ -402,7 +408,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
 
   doc.setFontSize(11);
   doc.setFont("courier", "bold");
-  doc.setTextColor(NAVY.r, NAVY.g, NAVY.b);
+  doc.setTextColor(DEEP.r, DEEP.g, DEEP.b);
   doc.text(certificateCode, w / 2, codeY + 6, { align: "center" });
 
   const codeW = doc.getTextWidth(certificateCode) + 10;

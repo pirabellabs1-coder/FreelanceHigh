@@ -110,7 +110,7 @@ export default function MesCertificatsPage() {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+        <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
           <Award className="w-7 h-7 text-white" />
         </div>
         <div>
@@ -149,11 +149,11 @@ export default function MesCertificatsPage() {
             return (
               <div
                 key={cert.id}
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg hover:border-amber-200 dark:hover:border-amber-500/20 transition-all duration-300"
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-all duration-300"
               >
                 <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                   {/* Thumbnail / Certificate icon */}
-                  <div className="w-24 h-16 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-500/10 dark:to-amber-500/5 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center border border-amber-200/50 dark:border-amber-500/20">
+                  <div className="w-24 h-16 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-500/10 dark:to-violet-500/5 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center border border-indigo-200/50 dark:border-indigo-500/20">
                     {formation.thumbnail ? (
                       <img
                         src={formation.thumbnail}
@@ -161,7 +161,7 @@ export default function MesCertificatsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Award className="w-8 h-8 text-amber-500 dark:text-amber-400" />
+                      <Award className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
                     )}
                   </div>
 

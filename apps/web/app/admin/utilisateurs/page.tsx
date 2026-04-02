@@ -173,8 +173,9 @@ export default function AdminUsers() {
         <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">people</span>
           Utilisateurs
+          <span className="text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">Marketplace</span>
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Gérez les {stats.total} comptes de la plateforme.</p>
+        <p className="text-slate-400 text-sm mt-1">Gérez les {stats.total} comptes marketplace. Les utilisateurs formations sont gérés dans l&apos;espace formations.</p>
       </div>
 
       {/* Stats rapides */}

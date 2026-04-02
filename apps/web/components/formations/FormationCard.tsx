@@ -143,45 +143,47 @@ export default function FormationCard({
     >
       <Link
         href={`/formations/${formation.slug}`}
-        className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl hover:border-primary/30 transition-all duration-300 flex flex-col"
-        style={{ borderLeftWidth: 3, borderLeftColor: catColor }}
+        className="group bg-white dark:bg-slate-800/80 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-700/60 shadow-sm hover:shadow-xl hover:border-indigo-300/50 dark:hover:border-indigo-500/30 transition-all duration-300 flex flex-col"
+        style={{ borderTopWidth: 3, borderTopColor: catColor }}
       >
         {/* Thumbnail */}
         <div className="relative overflow-hidden aspect-video bg-slate-100 dark:bg-slate-700">
           {formation.thumbnail ? (
-            <img src={formation.thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img src={formation.thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br" style={{ background: `linear-gradient(135deg, ${catColor}20, ${catColor}40)` }}>
-              <DynamicIcon name="school" className="w-12 h-12 opacity-40" />
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.1'%3E%3Cpath d='M0 0h10v10H0z'/%3E%3C/g%3E%3C/svg%3E\")" }} />
+            <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${catColor}15, ${catColor}30)` }}>
+              <DynamicIcon name="school" className="w-12 h-12 opacity-30" />
             </div>
           )}
 
+          {/* Bottom gradient overlay for better contrast */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
+          <div className="absolute top-2.5 left-2.5 flex gap-1.5 flex-wrap">
             {isBestseller && (
-              <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-yellow-900 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+              <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md shadow-amber-500/20 uppercase tracking-wide">
                 Bestseller
               </span>
             )}
             {showNew && !isBestseller && (
-              <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md shadow-emerald-500/20 uppercase tracking-wide">
                 {lang === "en" ? "New" : "Nouveau"}
               </span>
             )}
           </div>
 
           {discount && (
-            <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="absolute top-2.5 right-2.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-md shadow-red-500/20">
               -{discount}%
             </span>
           )}
 
           {/* Rating overlay on thumbnail */}
           {formation.rating > 0 && (
-            <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+            <div className="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-lg">
               <span className="text-yellow-400">{formation.rating.toFixed(1)}</span>
-              <span className="text-yellow-400">★</span>
+              <span className="text-yellow-400 text-[10px]">★</span>
             </div>
           )}
         </div>
@@ -197,14 +199,14 @@ export default function FormationCard({
           </h3>
 
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-5 h-5 rounded-full bg-primary/10 overflow-hidden flex-shrink-0">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-500/20 dark:to-violet-500/20 overflow-hidden flex-shrink-0 ring-1 ring-indigo-200/50 dark:ring-indigo-500/20">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={instructorName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs flex items-center justify-center h-full text-primary font-medium">{instructorName.charAt(0)}</span>
+                <span className="text-[10px] flex items-center justify-center h-full text-indigo-600 dark:text-indigo-400 font-semibold">{instructorName.charAt(0)}</span>
               )}
             </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{instructorName}</span>
+            <span className="text-xs text-slate-600 dark:text-slate-400 truncate font-medium">{instructorName}</span>
           </div>
 
           {formation.rating > 0 && (
@@ -224,17 +226,17 @@ export default function FormationCard({
           <div className="mt-3 flex items-center justify-between">
             <div>
               {formation.isFree ? (
-                <span className="text-lg font-extrabold text-green-500">{freeLabel}</span>
+                <span className="text-base font-extrabold text-emerald-500">{freeLabel}</span>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-extrabold text-slate-900 dark:text-white">{formatPrice(formation.price, false)}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">{formatPrice(formation.price, false)}</span>
                   {formation.originalPrice && formation.originalPrice > formation.price && (
-                    <span className="text-sm text-red-400 line-through font-medium">{formation.originalPrice.toFixed(0)}&nbsp;&euro;</span>
+                    <span className="text-xs text-slate-400 line-through">{formation.originalPrice.toFixed(0)}&nbsp;&euro;</span>
                   )}
                 </div>
               )}
             </div>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">{viewLabel} &rarr;</span>
+            <span className="text-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg font-semibold group-hover:bg-indigo-500 group-hover:text-white transition-colors">{viewLabel} &rarr;</span>
           </div>
         </div>
       </Link>

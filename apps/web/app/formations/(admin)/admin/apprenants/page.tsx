@@ -18,13 +18,18 @@ interface AdminApprenant {
 export default function AdminApprenantsPage() {
   const t = useTranslations("formations_nav");
   const [enrollments, setEnrollments] = useState<AdminApprenant[]>([]);
+  const [stats, setStats] = useState({ totalFormationsUsers: 0, totalApprenants: 0, totalInstructeurs: 0 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/formations/apprenants")
       .then((r) => r.json())
-      .then((d) => { setEnrollments(d.enrollments ?? []); setLoading(false); })
+      .then((d) => {
+        setEnrollments(d.enrollments ?? []);
+        if (d.stats) setStats(d.stats);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
@@ -38,6 +43,24 @@ export default function AdminApprenantsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">{t("admin_students_title")}</h1>
+
+      {/* Stats summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total utilisateurs formations", value: stats.totalFormationsUsers, icon: "people", color: "text-indigo-500" },
+          { label: "Apprenants", value: stats.totalApprenants, icon: "school", color: "text-violet-500" },
+          { label: "Instructeurs", value: stats.totalInstructeurs, icon: "person_book", color: "text-amber-500" },
+          { label: "Inscriptions", value: enrollments.length, icon: "assignment", color: "text-emerald-500" },
+        ].map((s, i) => (
+          <div key={i} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`material-symbols-outlined text-lg ${s.color}`}>{s.icon}</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{s.value}</span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
 
       {/* Search */}
       <div className="flex gap-3">
