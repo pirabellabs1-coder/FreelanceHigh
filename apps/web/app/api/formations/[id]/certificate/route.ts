@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { ensureUserInDb } from "@/lib/formations/ensure-user";
 import { generateCertificatePDF } from "@/lib/formations/certificate-generator";
 import { getSignedUrl } from "@/lib/supabase-storage";
 
@@ -17,6 +18,7 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
+    await ensureUserInDb(session as { user: { id: string; email: string; name: string } });
 
     const enrollment = await prisma.enrollment.findFirst({
       where: {

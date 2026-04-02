@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import prisma from "@freelancehigh/db";
+import { ensureUserInDb } from "@/lib/formations/ensure-user";
 import { PaymentService } from "@/lib/payments/service";
 
 export async function POST(
@@ -16,6 +17,7 @@ export async function POST(
     if (!session?.user) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
+    await ensureUserInDb(session as { user: { id: string; email: string; name: string } });
 
     const body = await req.json().catch(() => ({}));
     const { stripeSessionId } = body as { stripeSessionId?: string };
