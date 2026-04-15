@@ -37,8 +37,9 @@ export async function POST(request: Request) {
     const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const pid = await getProfileId(userId);
-    if (!pid) return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
+    const _upsert = await prisma.instructeurProfile.upsert({ where: { userId }, create: { userId, status: "APPROUVE" }, update: {} }).catch((e) => { console.error("[profile upsert]", e); return null; });
+    const pid = _upsert?.id ?? null;
+    if (!pid) return NextResponse.json({ error: "Impossible de créer votre profil vendeur" }, { status: 500 });
 
     const body = await request.json();
     const { type, pixelId } = body;
@@ -68,8 +69,9 @@ export async function DELETE(request: Request) {
     const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const pid = await getProfileId(userId);
-    if (!pid) return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
+    const _upsert = await prisma.instructeurProfile.upsert({ where: { userId }, create: { userId, status: "APPROUVE" }, update: {} }).catch((e) => { console.error("[profile upsert]", e); return null; });
+    const pid = _upsert?.id ?? null;
+    if (!pid) return NextResponse.json({ error: "Impossible de créer votre profil vendeur" }, { status: 500 });
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") as PixelType | null;

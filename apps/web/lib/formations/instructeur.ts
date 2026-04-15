@@ -1,67 +1,45 @@
 // Helper: get or auto-create the InstructeurProfile for the current user.
 //
-// Policy: if a user reaches any vendor API (funnels, sequences, products, etc.),
-// they clearly want to sell. So we create the profile no matter what their
-// formationsRole is. The only reason this returns null is if the user literally
-// does not exist in the database.
+// Policy: any authenticated user that reaches a vendor API clearly wants to sell.
+// We use an atomic upsert to guarantee the profile exists in a single DB call —
+// no race conditions, no silent failures.
 
 import { prisma } from "@/lib/prisma";
 
 export async function getOrCreateInstructeur(userId: string) {
+  if (!userId) return null;
+
   try {
-    // First check if profile already exists
-    const existing = await prisma.instructeurProfile.findUnique({ where: { userId } });
-    if (existing) return existing;
-
-    // Verify the user exists in the DB before trying to create a profile
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, formationsRole: true, email: true },
-    });
-
-    if (!user) {
-      console.warn(
-        `[getOrCreateInstructeur] User ${userId} not found in DB — cannot create profile`
-      );
-      return null;
-    }
-
-    // Create the profile — be permissive, the user is clearly trying to sell
-    const inst = await prisma.instructeurProfile.create({
-      data: {
+    // Atomic upsert: creates if missing, returns existing otherwise
+    const inst = await prisma.instructeurProfile.upsert({
+      where: { userId },
+      create: {
         userId,
         status: "APPROUVE",
       },
+      update: {}, // No-op update, just to make it idempotent
     });
 
-    // Align formationsRole to "instructeur" so future API calls don't re-check
-    if (user.formationsRole !== "instructeur") {
-      await prisma.user
-        .update({
-          where: { id: userId },
-          data: { formationsRole: "instructeur" },
-        })
-        .catch((e) => console.warn("[getOrCreateInstructeur] role update failed:", e));
-    }
+    // Also align the user's formationsRole — best effort, non-blocking
+    prisma.user
+      .update({
+        where: { id: userId },
+        data: { formationsRole: "instructeur" },
+      })
+      .catch(() => null);
 
     return inst;
   } catch (err) {
-    // Could be a race condition (concurrent request created the profile first)
-    // Retry a findUnique — if it now exists, return it
-    try {
-      const retry = await prisma.instructeurProfile.findUnique({ where: { userId } });
-      if (retry) return retry;
-    } catch {
-      /* ignore */
-    }
-    console.error("[getOrCreateInstructeur] Fatal error:", err);
+    // Most likely a FK violation: the userId doesn't exist in the User table.
+    // That means the session is stale / the user was deleted.
+    console.error("[getOrCreateInstructeur] Upsert failed for userId=" + userId, err);
     return null;
   }
 }
 
 /**
  * Resolve the current user's instructeurId (used in query WHERE clauses).
- * Returns null only if the user doesn't exist in the DB at all.
+ * Returns null only if the userId is invalid or the user was deleted.
  */
 export async function getInstructeurId(userId: string): Promise<string | null> {
   const inst = await getOrCreateInstructeur(userId);

@@ -41,10 +41,49 @@ export async function POST(request: Request) {
     const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const profile = await getOrCreateInstructeur(userId);
-    if (!profile) {
-      return NextResponse.json({ error: "Profil instructeur introuvable" }, { status: 404 });
+    // ── Self-healing profile ensure ──────────────────────────────────────
+    // Verify user exists first
+    const userRow = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!userRow) {
+      return NextResponse.json(
+        {
+          error: "Session expirée — veuillez vous reconnecter",
+          code: "USER_NOT_FOUND",
+        },
+        { status: 401 }
+      );
     }
+
+    // Upsert the profile atomically
+    let profile;
+    try {
+      profile = await prisma.instructeurProfile.upsert({
+        where: { userId },
+        create: { userId, status: "APPROUVE" },
+        update: {},
+      });
+    } catch (upsertErr) {
+      console.error("[products/create] upsert failed:", upsertErr);
+      // Try fallback: helper
+      profile = await getOrCreateInstructeur(userId);
+      if (!profile) {
+        return NextResponse.json(
+          {
+            error: "Impossible de créer votre profil vendeur",
+            detail: upsertErr instanceof Error ? upsertErr.message : String(upsertErr),
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Best-effort role alignment
+    prisma.user
+      .update({ where: { id: userId }, data: { formationsRole: "instructeur" } })
+      .catch(() => null);
 
     const body = await request.json();
     const {
