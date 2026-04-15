@@ -1,5 +1,6 @@
 import "../(formations)/formations.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { ToastContainer } from "@/components/ui/toast";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -19,6 +20,7 @@ export default function FormationsDashboardLayout({
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {children}
+      <ToastContainer />
     </div>
   );
 }

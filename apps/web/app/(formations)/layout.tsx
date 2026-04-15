@@ -2,6 +2,7 @@ import "./formations.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { FormationsNavbar } from "@/components/formations/FormationsNavbar";
 import { FormationsFooter } from "@/components/formations/FormationsFooter";
+import { ToastContainer } from "@/components/ui/toast";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -23,6 +24,7 @@ export default function FormationsLayout({
       <FormationsNavbar />
       <main className="flex-1 pt-24 overflow-x-hidden">{children}</main>
       <FormationsFooter />
+      <ToastContainer />
     </div>
   );
 }

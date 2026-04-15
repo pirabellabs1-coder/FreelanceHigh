@@ -1,4 +1,5 @@
 "use client";
+import { useToastStore } from "@/store/toast";
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
@@ -96,7 +97,7 @@ function ProductCard({ item, idx }: { item: Item; idx: number }) {
         const returnTo = encodeURIComponent(window.location.pathname);
         window.location.href = `/formations/inscription?role=apprenant&returnTo=${returnTo}`;
       } else {
-        alert(json.error ?? "Erreur lors de l'initialisation du paiement");
+        useToastStore.getState().addToast("error", json.error ?? "Erreur lors de l'initialisation du paiement");
         setAdding(false);
       }
     } catch (err) {
@@ -246,7 +247,7 @@ function GiftModal({ item, onClose }: { item: Item | null; onClose: () => void }
         body: JSON.stringify({ kind: item?.kind, itemId: item?.id, ...body }),
       }).then((r) => r.json()),
     onSuccess: (res) => {
-      if (res.error) { alert(res.error); return; }
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
       setSuccess(res.data?.recipient?.email ?? null);
     },
   });

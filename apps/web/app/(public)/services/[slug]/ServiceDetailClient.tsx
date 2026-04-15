@@ -6,6 +6,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { useCurrencyStore } from "@/store/currency";
+import { useToastStore } from "@/store/toast";
 import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 import { cn } from "@/lib/utils";
 import { optimizedUrl } from "@/lib/cloudinary-utils";
@@ -343,10 +344,10 @@ export default function ServiceDetailClient() {
         router.push(orderId ? `/client/commandes/${orderId}` : "/client/commandes");
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || "Erreur lors de la commande");
+        useToastStore.getState().addToast("error", err.error || "Erreur lors de la commande");
       }
     } catch {
-      alert("Erreur réseau");
+      useToastStore.getState().addToast("error", "Erreur réseau");
     } finally {
       setOrdering(false);
     }

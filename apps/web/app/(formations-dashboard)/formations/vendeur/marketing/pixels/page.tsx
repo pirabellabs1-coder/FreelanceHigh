@@ -1,4 +1,5 @@
 "use client";
+import { useToastStore } from "@/store/toast";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,7 +61,7 @@ export default function PixelsPage() {
         body: JSON.stringify(body),
       }).then((r) => r.json()),
     onSuccess: (res) => {
-      if (res.error) { alert(res.error); return; }
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
       qc.invalidateQueries({ queryKey: ["vendeur-pixels"] });
       qc.invalidateQueries({ queryKey: ["vendeur-marketing-hub"] });
       setEditingType(null);

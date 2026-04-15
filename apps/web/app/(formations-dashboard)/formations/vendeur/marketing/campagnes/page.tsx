@@ -1,4 +1,5 @@
 "use client";
+import { useToastStore } from "@/store/toast";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -66,7 +67,7 @@ export default function CampagnesPage() {
         body: JSON.stringify(body),
       }).then((r) => r.json()),
     onSuccess: (res) => {
-      if (res.error) { alert(res.error); return; }
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
       qc.invalidateQueries({ queryKey: ["vendeur-campagnes"] });
       qc.invalidateQueries({ queryKey: ["vendeur-marketing-hub"] });
       setShowForm(false);

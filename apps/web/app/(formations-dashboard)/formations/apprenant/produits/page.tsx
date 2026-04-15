@@ -1,4 +1,5 @@
 "use client";
+import { useToastStore } from "@/store/toast";
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,7 +75,7 @@ export default function ProduitsPage() {
       window.open(p.product.fileUrl, "_blank");
       setDownloaded((prev) => new Set([...prev, p.id]));
     } else {
-      alert("Fichier non disponible pour ce produit. Contactez le vendeur.");
+      useToastStore.getState().addToast("error", "Fichier non disponible pour ce produit. Contactez le vendeur.");
     }
   };
 

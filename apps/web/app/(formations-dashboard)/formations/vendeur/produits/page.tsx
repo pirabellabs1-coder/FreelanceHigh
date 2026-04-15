@@ -170,7 +170,7 @@ export default function ProduitsPage() {
             Exporter
           </button>
           <Link
-            href="/formations/vendeur/produits/nouveau"
+            href="/formations/vendeur/produits/creer"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-bold transition-opacity hover:opacity-90"
             style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
           >
@@ -288,7 +288,7 @@ export default function ProduitsPage() {
             </p>
             {allItems.length === 0 && (
               <Link
-                href="/formations/vendeur/produits/nouveau"
+                href="/formations/vendeur/produits/creer"
                 className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold"
                 style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
               >
