@@ -1,119 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// ─── Static mentor data (will be replaced with API once mentor profiles are in DB) ──
-const mentors = [
-  {
-    id: 1,
-    name: "Éric Mensah",
-    initials: "EM",
-    cover: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
-    gradient: "from-blue-500 to-blue-700",
-    specialty: "Facebook Ads & Marketing Digital",
-    domain: "Marketing",
-    bio: "10 ans d'expérience en growth marketing pour des marques africaines. Formé +1 200 freelances. Je vous aide à construire des campagnes qui convertissent vraiment.",
-    rating: 4.9,
-    reviews: 247,
-    students: 1284,
-    sessionPrice: 25000,
-    sessionDuration: "60 min",
-    languages: ["FR", "EN"],
-    badges: ["Top Mentor", "Vérifié"],
-    available: true,
-  },
-  {
-    id: 2,
-    name: "Aminata Koné",
-    initials: "AK",
-    cover: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
-    gradient: "from-purple-500 to-purple-700",
-    specialty: "Développement Web & React",
-    domain: "Dev",
-    bio: "Développeuse full-stack Senior chez une startup fintech. Passionnée par la transmission, je vous aide à progresser vite et à bien.",
-    rating: 4.8,
-    reviews: 183,
-    students: 967,
-    sessionPrice: 35000,
-    sessionDuration: "60 min",
-    languages: ["FR"],
-    badges: ["Expert Tech", "Vérifié"],
-    available: true,
-  },
-  {
-    id: 3,
-    name: "David Kabore",
-    initials: "DK",
-    cover: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-    gradient: "from-orange-500 to-orange-700",
-    specialty: "Design UI/UX & Branding",
-    domain: "Design",
-    bio: "Designer indépendant avec +120 projets. Spécialiste de l'identité visuelle pour TPE/PME africaines.",
-    rating: 4.7,
-    reviews: 98,
-    students: 542,
-    sessionPrice: 20000,
-    sessionDuration: "45 min",
-    languages: ["FR"],
-    badges: ["Vérifié"],
-    available: false,
-  },
-  {
-    id: 4,
-    name: "Carine Aboua",
-    initials: "CA",
-    cover: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80",
-    gradient: "from-pink-500 to-rose-600",
-    specialty: "Copywriting & Personal Branding",
-    domain: "Marketing",
-    bio: "Copywriteuse freelance et coach personal branding. A aidé +300 entrepreneurs à se positionner sur les réseaux africains.",
-    rating: 5.0,
-    reviews: 74,
-    students: 388,
-    sessionPrice: 18000,
-    sessionDuration: "60 min",
-    languages: ["FR"],
-    badges: ["Rising Star", "Vérifié"],
-    available: true,
-  },
-  {
-    id: 5,
-    name: "Moussa Diallo",
-    initials: "MD",
-    cover: "https://images.unsplash.com/photo-1554774853-b415df9eeb92?w=800&q=80",
-    gradient: "from-teal-500 to-teal-700",
-    specialty: "Finance Personnelle & Investissement",
-    domain: "Business",
-    bio: "Consultant financier indépendant. Expert en gestion patrimoniale adaptée aux marchés africains et diaspora.",
-    rating: 4.9,
-    reviews: 131,
-    students: 710,
-    sessionPrice: 40000,
-    sessionDuration: "90 min",
-    languages: ["FR", "EN", "WO"],
-    badges: ["Top Mentor", "Vérifié"],
-    available: true,
-  },
-  {
-    id: 6,
-    name: "Jean-Pierre Nkomo",
-    initials: "JN",
-    cover: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
-    gradient: "from-indigo-500 to-indigo-700",
-    specialty: "Intelligence Artificielle & Automatisation",
-    domain: "Dev",
-    bio: "Data scientist et entrepreneur tech. Aide les freelances à intégrer l'IA dans leurs services pour se différencier.",
-    rating: 4.8,
-    reviews: 59,
-    students: 294,
-    sessionPrice: 45000,
-    sessionDuration: "60 min",
-    languages: ["FR", "EN"],
-    badges: ["Expert Tech", "Vérifié"],
-    available: true,
-  },
+// ─── Mentor shape (matches /api/formations/mentors response) ────────────────
+type Mentor = {
+  id: string;
+  userId: string;
+  name: string | null;
+  image: string | null;
+  specialty: string;
+  domain: string | null;
+  bio: string;
+  coverImage: string | null;
+  sessionPrice: number;
+  sessionDuration: number;
+  languages: string[];
+  badges: string[];
+  available: boolean;
+  isVerified: boolean;
+  rating: number;
+  reviews: number;
+  students: number;
+  totalSessions: number;
+  // Derived (UI helpers)
+  cover?: string;
+  initials?: string;
+  gradient?: string;
+  sessionDurationLabel?: string;
+};
+
+// Default cover photos (rotated based on mentor id hash) — shown when mentor hasn't set a cover
+const DEFAULT_COVERS = [
+  "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80",
+  "https://images.unsplash.com/photo-1506765515384-028b60a970df?w=800&q=80",
+  "https://images.unsplash.com/photo-1557425493-6f90ae4659fc?w=800&q=80",
+  "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
 ];
+
+function coverFor(m: Mentor): string {
+  if (m.coverImage) return m.coverImage;
+  const hash = m.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return DEFAULT_COVERS[hash % DEFAULT_COVERS.length];
+}
+
+function initialsOf(name: string | null): string {
+  if (!name) return "??";
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function gradientFor(id: string): string {
+  const gradients = [
+    "from-blue-500 to-blue-700",
+    "from-purple-500 to-pink-600",
+    "from-emerald-500 to-teal-700",
+    "from-amber-500 to-orange-600",
+    "from-indigo-500 to-indigo-700",
+    "from-rose-500 to-red-600",
+  ];
+  const hash = id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return gradients[hash % gradients.length];
+}
+
 
 const domains = ["Tous", "Marketing", "Dev", "Design", "Business"];
 
@@ -127,13 +75,41 @@ const badgeConfig: Record<string, { bg: string; text: string; icon: string }> = 
 export default function MentorsPage() {
   const [activeDomain, setActiveDomain] = useState("Tous");
   const [search, setSearch] = useState("");
+  const [allMentors, setAllMentors] = useState<Mentor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mentors.filter((m) => {
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/formations/mentors");
+        if (!res.ok) throw new Error();
+        const json = await res.json();
+        // Enrich with UI helpers so the existing card markup keeps working
+        const enriched: Mentor[] = (json.data ?? []).map((m: Mentor) => ({
+          ...m,
+          cover: coverFor(m),
+          initials: initialsOf(m.name),
+          gradient: gradientFor(m.id),
+          sessionDurationLabel: `${m.sessionDuration} min`,
+        }));
+        setAllMentors(enriched);
+      } catch (err) {
+        console.warn("[mentors page] fetch failed", err);
+        setAllMentors([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = allMentors.filter((m) => {
     const matchDomain = activeDomain === "Tous" || m.domain === activeDomain;
+    const q = search.trim().toLowerCase();
     const matchSearch =
-      search.trim() === "" ||
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.specialty.toLowerCase().includes(search.toLowerCase());
+      q === "" ||
+      (m.name ?? "").toLowerCase().includes(q) ||
+      m.specialty.toLowerCase().includes(q);
     return matchDomain && matchSearch;
   });
 
@@ -197,11 +173,41 @@ export default function MentorsPage() {
       {/* ── Mentor grid ────────────────────────────────────────────── */}
       <section className="py-12 px-4 bg-[#f7f9fb] min-h-[60vh]">
         <div className="max-w-5xl mx-auto">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+                  <div className="h-28 bg-gray-200" />
+                  <div className="p-5 space-y-3">
+                    <div className="w-14 h-14 bg-gray-200 rounded-2xl -mt-7" />
+                    <div className="h-4 bg-gray-200 rounded-lg w-2/3" />
+                    <div className="h-3 bg-gray-200 rounded-lg w-full" />
+                    <div className="h-10 bg-gray-200 rounded-xl mt-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-20 text-[#5c647a]">
               <span className="material-symbols-outlined text-[56px] block mb-3 text-gray-300">person_search</span>
-              <p className="font-semibold text-[#191c1e] mb-1">Aucun mentor trouvé</p>
-              <p className="text-sm">Essayez un autre domaine ou modifiez votre recherche.</p>
+              <p className="font-semibold text-[#191c1e] mb-1">
+                {allMentors.length === 0 ? "Aucun mentor inscrit pour l'instant" : "Aucun mentor trouvé"}
+              </p>
+              <p className="text-sm mb-4">
+                {allMentors.length === 0
+                  ? "Soyez le premier à proposer vos services de mentorat sur FreelanceHigh."
+                  : "Essayez un autre domaine ou modifiez votre recherche."}
+              </p>
+              {allMentors.length === 0 && (
+                <Link
+                  href="/formations/inscription?role=mentor"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-white text-sm font-bold"
+                  style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+                >
+                  <span className="material-symbols-outlined text-[16px]">volunteer_activism</span>
+                  Devenir mentor
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -246,7 +252,7 @@ export default function MentorsPage() {
 }
 
 // ─── Beautiful Mentor Card ─────────────────────────────────────────────────────
-function MentorCard({ mentor }: { mentor: typeof mentors[0] }) {
+function MentorCard({ mentor }: { mentor: Mentor }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group">
 
@@ -254,8 +260,8 @@ function MentorCard({ mentor }: { mentor: typeof mentors[0] }) {
       <div className="relative h-28 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={mentor.cover}
-          alt={mentor.name}
+          src={mentor.cover ?? coverFor(mentor)}
+          alt={mentor.name ?? "Mentor"}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -267,15 +273,22 @@ function MentorCard({ mentor }: { mentor: typeof mentors[0] }) {
         </div>
 
         {/* Domain tag */}
-        <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
-          {mentor.domain}
-        </div>
+        {mentor.domain && (
+          <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
+            {mentor.domain}
+          </div>
+        )}
       </div>
 
       {/* Avatar — overlapping cover */}
       <div className="relative px-5">
-        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${mentor.gradient} flex items-center justify-center border-4 border-white shadow-lg -mt-7 relative z-10`}>
-          <span className="text-white font-extrabold text-base tracking-tight">{mentor.initials}</span>
+        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${mentor.gradient ?? gradientFor(mentor.id)} flex items-center justify-center border-4 border-white shadow-lg -mt-7 relative z-10 overflow-hidden`}>
+          {mentor.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={mentor.image} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white font-extrabold text-base tracking-tight">{mentor.initials ?? initialsOf(mentor.name)}</span>
+          )}
         </div>
       </div>
 
@@ -283,7 +296,7 @@ function MentorCard({ mentor }: { mentor: typeof mentors[0] }) {
       <div className="px-5 pt-2 pb-5 flex flex-col flex-1">
         {/* Name + specialty */}
         <div className="mb-2">
-          <h3 className="font-extrabold text-[#191c1e] text-base leading-tight">{mentor.name}</h3>
+          <h3 className="font-extrabold text-[#191c1e] text-base leading-tight">{mentor.name ?? "Mentor"}</h3>
           <p className="text-xs text-[#5c647a] font-medium mt-0.5 leading-snug">{mentor.specialty}</p>
         </div>
 
@@ -327,7 +340,7 @@ function MentorCard({ mentor }: { mentor: typeof mentors[0] }) {
         <div className="border-t border-gray-100 pt-4 flex items-center justify-between gap-2">
           <div>
             <p className="font-extrabold text-[#006e2f] text-base">{mentor.sessionPrice.toLocaleString("fr-FR")} <span className="text-xs font-bold text-[#5c647a]">FCFA</span></p>
-            <p className="text-[10px] text-[#5c647a]">{mentor.sessionDuration} · ≈{Math.round(mentor.sessionPrice / 655.957)} €</p>
+            <p className="text-[10px] text-[#5c647a]">{mentor.sessionDurationLabel ?? `${mentor.sessionDuration} min`} · ≈{Math.round(mentor.sessionPrice / 655.957)} €</p>
           </div>
           <div className="flex gap-1.5">
             <Link

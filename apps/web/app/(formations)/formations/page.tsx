@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { RevenueSimulator } from "@/components/formations/RevenueSimulator";
 import { CreatorsJoinBadge, HeroBadge } from "@/components/formations/PublicStatsBadge";
+import { BestSellers } from "@/components/formations/BestSellers";
 
 export const metadata: Metadata = {
   title: "FreelanceHigh | Le Curateur Digital",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
     "La plateforme éditoriale pour créateurs qui veulent vendre des formations, ebooks et services sans la complexité technique.",
 };
 
-export default function FormationsPage() {
+export default async function FormationsPage() {
   return (
     <>
       {/* ── 1. HERO ─────────────────────────────────────────────── */}
@@ -117,47 +118,7 @@ export default function FormationsPage() {
             </button>
           </div>
 
-          <div className="flex gap-5 overflow-x-auto no-scrollbar pb-6 -mx-4 px-4">
-            {[
-              { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA_GZu5B-jEVoHMXHILasULWh0VbYyfd8cPODyOa7IRUyRPqCBI5ElmbPtbwEFMKTCeyOg7Wx6CCUf0yfd_L-jEwj1wKtFN-S6Bw7sYT3vbiUh2oSn-1ZiZTKckDEWzxf4TfwaUmxgR1Z0wKXFosXZ_QjI1dp79EHYg4V2Mr9k0MORLBXDggLmUbS1ZYTN0Dc6kjcgmXF4nP4IwvQv5Te3vwHykF-KwTVOPUDxUVGWQKz5sZn2YA--NpWKm26Pr7Cvqzvr84Vu6b_Ii", badge: "Bestseller", badgeBg: "bg-[#22c55e] text-[#004b1e]", rating: "4.9", title: "Guide : Ads 2024", desc: "Maîtrisez les algorithmes pour doubler vos ventes.", priceFcfa: "32 000 FCFA", priceEur: "≈ 49 €" },
-              { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA0KeECDMQ5lgVzzdFdwSDrmdbHMwymn424OM-ZOSe9z4DKszrVPMoBY-ujj-u3gw7XKrfYytDbAN_ER_9Y7IjLgJwONkCOWpMtf3a-R9BYQ4dKZuaY1oR2jL0uSMkgP4og7UPzCY78Z6tPsxs0xwE9FDe0qaAQ7GakcZEeeEyshgzB9LlOaccHy2lhrNzsKg_LgoIMtTjQJW6wVPwkwhcnsC79E8bG2z7upf8fen9q9oJNA5RA_LCXBQJ2z5fLNUt7cpswmU2CdQ9n", badge: "Nouveau", badgeBg: "bg-[#dae2fd] text-[#5c647a]", rating: "5.0", title: "Template Notion Pro", desc: "Le système complet pour gérer 10+ clients.", priceFcfa: "19 000 FCFA", priceEur: "≈ 29 €" },
-              { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBwevjBiPqKQQJ7pAltedZ73_nCffYZcliiy7B29V-X6mhAjdyia8FteSfOcjGDqcr7j_JaIhWYrO8X-zsNYNRVKF_GWB-8dZdtI7o8Bh4j7oEs8Pll2DqFk_D7-uEf6rXjV0M3RfUV_lYv6C5RCPS7gS1kmAeX8mv0Wma2nvMT517oRkVVRqc4kPVJfnIlQJwa2Mv0jtfE_NZj4ZUK5jq-81VFC3jktB34mxYBS1dfz_LBGuWTymjYlH6M5Hvm-iuyjAF4WxFPUmsI", badge: "Bestseller", badgeBg: "bg-[#22c55e] text-[#004b1e]", rating: "4.8", title: "Masterclass Ghostwriting", desc: "Vendez vos écrits à prix d'or sur LinkedIn.", priceFcfa: "130 000 FCFA", priceEur: "≈ 199 €" },
-              { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA8oHKW0Huw8dWLM1uxQMSIsllqEW7QJhrZDZBvfbpm1t2-YVwVydJpMlQKPOWoP_BBQE36FvjpimZabfhbx8qzpchOMsnrJMRIxM2aTClpGjf0scsSE30IICd7R01cWP7y7ZpaJXMsBZ0vx4RK4Rtxuc00Kqcu_wWstu34EB0Ui1huwsRJyTgu4k4RtM_L5tvr0byhcveit2jMx8Jo9b1xzshqqXNKY3enMQUZlxZghcpdXWfAdlIzy2dQ2qqBboOeYtGqgd_BEnVE", badge: "Bestseller", badgeBg: "bg-[#22c55e] text-[#004b1e]", rating: "4.9", title: "SaaS Boilerplate", desc: "Lancement rapide avec Next.js et Stripe.", priceFcfa: "58 000 FCFA", priceEur: "≈ 89 €" },
-            ].map((card) => (
-              <div key={card.title} className="min-w-[260px] md:min-w-[300px] bg-white squircle shadow-[0_10px_30px_rgba(0,0,0,0.03)] group hover:-translate-y-2 transition-all duration-300 flex-shrink-0">
-                <div className="h-40 md:h-48 overflow-hidden rounded-t-[2rem]">
-                  <Image
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    src={card.img}
-                    alt={card.title}
-                    width={300}
-                    height={192}
-                    unoptimized
-                  />
-                </div>
-                <div className="p-6 md:p-8">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`${card.badgeBg} text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest`}>{card.badge}</span>
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                      <span className="text-sm font-bold">{card.rating}</span>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-base md:text-lg mb-1 text-[#191c1e]">{card.title}</h3>
-                  <p className="text-sm text-[#5c647a] mb-5">{card.desc}</p>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-lg md:text-xl font-extrabold text-[#191c1e]">{card.priceFcfa}</div>
-                      <div className="text-xs text-[#5c647a] font-medium mt-0.5">{card.priceEur}</div>
-                    </div>
-                    <button className="w-9 h-9 rounded-full bg-[#eceef0] flex items-center justify-center hover:bg-[#006e2f] hover:text-white transition-colors">
-                      <span className="material-symbols-outlined text-sm">add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <BestSellers />
         </div>
       </section>
 
