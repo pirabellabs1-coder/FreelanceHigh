@@ -175,14 +175,14 @@ function StringInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
-          className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f] resize-none"
+          className="w-full text-sm text-[#191c1e] placeholder-gray-400 bg-white px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f] resize-none"
         />
       ) : (
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
+          className="w-full text-sm text-[#191c1e] placeholder-gray-400 bg-white px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
         />
       )}
     </div>
@@ -207,7 +207,7 @@ function NumberInput({
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
+        className="w-full text-sm text-[#191c1e] placeholder-gray-400 bg-white px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
       />
     </div>
   );
@@ -517,7 +517,8 @@ export default function FunnelEditorPage({ params }: { params: Promise<{ id: str
             value={funnel.name}
             onChange={(e) => setFunnel({ ...funnel, name: e.target.value })}
             onBlur={() => save({ name: funnel.name })}
-            className="text-sm font-bold text-[#191c1e] flex-1 bg-transparent focus:outline-none focus:bg-gray-50 px-2 py-1 rounded transition-colors"
+            className="text-sm font-bold text-[#191c1e] flex-1 bg-transparent placeholder-gray-400 focus:outline-none focus:bg-gray-50 px-2 py-1 rounded transition-colors"
+            placeholder="Nom du funnel"
           />
 
           <div className="flex items-center gap-2 text-xs text-[#5c647a]">

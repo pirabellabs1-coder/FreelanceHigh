@@ -3,11 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 
 type Params = { params: Promise<{ id: string }> };
 
 async function ensureOwnership(userId: string, funnelId: string) {
-  const inst = await prisma.instructeurProfile.findUnique({ where: { userId } });
+  const inst = await getOrCreateInstructeur(userId);
   if (!inst) return { ok: false, status: 400 as const, error: "Profil instructeur requis" };
   const funnel = await prisma.salesFunnel.findFirst({
     where: { id: funnelId, instructeurId: inst.id },

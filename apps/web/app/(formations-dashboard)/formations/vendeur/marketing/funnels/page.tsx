@@ -237,7 +237,7 @@ export default function FunnelsListPage() {
               placeholder="ex: Lancement formation marketing 2026"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-[#191c1e] placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[#006e2f]/30 focus:border-[#006e2f]"
             />
 
             <div className="bg-[#006e2f]/5 border border-[#006e2f]/20 rounded-xl p-3 mt-4 mb-5 flex items-start gap-2">

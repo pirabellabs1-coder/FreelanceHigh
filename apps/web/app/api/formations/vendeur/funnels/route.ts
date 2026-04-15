@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 
 async function getInstructeur(userId: string) {
-  return prisma.instructeurProfile.findUnique({ where: { userId } });
+  return getOrCreateInstructeur(userId);
 }
 
 function slugify(s: string): string {

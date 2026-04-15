@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { signOut } from "next-auth/react";
 
 type Tab = "compte" | "paiements" | "notifications" | "securite" | "coaching";
 
@@ -82,6 +83,55 @@ export default function ParamaetresPage() {
   const [activeTab, setActiveTab] = useState<Tab>("compte");
   const [twoFA, setTwoFA] = useState(false);
 
+  // Real user/account state (loaded from API)
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [emailAcc, setEmailAcc] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [pays, setPays] = useState("Sénégal");
+  const [savingCompte, setSavingCompte] = useState(false);
+  const [compteSaved, setCompteSaved] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/formations/vendeur/profile");
+        if (!res.ok) return;
+        const json = await res.json();
+        const u = json.data?.user;
+        if (u) {
+          const parts = (u.name ?? "").split(" ");
+          setPrenom(parts[0] ?? "");
+          setNom(parts.slice(1).join(" ") ?? "");
+          setEmailAcc(u.email ?? "");
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    load();
+  }, []);
+
+  async function saveCompte() {
+    setSavingCompte(true);
+    try {
+      const fullName = `${prenom} ${nom}`.trim();
+      await fetch("/api/formations/vendeur/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName }),
+      });
+      setCompteSaved(true);
+      setTimeout(() => setCompteSaved(false), 2500);
+    } finally {
+      setSavingCompte(false);
+    }
+  }
+
+  async function handleLogout() {
+    await signOut({ callbackUrl: "/formations" });
+  }
+
   // Coach mode state
   const [coachActif, setCoachActif] = useState(false);
   const [tarifSession, setTarifSession] = useState("25000");
@@ -146,21 +196,47 @@ export default function ParamaetresPage() {
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <h2 className="text-base font-bold text-[#191c1e]">Informations du compte</h2>
-            {[
-              { label: "Prénom", placeholder: "Kofi", type: "text" },
-              { label: "Nom", placeholder: "Asante", type: "text" },
-              { label: "Adresse email", placeholder: "kofi.asante@email.com", type: "email" },
-              { label: "Numéro de téléphone", placeholder: "+221 77 654 32 10", type: "tel" },
-            ].map((field) => (
-              <div key={field.label}>
-                <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">{field.label}</label>
-                <input
-                  type={field.type}
-                  placeholder={field.placeholder}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-[#191c1e] focus:outline-none focus:border-[#006e2f] focus:ring-2 focus:ring-[#006e2f]/10 transition-all"
-                />
-              </div>
-            ))}
+
+            <div>
+              <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">Prénom</label>
+              <input
+                type="text"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                placeholder="Votre prénom"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-[#191c1e] placeholder-gray-400 bg-white focus:outline-none focus:border-[#006e2f] focus:ring-2 focus:ring-[#006e2f]/10 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">Nom</label>
+              <input
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                placeholder="Votre nom"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-[#191c1e] placeholder-gray-400 bg-white focus:outline-none focus:border-[#006e2f] focus:ring-2 focus:ring-[#006e2f]/10 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">Adresse email</label>
+              <input
+                type="email"
+                value={emailAcc}
+                disabled
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-[#5c647a] bg-gray-50 cursor-not-allowed"
+              />
+              <p className="text-[10px] text-[#5c647a] mt-1">L&apos;email ne peut pas être modifié. Contactez le support si besoin.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">Numéro de téléphone</label>
+              <input
+                type="tel"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="+221 77 123 45 67"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-[#191c1e] placeholder-gray-400 bg-white focus:outline-none focus:border-[#006e2f] focus:ring-2 focus:ring-[#006e2f]/10 transition-all"
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-semibold text-[#191c1e] mb-1.5">Pays de résidence</label>
@@ -174,16 +250,47 @@ export default function ParamaetresPage() {
               </select>
             </div>
 
+            <div className="flex flex-wrap gap-3 items-center">
+              <button
+                onClick={saveCompte}
+                disabled={savingCompte}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold transition-opacity hover:opacity-90 shadow-md shadow-[#006e2f]/20 disabled:opacity-50"
+                style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+              >
+                {savingCompte ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                    Sauvegarde…
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">save</span>
+                    Enregistrer les modifications
+                  </>
+                )}
+              </button>
+              {compteSaved && (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700">
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Sauvegardé !
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Logout + Danger zone */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+            <h2 className="text-base font-bold text-[#191c1e] mb-1">Session</h2>
+            <p className="text-sm text-[#5c647a] mb-4">Déconnectez-vous de votre compte sur cet appareil.</p>
             <button
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold transition-opacity hover:opacity-90 shadow-md shadow-[#006e2f]/20"
-              style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 text-[#191c1e] text-sm font-bold hover:bg-gray-200 transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">save</span>
-              Enregistrer les modifications
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              Se déconnecter
             </button>
           </div>
 
-          {/* Danger zone */}
           <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
             <h2 className="text-base font-bold text-red-600 mb-1">Zone dangereuse</h2>
             <p className="text-sm text-[#5c647a] mb-4">Ces actions sont irréversibles. Soyez prudent.</p>

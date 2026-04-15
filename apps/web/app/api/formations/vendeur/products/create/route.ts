@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
 import { DigitalProductType } from "@prisma/client";
+import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 
 function slugify(text: string): string {
   return text
@@ -40,10 +41,7 @@ export async function POST(request: Request) {
     const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const profile = await prisma.instructeurProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
+    const profile = await getOrCreateInstructeur(userId);
     if (!profile) {
       return NextResponse.json({ error: "Profil instructeur introuvable" }, { status: 404 });
     }

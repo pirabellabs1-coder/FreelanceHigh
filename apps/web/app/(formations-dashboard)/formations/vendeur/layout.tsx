@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   // Catalogue
   { icon: "storefront", label: "Mes produits", href: "/formations/vendeur/produits", section: "Catalogue" },
   { icon: "receipt_long", label: "Transactions", href: "/formations/vendeur/transactions", section: "Catalogue" },
+  { icon: "account_balance_wallet", label: "Revenus & retraits", href: "/formations/wallet", section: "Catalogue" },
   // Croissance
   { icon: "campaign", label: "Marketing", href: "/formations/vendeur/marketing", section: "Croissance" },
   { icon: "bolt", label: "Automatisations", href: "/formations/vendeur/automatisations", section: "Croissance" },

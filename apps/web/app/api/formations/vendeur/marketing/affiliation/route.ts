@@ -4,10 +4,8 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
 
-async function getProfileId(userId: string) {
-  const p = await prisma.instructeurProfile.findUnique({ where: { userId }, select: { id: true } });
-  return p?.id ?? null;
-}
+import { getInstructeurId as _gii } from "@/lib/formations/instructeur";
+async function getProfileId(userId: string) { return _gii(userId); }
 
 export async function GET() {
   try {
