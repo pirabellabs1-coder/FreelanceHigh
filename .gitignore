@@ -62,3 +62,23 @@ apps/web/lib/dev/blog-articles.json
 
 # Prisma generated client
 packages/db/generated/
+
+# Dev runtime logs & fixtures
+dev.log
+dev-err.log
+*.log
+apps/web/lib/dev/orders.json
+apps/web/lib/dev/reviews.json
+apps/web/lib/dev/services.json
+
+# MCP playwright cache
+.playwright-mcp/
+
+# One-off debug scripts (not committed)
+packages/db/check-formations.mjs
+
+# Reference HTML maquettes (kept locally only, too large)
+Partie formation du site/
+
+# Claude Code — local launch config
+.claude/launch.json

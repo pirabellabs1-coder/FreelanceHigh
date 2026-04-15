@@ -10,10 +10,10 @@ let maintenanceModeCache: { enabled: boolean; message: string; cachedAt: number 
 const MAINTENANCE_CACHE_TTL_MS = 60_000; // 60 seconds
 
 // Routes publiques — toujours accessibles
-// NOTE: /formations is handled separately below — NOT in this list
 const PUBLIC_ROUTES = [
   "/",
   "/explorer",
+  "/formations",
   "/services",
   "/freelances",
   "/agences",

@@ -3,7 +3,8 @@
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
+  output        = "../generated/client"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "windows"]
 }
 
 datasource db {
@@ -113,15 +114,13 @@ enum NotificationType {
   KYC
   SYSTEM
   PAYMENT
-  OFFER
-  REVIEW
-  AGENCY
-  PRODUCT
-  SERVICE
-  BOOST
 }
 
-
+enum KycStatus {
+  EN_ATTENTE
+  APPROUVE
+  REFUSE
+}
 
 enum BlogStatus {
   BROUILLON
@@ -136,108 +135,18 @@ enum BidStatus {
   EXPIRE
 }
 
-enum OfferStatus {
-  EN_ATTENTE
-  ACCEPTEE
-  REFUSEE
-  EXPIREE
-  ANNULEE
+enum ContractStatus {
+  BROUILLON
+  ENVOYE
+  SIGNE
+  EXPIRE
+  ANNULE
 }
-
-
 
 enum AutomationStatus {
   ACTIF
   PAUSE
   BROUILLON
-}
-
-enum PropositionStatus {
-  PENDING
-  SENT
-  VIEWED
-  ACCEPTED
-  REJECTED
-  EXPIRED
-  WITHDRAWN
-}
-
-enum BoostType {
-  VIEWS_BOOST
-  FEATURED
-  PREMIUM
-}
-
-enum BoostStatus {
-  PENDING_PAYMENT
-  ACTIVE
-  PAUSED
-  COMPLETED
-  CANCELLED
-}
-
-enum EscrowReason {
-  ORDER_PAYMENT
-  BOOST_PAYMENT
-}
-
-enum TransactionType {
-  SERVICE_FEE
-  BOOST_FEE
-  SUBSCRIPTION_FEE
-  REFUND
-  PAYOUT
-}
-
-enum TransactionStatus {
-  PENDING
-  CONFIRMED
-  PAID_OUT
-}
-
-enum PayoutStatus {
-  PAYOUT_PENDING
-  PROCESSING
-  PAYOUT_COMPLETED
-  FAILED
-}
-
-enum TeamMemberRole {
-  PROPRIETAIRE
-  MANAGER
-  FREELANCE_MEMBRE
-  COMMERCIAL
-}
-
-enum TeamMemberStatus {
-  INVITED
-  ACTIVE
-  INACTIVE
-  REMOVED
-}
-
-enum WalletTransactionType {
-  ORDER_PAYOUT
-  REFUND_WALLET
-  WITHDRAWAL
-  DEPOSIT
-  BOOST_REFUND
-  COMMISSION_INTERNAL
-}
-
-enum WalletTransactionStatus {
-  WALLET_PENDING
-  WALLET_COMPLETED
-  WALLET_FAILED
-  WALLET_CANCELLED
-}
-
-enum WithdrawalMethod {
-  SEPA
-  MOBILE_MONEY
-  PAYPAL
-  WISE
-  CRYPTO
 }
 
 // ── OTP Codes ──
@@ -256,84 +165,88 @@ model OtpCode {
 // ── Models ──
 
 model User {
-  id              String     @id @default(cuid())
-  email           String     @unique
-  emailVerified   DateTime?
-  passwordHash    String
-  name            String
-  image           String?
-  role            UserRole   @default(CLIENT)
-  plan            UserPlan   @default(GRATUIT)
-  status          UserStatus @default(ACTIF)
-  country         String?
-  countryFlag     String?
-  avatar          String?
-  kyc             Int        @default(1)
-  suspendReason   String?
-
-  // Personal info (KYC verification)
-  firstName       String?
-  lastName        String?
-  city            String?
-  address         String?
-  dateOfBirth     DateTime?
+  id            String     @id @default(cuid())
+  email         String     @unique
+  emailVerified DateTime?
+  passwordHash  String
+  name          String
+  image         String?
+  role          UserRole   @default(FREELANCE)
+  plan          UserPlan   @default(GRATUIT)
+  status        UserStatus @default(ACTIF)
+  country       String?
+  countryFlag   String?
+  avatar        String?
+  kyc           Int        @default(1)
+  suspendReason String?
 
   // 2FA
-  twoFactorEnabled Boolean  @default(false)
+  twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
 
-
+  // Formations
+  formationsRole String? // "apprenant" ou "instructeur"
 
   // Tracking
-  lastLoginAt     DateTime?
-  lastLoginIp     String?
-  loginCount      Int        @default(0)
+  lastLoginAt DateTime?
+  lastLoginIp String?
+  loginCount  Int       @default(0)
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  accounts           Account[]
-  sessions           Session[]
-  auditLogsAsActor   AuditLog[]          @relation("AuditActor")
-  auditLogsAsTarget  AuditLog[]          @relation("AuditTarget")
-  messages           Message[]
-  notifications      Notification[]
-  conversationUsers  ConversationUser[]
-  loginAttempts      LoginAttempt[]
-  freelancerProfile  FreelancerProfile?
-  clientProfile      ClientProfile?
-  agencyProfile      AgencyProfile?
-  services           Service[]
-  ordersAsClient     Order[]             @relation("OrderClient")
-  ordersAsFreelance  Order[]             @relation("OrderFreelance")
-  reviewsGiven       Review[]            @relation("ReviewAuthor")
-  reviewsReceived    Review[]            @relation("ReviewTarget")
-  paymentsAsPayer    Payment[]           @relation("PaymentPayer")
-  paymentsAsPayee    Payment[]           @relation("PaymentPayee")
-  bids               Bid[]
-  contractsSigned    ContractSignature[]
-  automations        AutomationScenario[]
-  affiliationCodes   AffiliationCode[]
-  blogPosts          BlogPost[]
-  kycRequests        KycRequest[]
-  disputesAsClient   Dispute[]           @relation("DisputeClient")
-  disputesAsFreelance Dispute[]          @relation("DisputeFreelance")
-  projects           Project[]           @relation("ProjectClient")
-  bidsOnProjects     ProjectBid[]        @relation("ProjectBidFreelance")
+  accounts            Account[]
+  sessions            Session[]
+  auditLogsAsActor    AuditLog[]           @relation("AuditActor")
+  auditLogsAsTarget   AuditLog[]           @relation("AuditTarget")
+  messages            Message[]
+  notifications       Notification[]
+  conversationUsers   ConversationUser[]
+  loginAttempts       LoginAttempt[]
+  freelancerProfile   FreelancerProfile?
+  clientProfile       ClientProfile?
+  agencyProfile       AgencyProfile?
+  services            Service[]
+  ordersAsClient      Order[]              @relation("OrderClient")
+  ordersAsFreelance   Order[]              @relation("OrderFreelance")
+  reviewsGiven        Review[]             @relation("ReviewAuthor")
+  reviewsReceived     Review[]             @relation("ReviewTarget")
+  paymentsAsPayer     Payment[]            @relation("PaymentPayer")
+  paymentsAsPayee     Payment[]            @relation("PaymentPayee")
+  bids                Bid[]
+  contractsSigned     ContractSignature[]
+  automations         AutomationScenario[]
+  affiliationCodes    AffiliationCode[]
+  blogPosts           BlogPost[]
+  kycRequests         KycRequest[]
+  disputesAsClient    Dispute[]            @relation("DisputeClient")
+  disputesAsFreelance Dispute[]            @relation("DisputeFreelance")
 
+  // Relations formations
+  instructeurProfile InstructeurProfile?
+  enrollments        Enrollment[]             @relation("UserEnrollments")
+  certificates       Certificate[]            @relation("UserCertificates")
+  formationReviews   FormationReview[]        @relation("UserFormationReviews")
+  cartItems          CartItem[]               @relation("UserCartItems")
+  productPurchases   DigitalProductPurchase[] @relation("UserProductPurchases")
+  productReviews     DigitalProductReview[]   @relation("UserProductReviews")
+  abandonedCarts     AbandonedCart[]          @relation("UserAbandonedCarts")
+  marketingEvents    MarketingEvent[]         @relation("UserMarketingEvents")
+  courseDiscussions  CourseDiscussion[]       @relation("UserDiscussions")
+  discussionReplies  CourseDiscussionReply[]  @relation("UserDiscussionReplies")
+  cohortMessages     CohortMessage[]          @relation("UserCohortMessages")
 
-  offers               Offer[]                  @relation("UserOffers")
-  offersReceived       Offer[]                  @relation("OffersReceived")
-
-  // Relations Phase 1 — données correctement liées
-  propositionsAsFreelance Proposition[]          @relation("PropositionFreelance")
-  propositionsAsClient    Proposition[]          @relation("PropositionClient")
-  boosts                  Boost[]                @relation("UserBoosts")
-  serviceViews            ServiceView[]
-  serviceClicks           ServiceClick[]
-  teamMemberships         TeamMember[]
-  walletFreelance         WalletFreelance?
+  // Relations marketing
+  affiliateProfile    AffiliateProfile?         @relation("UserAffiliateProfile")
+  affiliateClicks     AffiliateClick[]          @relation("UserAffiliateClicks")
+  emailSeqEnrollments EmailSequenceEnrollment[] @relation("UserEmailSeqEnrollments")
+  funnelEvents        FunnelEvent[]             @relation("UserFunnelEvents")
+  popupImpressions    PopupImpression[]         @relation("UserPopupImpressions")
+  campaignEvents      CampaignEvent[]           @relation("UserCampaignEvents")
+  userTags            UserTag[]                 @relation("UserTags")
+  refundRequests      RefundRequest[]           @relation("UserRefundRequests")
+  discussionReports   DiscussionReport[]        @relation("UserDiscussionReports")
 
   @@index([email])
   @@index([role])
@@ -361,132 +274,49 @@ model Account {
 }
 
 model FreelancerProfile {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  bio              String?  @db.Text
-  title            String?
-  skills           String[] @default([])
-  hourlyRate       Float?
-  availability     Json?
-  timezone         String?
-  languages        Json?
-  portfolio        Json?
-  badges           String[] @default([])
-  completionRate   Float    @default(0)
-  completionPercent Float   @default(0)
-  avgResponseTime  Int?
-  phone            String?
-  coverPhoto       String?
-  city             String?
-  country          String?
-  education        Json?
-  links            Json?
-  vacationMode     Boolean  @default(false)
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?  @db.Text
+  title           String?
+  skills          String[] @default([])
+  hourlyRate      Float?
+  availability    String? // "disponible", "occupe", "vacances"
+  timezone        String?
+  languages       String[] @default([])
+  portfolio       Json? // Array d'objets { title, description, imageUrl, link }
+  badges          String[] @default([])
+  completionRate  Float    @default(0)
+  avgResponseTime Int? // en minutes
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ClientProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
+  id          String  @id @default(cuid())
+  userId      String  @unique
   company     String?
   sector      String?
-  size        String?  // "1-10", "11-50", "51-200", "200+"
+  size        String? // "1-10", "11-50", "51-200", "200+"
   website     String?
-  description String?  @db.Text
+  description String? @db.Text
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AgencyProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
+  id          String  @id @default(cuid())
+  userId      String  @unique
   agencyName  String
   logo        String?
   sector      String?
   size        String?
-  description String?  @db.Text
+  description String? @db.Text
   website     String?
   siret       String?
-  verified    Boolean  @default(false)
-  teamMembers Json?    // Array d'objets { userId, role, joinedAt } (legacy)
-  settings    Json?
-  country     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  verified    Boolean @default(false)
+  teamMembers Json? // Array d'objets { userId, role, joinedAt }
 
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  members        TeamMember[]
-  agServices     Service[]     @relation("AgencyServices")
-  agOrders       Order[]       @relation("AgencyOrders")
-  agPropositions Proposition[] @relation("AgencyPropositions")
-  agBoosts       Boost[]       @relation("AgencyBoosts")
-  wallet         WalletAgency?
-}
-
-model TeamMember {
-  id          String           @id @default(cuid())
-  agencyId    String
-  userId      String
-  role        TeamMemberRole   @default(FREELANCE_MEMBRE)
-  status      TeamMemberStatus @default(INVITED)
-  joinedAt    DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-
-  agency      AgencyProfile    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([agencyId, userId])
-  @@index([agencyId])
-  @@index([userId])
-}
-
-model WalletFreelance {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  balance     Float    @default(0)
-  pending     Float    @default(0)
-  totalEarned Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions WalletTransaction[] @relation("FreelanceWalletTx")
-}
-
-model WalletAgency {
-  id          String   @id @default(cuid())
-  agencyId    String   @unique
-  balance     Float    @default(0)
-  pending     Float    @default(0)
-  totalEarned Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  agency       AgencyProfile      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  transactions WalletTransaction[] @relation("AgencyWalletTx")
-}
-
-model WalletTransaction {
-  id                  String                  @id @default(cuid())
-  freelanceWalletId   String?
-  agencyWalletId      String?
-  type                WalletTransactionType
-  amount              Float
-  description         String
-  status              WalletTransactionStatus @default(WALLET_PENDING)
-  orderId             String?
-  withdrawalMethod    WithdrawalMethod?
-  externalRef         String?
-  createdAt           DateTime                @default(now())
-
-  freelanceWallet     WalletFreelance?        @relation("FreelanceWalletTx", fields: [freelanceWalletId], references: [id])
-  agencyWallet        WalletAgency?           @relation("AgencyWalletTx", fields: [agencyWalletId], references: [id])
-
-  @@index([freelanceWalletId])
-  @@index([agencyWalletId])
-  @@index([status])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -500,7 +330,7 @@ model Session {
   impersonatedBy  String?
   createdAt       DateTime @default(now())
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -508,20 +338,20 @@ model Session {
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
   icon        String?
   color       String?
   description String?
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
+  order       Int        @default(0)
+  isActive    Boolean    @default(true)
   parentId    String?
-  parent      Category? @relation("CategoryChildren", fields: [parentId], references: [id])
+  parent      Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryChildren")
   services    Service[]
   tags        Tag[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
 
   @@index([slug])
   @@index([order])
@@ -537,7 +367,7 @@ model Service {
   title                String
   slug                 String        @unique
   language             String        @default("fr")
-  description          Json?         // Format Tiptap JSON
+  description          Json? // Format Tiptap JSON
   descriptionText      String?       @db.Text // Texte brut pour la recherche FTS
   categoryId           String
   subCategoryId        String?
@@ -548,60 +378,40 @@ model Service {
   deliveryDays         Int           @default(7)
   revisions            Int           @default(1)
   instructionsRequired Boolean       @default(false)
-  instructionsContent  Json?         // Format Tiptap JSON
-  draftData            Json?         // Sauvegarde brouillon wizard complet
-  draftStep            Int?          // Derniere etape completee du wizard
+  instructionsContent  Json? // Format Tiptap JSON
+  draftData            Json? // Sauvegarde brouillon wizard complet
+  draftStep            Int? // Derniere etape completee du wizard
 
   // Ancien champ prix conserve pour compatibilite
-  price                Float         @default(5)
+  price Float @default(5)
 
   // Legacy fields (migration progressive)
-  tags                 String[]      @default([])
-  images               String[]      @default([])
-  packages             Json?
-  faq                  Json?
-  extras               Json?
+  tags     String[] @default([])
+  images   String[] @default([])
+  packages Json?
+  faq      Json?
+  extras   Json?
 
-  // Stats — liées aux vraies données
-  // totalOrders = COUNT(Order WHERE status=TERMINE)
-  // totalRevenue = SUM(Order.freelancerPayout WHERE status=TERMINE)
-  // totalViews = COUNT(ServiceView)
-  // totalClicks = COUNT(ServiceClick)
-  views                Int           @default(0)
-  orderCount           Int           @default(0)
-  totalRevenue         Float         @default(0)
-  totalContacts        Int           @default(0)
-  rating               Float         @default(0)
-  ratingCount          Int           @default(0)
-  isBoosted            Boolean       @default(false)
-  boostedUntil         DateTime?
-  refuseReason         String?
+  // Stats
+  views        Int       @default(0)
+  orderCount   Int       @default(0)
+  rating       Float     @default(0)
+  ratingCount  Int       @default(0)
+  isBoosted    Boolean   @default(false)
+  boostedUntil DateTime?
+  refuseReason String?
 
-  // SEO complet
-  seoTitle             String?
-  seoDescription       String?
-  seoKeywords          String[]      @default([])
-  seoFocusKeyword      String?
-  seoLongTail          String[]      @default([])
-  seoMetaTitle         String?
-  seoMetaDescription   String?
-
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  category             Category      @relation(fields: [categoryId], references: [id])
-  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders               Order[]
-  reviews              Review[]
-  options              ServiceOption[]
-  media                ServiceMedia[]
-  serviceTags          ServiceTag[]
-  propositions         Proposition[]
-  boosts               Boost[]
-  viewTracking         ServiceView[]
-  clickTracking        ServiceClick[]
-  agency               AgencyProfile? @relation("AgencyServices", fields: [agencyId], references: [id], onDelete: SetNull)
+  category    Category        @relation(fields: [categoryId], references: [id])
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      Order[]
+  reviews     Review[]
+  options     ServiceOption[]
+  media       ServiceMedia[]
+  serviceTags ServiceTag[]
 
   @@index([slug])
   @@index([categoryId])
@@ -612,189 +422,121 @@ model Service {
 }
 
 model ServiceOption {
-  id                  String   @id @default(cuid())
-  serviceId           String
-  title               String
-  description         String?
-  extraPrice          Float    @default(0)
-  extraDays           Int      @default(0)
-  isRecommended       Boolean  @default(false)
-  sortOrder           Int      @default(0)
-  expressEnabled      Boolean  @default(false)
-  expressPrice        Float?
+  id                   String  @id @default(cuid())
+  serviceId            String
+  title                String
+  description          String?
+  extraPrice           Float   @default(0)
+  extraDays            Int     @default(0)
+  isRecommended        Boolean @default(false)
+  sortOrder            Int     @default(0)
+  expressEnabled       Boolean @default(false)
+  expressPrice         Float?
   expressDaysReduction Int?
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  service             Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@index([serviceId])
   @@index([sortOrder])
 }
 
 model ServiceMedia {
-  id          String    @id @default(cuid())
-  serviceId   String
-  type        MediaType @default(IMAGE)
-  url         String
-  isPrimary   Boolean   @default(false)
-  sortOrder   Int       @default(0)
-  width       Int?
-  height      Int?
+  id        String    @id @default(cuid())
+  serviceId String
+  type      MediaType @default(IMAGE)
+  url       String
+  isPrimary Boolean   @default(false)
+  sortOrder Int       @default(0)
+  width     Int?
+  height    Int?
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@index([serviceId])
   @@index([isPrimary])
 }
 
 model Tag {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  slug        String       @unique
-  categoryId  String?
+  id         String  @id @default(cuid())
+  name       String  @unique
+  slug       String  @unique
+  categoryId String?
 
-  category    Category?    @relation(fields: [categoryId], references: [id])
-  services    ServiceTag[]
+  category Category?    @relation(fields: [categoryId], references: [id])
+  services ServiceTag[]
 
   @@index([categoryId])
   @@index([slug])
 }
 
 model ServiceTag {
-  serviceId   String
-  tagId       String
+  serviceId String
+  tagId     String
 
-  service     Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  tag         Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([serviceId, tagId])
   @@index([tagId])
 }
 
-// ── Projets clients (offres publiées par les clients) ──────────────────────
-model Project {
-  id            String        @id @default(cuid())
-  clientId      String
-  title         String
-  description   String        @db.Text
-  category      String        @default("general")
-  budgetMin     Float         @default(0)
-  budgetMax     Float         @default(0)
-  deadline      DateTime
-  urgency       String        @default("normale") // normale, urgente, tres_urgente
-  contractType  String        @default("ponctuel") // ponctuel, long_terme, recurrent
-  skills        String[]      @default([])
-  status        String        @default("ouvert") // ouvert, pourvu, ferme, brouillon
-  visibility    String        @default("public") // public, prive
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  client        User          @relation("ProjectClient", fields: [clientId], references: [id], onDelete: Cascade)
-  bids          ProjectBid[]
-  propositions  Proposition[]
-
-  @@index([clientId])
-  @@index([status])
-  @@index([category])
-}
-
-model ProjectBid {
-  id            String   @id @default(cuid())
-  projectId     String
-  freelanceId   String
-  amount        Float
-  deliveryDays  Int
-  coverLetter   String?  @db.Text
-  status        String   @default("en_attente") // en_attente, acceptee, refusee
-
-  createdAt     DateTime @default(now())
-
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  freelance     User     @relation("ProjectBidFreelance", fields: [freelanceId], references: [id])
-
-  @@index([projectId])
-  @@index([freelanceId])
-}
-
 model Order {
-  id            String       @id @default(cuid())
-  serviceId     String?
-  clientId      String
-  freelanceId   String
-  agencyId      String?
-  status        OrderStatus  @default(EN_ATTENTE)
-  escrowStatus  EscrowStatus @default(HELD)
-  amount        Float
-  currency      String       @default("EUR")
+  id           String       @id @default(cuid())
+  serviceId    String
+  clientId     String
+  freelanceId  String
+  status       OrderStatus  @default(EN_ATTENTE)
+  escrowStatus EscrowStatus @default(HELD)
+  amount       Float
+  commission   Float        @default(0)
+  packageType  String? // "basic", "standard", "premium"
+  requirements String?      @db.Text
+  deadline     DateTime
+  deliveredAt  DateTime?
+  completedAt  DateTime?
+  progress     Int          @default(0)
 
-  // Commission calculée automatiquement
-  // platformFee = 20% de amount (va à Admin)
-  // freelancerPayout = 80% de amount (au freelancer)
-  commission    Float        @default(0)
-  platformFee   Float        @default(0)
-  freelancerPayout Float     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  title         String?
-  description   String?      @db.Text
-  deliveryDays  Int?
-  packageType   String?      // "basic", "standard", "premium"
-  requirements  String?      @db.Text
-  progress      Int          @default(0)
-
-  // Timeline complète
-  deadline      DateTime
-  deliveredDeadline DateTime?
-  acceptedAt    DateTime?
-  startedAt     DateTime?
-  deliveredAt   DateTime?
-  completedAt   DateTime?
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  service       Service?     @relation(fields: [serviceId], references: [id])
-  client        User         @relation("OrderClient", fields: [clientId], references: [id])
-  freelance     User         @relation("OrderFreelance", fields: [freelanceId], references: [id])
-  payments      Payment[]
-  reviews       Review[]
-  disputes      Dispute[]
-  conversation  Conversation?
-  escrow        Escrow?
-  revisions     RevisionRequest[]
-  proposition   Proposition?
-  agency        AgencyProfile? @relation("AgencyOrders", fields: [agencyId], references: [id], onDelete: SetNull)
+  service      Service       @relation(fields: [serviceId], references: [id])
+  client       User          @relation("OrderClient", fields: [clientId], references: [id])
+  freelance    User          @relation("OrderFreelance", fields: [freelanceId], references: [id])
+  payments     Payment[]
+  reviews      Review[]
+  disputes     Dispute[]
+  conversation Conversation?
 
   @@index([clientId])
   @@index([freelanceId])
-  @@index([agencyId])
   @@index([status])
   @@index([createdAt])
 }
 
 model Review {
-  id          String   @id @default(cuid())
-  orderId     String
-  serviceId   String
-  authorId    String
-  targetId    String
-  rating      Float
-  comment     String?  @db.Text
-  response    String?  @db.Text // reponse du freelance
-  quality     Float?
+  id            String  @id @default(cuid())
+  orderId       String
+  serviceId     String
+  authorId      String
+  targetId      String
+  rating        Float
+  comment       String? @db.Text
+  response      String? @db.Text // reponse du freelance
+  quality       Float?
   communication Float?
-  timeliness  Float?
+  timeliness    Float?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  order       Order    @relation(fields: [orderId], references: [id])
-  service     Service  @relation(fields: [serviceId], references: [id])
-  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id])
-  target      User     @relation("ReviewTarget", fields: [targetId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+  author  User    @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target  User    @relation("ReviewTarget", fields: [targetId], references: [id])
 
   @@unique([orderId, authorId])
   @@index([targetId])
@@ -802,23 +544,23 @@ model Review {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   orderId         String?
   payerId         String
   payeeId         String?
   amount          Float
-  currency        String        @default("EUR")
-  status          PaymentStatus @default(EN_ATTENTE)
+  currency        String         @default("EUR")
+  status          PaymentStatus  @default(EN_ATTENTE)
   method          PaymentMethod?
   stripePaymentId String?
   description     String?
-  type            String        @default("paiement") // paiement, commission, retrait, remboursement, abonnement
+  type            String         @default("paiement") // paiement, commission, retrait, remboursement, abonnement
 
-  createdAt       DateTime      @default(now())
+  createdAt DateTime @default(now())
 
-  order           Order?        @relation(fields: [orderId], references: [id])
-  payer           User          @relation("PaymentPayer", fields: [payerId], references: [id])
-  payee           User?         @relation("PaymentPayee", fields: [payeeId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+  payer User   @relation("PaymentPayer", fields: [payerId], references: [id])
+  payee User?  @relation("PaymentPayee", fields: [payeeId], references: [id])
 
   @@index([orderId])
   @@index([payerId])
@@ -827,134 +569,108 @@ model Payment {
 }
 
 model Dispute {
-  id              String         @id @default(cuid())
-  orderId         String
-  clientId        String
-  freelanceId     String
-  reason          String
-  clientArgument  String?        @db.Text
-  freelanceArgument String?      @db.Text
-  status          DisputeStatus  @default(OUVERT)
-  verdict         DisputeVerdict?
-  verdictNote     String?
-  partialPercent  Int?
-  resolvedAt      DateTime?
+  id                String          @id @default(cuid())
+  orderId           String
+  clientId          String
+  freelanceId       String
+  reason            String
+  clientArgument    String?         @db.Text
+  freelanceArgument String?         @db.Text
+  status            DisputeStatus   @default(OUVERT)
+  verdict           DisputeVerdict?
+  verdictNote       String?
+  partialPercent    Int?
+  resolvedAt        DateTime?
 
-  createdAt       DateTime       @default(now())
+  createdAt DateTime @default(now())
 
-  order           Order          @relation(fields: [orderId], references: [id])
-  client          User           @relation("DisputeClient", fields: [clientId], references: [id])
-  freelance       User           @relation("DisputeFreelance", fields: [freelanceId], references: [id])
+  order     Order @relation(fields: [orderId], references: [id])
+  client    User  @relation("DisputeClient", fields: [clientId], references: [id])
+  freelance User  @relation("DisputeFreelance", fields: [freelanceId], references: [id])
 
   @@index([status])
   @@index([orderId])
 }
 
 model Bid {
-  id          String    @id @default(cuid())
-  userId      String
-  projectId   String?   // reference a un projet client (future table)
-  proposal    String?   @db.Text
-  amount      Float
+  id           String    @id @default(cuid())
+  userId       String
+  projectId    String? // reference a un projet client (future table)
+  proposal     String?   @db.Text
+  amount       Float
   deliveryDays Int
-  status      BidStatus @default(EN_ATTENTE)
+  status       BidStatus @default(EN_ATTENTE)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
-model Offer {
-  id            String       @id @default(cuid())
-  freelanceId   String
-  clientId      String?
-  clientName    String
-  clientEmail   String?
-  title         String
-  description   String       @db.Text
-  amount        Float
-  delay         String       // ex: "7 jours", "2 semaines"
-  revisions     Int          @default(2)
-  validityDays  Int          @default(14)
-  status        OfferStatus  @default(EN_ATTENTE)
-  expiresAt     DateTime?
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  freelance     User         @relation("UserOffers", fields: [freelanceId], references: [id], onDelete: Cascade)
-  client        User?        @relation("OffersReceived", fields: [clientId], references: [id])
-
-  @@index([freelanceId])
-  @@index([clientId])
-  @@index([status])
-}
-
 model Contract {
-  id          String         @id @default(cuid())
-  title       String
-  content     String         @db.Text
-  orderId     String?
-  status      ContractStatus @default(BROUILLON)
-  expiresAt   DateTime?
+  id        String         @id @default(cuid())
+  title     String
+  content   String         @db.Text
+  orderId   String?
+  status    ContractStatus @default(BROUILLON)
+  expiresAt DateTime?
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  signatures  ContractSignature[]
+  signatures ContractSignature[]
 }
 
 model ContractSignature {
-  id          String   @id @default(cuid())
-  contractId  String
-  userId      String
-  signedAt    DateTime @default(now())
-  ipAddress   String?
+  id         String   @id @default(cuid())
+  contractId String
+  userId     String
+  signedAt   DateTime @default(now())
+  ipAddress  String?
 
-  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
 
   @@unique([contractId, userId])
 }
 
 model AutomationScenario {
-  id            String           @id @default(cuid())
-  userId        String
-  name          String
-  trigger       String           // "order_accepted", "deadline_24h", "client_inactive_3d"
-  conditions    Json?            // conditions supplementaires
-  actions       Json             // actions a executer
-  status        AutomationStatus @default(BROUILLON)
-  planRequired  UserPlan         @default(PRO) // plan minimum requis
-  executionCount Int             @default(0)
+  id             String           @id @default(cuid())
+  userId         String
+  name           String
+  trigger        String // "order_accepted", "deadline_24h", "client_inactive_3d"
+  conditions     Json? // conditions supplementaires
+  actions        Json // actions a executer
+  status         AutomationStatus @default(BROUILLON)
+  planRequired   UserPlan         @default(PRO) // plan minimum requis
+  executionCount Int              @default(0)
   lastExecutedAt DateTime?
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
 model AffiliationCode {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   userId      String
-  code        String   @unique
-  commission  Float    @default(10) // pourcentage
-  tier        String   @default("standard") // standard, premium
-  usageCount  Int      @default(0)
-  totalEarned Float    @default(0)
-  isActive    Boolean  @default(true)
+  code        String  @unique
+  commission  Float   @default(10) // pourcentage
+  tier        String  @default("standard") // standard, premium
+  usageCount  Int     @default(0)
+  totalEarned Float   @default(0)
+  isActive    Boolean @default(true)
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([code])
   @@index([userId])
@@ -979,10 +695,10 @@ model BlogPost {
   metaTitle       String?
   metaDescription String?
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  author      User       @relation(fields: [authorId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
 
   @@index([slug])
   @@index([status])
@@ -990,41 +706,39 @@ model BlogPost {
 }
 
 model KycRequest {
-  id              String    @id @default(cuid())
-  userId          String
-  requestedLevel  Int
-  currentLevel    Int
-  documentType    String
-  documentUrl     String?
-  status          KycStatus @default(EN_ATTENTE)
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  refuseReason    String?
-  metadata        Json?
-  submissionType  String?
+  id             String    @id @default(cuid())
+  userId         String
+  requestedLevel Int
+  currentLevel   Int
+  documentType   String
+  documentUrl    String?
+  status         KycStatus @default(EN_ATTENTE)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  refuseReason   String?
 
-  createdAt       DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
 model AuditLog {
-  id            String   @id @default(cuid())
-  actorId       String
-  action        String
-  targetType    String?
-  targetId      String?
-  targetUserId  String?
-  details       Json?
-  ipAddress     String?
+  id           String  @id @default(cuid())
+  actorId      String
+  action       String
+  targetType   String?
+  targetId     String?
+  targetUserId String?
+  details      Json?
+  ipAddress    String?
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  actor         User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
-  targetUser    User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  actor      User  @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@index([actorId])
   @@index([targetUserId])
@@ -1034,17 +748,17 @@ model AuditLog {
 }
 
 model Conversation {
-  id        String           @id @default(cuid())
-  type      ConversationType @default(DIRECT)
-  title     String?
-  orderId   String?          @unique
+  id      String           @id @default(cuid())
+  type    ConversationType @default(DIRECT)
+  title   String?
+  orderId String?          @unique
 
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  order     Order?           @relation(fields: [orderId], references: [id])
-  users     ConversationUser[]
-  messages  Message[]
+  order    Order?             @relation(fields: [orderId], references: [id])
+  users    ConversationUser[]
+  messages Message[]
 
   @@index([type])
 }
@@ -1054,54 +768,53 @@ model ConversationUser {
   userId         String
   lastReadAt     DateTime?
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId])
 }
 
 model Message {
-  id              String       @id @default(cuid())
-  conversationId  String
-  senderId        String
-  content         String       @db.Text
-  type            MessageType  @default(TEXT)
-  fileName        String?
-  fileUrl         String?
-  fileType        String?
-  fileSizeBytes   Int?
-  audioUrl        String?
-  audioDuration   Int?
-  transcription   String?      @db.Text
-  callDuration    Int?
-  read            Boolean      @default(false)
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String      @db.Text
+  type           MessageType @default(TEXT)
+  fileName       String?
+  fileUrl        String?
+  fileType       String?
+  fileSizeBytes  Int?
+  audioUrl       String?
+  audioDuration  Int?
+  callDuration   Int?
+  read           Boolean     @default(false)
 
   editedAt        DateTime?
   deletedAt       DateTime?
   linkPreviewData Json?
 
-  createdAt       DateTime     @default(now())
+  createdAt DateTime @default(now())
 
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender          User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@index([senderId])
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      NotificationType @default(SYSTEM)
-  read      Boolean          @default(false)
-  link      String?
+  id      String           @id @default(cuid())
+  userId  String
+  title   String
+  message String
+  type    NotificationType @default(SYSTEM)
+  read    Boolean          @default(false)
+  link    String?
 
-  createdAt DateTime         @default(now())
+  createdAt DateTime @default(now())
 
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
   @@index([createdAt])
@@ -1120,293 +833,795 @@ model LoginAttempt {
   @@index([ipAddress, createdAt])
 }
 
-// ── Admin Team Invitations (magic link) ──
-
-model AdminInvitation {
-  id        String   @id @default(cuid())
-  email     String
-  name      String
-  adminRole String
-  token     String   @unique
-  status    String   @default("pending") // pending | accepted | expired
-  invitedBy String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([token])
-  @@index([email])
-}
-
-// ── Platform Configuration (key-value store) ──
-
-model PlatformConfig {
-  key       String   @id
-  value     Json
-  updatedAt DateTime @updatedAt
-  updatedBy String?
-}
-
-// ── Admin Notification Log ──
-
-model AdminNotificationLog {
-  id              String   @id @default(cuid())
-  adminId         String
-  title           String
-  message         String   @db.Text
-  targetCriteria  Json?
-  recipientCount  Int      @default(0)
-  failedCount     Int      @default(0)
-  channels        String[] @default([])
-  createdAt       DateTime @default(now())
-
-  @@index([adminId])
-  @@index([createdAt])
-}
-
 // ══════════════════════════════════════════════════════════════
-// PHASE 1 — DONNÉES CORRECTEMENT LIÉES
-// Tracking, Propositions, Boosts, Escrow, Admin Wallet
+// FORMATIONS PLATFORM
 // ══════════════════════════════════════════════════════════════
 
-// ── Tracking réel des vues et clics service ──
+// ── Enums formations ──
 
-model ServiceView {
-  id        String   @id @default(cuid())
-  serviceId String
-  userId    String?
-  ip        String?
-  createdAt DateTime @default(now())
-
-  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([serviceId])
-  @@index([userId])
-  @@index([createdAt])
+enum FormationLevel {
+  DEBUTANT
+  INTERMEDIAIRE
+  AVANCE
+  TOUS_NIVEAUX
 }
 
-model ServiceClick {
-  id        String   @id @default(cuid())
-  serviceId String
-  userId    String?
-  ip        String?
-  createdAt DateTime @default(now())
-
-  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([serviceId])
-  @@index([userId])
-  @@index([createdAt])
+enum LessonType {
+  VIDEO
+  PDF
+  TEXTE
+  AUDIO
+  QUIZ
 }
 
-// ── Propositions (offres basées sur un service) ──
+enum QuestionType {
+  CHOIX_UNIQUE
+  CHOIX_MULTIPLE
+  VRAI_FAUX
+  TEXTE_LIBRE
+}
 
-model Proposition {
+enum FormationStatus {
+  BROUILLON
+  EN_ATTENTE
+  ACTIF
+  ARCHIVE
+}
+
+enum CohortStatus {
+  OUVERT
+  COMPLET
+  EN_COURS
+  TERMINE
+  ANNULE
+}
+
+enum InstructeurStatus {
+  EN_ATTENTE
+  APPROUVE
+  SUSPENDU
+}
+
+// ── Models formations ──
+
+model FormationCategory {
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  icon     String?
+  color    String?
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  formations      Formation[]
+  digitalProducts DigitalProduct[] @relation("CategoryProducts")
+
+  createdAt DateTime @default(now())
+
+  @@index([slug])
+  @@index([order])
+}
+
+model InstructeurProfile {
   id          String            @id @default(cuid())
+  userId      String            @unique
+  bioFr       String?           @db.Text
+  bioEn       String?           @db.Text
+  expertise   String[]          @default([])
+  linkedin    String?
+  website     String?
+  youtube     String?
+  motivation  String?           @db.Text
+  yearsExp    Int               @default(0)
+  totalEarned Float             @default(0)
+  status      InstructeurStatus @default(EN_ATTENTE)
 
-  serviceId   String
-  freelanceId String
-  clientId    String
-  agencyId    String?
-  projectId   String?
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  formations      Formation[]
+  withdrawals     InstructorWithdrawal[] @relation("InstructeurWithdrawals")
+  digitalProducts DigitalProduct[]       @relation("InstructeurProducts")
+  marketingPixels MarketingPixel[]       @relation("InstructeurPixels")
 
-  title       String
-  description String            @db.Text
-  amount      Float
-  deliveryDays Int
-  revisions   Int               @default(1)
+  // Marketing relations
+  affiliatePrograms   AffiliateProgram[]   @relation("InstructeurAffiliatePrograms")
+  discountCodes       DiscountCode[]       @relation("InstructeurDiscountCodes")
+  emailSequences      EmailSequence[]      @relation("InstructeurEmailSequences")
+  salesFunnels        SalesFunnel[]        @relation("InstructeurSalesFunnels")
+  smartPopups         SmartPopup[]         @relation("InstructeurSmartPopups")
+  campaignTrackers    CampaignTracker[]    @relation("InstructeurCampaignTrackers")
+  automationWorkflows AutomationWorkflow[] @relation("InstructeurAutomationWorkflows")
 
-  status      PropositionStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  viewedAt    DateTime?
-  acceptedAt  DateTime?
-  rejectedAt  DateTime?
-  expiresAt   DateTime?
-
-  // Devient commande si acceptée
-  orderId     String?           @unique
-
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  service     Service           @relation(fields: [serviceId], references: [id])
-  freelance   User              @relation("PropositionFreelance", fields: [freelanceId], references: [id])
-  client      User              @relation("PropositionClient", fields: [clientId], references: [id])
-  project     Project?          @relation(fields: [projectId], references: [id])
-  order       Order?            @relation(fields: [orderId], references: [id])
-  agency      AgencyProfile?    @relation("AgencyPropositions", fields: [agencyId], references: [id], onDelete: SetNull)
-
-  @@index([serviceId])
-  @@index([freelanceId])
-  @@index([clientId])
-  @@index([agencyId])
   @@index([status])
+  @@index([userId])
 }
 
-// ── Demandes de révision sur une commande ──
+model Formation {
+  id   String @id @default(cuid())
+  slug String @unique
 
-model RevisionRequest {
+  // Contenu (langue unique, détectée par locale)
+  title          String
+  shortDesc      String?
+  description    String?  @db.Text
+  learnPoints    String[] @default([])
+  requirements   String[] @default([])
+  targetAudience String?  @db.Text
+  locale         String   @default("fr")
+  customCategory String?
+
+  // Médias
+  thumbnail    String?
+  previewVideo String?
+
+  // Catégorie
+  categoryId  String
+  subCategory String?
+
+  // Infos
+  level    FormationLevel @default(TOUS_NIVEAUX)
+  language String[]       @default(["fr"])
+  duration Int            @default(0) // minutes total
+
+  // Prix
+  price         Float   @default(0)
+  originalPrice Float?
+  isFree        Boolean @default(false)
+
+  // Certificat
+  hasCertificate   Boolean @default(true)
+  minScore         Int     @default(80)
+  requireFinalQuiz Boolean @default(false)
+
+  // Stock limité & Promotions flash
+  maxStudents       Int? // null = illimité
+  discountStartAt   DateTime?
+  discountEndAt     DateTime?
+  descriptionFormat String    @default("text") // "text" | "tiptap"
+
+  // Cohortes
+  isGroupFormation Boolean @default(false)
+
+  // Stats
+  studentsCount Int   @default(0)
+  rating        Float @default(0)
+  reviewsCount  Int   @default(0)
+  viewsCount    Int   @default(0)
+
+  // Statut
+  status       FormationStatus @default(BROUILLON)
+  publishedAt  DateTime?
+  scheduledAt  DateTime?
+  refuseReason String?
+
+  // Wizard brouillon
+  draftStep Int?
+
+  // Relations
+  instructeurId   String
+  instructeur     InstructeurProfile @relation(fields: [instructeurId], references: [id], onDelete: Cascade)
+  category        FormationCategory  @relation(fields: [categoryId], references: [id])
+  sections        Section[]
+  enrollments     Enrollment[]
+  reviews         FormationReview[]
+  certificates    Certificate[]
+  cartItems       CartItem[]
+  flashPromotions FlashPromotion[]   @relation("FormationFlashPromos")
+  marketingEvents MarketingEvent[]   @relation("FormationMarketingEvents")
+  discussions     CourseDiscussion[]
+  cohorts         FormationCohort[]
+  salesPage       SalesPage?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([instructeurId])
+  @@index([status])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([studentsCount])
+  @@index([price])
+  @@index([isFree])
+}
+
+model SalesPage {
+  id           String    @id @default(cuid())
+  formationId  String    @unique
+  instructorId String
+  slug         String    @unique
+  blocks       Json      @default("[]") // Array de blocs typés
+  published    Boolean   @default(false)
+  formation    Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([instructorId])
+}
+
+model Section {
+  id          String    @id @default(cuid())
+  title       String
+  desc        String?
+  order       Int       @default(0)
+  formationId String
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([formationId, order])
+}
+
+model Lesson {
+  id                  String           @id @default(cuid())
+  title               String
+  desc                String?          @db.Text
+  type                LessonType       @default(VIDEO)
+  content             String?          @db.Text // Pour les leçons TEXTE (HTML rich text)
+  videoUrl            String? // URL YouTube/Vimeo ou URL signée Supabase
+  videoStoragePath    String? // Chemin dans Supabase Storage
+  pdfUrl              String?
+  pdfStoragePath      String?
+  audioUrl            String?
+  audioStoragePath    String?
+  subtitleUrl         String? // URL publique du fichier .vtt
+  subtitleStoragePath String? // Chemin dans Supabase Storage
+  subtitleLabel       String? // Ex: "Français", "English"
+  chapters            Json? // [{title, timestamp}] pour navigation vidéo
+  duration            Int? // minutes
+  order               Int              @default(0)
+  isFree              Boolean          @default(false)
+  allowDownload       Boolean          @default(false) // pour PDF/audio
+  sectionId           String
+  section             Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  resources           LessonResource[]
+  quiz                Quiz?
+  progress            LessonProgress[]
+  notes               LessonNote[]
+
+  @@index([sectionId, order])
+}
+
+model LessonResource {
+  id       String  @id @default(cuid())
+  lessonId String
+  name     String
+  url      String
+  fileSize Int? // bytes
+  mimeType String?
+  lesson   Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
+
+model Quiz {
+  id           String     @id @default(cuid())
+  title        String
+  passingScore Int        @default(80)
+  timeLimit    Int? // minutes, null = pas de limite
+  lessonId     String     @unique
+  lesson       Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions    Question[]
+
+  @@index([lessonId])
+}
+
+model Question {
+  id            String       @id @default(cuid())
+  text          String       @db.Text
+  type          QuestionType @default(CHOIX_UNIQUE)
+  options       Json // Array of { text, value }
+  correctAnswer String // valeur(s) correcte(s) — JSON array pour CHOIX_MULTIPLE
+  explanation   String?      @db.Text
+  order         Int          @default(0)
+  quizId        String
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, order])
+}
+
+model Enrollment {
+  id              String    @id @default(cuid())
+  userId          String
+  formationId     String
+  cohortId        String?
+  progress        Float     @default(0) // 0-100%
+  completedAt     DateTime?
+  paidAmount      Float     @default(0)
+  stripeSessionId String?
+  refundRequested Boolean   @default(false)
+  refundReason    String?
+  refundedAt      DateTime?
+
+  user           User             @relation("UserEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+  formation      Formation        @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  cohort         FormationCohort? @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  lessonProgress LessonProgress[]
+  certificate    Certificate?
+  notes          LessonNote[]
+  refundRequests RefundRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, formationId])
+  @@index([userId])
+  @@index([formationId])
+  @@index([cohortId])
+  @@index([createdAt])
+}
+
+model LessonProgress {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+  completed    Boolean    @default(false)
+  score        Int? // score quiz 0-100
+  watchedPct   Float? // pourcentage visionné pour les vidéos
+  completedAt  DateTime?
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson       Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+}
+
+model LessonNote {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+  content      String   @db.Text
+  timestamp    Int? // secondes dans la vidéo
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId, lessonId])
+}
+
+model Certificate {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  enrollmentId   String    @unique
+  userId         String
+  formationId    String
+  score          Int       @default(0)
+  pdfUrl         String?
+  pdfStoragePath String?
+  revokedAt      DateTime?
+  revokeReason   String?
+  issuedAt       DateTime  @default(now())
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  user       User       @relation("UserCertificates", fields: [userId], references: [id], onDelete: Cascade)
+  formation  Formation  @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+  @@index([formationId])
+}
+
+model FormationReview {
+  id           String    @id @default(cuid())
+  rating       Int // 1-5
+  comment      String    @db.Text
+  userId       String
+  formationId  String
+  enrollmentId String?
+  response     String?   @db.Text
+  respondedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user      User      @relation("UserFormationReviews", fields: [userId], references: [id], onDelete: Cascade)
+  formation Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, formationId])
+  @@index([formationId])
+  @@index([userId])
+}
+
+model CartItem {
   id          String   @id @default(cuid())
-  orderId     String
-  requestedBy String
-  message     String   @db.Text
-  status      String   @default("pending") // pending, resolved
-  resolvedAt  DateTime?
-
+  userId      String
+  formationId String
   createdAt   DateTime @default(now())
 
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User      @relation("UserCartItems", fields: [userId], references: [id], onDelete: Cascade)
+  formation Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
 
-  @@index([orderId])
-  @@index([status])
-}
-
-// ── Boosts (promotions payantes de services) ──
-
-model Boost {
-  id          String      @id @default(cuid())
-
-  serviceId   String
-  userId      String
-  agencyId    String?
-
-  type        BoostType
-  durationDays Int
-  costPerDay  Float
-  totalCost   Float
-
-  // Estimations
-  estimatedDailyImpressions Int @default(0)
-  totalEstimatedImpressions Int @default(0)
-
-  // Stats réelles (non simulées)
-  // actualImpressions = SUM(BoostDailyStat.impressions)
-  // actualClicks = SUM(BoostDailyStat.clicks)
-  actualImpressions Int @default(0)
-  actualClicks      Int @default(0)
-  actualContacts    Int @default(0)
-  actualOrders      Int @default(0)
-
-  status      BoostStatus @default(PENDING_PAYMENT)
-
-  paidAt      DateTime?
-  startedAt   DateTime?
-  endedAt     DateTime?
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  service     Service     @relation(fields: [serviceId], references: [id])
-  user        User        @relation("UserBoosts", fields: [userId], references: [id])
-  escrow      Escrow?
-  dailyStats  BoostDailyStat[]
-  agency      AgencyProfile?  @relation("AgencyBoosts", fields: [agencyId], references: [id], onDelete: SetNull)
-
-  @@index([serviceId])
+  @@unique([userId, formationId])
   @@index([userId])
-  @@index([agencyId])
+}
+
+model PromoCode {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  discountPct  Int // 0-100
+  maxUsage     Int? // null = illimité
+  usageCount   Int       @default(0)
+  expiresAt    DateTime?
+  isActive     Boolean   @default(true)
+  formationIds String[]  @default([]) // vide = tous les cours
+
+  createdAt DateTime @default(now())
+
+  @@index([code])
+}
+
+model InstructorWithdrawal {
+  id             String    @id @default(cuid())
+  instructeurId  String
+  amount         Float
+  method         String // "virement", "paypal", "wave", "orange_money", "mtn"
+  accountDetails Json // IBAN, email PayPal, numéro mobile...
+  status         String    @default("EN_ATTENTE") // EN_ATTENTE, TRAITE, REFUSE
+  refusedReason  String?
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  instructeur InstructeurProfile @relation("InstructeurWithdrawals", fields: [instructeurId], references: [id], onDelete: Cascade)
+
+  @@index([instructeurId])
   @@index([status])
 }
 
-model BoostDailyStat {
-  id          String   @id @default(cuid())
-  boostId     String
-  date        DateTime
-  impressions Int      @default(0)
-  clicks      Int      @default(0)
-  contacts    Int      @default(0)
-  orders      Int      @default(0)
+// ── Enums produits numériques & marketing ──
 
-  boost       Boost    @relation(fields: [boostId], references: [id], onDelete: Cascade)
-
-  @@unique([boostId, date])
-  @@index([boostId])
-  @@index([date])
+enum DigitalProductType {
+  EBOOK
+  PDF
+  TEMPLATE
+  LICENCE
+  AUDIO
+  VIDEO
+  AUTRE
 }
 
-// ── Escrow (paiement bloqué — ordres et boosts) ──
+enum DigitalProductStatus {
+  BROUILLON
+  EN_ATTENTE
+  ACTIF
+  ARCHIVE
+  REFUSE
+}
 
-model Escrow {
-  id        String       @id @default(cuid())
+enum PixelType {
+  FACEBOOK
+  GOOGLE
+  TIKTOK
+}
 
-  orderId   String?      @unique
-  boostId   String?      @unique
+enum MarketingEventType {
+  PAGE_VIEW
+  ADD_TO_CART
+  CHECKOUT_STARTED
+  PURCHASE_COMPLETED
+  PAYMENT_FAILED
+  CART_ABANDONED
+}
 
-  amount    Float
-  currency  String       @default("EUR")
-  reason    EscrowReason
-  status    EscrowStatus @default(HELD)
+enum AbandonedCartStatus {
+  DETECTE
+  RELANCE_1
+  RELANCE_2
+  RELANCE_3
+  CONVERTI
+  TERMINE
+  DESABONNE
+}
 
-  heldAt    DateTime     @default(now())
-  releasedAt DateTime?
+// ── Produits Numériques ──
 
-  order     Order?       @relation(fields: [orderId], references: [id])
-  boost     Boost?       @relation(fields: [boostId], references: [id])
+model DigitalProduct {
+  id   String @id @default(cuid())
+  slug String @unique
 
-  @@index([orderId])
-  @@index([boostId])
+  // Contenu (langue unique)
+  title             String
+  description       String? @db.Text
+  descriptionFormat String  @default("text") // "text" | "tiptap"
+  locale            String  @default("fr")
+
+  // Type de produit
+  productType DigitalProductType @default(EBOOK)
+
+  // Médias
+  banner          String? // URL image bannière/couverture
+  fileUrl         String? // URL Supabase Storage
+  fileStoragePath String? // chemin dans le bucket
+  fileSize        Int? // bytes
+  fileMimeType    String?
+
+  // Aperçu
+  previewEnabled   Boolean @default(false)
+  previewPages     Int     @default(5) // nombre de pages pour l'aperçu PDF
+  watermarkEnabled Boolean @default(true)
+
+  // Prix
+  price         Float   @default(0)
+  originalPrice Float?
+  isFree        Boolean @default(false)
+
+  // Stock limité
+  maxBuyers     Int? // null = illimité
+  currentBuyers Int  @default(0)
+
+  // Stats
+  rating       Float @default(0)
+  reviewsCount Int   @default(0)
+  salesCount   Int   @default(0)
+  viewsCount   Int   @default(0)
+
+  // Tags
+  tags String[] @default([])
+
+  // Statut
+  status       DigitalProductStatus @default(BROUILLON)
+  refuseReason String?
+
+  // Relations
+  instructeurId   String
+  categoryId      String
+  instructeur     InstructeurProfile       @relation("InstructeurProducts", fields: [instructeurId], references: [id], onDelete: Cascade)
+  category        FormationCategory        @relation("CategoryProducts", fields: [categoryId], references: [id])
+  purchases       DigitalProductPurchase[]
+  reviews         DigitalProductReview[]
+  flashPromotions FlashPromotion[]         @relation("ProductFlashPromos")
+  marketingEvents MarketingEvent[]         @relation("ProductMarketingEvents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([instructeurId])
+  @@index([categoryId])
   @@index([status])
-}
-
-// ── Admin Wallet (toutes les commissions plateforme) ──
-
-model AdminWallet {
-  id                String             @id @default(cuid())
-
-  // Montants totaux réels
-  totalFeesHeld     Float              @default(0)
-  totalFeesReleased Float              @default(0)
-
-  transactions      AdminTransaction[]
-  payouts           AdminPayout[]
-
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-}
-
-model AdminTransaction {
-  id            String            @id @default(cuid())
-  adminWalletId String
-
-  type          TransactionType
-  amount        Float
-  currency      String            @default("EUR")
-  description   String
-
-  orderId       String?
-  boostId       String?
-
-  status        TransactionStatus @default(PENDING)
-
-  createdAt     DateTime          @default(now())
-
-  adminWallet   AdminWallet       @relation(fields: [adminWalletId], references: [id])
-
-  @@index([adminWalletId])
-  @@index([type])
-  @@index([status])
+  @@index([productType])
+  @@index([rating])
   @@index([createdAt])
+  @@index([salesCount])
+  @@index([price])
 }
 
-model AdminPayout {
-  id            String      @id @default(cuid())
-  adminWalletId String
+model DigitalProductPurchase {
+  id              String  @id @default(cuid())
+  userId          String
+  productId       String
+  paidAmount      Float   @default(0)
+  stripeSessionId String?
+  licenseKey      String? // clé de licence unique si type LICENCE
+  downloadCount   Int     @default(0)
+  maxDownloads    Int     @default(5)
 
-  amount        Float
-  currency      String      @default("EUR")
-  method        String
-  status        PayoutStatus @default(PAYOUT_PENDING)
+  user    User           @relation("UserProductPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  product DigitalProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  paidAt        DateTime?
+  createdAt DateTime @default(now())
 
-  createdAt     DateTime    @default(now())
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@index([stripeSessionId])
+}
 
-  adminWallet   AdminWallet @relation(fields: [adminWalletId], references: [id])
+model DigitalProductReview {
+  id          String    @id @default(cuid())
+  rating      Int // 1-5
+  comment     String    @db.Text
+  userId      String
+  productId   String
+  response    String?   @db.Text // réponse de l'instructeur
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  @@index([adminWalletId])
+  user    User           @relation("UserProductReviews", fields: [userId], references: [id], onDelete: Cascade)
+  product DigitalProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+}
+
+// ── Promotions Flash ──
+
+model FlashPromotion {
+  id               String   @id @default(cuid())
+  formationId      String?
+  digitalProductId String?
+  discountPct      Int // 1-90
+  startsAt         DateTime
+  endsAt           DateTime
+  maxUsage         Int? // null = illimité
+  usageCount       Int      @default(0)
+  isActive         Boolean  @default(true)
+
+  formation      Formation?      @relation("FormationFlashPromos", fields: [formationId], references: [id], onDelete: Cascade)
+  digitalProduct DigitalProduct? @relation("ProductFlashPromos", fields: [digitalProductId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([formationId])
+  @@index([digitalProductId])
+  @@index([isActive, endsAt])
+}
+
+// ── Paniers Abandonnés ──
+
+model AbandonedCart {
+  id            String              @id @default(cuid())
+  userId        String
+  cartItemIds   String[]            @default([])
+  detectedAt    DateTime            @default(now())
+  emailSequence Int                 @default(0) // 0=pas envoyé, 1=1h, 2=24h, 3=7j
+  lastEmailAt   DateTime?
+  status        AbandonedCartStatus @default(DETECTE)
+
+  user User @relation("UserAbandonedCarts", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
   @@index([status])
-  @@index([createdAt])
+  @@index([detectedAt])
+}
+
+// ── Marketing Pixels ──
+
+model MarketingPixel {
+  id            String    @id @default(cuid())
+  instructeurId String
+  type          PixelType
+  pixelId       String // ID du pixel (ex: "123456789012345" pour Facebook)
+  isActive      Boolean   @default(true)
+
+  instructeur InstructeurProfile @relation("InstructeurPixels", fields: [instructeurId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([instructeurId, type])
+  @@index([instructeurId])
+}
+
+// ── Marketing Events ──
+
+model MarketingEvent {
+  id               String             @id @default(cuid())
+  type             MarketingEventType
+  formationId      String?
+  digitalProductId String?
+  userId           String?
+  metadata         Json?
+
+  formation      Formation?      @relation("FormationMarketingEvents", fields: [formationId], references: [id], onDelete: SetNull)
+  digitalProduct DigitalProduct? @relation("ProductMarketingEvents", fields: [digitalProductId], references: [id], onDelete: SetNull)
+  user           User?           @relation("UserMarketingEvents", fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([formationId])
+  @@index([digitalProductId])
+  @@index([userId])
+}
+
+// ── Course Discussions ──
+
+model CourseDiscussion {
+  id          String  @id @default(cuid())
+  formationId String
+  userId      String
+  title       String
+  content     String  @db.Text
+  isPinned    Boolean @default(false)
+  isResolved  Boolean @default(false)
+  status      String  @default("active") // active, locked, deleted
+  reportCount Int     @default(0)
+
+  formation Formation               @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  user      User                    @relation("UserDiscussions", fields: [userId], references: [id], onDelete: Cascade)
+  replies   CourseDiscussionReply[]
+  reports   DiscussionReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([formationId, createdAt])
+  @@index([userId])
+  @@index([reportCount])
+  @@index([status])
+}
+
+model CourseDiscussionReply {
+  id           String  @id @default(cuid())
+  discussionId String
+  userId       String
+  content      String  @db.Text
+  isInstructor Boolean @default(false)
+  status       String  @default("active") // active, deleted
+  reportCount  Int     @default(0)
+
+  discussion CourseDiscussion   @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User               @relation("UserDiscussionReplies", fields: [userId], references: [id], onDelete: Cascade)
+  reports    DiscussionReport[] @relation("ReplyReports")
+
+  createdAt DateTime @default(now())
+
+  @@index([discussionId, createdAt])
+  @@index([userId])
+}
+
+// ── Cohortes (Formations groupées) ──
+
+model FormationCohort {
+  id          String @id @default(cuid())
+  formationId String
+
+  // Contenu (langue unique)
+  title       String
+  description String? @db.Text
+
+  // Dates
+  startDate          DateTime
+  endDate            DateTime
+  enrollmentDeadline DateTime
+  durationDays       Int
+
+  // Capacité
+  maxParticipants Int
+  currentCount    Int @default(0)
+
+  // Prix
+  price         Float
+  originalPrice Float?
+
+  // Statut
+  status CohortStatus @default(OUVERT)
+
+  // Programme semaine par semaine (JSON)
+  schedule Json?
+
+  // Relations
+  formation   Formation       @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+  messages    CohortMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([formationId])
+  @@index([status])
+  @@index([startDate])
+  @@index([enrollmentDeadline])
+}
+
+model CohortMessage {
+  id             String  @id @default(cuid())
+  cohortId       String
+  userId         String
+  content        String  @db.Text
+  isInstructor   Boolean @default(false)
+  isPinned       Boolean @default(false)
+  attachmentUrl  String?
+  attachmentName String?
+
+  cohort FormationCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  user   User            @relation("UserCohortMessages", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cohortId, createdAt])
+  @@index([userId])
+  @@index([cohortId, isPinned])
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1536,52 +1751,52 @@ enum WorkflowStatus {
 // ── Affiliate System ──────────────────────────────────────────
 
 model AffiliateProgram {
-  id               String             @id @default(cuid())
-  instructeurId    String
-  name             String
-  description      String?            @db.Text
-  commissionPct    Float              @default(20)    // default 20%
-  cookieDays       Int                @default(30)    // tracking cookie duration
-  isActive         Boolean            @default(true)
-  minPayoutAmount  Float              @default(20)    // minimum €20 for payout
-  autoApprove      Boolean            @default(true)  // auto-approve affiliates
+  id              String   @id @default(cuid())
+  instructeurId   String
+  name            String
+  description     String?  @db.Text
+  commissionPct   Float    @default(20) // default 20%
+  cookieDays      Int      @default(30) // tracking cookie duration
+  isActive        Boolean  @default(true)
+  minPayoutAmount Float    @default(20) // minimum €20 for payout
+  autoApprove     Boolean  @default(true) // auto-approve affiliates
   // Scope: which products/courses
-  applyToAll       Boolean            @default(true)
-  formationIds     String[]           @default([])
-  productIds       String[]           @default([])
+  applyToAll      Boolean  @default(true)
+  formationIds    String[] @default([])
+  productIds      String[] @default([])
 
-  instructeur      InstructeurProfile @relation("InstructeurAffiliatePrograms", fields: [instructeurId], references: [id], onDelete: Cascade)
-  affiliates       AffiliateProfile[]
+  instructeur InstructeurProfile @relation("InstructeurAffiliatePrograms", fields: [instructeurId], references: [id], onDelete: Cascade)
+  affiliates  AffiliateProfile[]
 
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([isActive])
 }
 
 model AffiliateProfile {
-  id               String           @id @default(cuid())
-  userId           String           @unique
+  id               String          @id @default(cuid())
+  userId           String          @unique
   programId        String
-  affiliateCode    String           @unique  // unique code for links
-  status           AffiliateStatus  @default(PENDING)
-  totalClicks      Int              @default(0)
-  totalConversions Int              @default(0)
-  totalEarned      Float            @default(0)
-  pendingEarnings  Float            @default(0)
-  paidEarnings     Float            @default(0)
-  conversionRate   Float            @default(0)
+  affiliateCode    String          @unique // unique code for links
+  status           AffiliateStatus @default(PENDING)
+  totalClicks      Int             @default(0)
+  totalConversions Int             @default(0)
+  totalEarned      Float           @default(0)
+  pendingEarnings  Float           @default(0)
+  paidEarnings     Float           @default(0)
+  conversionRate   Float           @default(0)
   paypalEmail      String?
   bankDetails      Json?
 
-  user             User             @relation("UserAffiliateProfile", fields: [userId], references: [id], onDelete: Cascade)
-  program          AffiliateProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
-  clicks           AffiliateClick[]
-  commissions      AffiliateCommission[]
+  user        User                  @relation("UserAffiliateProfile", fields: [userId], references: [id], onDelete: Cascade)
+  program     AffiliateProgram      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  clicks      AffiliateClick[]
+  commissions AffiliateCommission[]
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([programId])
@@ -1590,21 +1805,21 @@ model AffiliateProfile {
 }
 
 model AffiliateClick {
-  id            String           @id @default(cuid())
-  affiliateId   String
-  visitorId     String?          // anonymous visitor ID (cookie)
-  userId        String?          // if visitor is logged in
-  ip            String?
-  userAgent     String?
-  referer       String?
-  landingPage   String?
-  converted     Boolean          @default(false)
-  conversionId  String?          // link to commission
+  id           String  @id @default(cuid())
+  affiliateId  String
+  visitorId    String? // anonymous visitor ID (cookie)
+  userId       String? // if visitor is logged in
+  ip           String?
+  userAgent    String?
+  referer      String?
+  landingPage  String?
+  converted    Boolean @default(false)
+  conversionId String? // link to commission
 
-  affiliate     AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
-  user          User?            @relation("UserAffiliateClicks", fields: [userId], references: [id], onDelete: SetNull)
+  affiliate AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  user      User?            @relation("UserAffiliateClicks", fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime         @default(now())
+  createdAt DateTime @default(now())
 
   @@index([affiliateId])
   @@index([visitorId])
@@ -1614,21 +1829,21 @@ model AffiliateClick {
 }
 
 model AffiliateCommission {
-  id              String          @id @default(cuid())
-  affiliateId     String
-  orderId         String?         // enrollment or purchase reference
-  orderType       String          // "formation" or "product"
-  orderAmount     Float           // total sale amount
-  commissionPct   Float           // % at time of sale
-  commissionAmount Float          // calculated amount
-  status          CommissionStatus @default(PENDING)
-  paidAt          DateTime?
-  payoutRef       String?         // payout transaction reference
+  id               String           @id @default(cuid())
+  affiliateId      String
+  orderId          String? // enrollment or purchase reference
+  orderType        String // "formation" or "product"
+  orderAmount      Float // total sale amount
+  commissionPct    Float // % at time of sale
+  commissionAmount Float // calculated amount
+  status           CommissionStatus @default(PENDING)
+  paidAt           DateTime?
+  payoutRef        String? // payout transaction reference
 
-  affiliate       AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  affiliate AffiliateProfile @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([affiliateId])
   @@index([status])
@@ -1638,29 +1853,29 @@ model AffiliateCommission {
 // ── Discount System ───────────────────────────────────────────
 
 model DiscountCode {
-  id              String           @id @default(cuid())
+  id              String        @id @default(cuid())
   instructeurId   String
-  code            String           @unique
-  discountType    DiscountType     @default(PERCENTAGE)
-  discountValue   Float            // percentage (0-100) or fixed amount
-  scope           DiscountScope    @default(ALL)
-  formationIds    String[]         @default([])
-  productIds      String[]         @default([])
-  maxUses         Int?             // null = unlimited
-  usedCount       Int              @default(0)
-  maxUsesPerUser  Int?             // null = unlimited
-  minOrderAmount  Float?           // minimum order value
+  code            String        @unique
+  discountType    DiscountType  @default(PERCENTAGE)
+  discountValue   Float // percentage (0-100) or fixed amount
+  scope           DiscountScope @default(ALL)
+  formationIds    String[]      @default([])
+  productIds      String[]      @default([])
+  maxUses         Int? // null = unlimited
+  usedCount       Int           @default(0)
+  maxUsesPerUser  Int? // null = unlimited
+  minOrderAmount  Float? // minimum order value
   expiresAt       DateTime?
-  isActive        Boolean          @default(true)
+  isActive        Boolean       @default(true)
   // Tracking
-  totalDiscounted Float            @default(0) // total amount discounted
-  revenue         Float            @default(0) // total revenue from discounted sales
+  totalDiscounted Float         @default(0) // total amount discounted
+  revenue         Float         @default(0) // total revenue from discounted sales
 
-  instructeur     InstructeurProfile @relation("InstructeurDiscountCodes", fields: [instructeurId], references: [id], onDelete: Cascade)
-  usages          DiscountUsage[]
+  instructeur InstructeurProfile @relation("InstructeurDiscountCodes", fields: [instructeurId], references: [id], onDelete: Cascade)
+  usages      DiscountUsage[]
 
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
   @@index([instructeurId])
@@ -1669,43 +1884,43 @@ model DiscountCode {
 }
 
 model DiscountUsage {
-  id            String       @id @default(cuid())
-  discountId    String
-  userId        String
-  orderType     String       // "formation" or "product"
-  orderId       String
+  id             String @id @default(cuid())
+  discountId     String
+  userId         String
+  orderType      String // "formation" or "product"
+  orderId        String
   originalAmount Float
   discountAmount Float
-  finalAmount   Float
+  finalAmount    Float
 
-  discount      DiscountCode @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discount DiscountCode @relation(fields: [discountId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime     @default(now())
+  createdAt DateTime @default(now())
 
+  @@unique([discountId, userId, orderId])
   @@index([discountId])
   @@index([userId])
-  @@unique([discountId, userId, orderId])
 }
 
 // ── Email Automation System ───────────────────────────────────
 
 model EmailSequence {
-  id              String              @id @default(cuid())
-  instructeurId   String
-  name            String
-  description     String?             @db.Text
-  trigger         EmailSequenceTrigger
-  triggerConfig   Json?               // additional trigger config (e.g., days of inactivity)
-  isActive        Boolean             @default(false)
-  totalEnrolled   Int                 @default(0)
-  totalCompleted  Int                 @default(0)
+  id             String               @id @default(cuid())
+  instructeurId  String
+  name           String
+  description    String?              @db.Text
+  trigger        EmailSequenceTrigger
+  triggerConfig  Json? // additional trigger config (e.g., days of inactivity)
+  isActive       Boolean              @default(false)
+  totalEnrolled  Int                  @default(0)
+  totalCompleted Int                  @default(0)
 
-  instructeur     InstructeurProfile  @relation("InstructeurEmailSequences", fields: [instructeurId], references: [id], onDelete: Cascade)
-  steps           EmailSequenceStep[]
-  enrollments     EmailSequenceEnrollment[]
+  instructeur InstructeurProfile        @relation("InstructeurEmailSequences", fields: [instructeurId], references: [id], onDelete: Cascade)
+  steps       EmailSequenceStep[]
+  enrollments EmailSequenceEnrollment[]
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([trigger])
@@ -1713,49 +1928,49 @@ model EmailSequence {
 }
 
 model EmailSequenceStep {
-  id            String        @id @default(cuid())
-  sequenceId    String
-  stepOrder     Int
-  stepType      EmailStepType @default(EMAIL)
+  id             String        @id @default(cuid())
+  sequenceId     String
+  stepOrder      Int
+  stepType       EmailStepType @default(EMAIL)
   // For EMAIL type
-  subjectFr     String?
-  subjectEn     String?
-  bodyFr        String?       @db.Text
-  bodyEn        String?       @db.Text
+  subjectFr      String?
+  subjectEn      String?
+  bodyFr         String?       @db.Text
+  bodyEn         String?       @db.Text
   // For DELAY type
-  delayMinutes  Int?          // delay in minutes (1440 = 1 day)
+  delayMinutes   Int? // delay in minutes (1440 = 1 day)
   // For CONDITION type
-  conditionField String?      // e.g., "course_progress", "has_purchased"
-  conditionOp    String?      // "gte", "eq", "contains"
+  conditionField String? // e.g., "course_progress", "has_purchased"
+  conditionOp    String? // "gte", "eq", "contains"
   conditionValue String?
   // For TAG_ACTION type
-  tagAction     String?       // "add" or "remove"
-  tagName       String?
+  tagAction      String? // "add" or "remove"
+  tagName        String?
 
-  sequence      EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sequence EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sequenceId])
   @@index([stepOrder])
 }
 
 model EmailSequenceEnrollment {
-  id              String                   @id @default(cuid())
-  sequenceId      String
-  userId          String
-  currentStepIdx  Int                      @default(0)
-  status          SequenceEnrollmentStatus @default(ACTIVE)
-  nextStepAt      DateTime?                // when to execute next step
-  completedAt     DateTime?
-  metadata        Json?                    // user-specific context data
+  id             String                   @id @default(cuid())
+  sequenceId     String
+  userId         String
+  currentStepIdx Int                      @default(0)
+  status         SequenceEnrollmentStatus @default(ACTIVE)
+  nextStepAt     DateTime? // when to execute next step
+  completedAt    DateTime?
+  metadata       Json? // user-specific context data
 
-  sequence        EmailSequence            @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
-  user            User                     @relation("UserEmailSeqEnrollments", fields: [userId], references: [id], onDelete: Cascade)
+  sequence EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  user     User          @relation("UserEmailSeqEnrollments", fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([sequenceId, userId])
   @@index([sequenceId])
@@ -1766,22 +1981,22 @@ model EmailSequenceEnrollment {
 // ── Sales Funnel System ───────────────────────────────────────
 
 model SalesFunnel {
-  id              String             @id @default(cuid())
-  instructeurId   String
-  name            String
-  slug            String             @unique
-  description     String?            @db.Text
-  isActive        Boolean            @default(false)
-  totalViews      Int                @default(0)
-  totalConversions Int               @default(0)
-  totalRevenue    Float              @default(0)
+  id               String  @id @default(cuid())
+  instructeurId    String
+  name             String
+  slug             String  @unique
+  description      String? @db.Text
+  isActive         Boolean @default(false)
+  totalViews       Int     @default(0)
+  totalConversions Int     @default(0)
+  totalRevenue     Float   @default(0)
 
-  instructeur     InstructeurProfile @relation("InstructeurSalesFunnels", fields: [instructeurId], references: [id], onDelete: Cascade)
-  steps           FunnelStep[]
-  events          FunnelEvent[]
+  instructeur InstructeurProfile @relation("InstructeurSalesFunnels", fields: [instructeurId], references: [id], onDelete: Cascade)
+  steps       FunnelStep[]
+  events      FunnelEvent[]
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([slug])
@@ -1789,48 +2004,48 @@ model SalesFunnel {
 }
 
 model FunnelStep {
-  id              String         @id @default(cuid())
-  funnelId        String
-  stepOrder       Int
-  stepType        FunnelStepType @default(PRODUCT)
-  title           String
+  id            String         @id @default(cuid())
+  funnelId      String
+  stepOrder     Int
+  stepType      FunnelStepType @default(PRODUCT)
+  title         String
   // Product reference
-  formationId     String?
-  productId       String?
+  formationId   String?
+  productId     String?
   // Config
-  discountPct     Float?         // optional discount at this step
-  headlineFr      String?
-  headlineEn      String?
-  descriptionFr   String?        @db.Text
-  descriptionEn   String?        @db.Text
-  ctaTextFr       String?
-  ctaTextEn       String?
+  discountPct   Float? // optional discount at this step
+  headlineFr    String?
+  headlineEn    String?
+  descriptionFr String?        @db.Text
+  descriptionEn String?        @db.Text
+  ctaTextFr     String?
+  ctaTextEn     String?
   // Tracking
-  views           Int            @default(0)
-  conversions     Int            @default(0)
+  views         Int            @default(0)
+  conversions   Int            @default(0)
 
-  funnel          SalesFunnel    @relation(fields: [funnelId], references: [id], onDelete: Cascade)
+  funnel SalesFunnel @relation(fields: [funnelId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([funnelId])
   @@index([stepOrder])
 }
 
 model FunnelEvent {
-  id            String      @id @default(cuid())
-  funnelId      String
-  stepId        String?
-  userId        String?
-  visitorId     String?
-  eventType     String      // "view", "click", "purchase", "skip"
-  metadata      Json?
+  id        String  @id @default(cuid())
+  funnelId  String
+  stepId    String?
+  userId    String?
+  visitorId String?
+  eventType String // "view", "click", "purchase", "skip"
+  metadata  Json?
 
-  funnel        SalesFunnel @relation(fields: [funnelId], references: [id], onDelete: Cascade)
-  user          User?       @relation("UserFunnelEvents", fields: [userId], references: [id], onDelete: SetNull)
+  funnel SalesFunnel @relation(fields: [funnelId], references: [id], onDelete: Cascade)
+  user   User?       @relation("UserFunnelEvents", fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@index([funnelId])
   @@index([stepId])
@@ -1842,44 +2057,44 @@ model FunnelEvent {
 // ── Smart Popups & Conversion Tools ───────────────────────────
 
 model SmartPopup {
-  id              String             @id @default(cuid())
-  instructeurId   String
-  name            String
-  popupType       PopupType          @default(DISCOUNT)
-  trigger         PopupTrigger       @default(TIME_DELAY)
+  id               String       @id @default(cuid())
+  instructeurId    String
+  name             String
+  popupType        PopupType    @default(DISCOUNT)
+  trigger          PopupTrigger @default(TIME_DELAY)
   // Trigger config
-  delaySeconds    Int?               // for TIME_DELAY
-  scrollPercent   Int?               // for SCROLL_PERCENT (0-100)
-  pageViewCount   Int?               // for PAGE_VIEW_COUNT
+  delaySeconds     Int? // for TIME_DELAY
+  scrollPercent    Int? // for SCROLL_PERCENT (0-100)
+  pageViewCount    Int? // for PAGE_VIEW_COUNT
   // Content
-  headlineFr      String?
-  headlineEn      String?
-  bodyFr          String?            @db.Text
-  bodyEn          String?            @db.Text
-  ctaTextFr       String?
-  ctaTextEn       String?
-  imageBanner     String?
+  headlineFr       String?
+  headlineEn       String?
+  bodyFr           String?      @db.Text
+  bodyEn           String?      @db.Text
+  ctaTextFr        String?
+  ctaTextEn        String?
+  imageBanner      String?
   // Discount link
-  discountCodeId  String?
+  discountCodeId   String?
   // Email capture
-  emailListTag    String?            // tag to add when email captured
+  emailListTag     String? // tag to add when email captured
   // Targeting
-  showOnPages     String[]           @default([]) // empty = all pages
-  excludePages    String[]           @default([])
-  showToNewOnly   Boolean            @default(false)
-  maxShowsPerUser Int                @default(1)
+  showOnPages      String[]     @default([]) // empty = all pages
+  excludePages     String[]     @default([])
+  showToNewOnly    Boolean      @default(false)
+  maxShowsPerUser  Int          @default(1)
   // State
-  isActive        Boolean            @default(false)
+  isActive         Boolean      @default(false)
   // Stats
-  totalImpressions Int               @default(0)
-  totalClicks     Int                @default(0)
-  totalConversions Int               @default(0)
+  totalImpressions Int          @default(0)
+  totalClicks      Int          @default(0)
+  totalConversions Int          @default(0)
 
-  instructeur     InstructeurProfile @relation("InstructeurSmartPopups", fields: [instructeurId], references: [id], onDelete: Cascade)
-  impressions     PopupImpression[]
+  instructeur InstructeurProfile @relation("InstructeurSmartPopups", fields: [instructeurId], references: [id], onDelete: Cascade)
+  impressions PopupImpression[]
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([isActive])
@@ -1887,17 +2102,17 @@ model SmartPopup {
 }
 
 model PopupImpression {
-  id            String     @id @default(cuid())
-  popupId       String
-  userId        String?
-  visitorId     String?
-  action        String     // "view", "click", "close", "convert"
-  metadata      Json?
+  id        String  @id @default(cuid())
+  popupId   String
+  userId    String?
+  visitorId String?
+  action    String // "view", "click", "close", "convert"
+  metadata  Json?
 
-  popup         SmartPopup @relation(fields: [popupId], references: [id], onDelete: Cascade)
-  user          User?      @relation("UserPopupImpressions", fields: [userId], references: [id], onDelete: SetNull)
+  popup SmartPopup @relation(fields: [popupId], references: [id], onDelete: Cascade)
+  user  User?      @relation("UserPopupImpressions", fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@index([popupId])
   @@index([userId])
@@ -1908,28 +2123,28 @@ model PopupImpression {
 // ── Campaign Tracking ─────────────────────────────────────────
 
 model CampaignTracker {
-  id              String             @id @default(cuid())
-  instructeurId   String
-  name            String
-  slug            String             @unique // used in URLs
+  id               String  @id @default(cuid())
+  instructeurId    String
+  name             String
+  slug             String  @unique // used in URLs
   // UTM parameters
-  utmSource       String?
-  utmMedium       String?
-  utmCampaign     String?
-  utmContent      String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmContent       String?
   // Target
-  destinationUrl  String
+  destinationUrl   String
   // Stats
-  totalClicks     Int                @default(0)
-  totalConversions Int               @default(0)
-  totalRevenue    Float              @default(0)
-  isActive        Boolean            @default(true)
+  totalClicks      Int     @default(0)
+  totalConversions Int     @default(0)
+  totalRevenue     Float   @default(0)
+  isActive         Boolean @default(true)
 
-  instructeur     InstructeurProfile @relation("InstructeurCampaignTrackers", fields: [instructeurId], references: [id], onDelete: Cascade)
-  events          CampaignEvent[]
+  instructeur InstructeurProfile @relation("InstructeurCampaignTrackers", fields: [instructeurId], references: [id], onDelete: Cascade)
+  events      CampaignEvent[]
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([slug])
@@ -1937,21 +2152,21 @@ model CampaignTracker {
 }
 
 model CampaignEvent {
-  id            String          @id @default(cuid())
-  campaignId    String
-  userId        String?
-  visitorId     String?
-  eventType     String          // "click", "conversion", "purchase"
-  ip            String?
-  userAgent     String?
-  referer       String?
-  revenue       Float?
-  metadata      Json?
+  id         String  @id @default(cuid())
+  campaignId String
+  userId     String?
+  visitorId  String?
+  eventType  String // "click", "conversion", "purchase"
+  ip         String?
+  userAgent  String?
+  referer    String?
+  revenue    Float?
+  metadata   Json?
 
-  campaign      CampaignTracker @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user          User?           @relation("UserCampaignEvents", fields: [userId], references: [id], onDelete: SetNull)
+  campaign CampaignTracker @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User?           @relation("UserCampaignEvents", fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@index([campaignId])
   @@index([userId])
@@ -1959,71 +2174,30 @@ model CampaignEvent {
   @@index([createdAt])
 }
 
-// ── Marketing Popups ──────────────────────────────────────────
-
-model MarketingPopup {
-  id                    String             @id @default(cuid())
-  instructeurId         String
-  name                  String
-  type                  String             // DISCOUNT, EMAIL_CAPTURE, ANNOUNCEMENT, UPSELL, COUNTDOWN
-  trigger               String             // EXIT_INTENT, TIME_DELAY, SCROLL_PERCENT, PAGE_VIEW_COUNT, MANUAL
-  triggerValue          Int?
-  headlineFr            String
-  headlineEn            String             @default("")
-  bodyFr                String             @default("") @db.Text
-  bodyEn                String             @default("") @db.Text
-  ctaTextFr             String             @default("")
-  ctaTextEn             String             @default("")
-  imageBannerUrl        String?
-  discountCode          String?
-  emailCaptureTag       String?
-  countdownEndsAt       DateTime?
-  upsellProductId       String?
-  upsellOriginalPrice   Float?
-  upsellDiscountedPrice Float?
-  ctaUrl                String?
-  showOnPages           String[]           @default([])
-  excludePages          String[]           @default([])
-  newVisitorsOnly       Boolean            @default(false)
-  maxShowsPerUser       Int                @default(3)
-  impressions           Int                @default(0)
-  clicks                Int                @default(0)
-  conversions           Int                @default(0)
-  isActive              Boolean            @default(true)
-
-  instructeur           InstructeurProfile @relation("InstructeurPopups", fields: [instructeurId], references: [id], onDelete: Cascade)
-
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-
-  @@index([instructeurId])
-  @@index([isActive])
-}
-
 // ── Automation Engine ─────────────────────────────────────────
 
 model AutomationWorkflow {
-  id              String             @id @default(cuid())
+  id              String                @id @default(cuid())
   instructeurId   String
   name            String
-  description     String?            @db.Text
-  status          WorkflowStatus     @default(DRAFT)
+  description     String?               @db.Text
+  status          WorkflowStatus        @default(DRAFT)
   // Trigger
   triggerType     AutomationTriggerType
-  triggerConfig   Json?              // e.g., { "formationId": "xxx", "minProgress": 80 }
+  triggerConfig   Json? // e.g., { "formationId": "xxx", "minProgress": 80 }
   // Actions (ordered list)
-  actions         Json               // AutomationActionType[] with config
+  actions         Json // AutomationActionType[] with config
   // Stats
-  totalExecutions Int                @default(0)
+  totalExecutions Int                   @default(0)
   lastExecutedAt  DateTime?
   // Conditions
-  conditions      Json?              // optional filter conditions
+  conditions      Json? // optional filter conditions
 
-  instructeur     InstructeurProfile @relation("InstructeurAutomationWorkflows", fields: [instructeurId], references: [id], onDelete: Cascade)
-  logs            AutomationLog[]
+  instructeur InstructeurProfile @relation("InstructeurAutomationWorkflows", fields: [instructeurId], references: [id], onDelete: Cascade)
+  logs        AutomationLog[]
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([instructeurId])
   @@index([status])
@@ -2031,18 +2205,18 @@ model AutomationWorkflow {
 }
 
 model AutomationLog {
-  id            String             @id @default(cuid())
-  workflowId    String
-  userId        String?            // user that triggered this
-  triggerEvent  String             // what triggered it
-  actionsRun    Json               // list of actions executed
-  success       Boolean            @default(true)
-  error         String?            @db.Text
-  executionMs   Int?               // execution time
+  id           String  @id @default(cuid())
+  workflowId   String
+  userId       String? // user that triggered this
+  triggerEvent String // what triggered it
+  actionsRun   Json // list of actions executed
+  success      Boolean @default(true)
+  error        String? @db.Text
+  executionMs  Int? // execution time
 
-  workflow      AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime           @default(now())
+  createdAt DateTime @default(now())
 
   @@index([workflowId])
   @@index([createdAt])
@@ -2052,12 +2226,12 @@ model AutomationLog {
 // ── User Tags ─────────────────────────────────────────────────
 
 model UserTag {
-  id        String   @id @default(cuid())
-  userId    String
-  tag       String
-  source    String?  // "automation", "manual", "email_sequence"
+  id     String  @id @default(cuid())
+  userId String
+  tag    String
+  source String? // "automation", "manual", "email_sequence"
 
-  user      User     @relation("UserTags", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserTags", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -2079,10 +2253,10 @@ model RefundRequest {
   resolvedAt   DateTime?
   resolvedBy   String?
 
-  user         User       @relation("UserRefundRequests", fields: [userId], references: [id], onDelete: Cascade)
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  user       User       @relation("UserRefundRequests", fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([enrollmentId])
@@ -2097,13 +2271,13 @@ model DiscussionReport {
   userId       String
   discussionId String?
   replyId      String?
-  reason       String  // spam, harassment, inappropriate, off-topic
+  reason       String // spam, harassment, inappropriate, off-topic
 
-  user         User                  @relation("UserDiscussionReports", fields: [userId], references: [id], onDelete: Cascade)
-  discussion   CourseDiscussion?     @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  reply        CourseDiscussionReply? @relation("ReplyReports", fields: [replyId], references: [id], onDelete: Cascade)
+  user       User                   @relation("UserDiscussionReports", fields: [userId], references: [id], onDelete: Cascade)
+  discussion CourseDiscussion?      @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  reply      CourseDiscussionReply? @relation("ReplyReports", fields: [replyId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, discussionId])
   @@index([discussionId])
@@ -2114,8 +2288,8 @@ model DiscussionReport {
 // ── Formations Config ──
 
 model FormationsConfig {
-  id    String @id @default(cuid())
-  key   String @unique
+  id    String  @id @default(cuid())
+  key   String  @unique
   value String
   label String?
 

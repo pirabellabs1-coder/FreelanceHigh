@@ -1,0 +1,75 @@
+/* FreelanceHigh Formations — Custom CSS */
+
+.formations-root {
+  font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif;
+  background-color: #f7f9fb;
+}
+
+.squircle {
+  border-radius: 2rem;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #006e2f 0%, #22c55e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bento-asym {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .bento-asym {
+    grid-auto-rows: 180px;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .bento-asym > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    min-height: 120px;
+  }
+}
+
+.animate-marquee-inner {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.network-line {
+  stroke-dasharray: 4 4;
+  animation: network-dash 20s linear infinite;
+}
+
+@keyframes network-dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}

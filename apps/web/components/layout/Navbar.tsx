@@ -43,6 +43,10 @@ export function Navbar() {
           )}
 
           <Link href="/offres-projets" className="text-sm font-semibold hover:text-primary transition-colors">{t("projets")}</Link>
+          <Link href="/formations" className="text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-base leading-none">school</span>
+            Formations
+          </Link>
           <Link href="/tarifs" className="text-sm font-semibold hover:text-primary transition-colors">{t("tarifs")}</Link>
         </nav>
 
@@ -154,6 +158,10 @@ export function Navbar() {
             )}
 
             <Link href="/offres-projets" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("projets")}</Link>
+            <Link href="/formations" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors flex items-center gap-2" onClick={() => setMobileOpen(false)}>
+              <span className="material-symbols-outlined text-base">school</span>
+              Formations
+            </Link>
             <Link href="/tarifs" className="px-3 py-2.5 text-sm font-semibold hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" onClick={() => setMobileOpen(false)}>{t("tarifs")}</Link>
           </nav>
 
