@@ -20,6 +20,10 @@ export async function GET(_req: Request, { params }: Params) {
             bioFr: true,
             expertise: true,
             yearsExp: true,
+            marketingPixels: {
+              where: { isActive: true },
+              select: { type: true, pixelId: true },
+            },
           },
         },
         category: { select: { id: true, slug: true, name: true } },
@@ -74,6 +78,7 @@ export async function GET(_req: Request, { params }: Params) {
           bio: product.instructeur.bioFr,
           expertise: product.instructeur.expertise,
           yearsExp: product.instructeur.yearsExp,
+          marketingPixels: product.instructeur.marketingPixels,
         },
         reviews: product.reviews.map((r) => ({
           id: r.id,

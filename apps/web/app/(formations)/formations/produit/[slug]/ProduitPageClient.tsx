@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PixelInjector } from "@/components/formations/PixelInjector";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Review {
@@ -21,6 +22,7 @@ interface Instructeur {
   bio: string | null;
   expertise: string[];
   yearsExp: number;
+  marketingPixels?: Array<{ type: "FACEBOOK" | "GOOGLE" | "TIKTOK"; pixelId: string }>;
 }
 
 interface Product {
@@ -184,6 +186,12 @@ export default function ProduitPageClient({ slug }: { slug: string }) {
 
   return (
     <div className="min-h-screen bg-[#f7f9fb]">
+      {/* Pixel tracking — fires ViewContent on page load */}
+      <PixelInjector
+        pixels={product.instructeur.marketingPixels ?? []}
+        event={{ name: "ViewContent", value: product.price, currency: "XOF" }}
+      />
+
       {/* Hero */}
       <div
         className="relative h-64 md:h-80"

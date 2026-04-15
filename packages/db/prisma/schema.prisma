@@ -1997,6 +1997,9 @@ model SalesFunnel {
   totalConversions Int     @default(0)
   totalRevenue     Float   @default(0)
 
+  // Theme config (shared across steps): { primaryColor, accentColor, font, logoUrl, ... }
+  theme Json?
+
   instructeur InstructeurProfile @relation("InstructeurSalesFunnels", fields: [instructeurId], references: [id], onDelete: Cascade)
   steps       FunnelStep[]
   events      FunnelEvent[]
@@ -2026,6 +2029,8 @@ model FunnelStep {
   descriptionEn String?        @db.Text
   ctaTextFr     String?
   ctaTextEn     String?
+  // Rich block-based content — JSON array of blocks (hero, features, testimonials, countdown, FAQ, etc.)
+  blocks        Json?
   // Tracking
   views         Int            @default(0)
   conversions   Int            @default(0)
