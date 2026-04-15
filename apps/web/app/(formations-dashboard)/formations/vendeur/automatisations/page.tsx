@@ -97,10 +97,74 @@ export default function AutomationsPage() {
     onSuccess: (res) => {
       if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
       qc.invalidateQueries({ queryKey: ["vendeur-automatisations"] });
+      useToastStore.getState().addToast("success", "Workflow créé");
       setShowForm(false);
       setForm({ name: "", description: "", triggerType: "PURCHASE" });
     },
   });
+
+  // ── Workflow actions ─────────────────────────────────────────────────
+  const workflowPatch = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Record<string, unknown> }) =>
+      fetch(`/api/formations/vendeur/automatisations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
+      qc.invalidateQueries({ queryKey: ["vendeur-automatisations"] });
+    },
+  });
+
+  const workflowDelete = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/formations/vendeur/automatisations/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
+      qc.invalidateQueries({ queryKey: ["vendeur-automatisations"] });
+      useToastStore.getState().addToast("success", "Workflow supprimé");
+    },
+  });
+
+  // ── Sequence actions ─────────────────────────────────────────────────
+  const sequencePatch = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Record<string, unknown> }) =>
+      fetch(`/api/formations/vendeur/marketing/sequences/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
+      qc.invalidateQueries({ queryKey: ["vendeur-automatisations"] });
+    },
+  });
+
+  const sequenceDelete = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/formations/vendeur/marketing/sequences/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: (res) => {
+      if (res.error) { useToastStore.getState().addToast("error", res.error); return; }
+      qc.invalidateQueries({ queryKey: ["vendeur-automatisations"] });
+      useToastStore.getState().addToast("success", "Séquence supprimée");
+    },
+  });
+
+  // ── Inline rename state (for workflow / sequence) ────────────────────
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  function startEdit(item: { id: string; name: string }) {
+    setEditingId(item.id);
+    setEditingName(item.name);
+  }
+  function commitEdit(kind: "workflow" | "sequence") {
+    if (!editingId || !editingName.trim()) { setEditingId(null); return; }
+    const mutation = kind === "workflow" ? workflowPatch : sequencePatch;
+    mutation.mutate({ id: editingId, patch: { name: editingName.trim() } });
+    setEditingId(null);
+  }
 
   const activeWorkflows = workflows.filter((w) => w.status === "ACTIVE").length;
   const activeSequences = sequences.filter((s) => s.isActive).length;
@@ -205,8 +269,22 @@ export default function AutomationsPage() {
                       <div className="w-10 h-10 rounded-xl bg-[#006e2f]/10 flex items-center justify-center flex-shrink-0">
                         <span className={`material-symbols-outlined text-[20px] ${trig.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{trig.icon}</span>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-[#191c1e] text-sm truncate">{wf.name}</p>
+                      <div className="min-w-0 flex-1">
+                        {editingId === wf.id ? (
+                          <input
+                            autoFocus
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => commitEdit("workflow")}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") commitEdit("workflow");
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            className="font-bold text-[#191c1e] text-sm w-full bg-transparent border-b border-[#006e2f] focus:outline-none px-1"
+                          />
+                        ) : (
+                          <p className="font-bold text-[#191c1e] text-sm truncate">{wf.name}</p>
+                        )}
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] text-[#5c647a]">Déclencheur : {trig.label}</span>
                           <span className="text-[10px] text-[#5c647a]">·</span>
@@ -221,7 +299,7 @@ export default function AutomationsPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6 mt-4 pt-3 border-t border-gray-50">
+                  <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[14px] text-[#5c647a]">play_circle</span>
                       <span className="text-xs text-[#5c647a]">{wf.totalExecutions.toLocaleString("fr-FR")} exécutions</span>
@@ -232,10 +310,45 @@ export default function AutomationsPage() {
                         <span className="text-xs text-[#5c647a]">Dernière : {new Date(wf.lastExecutedAt).toLocaleDateString("fr-FR")}</span>
                       </div>
                     )}
-                    <div className="ml-auto">
-                      <button className="flex items-center gap-1.5 text-xs font-semibold text-[#006e2f] hover:underline">
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {/* Toggle Actif/Brouillon */}
+                      {wf.status === "ACTIVE" ? (
+                        <button
+                          onClick={() => workflowPatch.mutate({ id: wf.id, patch: { status: "PAUSED" } })}
+                          className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded-lg transition-colors"
+                          title="Mettre en pause"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">pause</span>
+                          Pauser
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => workflowPatch.mutate({ id: wf.id, patch: { status: "ACTIVE" } })}
+                          className="flex items-center gap-1 text-xs font-semibold text-[#006e2f] hover:bg-[#006e2f]/10 px-2 py-1 rounded-lg transition-colors"
+                          title="Activer ce workflow"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">play_arrow</span>
+                          Activer
+                        </button>
+                      )}
+                      {/* Rename */}
+                      <button
+                        onClick={() => startEdit(wf)}
+                        className="flex items-center gap-1 text-xs font-semibold text-[#191c1e] hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
+                        title="Renommer"
+                      >
                         <span className="material-symbols-outlined text-[14px]">edit</span>
                         Éditer
+                      </button>
+                      {/* Delete */}
+                      <button
+                        onClick={() => {
+                          if (confirm(`Supprimer le workflow "${wf.name}" ?`)) workflowDelete.mutate(wf.id);
+                        }}
+                        className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                        title="Supprimer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
                       </button>
                     </div>
                   </div>
@@ -272,8 +385,22 @@ export default function AutomationsPage() {
                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
                       <span className="material-symbols-outlined text-[20px] text-orange-500" style={{ fontVariationSettings: "'FILL' 1" }}>mark_email_read</span>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-[#191c1e] text-sm truncate">{seq.name}</p>
+                    <div className="min-w-0 flex-1">
+                      {editingId === seq.id ? (
+                        <input
+                          autoFocus
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={() => commitEdit("sequence")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitEdit("sequence");
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          className="font-bold text-[#191c1e] text-sm w-full bg-transparent border-b border-[#006e2f] focus:outline-none px-1"
+                        />
+                      ) : (
+                        <p className="font-bold text-[#191c1e] text-sm truncate">{seq.name}</p>
+                      )}
                       <p className="text-[10px] text-[#5c647a]">
                         {seq._count.steps} étapes · Déclencheur : {SEQ_TRIGGER_LABELS[seq.trigger] ?? seq.trigger}
                       </p>
@@ -284,9 +411,43 @@ export default function AutomationsPage() {
                     {seq.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
-                <div className="flex items-center gap-6 mt-4 pt-3 border-t border-gray-50 text-xs text-[#5c647a]">
+                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-50 text-xs text-[#5c647a] flex-wrap">
                   <span>{seq.totalEnrolled.toLocaleString("fr-FR")} abonnés</span>
                   <span>{seq.totalCompleted.toLocaleString("fr-FR")} complétées</span>
+                  <div className="ml-auto flex items-center gap-1.5">
+                    {/* Toggle */}
+                    <button
+                      onClick={() => sequencePatch.mutate({ id: seq.id, patch: { isActive: !seq.isActive } })}
+                      className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition-colors ${
+                        seq.isActive
+                          ? "text-amber-700 hover:bg-amber-50"
+                          : "text-[#006e2f] hover:bg-[#006e2f]/10"
+                      }`}
+                      title={seq.isActive ? "Désactiver" : "Activer"}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {seq.isActive ? "pause" : "play_arrow"}
+                      </span>
+                      {seq.isActive ? "Désactiver" : "Activer"}
+                    </button>
+                    <button
+                      onClick={() => startEdit(seq)}
+                      className="flex items-center gap-1 text-xs font-semibold text-[#191c1e] hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
+                      title="Renommer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                      Éditer
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Supprimer la séquence "${seq.name}" ?`)) sequenceDelete.mutate(seq.id);
+                      }}
+                      className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                      title="Supprimer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
