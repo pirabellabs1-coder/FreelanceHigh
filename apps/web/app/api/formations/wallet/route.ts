@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
 import { VENDOR_NET_RATE } from "@/lib/formations/constants";
+import { resolveActiveUserId } from "@/lib/formations/active-user";
 import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 
 /**
@@ -19,7 +20,10 @@ export async function GET() {
     if (!session?.user && !IS_DEV)
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
+    // Resolve the real user (by id or email fallback)
+    const userId = await resolveActiveUserId(session, {
+      devFallback: IS_DEV ? "dev-instructeur-001" : undefined,
+    });
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
     // ── Vendor wallet ──
@@ -137,7 +141,10 @@ export async function POST(request: Request) {
     if (!session?.user && !IS_DEV)
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
+    // Resolve real user
+    const userId = await resolveActiveUserId(session, {
+      devFallback: IS_DEV ? "dev-instructeur-001" : undefined,
+    });
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
     const body = await request.json();

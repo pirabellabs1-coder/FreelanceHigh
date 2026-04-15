@@ -16,8 +16,9 @@ export async function GET() {
     const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
     if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const pid = await getProfileId(userId);
-    if (!pid) return NextResponse.json({ data: { workflows: [], sequences: [] } });
+    const _ctx = await resolveVendorContext(session, { devFallback: IS_DEV ? "dev-instructeur-001" : undefined });
+    if (!_ctx) return NextResponse.json({ data: { workflows: [], sequences: [] } });
+    const pid = _ctx.instructeurId;
 
     const [workflows, sequences] = await Promise.all([
       prisma.automationWorkflow.findMany({

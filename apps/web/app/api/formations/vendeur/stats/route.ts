@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { resolveVendorContext } from "@/lib/formations/active-user";
 import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 
 const PLATFORM_FEE = 0.20;
@@ -13,14 +14,16 @@ export async function GET(request: Request) {
     if (!session?.user && !IS_DEV) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
-    if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    const ctx = await resolveVendorContext(session, {
+      devFallback: IS_DEV ? "dev-instructeur-001" : undefined,
+    });
+    if (!ctx) return NextResponse.json({ data: null });
+    const userId = ctx.userId;
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") ?? "6m";
     const monthsBack = period === "3m" ? 3 : period === "12m" ? 12 : 6;
 
-    await getOrCreateInstructeur(userId); // ensure profile exists
     const profile = await prisma.instructeurProfile.findUnique({
       where: { userId },
       select: {

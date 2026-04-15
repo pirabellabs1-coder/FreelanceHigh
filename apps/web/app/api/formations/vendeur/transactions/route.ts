@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { resolveVendorContext } from "@/lib/formations/active-user";
 
 export async function GET(request: Request) {
   try {
@@ -10,17 +11,11 @@ export async function GET(request: Request) {
     if (!session?.user && !IS_DEV) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
-    if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-
-    const profile = await prisma.instructeurProfile.findUnique({
-      where: { userId },
-      select: { id: true },
+    const ctx = await resolveVendorContext(session, {
+      devFallback: IS_DEV ? "dev-instructeur-001" : undefined,
     });
-
-    if (!profile) {
-      return NextResponse.json({ data: [] });
-    }
+    if (!ctx) return NextResponse.json({ data: [] });
+    const profile = { id: ctx.instructeurId };
 
     // Fetch enrollments and digital product purchases in parallel
     const [enrollments, purchases] = await Promise.all([

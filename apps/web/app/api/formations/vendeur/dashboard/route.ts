@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { resolveVendorContext } from "@/lib/formations/active-user";
 import { getOrCreateInstructeur } from "@/lib/formations/instructeur";
 import { PLATFORM_COMMISSION_RATE } from "@/lib/formations/constants";
 
@@ -14,11 +15,14 @@ export async function GET() {
     if (!session?.user && !IS_DEV) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
-    if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    // Resolve the real user (by session.id OR session.email fallback) + ensure profile
+    const ctx = await resolveVendorContext(session, {
+      devFallback: IS_DEV ? "dev-instructeur-001" : undefined,
+    });
+    if (!ctx) return NextResponse.json({ data: null });
+    const userId = ctx.userId;
 
-    // Get instructeur profile with formations + products
-    await getOrCreateInstructeur(userId); // ensure profile exists
+    // Get instructeur profile with formations + products — use resolved userId
     const profile = await prisma.instructeurProfile.findUnique({
       where: { userId },
       select: {
