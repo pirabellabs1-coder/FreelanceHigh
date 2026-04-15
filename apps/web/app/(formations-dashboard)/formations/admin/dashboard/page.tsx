@@ -191,7 +191,7 @@ export default function AdminDashboardPage() {
               <span className="text-[10px] font-mono font-bold text-[#006e2f] bg-[#22c55e]/10 px-2 py-0.5">
                 {formatFCFA(d?.kpis.platformCommission ?? 0)} FCFA
               </span>
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Commission 20%</span>
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Commission 5%</span>
             </div>
           </div>
 
