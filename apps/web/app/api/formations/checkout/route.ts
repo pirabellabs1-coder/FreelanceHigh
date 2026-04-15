@@ -3,7 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-import { sendEnrollmentConfirmedEmail, sendDigitalProductDeliveryEmail } from "@/lib/email/formations";
+import {
+  sendEnrollmentConfirmedEmail,
+  sendDigitalProductDeliveryEmail,
+  sendNewStudentNotificationEmail,
+} from "@/lib/email/formations";
+import { PLATFORM_COMMISSION_RATE, VENDOR_NET_RATE } from "@/lib/formations/constants";
 import crypto from "crypto";
 
 /**
@@ -70,13 +75,37 @@ export async function POST(request: Request) {
       formationIds.length > 0
         ? prisma.formation.findMany({
             where: { id: { in: formationIds }, status: "ACTIF" },
-            select: { id: true, slug: true, title: true, price: true, instructeurId: true },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              price: true,
+              instructeurId: true,
+              instructeur: {
+                select: {
+                  user: { select: { id: true, email: true, name: true } },
+                },
+              },
+            },
           })
         : Promise.resolve([]),
       productIds.length > 0
         ? prisma.digitalProduct.findMany({
             where: { id: { in: productIds }, status: "ACTIF" },
-            select: { id: true, slug: true, title: true, price: true, instructeurId: true, productType: true, fileUrl: true },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              price: true,
+              instructeurId: true,
+              productType: true,
+              fileUrl: true,
+              instructeur: {
+                select: {
+                  user: { select: { id: true, email: true, name: true } },
+                },
+              },
+            },
           })
         : Promise.resolve([]),
       prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true } }),
@@ -157,7 +186,7 @@ export async function POST(request: Request) {
       });
       await prisma.instructeurProfile.update({
         where: { id: f.instructeurId },
-        data: { totalEarned: { increment: finalPrice * 0.8 } },
+        data: { totalEarned: { increment: finalPrice * VENDOR_NET_RATE } },
       });
       await prisma.formation.update({
         where: { id: f.id },
@@ -180,7 +209,7 @@ export async function POST(request: Request) {
       });
       await prisma.instructeurProfile.update({
         where: { id: p.instructeurId },
-        data: { totalEarned: { increment: finalPrice * 0.8 } },
+        data: { totalEarned: { increment: finalPrice * VENDOR_NET_RATE } },
       });
       await prisma.digitalProduct.update({
         where: { id: p.id },
@@ -234,34 +263,87 @@ export async function POST(request: Request) {
       }).catch(() => null);
     }
 
-    // Send emails
+    // Send emails + notify vendors of each new sale
     try {
       const fName = user.name ?? user.email.split("@")[0];
       const eurRate = 655.957;
+
       for (const f of formations) {
         const created = createdEnrollments.find((e) => e.title === f.title);
-        if (created) {
-          await sendEnrollmentConfirmedEmail({
-            email: user.email,
-            name: fName,
+        if (!created) continue;
+
+        // Buyer confirmation
+        await sendEnrollmentConfirmedEmail({
+          email: user.email,
+          name: fName,
+          formationTitle: f.title,
+          formationSlug: f.slug,
+          paidAmount: Number((created.price / eurRate).toFixed(2)),
+          locale: "fr",
+        }).catch((err) => console.warn("[email enrollment]", err));
+
+        // Vendor notification — email + in-app
+        const vendorEmail = f.instructeur?.user?.email;
+        const vendorName = f.instructeur?.user?.name ?? "Vendeur";
+        const vendorUserId = f.instructeur?.user?.id;
+        if (vendorEmail) {
+          await sendNewStudentNotificationEmail({
+            instructeurEmail: vendorEmail,
+            instructeurName: vendorName,
+            studentName: fName,
             formationTitle: f.title,
-            formationSlug: f.slug,
-            paidAmount: Number((created.price / eurRate).toFixed(2)),
-            locale: "fr",
-          }).catch((err) => console.warn("[email enrollment]", err));
+            paidAmount: created.price,
+          }).catch((err) => console.warn("[email vendor sale]", err));
+        }
+        if (vendorUserId) {
+          await prisma.notification.create({
+            data: {
+              userId: vendorUserId,
+              type: "ORDER",
+              title: "Nouvelle vente !",
+              message: `${fName} vient d'acheter votre formation « ${f.title} » pour ${Math.round(created.price * VENDOR_NET_RATE)} FCFA nets.`,
+              link: "/formations/vendeur/dashboard",
+            },
+          }).catch(() => null);
         }
       }
+
       for (const p of products) {
         const created = createdPurchases.find((q) => q.title === p.title);
-        if (created) {
-          const downloadUrl = p.fileUrl ?? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/formations/apprenant/produits`;
-          await sendDigitalProductDeliveryEmail({
-            email: user.email,
-            name: fName,
-            productTitle: p.title,
-            downloadUrl,
-            locale: "fr",
-          }).catch((err) => console.warn("[email product]", err));
+        if (!created) continue;
+
+        const downloadUrl = p.fileUrl ?? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/formations/apprenant/produits`;
+        await sendDigitalProductDeliveryEmail({
+          email: user.email,
+          name: fName,
+          productTitle: p.title,
+          downloadUrl,
+          locale: "fr",
+        }).catch((err) => console.warn("[email product]", err));
+
+        // Vendor notification — email + in-app
+        const vendorEmail = p.instructeur?.user?.email;
+        const vendorName = p.instructeur?.user?.name ?? "Vendeur";
+        const vendorUserId = p.instructeur?.user?.id;
+        if (vendorEmail) {
+          await sendNewStudentNotificationEmail({
+            instructeurEmail: vendorEmail,
+            instructeurName: vendorName,
+            studentName: fName,
+            formationTitle: p.title,
+            paidAmount: created.price,
+          }).catch((err) => console.warn("[email vendor sale]", err));
+        }
+        if (vendorUserId) {
+          await prisma.notification.create({
+            data: {
+              userId: vendorUserId,
+              type: "ORDER",
+              title: "Nouvelle vente !",
+              message: `${fName} vient d'acheter votre produit « ${p.title} » pour ${Math.round(created.price * VENDOR_NET_RATE)} FCFA nets.`,
+              link: "/formations/vendeur/dashboard",
+            },
+          }).catch(() => null);
         }
       }
     } catch (err) {
@@ -275,8 +357,8 @@ export async function POST(request: Request) {
         subTotal,
         discountAmount,
         totalAmount,
-        netToInstructor: totalAmount * 0.8,
-        commission: totalAmount * 0.2,
+        netToInstructor: totalAmount * VENDOR_NET_RATE,
+        commission: totalAmount * PLATFORM_COMMISSION_RATE,
         appliedCode: appliedCode?.code ?? null,
         enrollments: createdEnrollments,
         purchases: createdPurchases,

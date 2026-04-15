@@ -119,17 +119,17 @@ export async function sendNewStudentNotificationEmail(params: {
   paidAmount: number;
 }) {
   const { instructeurEmail, instructeurName, studentName, formationTitle, paidAmount } = params;
-  const netAmount = paidAmount * 0.7;
+  const netAmount = paidAmount * 0.95; // 5% platform fee
 
   const html = emailLayout(`
-    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">🎓 Nouvel apprenant inscrit !</h2>
+    <h2 style="color:#111827;font-size:22px;margin:0 0 16px;">🎓 Nouvelle vente !</h2>
     <p style="color:#4b5563;line-height:1.6;margin:0 0 16px;">
-      Bonjour ${instructeurName}, <strong>${studentName}</strong> vient de s'inscrire à votre formation
+      Bonjour ${instructeurName}, <strong>${studentName}</strong> vient d'acheter votre produit
       <strong>${formationTitle}</strong>.
     </p>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
-      <p style="color:#16a34a;font-size:28px;font-weight:800;margin:0;">+${netAmount.toFixed(2)} €</p>
-      <p style="color:#4ade80;font-size:13px;margin:4px 0 0;">Vos revenus nets (70%)</p>
+      <p style="color:#16a34a;font-size:28px;font-weight:800;margin:0;">+${netAmount.toFixed(0)} FCFA</p>
+      <p style="color:#4ade80;font-size:13px;margin:4px 0 0;">Vos revenus nets (95%)</p>
     </div>
     ${button("Voir mes apprenants", `${APP_URL}/formations/instructeur/apprenants`)}
   `);

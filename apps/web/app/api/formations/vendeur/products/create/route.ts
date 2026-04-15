@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           originalPrice: originalPrice ? parseFloat(originalPrice) : null,
           isFree: parseFloat(price) === 0,
           duration: totalDuration,
-          status: publish ? "EN_ATTENTE" : "BROUILLON",
+          status: publish ? "ACTIF" : "BROUILLON",
           instructeurId: profile.id,
           sections: validModules.length > 0 ? {
             create: validModules
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
           price: parseFloat(price),
           originalPrice: originalPrice ? parseFloat(originalPrice) : null,
           isFree: parseFloat(price) === 0,
-          status: publish ? "EN_ATTENTE" : "BROUILLON",
+          status: publish ? "ACTIF" : "BROUILLON",
           instructeurId: profile.id,
         },
       });

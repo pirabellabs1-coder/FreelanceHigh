@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
+import { PLATFORM_COMMISSION_RATE } from "@/lib/formations/constants";
 
-const PLATFORM_FEE = 0.20; // 20% platform commission
+const PLATFORM_FEE = PLATFORM_COMMISSION_RATE; // 5% platform commission (single source of truth)
 
 export async function GET() {
   try {

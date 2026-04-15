@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       // Update instructor's earned amount
       await prisma.instructeurProfile.update({
         where: { id: formation.instructeurId },
-        data: { totalEarned: { increment: formation.price * 0.8 } },
+        data: { totalEarned: { increment: formation.price * 0.95 } },
       });
 
       // Increment students count
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
 
       await prisma.instructeurProfile.update({
         where: { id: product.instructeurId },
-        data: { totalEarned: { increment: product.price * 0.8 } },
+        data: { totalEarned: { increment: product.price * 0.95 } },
       });
 
       await prisma.digitalProduct.update({

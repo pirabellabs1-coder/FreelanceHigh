@@ -102,7 +102,7 @@ export async function GET() {
     const totalEnrollmentRevenue = allEnrollments.reduce((s, e) => s + (e.refundedAt ? 0 : e.paidAmount), 0);
     const totalPurchaseRevenue = allPurchases.reduce((s, p) => s + p.paidAmount, 0);
     const totalRevenue = totalEnrollmentRevenue + totalPurchaseRevenue;
-    const platformCommission = totalRevenue * 0.2;
+    const platformCommission = totalRevenue * 0.05;
 
     // Transactions this month
     const enrollmentsThisMonth = allEnrollments.filter((e) => e.createdAt >= startOfMonth);

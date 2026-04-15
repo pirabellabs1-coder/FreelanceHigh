@@ -463,12 +463,12 @@ export default function CreerProduitPage() {
                         </div>
                         <div className="h-px bg-white/10" />
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Votre part (80%)</p>
-                          <p className="text-2xl font-bold font-mono text-[#22c55e]">{formatFCFA(price * 0.8)}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Votre part (95%)</p>
+                          <p className="text-2xl font-bold font-mono text-[#22c55e]">{formatFCFA(price * 0.95)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Commission FreelanceHigh (20%)</p>
-                          <p className="text-lg font-bold font-mono text-zinc-300">{formatFCFA(price * 0.2)}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Commission FreelanceHigh (5%)</p>
+                          <p className="text-lg font-bold font-mono text-zinc-300">{formatFCFA(price * 0.05)}</p>
                         </div>
                       </div>
                     </div>

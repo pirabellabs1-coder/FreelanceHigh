@@ -13,7 +13,7 @@ const CONFIG_SECTIONS = [
     title: "Commission plateforme",
     eyebrow: "Financial",
     items: [
-      { key: "commission_rate", label: "Taux de commission (%)", hint: "Par défaut 20%", type: "number" as const, default: "20" },
+      { key: "commission_rate", label: "Taux de commission (%)", hint: "Par défaut 5%", type: "number" as const, default: "5" },
       { key: "min_payout_amount", label: "Seuil de retrait minimum", hint: "FCFA — minimum pour une demande", type: "number" as const, default: "10000" },
     ],
   },
