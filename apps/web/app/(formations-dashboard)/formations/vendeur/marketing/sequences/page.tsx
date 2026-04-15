@@ -174,9 +174,13 @@ export default function SequencesPage() {
                       <span className={`w-1.5 h-1.5 rounded-full ${seq.isActive ? "bg-[#006e2f]" : "bg-gray-300"}`} />
                       {seq.isActive ? "Active" : "Inactive"}
                     </span>
-                    <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#5c647a] hover:text-[#191c1e]">
+                    <a
+                      href={`/formations/vendeur/marketing/sequences/${seq.id}`}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-[#5c647a] hover:text-[#191c1e] transition-colors"
+                      title="Éditer la séquence"
+                    >
                       <span className="material-symbols-outlined text-[16px]">edit</span>
-                    </button>
+                    </a>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-gray-50">
