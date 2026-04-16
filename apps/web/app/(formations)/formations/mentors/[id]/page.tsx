@@ -315,7 +315,7 @@ export default function MentorPublicProfilePage({ params }: { params: { id: stri
                   onClick={() => {
                     if (navigator.share) {
                       navigator.share({
-                        title: `${mentor.name} · Mentor FreelanceHigh`,
+                        title: `${mentor.name} · Mentor Novakou`,
                         text: mentor.specialty,
                         url: window.location.href,
                       });
@@ -396,7 +396,7 @@ export default function MentorPublicProfilePage({ params }: { params: { id: stri
             >
               shield
             </span>
-            Garanties FreelanceHigh
+            Garanties Novakou
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="flex items-start gap-2">

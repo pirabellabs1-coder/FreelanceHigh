@@ -98,7 +98,7 @@ export default function MentorsPage() {
           {/* Info banner — mentors come from the platform, no public list yet */}
           <div className="bg-[#006e2f]/5 border border-[#006e2f]/20 rounded-2xl p-6 text-center">
             <span className="material-symbols-outlined text-[40px] text-[#006e2f] mb-3 block" style={{ fontVariationSettings: "'FILL' 1" }}>support_agent</span>
-            <h3 className="font-bold text-[#191c1e] mb-2">Trouvez votre mentor sur FreelanceHigh</h3>
+            <h3 className="font-bold text-[#191c1e] mb-2">Trouvez votre mentor sur Novakou</h3>
             <p className="text-sm text-[#5c647a] mb-5 max-w-md mx-auto">
               Nos mentors sont des experts vérifiés en freelancing, marketing digital, tech et design.
               Accédez à la page des mentors pour voir les disponibilités et réserver une session.

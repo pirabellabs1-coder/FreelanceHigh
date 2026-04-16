@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         title: a.title,
         slug: a.slug,
         excerpt: a.excerpt,
-        author: a.author?.name || "FreelanceHigh",
+        author: a.author?.name || "Novakou",
         category: a.category,
         tags: a.tags,
         status: "publie",

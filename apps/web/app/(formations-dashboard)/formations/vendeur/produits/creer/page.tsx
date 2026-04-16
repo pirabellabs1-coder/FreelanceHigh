@@ -467,7 +467,7 @@ export default function CreerProduitPage() {
                           <p className="text-2xl font-bold font-mono text-[#22c55e]">{formatFCFA(price * 0.95)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Commission FreelanceHigh (5%)</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Commission Novakou (5%)</p>
                           <p className="text-lg font-bold font-mono text-zinc-300">{formatFCFA(price * 0.05)}</p>
                         </div>
                       </div>

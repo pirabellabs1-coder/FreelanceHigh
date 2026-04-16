@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Conditions Générales d'Utilisation — FreelanceHigh",
+  title: "Conditions Générales d'Utilisation — Novakou",
 };
 
 export default function CGUPage() {
@@ -21,7 +21,7 @@ export default function CGUPage() {
           <div>
             <h2 className="text-lg font-bold mb-2">1. Objet</h2>
             <p className="text-[#5c647a]">
-              Les présentes Conditions Générales d&apos;Utilisation (ci-après « CGU ») régissent l&apos;accès et l&apos;utilisation de la plateforme FreelanceHigh (ci-après « la Plateforme »), éditée et exploitée par la société FreelanceHigh. En utilisant la Plateforme, vous acceptez sans réserve l&apos;intégralité des présentes CGU.
+              Les présentes Conditions Générales d&apos;Utilisation (ci-après « CGU ») régissent l&apos;accès et l&apos;utilisation de la plateforme Novakou (ci-après « la Plateforme »), éditée et exploitée par la société Novakou. En utilisant la Plateforme, vous acceptez sans réserve l&apos;intégralité des présentes CGU.
             </p>
           </div>
 
@@ -42,7 +42,7 @@ export default function CGUPage() {
           <div>
             <h2 className="text-lg font-bold mb-2">4. Commission de la Plateforme</h2>
             <p className="text-[#5c647a]">
-              FreelanceHigh prélève une commission de <strong>5 %</strong> sur chaque vente réalisée. Le vendeur conserve <strong>95 %</strong> des revenus nets. Cette commission couvre les frais de paiement, l&apos;hébergement et l&apos;assistance.
+              Novakou prélève une commission de <strong>5 %</strong> sur chaque vente réalisée. Le vendeur conserve <strong>95 %</strong> des revenus nets. Cette commission couvre les frais de paiement, l&apos;hébergement et l&apos;assistance.
             </p>
           </div>
 
@@ -63,7 +63,7 @@ export default function CGUPage() {
           <div>
             <h2 className="text-lg font-bold mb-2">7. Propriété intellectuelle</h2>
             <p className="text-[#5c647a]">
-              Les vendeurs conservent la propriété intellectuelle de leurs contenus. En publiant sur la Plateforme, ils accordent à FreelanceHigh une licence non exclusive de diffusion. Toute reproduction non autorisée de contenu vendu sur la Plateforme est strictement interdite.
+              Les vendeurs conservent la propriété intellectuelle de leurs contenus. En publiant sur la Plateforme, ils accordent à Novakou une licence non exclusive de diffusion. Toute reproduction non autorisée de contenu vendu sur la Plateforme est strictement interdite.
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export default function CGUPage() {
           <div>
             <h2 className="text-lg font-bold mb-2">9. Responsabilité</h2>
             <p className="text-[#5c647a]">
-              FreelanceHigh agit en qualité d&apos;intermédiaire technique entre acheteurs et vendeurs. Nous ne garantissons pas la qualité pédagogique des contenus, qui relève de la responsabilité des vendeurs. Nous nous efforçons néanmoins de modérer activement les contenus signalés.
+              Novakou agit en qualité d&apos;intermédiaire technique entre acheteurs et vendeurs. Nous ne garantissons pas la qualité pédagogique des contenus, qui relève de la responsabilité des vendeurs. Nous nous efforçons néanmoins de modérer activement les contenus signalés.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function CGUPage() {
           <div>
             <h2 className="text-lg font-bold mb-2">11. Modification des CGU</h2>
             <p className="text-[#5c647a]">
-              FreelanceHigh se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle par email ou via une notification in-app. La poursuite de l&apos;utilisation de la Plateforme vaut acceptation des CGU modifiées.
+              Novakou se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle par email ou via une notification in-app. La poursuite de l&apos;utilisation de la Plateforme vaut acceptation des CGU modifiées.
             </p>
           </div>
 

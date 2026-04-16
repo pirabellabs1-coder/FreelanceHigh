@@ -293,15 +293,17 @@ export default function InstructeurPublicPage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-[#191c1e] text-sm line-clamp-2 mb-2">{f.title}</h3>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <Stars rating={f.rating} />
                       <span className="text-[11px] text-[#5c647a]">
-                        {f.rating > 0 ? f.rating.toFixed(1) : "—"}
+                        {f.rating > 0 ? f.rating.toFixed(1) : "Nouveau"}
                         {f.reviewsCount > 0 && ` (${f.reviewsCount})`}
                       </span>
-                      {f.studentsCount > 0 && (
-                        <span className="text-[11px] text-[#5c647a]">· {f.studentsCount} apprenants</span>
-                      )}
+                      <span className="text-[11px] text-[#5c647a] flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">groups</span>
+                        <span className="font-semibold text-[#191c1e]">{f.studentsCount}</span>
+                        élève{f.studentsCount !== 1 ? "s" : ""}
+                      </span>
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-lg font-extrabold text-[#006e2f]">{formatFCFA(f.price)} FCFA</span>
@@ -345,13 +347,17 @@ export default function InstructeurPublicPage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-[#191c1e] text-sm line-clamp-2 mb-2">{p.title}</h3>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <Stars rating={p.rating} />
                       <span className="text-[11px] text-[#5c647a]">
-                        {p.rating > 0 ? p.rating.toFixed(1) : "—"}
+                        {p.rating > 0 ? p.rating.toFixed(1) : "Nouveau"}
                         {p.reviewsCount > 0 && ` (${p.reviewsCount})`}
                       </span>
-                      {p.salesCount > 0 && <span className="text-[11px] text-[#5c647a]">· {p.salesCount} ventes</span>}
+                      <span className="text-[11px] text-[#5c647a] flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">shopping_bag</span>
+                        <span className="font-semibold text-[#191c1e]">{p.salesCount}</span>
+                        vente{p.salesCount !== 1 ? "s" : ""}
+                      </span>
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-lg font-extrabold text-violet-600">{formatFCFA(p.price)} FCFA</span>

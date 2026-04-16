@@ -54,7 +54,7 @@ const notifGroups = [
   {
     label: "Plateforme",
     items: [
-      { key: "promotion", label: "Offres promotionnelles", desc: "Invitations à participer aux ventes flash FreelanceHigh", email: true, push: false },
+      { key: "promotion", label: "Offres promotionnelles", desc: "Invitations à participer aux ventes flash Novakou", email: true, push: false },
       { key: "updates", label: "Mises à jour produit", desc: "Nouvelles fonctionnalités et améliorations", email: true, push: false },
     ],
   },
@@ -432,7 +432,7 @@ export default function ParamaetresPage() {
                 <div>
                   <h2 className="text-base font-bold text-[#191c1e]">Mode Coach</h2>
                   <p className="text-sm text-[#5c647a] mt-0.5 max-w-sm">
-                    Activez cette option pour proposer des sessions de coaching 1:1 et apparaître sur la page <span className="font-semibold text-[#006e2f]">Mentors</span> de FreelanceHigh.
+                    Activez cette option pour proposer des sessions de coaching 1:1 et apparaître sur la page <span className="font-semibold text-[#006e2f]">Mentors</span> de Novakou.
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     <span className={`w-2 h-2 rounded-full ${coachActif ? "bg-[#22c55e]" : "bg-gray-300"}`} />

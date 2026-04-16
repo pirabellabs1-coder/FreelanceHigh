@@ -24,7 +24,7 @@ function AffiliéFooter() {
     <footer className="border-t border-[#1e3a2f] bg-[#0d1f17] mt-auto">
       <div className="px-6 py-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[10px] text-[#5c9e7a]">© 2026 FreelanceHigh — Programme d&apos;affiliation</p>
+          <p className="text-[10px] text-[#5c9e7a]">© 2026 Novakou — Programme d&apos;affiliation</p>
           <div className="flex items-center gap-4">
             <Link href="/formations/cgu-affiliation" className="text-[10px] text-[#5c9e7a] hover:text-white transition-colors">Conditions d&apos;affiliation</Link>
             <Link href="/formations/aide" className="text-[10px] text-[#5c9e7a] hover:text-white transition-colors">Aide</Link>
@@ -70,10 +70,10 @@ export default function AffiliéLayout({ children }: { children: React.ReactNode
 
         <Link href="/formations/affilie/dashboard" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center" style={{ background: "linear-gradient(135deg, #006e2f, #22c55e)" }}>
-            <span className="text-white font-bold text-xs tracking-tight">FH</span>
+            <span className="text-white font-bold text-xs tracking-tight">NK</span>
           </div>
           <div className="hidden sm:block">
-            <span className="font-bold text-white text-sm">FreelanceHigh</span>
+            <span className="font-bold text-white text-sm">Novakou</span>
             <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#22c55e]/20 text-[#22c55e] uppercase tracking-wide">
               Affilié
             </span>

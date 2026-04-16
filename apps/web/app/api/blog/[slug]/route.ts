@@ -57,7 +57,7 @@ export async function GET(
         slug: raw.slug,
         content: raw.content ?? "",
         excerpt: raw.excerpt ?? "",
-        author: raw.authorName || raw.author || "FreelanceHigh",
+        author: raw.authorName || raw.author || "Novakou",
         category: raw.category ?? "",
         tags: raw.tags ?? [],
         status: "publie",

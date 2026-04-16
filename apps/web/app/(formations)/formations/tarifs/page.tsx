@@ -47,7 +47,7 @@ const INCLUDED_FEATURES = [
 ];
 
 const COMPETITORS = [
-  { name: "FreelanceHigh", commission: "5%", monthly: "0 FCFA", highlighted: true },
+  { name: "Novakou", commission: "5%", monthly: "0 FCFA", highlighted: true },
   { name: "Gumroad", commission: "10%", monthly: "0 FCFA" },
   { name: "Systeme.io", commission: "0%", monthly: "~19 000 FCFA (~30 €)" },
   { name: "Hotmart", commission: "9,9% + 1€", monthly: "0 FCFA" },
@@ -57,7 +57,7 @@ const COMPETITORS = [
 
 const FAQS = [
   {
-    q: "Comment FreelanceHigh gagne-t-il de l'argent si c'est gratuit ?",
+    q: "Comment Novakou gagne-t-il de l'argent si c'est gratuit ?",
     a: "La plateforme prélève une commission de 5 % sur chaque vente réalisée. C'est tout. Pas d'abonnement, pas de frais cachés, pas de paiement par mois. Vous payez seulement quand vous gagnez.",
   },
   {
@@ -77,7 +77,7 @@ const FAQS = [
     a: "Oui, le modèle est uniforme : 5 % sur les formations, 5 % sur les produits numériques, 5 % sur les séances de mentorat. Le mentor garde 95 % de chaque séance.",
   },
   {
-    q: "Puis-je utiliser FreelanceHigh uniquement comme acheteur ?",
+    q: "Puis-je utiliser Novakou uniquement comme acheteur ?",
     a: "Bien sûr. Créer un compte apprenant est 100 % gratuit — vous ne payez que ce que vous achetez. Aucun abonnement obligatoire pour accéder au catalogue.",
   },
   {

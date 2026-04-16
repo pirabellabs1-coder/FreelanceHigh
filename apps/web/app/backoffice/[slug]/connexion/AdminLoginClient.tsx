@@ -74,10 +74,10 @@ export default function AdminLoginClient() {
         {/* Brand bar */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="w-10 h-10 rounded-[10px] bg-[#006e2f] flex items-center justify-center">
-            <span className="text-white font-extrabold text-sm">FH</span>
+            <span className="text-white font-extrabold text-sm">NK</span>
           </div>
           <div>
-            <p className="font-bold text-white text-base leading-tight">FreelanceHigh</p>
+            <p className="font-bold text-white text-base leading-tight">Novakou</p>
             <p className="text-[10px] text-white/50 uppercase tracking-widest">Administration</p>
           </div>
         </div>

@@ -104,7 +104,33 @@ export default function CheckoutInner() {
           }
         }
         if (pids.length > 0) {
-          pids.forEach((id) => items.push({ id, kind: "product", title: "Produit numérique", price: 0 }));
+          // Fetch real product details (title, price, banner) — was hardcoded to 0
+          await Promise.all(
+            pids.map(async (id) => {
+              try {
+                const res = await fetch(`/api/formations/public/funnel-item?kind=product&id=${encodeURIComponent(id)}`);
+                if (!res.ok) {
+                  items.push({ id, kind: "product", title: "Produit numérique", price: 0 });
+                  return;
+                }
+                const json = await res.json();
+                const p = json.data;
+                if (p) {
+                  items.push({
+                    id,
+                    kind: "product",
+                    title: p.title ?? "Produit numérique",
+                    price: typeof p.price === "number" ? p.price : 0,
+                    thumbnail: p.image ?? undefined,
+                  });
+                } else {
+                  items.push({ id, kind: "product", title: "Produit numérique", price: 0 });
+                }
+              } catch {
+                items.push({ id, kind: "product", title: "Produit numérique", price: 0 });
+              }
+            })
+          );
         }
         setCartItems(items);
         setCartLoading(false);
@@ -392,7 +418,7 @@ export default function CheckoutInner() {
                 <a href="/formations/cgu" className="text-[#006e2f] hover:underline font-semibold">Conditions Générales de Vente</a>{" "}
                 et la{" "}
                 <a href="/formations/confidentialite" className="text-[#006e2f] hover:underline font-semibold">Politique de confidentialité</a>{" "}
-                de FreelanceHigh.
+                de Novakou.
               </span>
             </label>
           </div>

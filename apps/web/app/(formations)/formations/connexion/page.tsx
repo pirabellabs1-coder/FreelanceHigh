@@ -74,9 +74,9 @@ function ConnexionInner() {
 
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-            <span className="text-white font-extrabold text-sm tracking-tight">FH</span>
+            <span className="text-white font-extrabold text-sm tracking-tight">NK</span>
           </div>
-          <span className="text-white font-bold text-lg">FreelanceHigh</span>
+          <span className="text-white font-bold text-lg">Novakou</span>
         </div>
 
         <div className="relative z-10">
@@ -109,7 +109,7 @@ function ConnexionInner() {
             ))}
           </div>
           <p className="text-white/90 text-sm italic leading-relaxed mb-3">
-            &quot;J&apos;ai généré 480 000 FCFA en 3 semaines avec ma première formation. FreelanceHigh a tout changé pour moi.&quot;
+            &quot;J&apos;ai généré 480 000 FCFA en 3 semaines avec ma première formation. Novakou a tout changé pour moi.&quot;
           </p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">AD</div>
@@ -126,15 +126,15 @@ function ConnexionInner() {
         <div className="w-full max-w-md">
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="w-9 h-9 rounded-[9px] flex items-center justify-center" style={{ background: "#006e2f" }}>
-              <span className="text-white font-extrabold text-xs">FH</span>
+              <span className="text-white font-extrabold text-xs">NK</span>
             </div>
-            <span className="font-bold text-[#191c1e] text-base">FreelanceHigh</span>
+            <span className="font-bold text-[#191c1e] text-base">Novakou</span>
           </div>
 
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
             <div className="mb-7">
               <h2 className="text-2xl font-extrabold text-[#191c1e] mb-1.5">Bon retour parmi nous 👋</h2>
-              <p className="text-sm text-[#5c647a]">Connectez-vous à votre espace FreelanceHigh</p>
+              <p className="text-sm text-[#5c647a]">Connectez-vous à votre espace Novakou</p>
             </div>
 
             {/* Google OAuth */}

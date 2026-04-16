@@ -28,34 +28,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     if (!agency) {
-      return { title: "Agence introuvable | FreelanceHigh" };
+      return { title: "Agence introuvable | Novakou" };
     }
 
     const title = agency.agencyName;
     const description = agency.description
       ? agency.description.slice(0, 160)
-      : `Decouvrez ${agency.agencyName} sur FreelanceHigh${agency.sector ? ` — ${agency.sector}` : ""}`;
+      : `Decouvrez ${agency.agencyName} sur Novakou${agency.sector ? ` — ${agency.sector}` : ""}`;
     const ogImage = agency.logo || "https://freelancehigh.com/og-default.png";
 
     return {
-      title: `${title} | FreelanceHigh`,
+      title: `${title} | Novakou`,
       description,
       openGraph: {
-        title: `${title} | FreelanceHigh`,
+        title: `${title} | Novakou`,
         description,
         images: [{ url: ogImage, width: 400, height: 400, alt: title }],
         type: "website",
-        siteName: "FreelanceHigh",
+        siteName: "Novakou",
       },
       twitter: {
         card: "summary",
-        title: `${title} | FreelanceHigh`,
+        title: `${title} | Novakou`,
         description,
         images: [ogImage],
       },
     };
   } catch {
-    return { title: "FreelanceHigh — Agences" };
+    return { title: "Novakou — Agences" };
   }
 }
 

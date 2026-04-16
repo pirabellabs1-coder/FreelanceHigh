@@ -159,7 +159,7 @@ async function downloadPdf(
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `FreelanceHigh-${invoiceNumber}.pdf`;
+    link.download = `Novakou-${invoiceNumber}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -646,7 +646,7 @@ export default function AgenceFacturesPage() {
                     {previewInvoice.invoiceNumber}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Facture FreelanceHigh
+                    Facture Novakou
                   </p>
                 </div>
               </div>
@@ -664,7 +664,7 @@ export default function AgenceFacturesPage() {
                 Émetteur
               </p>
               <p className="text-sm text-white font-semibold">
-                FreelanceHigh SAS
+                Novakou SAS
               </p>
               <p className="text-xs text-slate-400">
                 123 Avenue de la Tech, 75001 Paris, France

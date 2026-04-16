@@ -89,9 +89,9 @@ function ResetInner() {
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="w-10 h-10 rounded-[10px] flex items-center justify-center" style={{ background: "#006e2f" }}>
-            <span className="text-white font-extrabold text-sm">FH</span>
+            <span className="text-white font-extrabold text-sm">NK</span>
           </div>
-          <span className="font-bold text-[#191c1e] text-lg">FreelanceHigh</span>
+          <span className="font-bold text-[#191c1e] text-lg">Novakou</span>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">

@@ -1,5 +1,5 @@
 /**
- * FreelanceHigh — Affiliate Tracker (Client-safe)
+ * Novakou — Affiliate Tracker (Client-safe)
  *
  * Fonctions utilisables cote client (navigateur) :
  * - Gestion des cookies affilies

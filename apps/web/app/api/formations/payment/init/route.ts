@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const moneroo = await initPayment({
       amount: totalAmount,
       currency: "XOF", // FCFA West Africa CFA franc
-      description: `Achat FreelanceHigh — ${formations.length + products.length} produit(s)`,
+      description: `Achat Novakou — ${formations.length + products.length} produit(s)`,
       customer: {
         email: userEmail!,
         first_name: first || "Apprenant",

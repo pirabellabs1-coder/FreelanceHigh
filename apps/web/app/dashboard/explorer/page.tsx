@@ -553,7 +553,7 @@ function ContactModal({
             className="w-full bg-neutral-dark border border-border-dark rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder:text-slate-500"
           />
           <p className="text-[11px] text-slate-600 mt-1.5">
-            Le destinataire recevra votre message dans sa messagerie FreelanceHigh.
+            Le destinataire recevra votre message dans sa messagerie Novakou.
           </p>
         </div>
 
@@ -913,7 +913,7 @@ export default function ExplorerPage() {
           Explorer le marche
         </h1>
         <p className="text-sm text-slate-400">
-          Decouvrez les services, offres clients et agences de la marketplace FreelanceHigh
+          Decouvrez les services, offres clients et agences de la marketplace Novakou
         </p>
       </div>
 

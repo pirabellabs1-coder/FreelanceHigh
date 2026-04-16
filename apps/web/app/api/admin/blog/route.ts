@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
         category: category ?? "General",
         tags: tags ?? [],
         authorId: authorId ?? "dev-admin-1",
-        authorName: author ?? "Admin FreelanceHigh",
+        authorName: author ?? "Admin Novakou",
         status: prismaStatus,
         publishedAt: prismaStatus === "PUBLIE" ? now : null,
         scheduledAt: scheduledAt ?? null,

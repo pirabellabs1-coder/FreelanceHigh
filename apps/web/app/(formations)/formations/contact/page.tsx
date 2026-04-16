@@ -43,7 +43,7 @@ export default function ContactPage() {
             <span className="text-white text-xs font-semibold">Contact</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">
-            Parlez à l&apos;équipe FreelanceHigh
+            Parlez à l&apos;équipe Novakou
           </h1>
           <p className="text-white/80 text-sm md:text-base">
             Nous répondons à tous les messages sous 24h ouvrées.

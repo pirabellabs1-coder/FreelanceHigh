@@ -184,7 +184,7 @@ export async function POST() {
       profile = await prisma.instructeurProfile.create({
         data: {
           userId,
-          bioFr: "Instructeur FreelanceHigh — démonstration de produits.",
+          bioFr: "Instructeur Novakou — démonstration de produits.",
           expertise: ["Marketing Digital", "Freelance", "Développement Web"],
           yearsExp: 5,
           status: "APPROUVE",

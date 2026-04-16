@@ -88,7 +88,19 @@ function InscriptionInner() {
         return;
       }
 
-      // 2. Auto sign-in
+      // 2. If new account requires email verification, redirect to OTP page.
+      //    Password is passed so auto-login can happen right after verification.
+      if (registerJson.requiresVerification) {
+        const params = new URLSearchParams({
+          email: email.trim().toLowerCase(),
+          callbackUrl: redirectAfterAuth,
+          p: password,
+        });
+        router.push(`/formations/verifier-email?${params.toString()}`);
+        return;
+      }
+
+      // 3. Existing account where only formationsRole was updated → direct sign-in
       const signInResult = await signIn("credentials", {
         email: email.trim().toLowerCase(),
         password,
@@ -96,7 +108,6 @@ function InscriptionInner() {
       });
 
       if (signInResult?.error) {
-        // Account created but auto-login failed — redirect to login
         router.push(`/formations/connexion?callbackUrl=${encodeURIComponent(redirectAfterAuth)}&registered=1`);
         return;
       }
@@ -128,9 +139,9 @@ function InscriptionInner() {
 
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-            <span className="text-white font-extrabold text-sm tracking-tight">FH</span>
+            <span className="text-white font-extrabold text-sm tracking-tight">NK</span>
           </div>
-          <span className="text-white font-bold text-lg">FreelanceHigh</span>
+          <span className="text-white font-bold text-lg">Novakou</span>
         </div>
 
         <div className="relative z-10">
@@ -175,9 +186,9 @@ function InscriptionInner() {
         <div className="w-full max-w-lg">
           <div className="flex items-center gap-2.5 mb-6 lg:hidden">
             <div className="w-9 h-9 rounded-[9px] flex items-center justify-center" style={{ background: "#006e2f" }}>
-              <span className="text-white font-extrabold text-xs">FH</span>
+              <span className="text-white font-extrabold text-xs">NK</span>
             </div>
-            <span className="font-bold text-[#191c1e] text-base">FreelanceHigh</span>
+            <span className="font-bold text-[#191c1e] text-base">Novakou</span>
           </div>
 
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-7">

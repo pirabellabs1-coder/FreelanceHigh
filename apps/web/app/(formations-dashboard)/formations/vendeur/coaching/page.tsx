@@ -72,7 +72,7 @@ export default function CoachingPage() {
         <h2 className="text-xl font-extrabold text-[#191c1e] mb-2">Coaching 1:1 — En construction</h2>
         <p className="text-sm text-[#5c647a] max-w-xl mx-auto mb-6">
           Bientôt, {userName}, vous pourrez proposer des sessions de coaching individuel, gérer votre agenda, recevoir les demandes et encaisser
-          vos honoraires directement depuis FreelanceHigh — sans outil tiers.
+          vos honoraires directement depuis Novakou — sans outil tiers.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-6">

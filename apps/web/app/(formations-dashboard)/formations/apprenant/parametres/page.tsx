@@ -31,7 +31,7 @@ export default function ParametresPage() {
     { id: "new_lesson", label: "Nouvelle leçon disponible", desc: "Quand une leçon est ajoutée à une de vos formations", email: true, push: true },
     { id: "order_confirm", label: "Confirmation de commande", desc: "Reçu de paiement et accès accordé", email: true, push: false },
     { id: "promo", label: "Promotions & offres", desc: "Réductions et offres spéciales", email: false, push: false },
-    { id: "newsletter", label: "Newsletter FreelanceHigh", desc: "Conseils, success stories et mises à jour plateforme", email: true, push: false },
+    { id: "newsletter", label: "Newsletter Novakou", desc: "Conseils, success stories et mises à jour plateforme", email: true, push: false },
   ]);
 
   const handleSave = () => {

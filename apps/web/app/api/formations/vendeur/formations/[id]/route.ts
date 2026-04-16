@@ -3,23 +3,20 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { IS_DEV } from "@/lib/env";
-
-import { getInstructeurId as _gii } from "@/lib/formations/instructeur";
-async function getProfileId(userId: string) { return _gii(userId); }
+import { resolveVendorContext } from "@/lib/formations/active-user";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user && !IS_DEV) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
-    if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+    const ctx = await resolveVendorContext(session, { devFallback: IS_DEV ? "dev-instructeur-001" : undefined });
+    if (!ctx) return NextResponse.json({ error: "Profil introuvable" }, { status: 401 });
 
     const { id } = await params;
-    const pid = await getProfileId(userId);
-    if (!pid) return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
 
     const formation = await prisma.formation.findFirst({
-      where: { id, instructeurId: pid },
+      where: { id, instructeurId: ctx.instructeurId },
       select: {
         id: true, slug: true, title: true, shortDesc: true, description: true,
         thumbnail: true, previewVideo: true, price: true, originalPrice: true,
@@ -53,14 +50,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user && !IS_DEV) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    const userId = session?.user?.id ?? (IS_DEV ? "dev-instructeur-001" : null);
-    if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+    const ctx = await resolveVendorContext(session, { devFallback: IS_DEV ? "dev-instructeur-001" : undefined });
+    if (!ctx) return NextResponse.json({ error: "Profil introuvable" }, { status: 401 });
 
     const { id } = await params;
-    const pid = await getProfileId(userId);
-    if (!pid) return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
-
-    const existing = await prisma.formation.findFirst({ where: { id, instructeurId: pid } });
+    const existing = await prisma.formation.findFirst({ where: { id, instructeurId: ctx.instructeurId } });
     if (!existing) return NextResponse.json({ error: "Formation introuvable" }, { status: 404 });
 
     const body = await request.json();
@@ -80,6 +75,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ data: updated });
   } catch (err) {
     console.error("[formations/[id] PATCH]", err);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user && !IS_DEV) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+    const ctx = await resolveVendorContext(session, { devFallback: IS_DEV ? "dev-instructeur-001" : undefined });
+    if (!ctx) return NextResponse.json({ error: "Profil introuvable" }, { status: 401 });
+
+    const { id } = await params;
+    const existing = await prisma.formation.findFirst({ where: { id, instructeurId: ctx.instructeurId } });
+    if (!existing) return NextResponse.json({ error: "Formation introuvable" }, { status: 404 });
+
+    await prisma.formation.delete({ where: { id } });
+    return NextResponse.json({ data: { ok: true } });
+  } catch (err) {
+    console.error("[formations/[id] DELETE]", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

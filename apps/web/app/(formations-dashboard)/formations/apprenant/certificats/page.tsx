@@ -114,14 +114,14 @@ export default function CertificatsPage() {
                   <div className="absolute inset-4 rounded-xl border border-white/10 pointer-events-none" />
                   <div className="relative">
                     <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                      <span className="text-white font-black text-lg">FH</span>
+                      <span className="text-white font-black text-lg">NK</span>
                     </div>
                     <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-3">Certificat de réussite</p>
                     <p className="text-white font-bold text-sm mb-1">Décerné à</p>
                     <p className="text-white font-black text-2xl mb-4">{displayName}</p>
                     <p className="text-white/80 text-xs mb-2">Pour avoir complété avec succès</p>
                     <p className="text-white font-bold text-base leading-snug mb-4 max-w-xs mx-auto">
-                      {selectedCert.formation?.title ?? "Formation FreelanceHigh"}
+                      {selectedCert.formation?.title ?? "Formation Novakou"}
                     </p>
                     <p className="text-white/70 text-xs mb-3">{issuedDate}</p>
                     {selectedCert.score > 0 && (
@@ -132,7 +132,7 @@ export default function CertificatsPage() {
                       </div>
                     )}
                     <div className="mt-4 pt-4 border-t border-white/20 text-[9px] text-white/60">
-                      Certificat #{selectedCert.code} · FreelanceHigh
+                      Certificat #{selectedCert.code} · Novakou
                     </div>
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default function CertificatsPage() {
                         )}
                       </div>
                       <h3 className="font-bold text-[#191c1e] text-sm leading-snug mb-2">
-                        {cert.formation?.title ?? "Formation FreelanceHigh"}
+                        {cert.formation?.title ?? "Formation Novakou"}
                       </h3>
                       <div className="flex items-center gap-3 text-[10px] text-[#5c647a] flex-wrap">
                         <span className="flex items-center gap-1">

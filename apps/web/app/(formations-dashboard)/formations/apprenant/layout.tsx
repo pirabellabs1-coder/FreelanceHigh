@@ -47,9 +47,9 @@ function ApprenantFooter() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#006e2f" }}>
-                <span className="text-white font-bold text-[10px]">FH</span>
+                <span className="text-white font-bold text-[10px]">NK</span>
               </div>
-              <span className="font-bold text-[#191c1e] text-sm">FreelanceHigh</span>
+              <span className="font-bold text-[#191c1e] text-sm">Novakou</span>
             </div>
             <p className="text-xs text-[#5c647a] leading-relaxed">
               La plateforme d&apos;apprentissage qui élève votre carrière freelance.
@@ -87,7 +87,7 @@ function ApprenantFooter() {
           </div>
         </div>
         <div className="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[10px] text-[#5c647a]">© 2026 FreelanceHigh — Tous droits réservés</p>
+          <p className="text-[10px] text-[#5c647a]">© 2026 Novakou — Tous droits réservés</p>
           <p className="text-[10px] text-[#5c647a]">Fondé par Lissanon Gildas · Afrique francophone &amp; diaspora</p>
         </div>
       </div>
@@ -136,9 +136,9 @@ export default function ApprenantLayout({ children }: { children: React.ReactNod
 
         <Link href="/formations/apprenant/dashboard" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center" style={{ background: "#006e2f" }}>
-            <span className="text-white font-bold text-xs tracking-tight">FH</span>
+            <span className="text-white font-bold text-xs tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">FreelanceHigh</span>
+          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
         </Link>
 
         <div className="flex-1" />

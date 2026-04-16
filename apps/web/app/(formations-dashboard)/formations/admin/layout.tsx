@@ -72,9 +72,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="w-8 h-8 rounded-[8px] flex items-center justify-center"
             style={{ background: "#006e2f" }}
           >
-            <span className="text-white font-bold text-xs tracking-tight">FH</span>
+            <span className="text-white font-bold text-xs tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">FreelanceHigh</span>
+          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
         </Link>
 
         {/* Admin badge */}

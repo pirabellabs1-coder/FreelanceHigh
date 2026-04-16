@@ -1,5 +1,5 @@
 /**
- * FreelanceHigh — Event Registry
+ * Novakou — Event Registry
  * Map centrale : chaque evenement → { notification, email }
  *
  * notification() retourne un NotificationOutput | NotificationOutput[] | null
@@ -667,7 +667,7 @@ export const EVENT_REGISTRY: {
     }),
     email: async (p: PaymentEventPayload) => {
       await sendPaymentSuccessEmail(p.userEmail, p.userName, {
-        amount: p.amount, serviceTitle: p.serviceTitle || "Service FreelanceHigh",
+        amount: p.amount, serviceTitle: p.serviceTitle || "Service Novakou",
       });
     },
   },
@@ -682,7 +682,7 @@ export const EVENT_REGISTRY: {
     }),
     email: async (p: PaymentEventPayload) => {
       await sendPaymentFailedEmail(p.userEmail, p.userName, {
-        amount: p.amount, serviceTitle: p.serviceTitle || "Service FreelanceHigh",
+        amount: p.amount, serviceTitle: p.serviceTitle || "Service Novakou",
         reason: p.reason,
       });
     },
@@ -829,7 +829,7 @@ export const EVENT_REGISTRY: {
   "system.welcome": {
     notification: (p: SystemEventPayload) => ({
       userId: p.userId,
-      title: "Bienvenue sur FreelanceHigh !",
+      title: "Bienvenue sur Novakou !",
       message: "Votre compte a ete cree avec succes. Completez votre profil pour commencer.",
       type: "system",
       link: "/dashboard/profil",

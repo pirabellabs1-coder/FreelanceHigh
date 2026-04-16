@@ -99,9 +99,9 @@ export default function VendeurLayout({ children }: { children: React.ReactNode 
         {/* Logo */}
         <Link href="/formations/vendeur/dashboard" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #006e2f, #22c55e)" }}>
-            <span className="text-white font-bold text-xs tracking-tight">FH</span>
+            <span className="text-white font-bold text-xs tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">FreelanceHigh</span>
+          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
         </Link>
 
         {/* Vendor badge */}

@@ -21,14 +21,14 @@ export async function POST(request: Request) {
       try {
         const resend = new Resend(resendKey);
         await resend.emails.send({
-          from: "FreelanceHigh <noreply@freelancehigh.com>",
+          from: "Novakou <noreply@freelancehigh.com>",
           to: "support@freelancehigh.com",
           replyTo: email,
           subject: `[Contact] ${subject ?? "general"} — ${name}`,
           html: `
             <div style="font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #f7f9fb;">
               <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #eef0f3;">
-                <div style="background: linear-gradient(135deg, #006e2f, #22c55e); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-bottom: 16px;">FH</div>
+                <div style="background: linear-gradient(135deg, #006e2f, #22c55e); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-bottom: 16px;">NK</div>
                 <h2 style="margin: 0 0 8px; color: #191c1e; font-size: 18px;">Nouveau message de contact</h2>
                 <p style="margin: 0 0 20px; color: #5c647a; font-size: 13px;">Sujet : <strong>${subject ?? "general"}</strong></p>
                 <table style="width: 100%; border-collapse: collapse;">
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
                   <p style="margin: 0; color: #191c1e; font-size: 13px; white-space: pre-wrap; line-height: 1.6;">${message.replace(/</g, "&lt;")}</p>
                 </div>
               </div>
-              <p style="margin: 16px 0 0; text-align: center; color: #9ca3af; font-size: 11px;">FreelanceHigh — La plateforme qui élève votre carrière freelance</p>
+              <p style="margin: 16px 0 0; text-align: center; color: #9ca3af; font-size: 11px;">Novakou — La plateforme qui élève votre carrière freelance</p>
             </div>
           `,
         });

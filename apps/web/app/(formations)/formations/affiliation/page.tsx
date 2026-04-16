@@ -35,7 +35,7 @@ const steps = [
     icon: "person_add",
     step: "02",
     title: "Quelqu'un s'inscrit",
-    desc: `Un visiteur clique sur votre lien et s'inscrit sur FreelanceHigh Formations. Le cookie est valable ${COOKIE_DAYS} jours après son premier clic.`,
+    desc: `Un visiteur clique sur votre lien et s'inscrit sur Novakou Formations. Le cookie est valable ${COOKIE_DAYS} jours après son premier clic.`,
     color: "#1565c0",
     bg: "#e3f2fd",
   },
@@ -132,7 +132,7 @@ export default function AffiliationPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-5">
             Gagnez en recommandant
             <br />
-            <span className="text-[#86efac]">FreelanceHigh Formations</span>
+            <span className="text-[#86efac]">Novakou Formations</span>
           </h1>
           <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
             Partagez votre lien unique. Touchez{" "}

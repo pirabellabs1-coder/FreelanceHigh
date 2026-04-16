@@ -11,7 +11,7 @@ const steps = [
   {
     num: "01", icon: "add_link",
     title: "Choisissez une formation",
-    desc: "Parcourez le catalogue FreelanceHigh et sélectionnez les formations que vous souhaitez promouvoir. Chaque formation génère un lien unique traçable.",
+    desc: "Parcourez le catalogue Novakou et sélectionnez les formations que vous souhaitez promouvoir. Chaque formation génère un lien unique traçable.",
   },
   {
     num: "02", icon: "share",
@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     q: "Puis-je promouvoir toutes les formations ?",
-    a: "Oui, toutes les formations et produits publiés sur FreelanceHigh sont éligibles à l'affiliation.",
+    a: "Oui, toutes les formations et produits publiés sur Novakou sont éligibles à l'affiliation.",
   },
 ];
 
@@ -148,13 +148,13 @@ export default function DevenirAffilierPage() {
         <div className="relative">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-white/20 text-white mb-4">
             <span className="material-symbols-outlined text-[12px]">star</span>
-            Programme d&apos;affiliation FreelanceHigh
+            Programme d&apos;affiliation Novakou
           </span>
           <h1 className="text-2xl md:text-3xl font-extrabold text-white mb-3 leading-tight">
             Gagnez {COMMISSION_PCT}% sur chaque<br />vente réalisée via vos liens
           </h1>
           <p className="text-sm text-white/80 mb-6 max-w-md leading-relaxed">
-            Partagez les formations FreelanceHigh. Quand quelqu&apos;un achète via votre lien,
+            Partagez les formations Novakou. Quand quelqu&apos;un achète via votre lien,
             <strong className="text-white"> {COMMISSION_PCT}% du prix est automatiquement crédité</strong> sur votre solde — sans démarche manuelle.
           </p>
           <div className="flex items-center gap-6 text-white/80 text-xs">
@@ -279,7 +279,7 @@ export default function DevenirAffilierPage() {
           ) : (
             <>
               <span className="material-symbols-outlined text-[18px]">link</span>
-              Devenir affilié FreelanceHigh
+              Devenir affilié Novakou
             </>
           )}
         </button>

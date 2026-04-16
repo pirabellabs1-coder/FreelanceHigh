@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Politique de confidentialité — FreelanceHigh",
+  title: "Politique de confidentialité — Novakou",
 };
 
 export default function ConfidentialitePage() {
@@ -21,7 +21,7 @@ export default function ConfidentialitePage() {
           <div>
             <h2 className="text-lg font-bold mb-2">1. Responsable du traitement</h2>
             <p className="text-[#5c647a]">
-              FreelanceHigh est responsable du traitement de vos données personnelles collectées via la Plateforme. Pour toute question, contactez-nous à <strong>privacy@freelancehigh.com</strong>.
+              Novakou est responsable du traitement de vos données personnelles collectées via la Plateforme. Pour toute question, contactez-nous à <strong>privacy@freelancehigh.com</strong>.
             </p>
           </div>
 

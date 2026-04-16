@@ -365,7 +365,11 @@ export default function ProduitsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-1">
                     <Link
-                      href={`/formations/vendeur/cours/${product.id}/editer`}
+                      href={
+                        product.productKind === "formation"
+                          ? `/formations/vendeur/cours/${product.id}/editer`
+                          : `/formations/vendeur/produits/${product.id}/editer`
+                      }
                       className="p-2 rounded-lg hover:bg-gray-100 text-[#5c647a] hover:text-[#191c1e] transition-colors"
                       title="Modifier"
                     >

@@ -195,7 +195,7 @@ export default function MentorsPage() {
               </p>
               <p className="text-sm mb-4">
                 {allMentors.length === 0
-                  ? "Soyez le premier à proposer vos services de mentorat sur FreelanceHigh."
+                  ? "Soyez le premier à proposer vos services de mentorat sur Novakou."
                   : "Essayez un autre domaine ou modifiez votre recherche."}
               </p>
               {allMentors.length === 0 && (
@@ -225,7 +225,7 @@ export default function MentorsPage() {
           <div className="w-16 h-16 rounded-2xl bg-[#e8f5e9] flex items-center justify-center mx-auto mb-5">
             <span className="material-symbols-outlined text-[32px] text-[#006e2f]" style={{ fontVariationSettings: "'FILL' 1" }}>record_voice_over</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-[#191c1e] mb-3">Devenez mentor sur FreelanceHigh</h2>
+          <h2 className="text-2xl font-extrabold text-[#191c1e] mb-3">Devenez mentor sur Novakou</h2>
           <p className="text-[#5c647a] text-base mb-8 max-w-lg mx-auto leading-relaxed">
             Partagez votre expertise en 1:1, fixez vos propres tarifs et développez une nouvelle source de revenus récurrents. Les candidatures sont ouvertes.
           </p>

@@ -33,31 +33,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
 
     if (!service) {
-      return { title: "Service introuvable | FreelanceHigh" };
+      return { title: "Service introuvable | Novakou" };
     }
 
     const title = service.seoMetaTitle || service.title;
     const description =
       service.seoMetaDescription ||
-      (service.descriptionText ? service.descriptionText.slice(0, 160) : `${service.title} par ${service.agency?.agencyName || service.user?.name || "un freelance"} sur FreelanceHigh`);
+      (service.descriptionText ? service.descriptionText.slice(0, 160) : `${service.title} par ${service.agency?.agencyName || service.user?.name || "un freelance"} sur Novakou`);
     const images = (service.images as string[]) || [];
     const ogImage = images[0] || "https://freelancehigh.com/og-default.png";
-    const vendorName = service.agency?.agencyName || service.user?.name || "FreelanceHigh";
+    const vendorName = service.agency?.agencyName || service.user?.name || "Novakou";
 
     return {
-      title: `${title} | FreelanceHigh`,
+      title: `${title} | Novakou`,
       description,
       keywords: service.tags || [],
       openGraph: {
-        title: `${title} | FreelanceHigh`,
+        title: `${title} | Novakou`,
         description,
         images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
         type: "website",
-        siteName: "FreelanceHigh",
+        siteName: "Novakou",
       },
       twitter: {
         card: "summary_large_image",
-        title: `${title} | FreelanceHigh`,
+        title: `${title} | Novakou`,
         description,
         images: [ogImage],
       },
@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: "FreelanceHigh — Services" };
+    return { title: "Novakou — Services" };
   }
 }
 
@@ -102,7 +102,7 @@ async function ServiceJsonLd({ slug }: { slug: string }) {
       image: (service.images as string[])?.[0] || undefined,
       provider: {
         "@type": "Organization",
-        name: "FreelanceHigh",
+        name: "Novakou",
         url: "https://freelancehigh.com",
       },
       offers: {

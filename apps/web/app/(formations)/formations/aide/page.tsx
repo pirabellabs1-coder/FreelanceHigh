@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Centre d'aide — FreelanceHigh",
-  description: "Trouvez des réponses à vos questions sur FreelanceHigh Formations.",
+  title: "Centre d'aide — Novakou",
+  description: "Trouvez des réponses à vos questions sur Novakou Formations.",
 };
 
 const FAQS = [
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Quelle est la commission de la plateforme ?",
-    a: "FreelanceHigh prélève 5 % de commission sur chaque vente. Vous conservez 95 % de vos revenus nets, ce qui est l'un des meilleurs taux du marché.",
+    a: "Novakou prélève 5 % de commission sur chaque vente. Vous conservez 95 % de vos revenus nets, ce qui est l'un des meilleurs taux du marché.",
   },
   {
     q: "Comment devenir mentor ?",
