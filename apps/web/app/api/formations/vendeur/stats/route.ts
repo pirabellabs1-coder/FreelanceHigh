@@ -238,27 +238,71 @@ export async function GET(request: Request) {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 15);
 
-    // ── Views by country (from tracking store) ──
-    const productIds = [...profile.formations.map((f) => f.id), ...profile.digitalProducts.map((p) => p.id)];
-    const allEvents = trackingStore.getEvents({
-      startDate: cutoff ? cutoff.toISOString() : undefined,
-    });
-    const sessions = trackingStore.getSessions();
-    const sessionCountryMap = new Map(sessions.map((s) => [s.id, s.country] as const));
+    // ── Views by country ──
+    // Source de vérité : MarketingEvent en DB (PAGE_VIEW) — persistant cross-deploy.
+    // Fallback : trackingStore JSON (dev local sans events DB).
+    const formationIds = profile.formations.map((f) => f.id);
+    const productIdsList = profile.digitalProducts.map((p) => p.id);
+    const productIds = [...formationIds, ...productIdsList];
 
-    // Views = all page_view/service_viewed/formation_viewed events whose entityId matches our products
-    // OR path contains the product id (fallback). For general views, include all events on /formations paths.
-    const productViewEvents = allEvents.filter(
+    const orConditions: Array<{ formationId?: { in: string[] }; digitalProductId?: { in: string[] } }> = [];
+    if (formationIds.length > 0) orConditions.push({ formationId: { in: formationIds } });
+    if (productIdsList.length > 0) orConditions.push({ digitalProductId: { in: productIdsList } });
+
+    // Count product views in DB (groupBy: aggregate side DB, économise mémoire & latence)
+    const dbProductViewsCount =
+      orConditions.length > 0
+        ? await prisma.marketingEvent.count({
+            where: {
+              type: "PAGE_VIEW",
+              OR: orConditions,
+              ...(cutoff ? { createdAt: { gte: cutoff } } : {}),
+            },
+          })
+        : 0;
+
+    // Sample events for viewsByCountry (cap 5000 — assez pour aggrégation pays, pas OOM)
+    const dbViewEventsSample = orConditions.length > 0
+      ? await prisma.marketingEvent.findMany({
+          where: {
+            type: "PAGE_VIEW",
+            OR: orConditions,
+            ...(cutoff ? { createdAt: { gte: cutoff } } : {}),
+          },
+          select: { metadata: true },
+          take: 5000,
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
+
+    // Fallback events from JSON store — DEV ONLY pour éviter contamination prod
+    const fallbackEvents = IS_DEV
+      ? trackingStore.getEvents({
+          startDate: cutoff ? cutoff.toISOString() : undefined,
+        })
+      : [];
+    const sessions = IS_DEV ? trackingStore.getSessions() : [];
+    const sessionCountryMap = new Map(sessions.map((s) => [s.id, s.country] as const));
+    const fallbackProductViewEvents = fallbackEvents.filter(
       (e) =>
         (e.type === "service_viewed" || e.type === "formation_viewed" || e.type === "page_view") &&
         ((e.entityId && productIds.includes(e.entityId)) ||
           productIds.some((id) => e.path?.includes(id)))
     );
 
+    // Aggregate views by country
     const viewsByCountryMap = new Map<string, number>();
-    for (const e of productViewEvents) {
-      const c = e.country || sessionCountryMap.get(e.sessionId) || "??";
+    for (const e of dbViewEventsSample) {
+      const meta = (e.metadata ?? {}) as { country?: string };
+      const c = meta.country || "??";
       viewsByCountryMap.set(c, (viewsByCountryMap.get(c) || 0) + 1);
+    }
+    // Fallback uniquement en dev quand DB vide
+    if (IS_DEV && dbProductViewsCount === 0) {
+      for (const e of fallbackProductViewEvents) {
+        const c = e.country || sessionCountryMap.get(e.sessionId) || "??";
+        viewsByCountryMap.set(c, (viewsByCountryMap.get(c) || 0) + 1);
+      }
     }
     const viewsByCountry = [...viewsByCountryMap.entries()]
       .map(([country, count]) => ({ country, count }))
@@ -266,8 +310,22 @@ export async function GET(request: Request) {
       .slice(0, 15);
 
     // ── Conversion funnel ──
-    const totalViews = allEvents.filter((e) => e.type === "page_view").length;
-    const productViews = productViewEvents.length;
+    // productViews = page_view sur fiches produit du vendeur (DB source de vérité, fallback dev)
+    // totalViews = page_view global sur la plateforme dans la période (DB count plus tard si besoin)
+    const productViews =
+      dbProductViewsCount > 0
+        ? dbProductViewsCount
+        : IS_DEV
+          ? fallbackProductViewEvents.length
+          : 0;
+    // Pour l'instant, totalViews ≈ productViews (les autres pages publiques ne sont pas encore comptées)
+    // TODO: créer agrégation MarketingEvent globale par période pour totalViews réel
+    const totalViews =
+      dbProductViewsCount > 0
+        ? dbProductViewsCount
+        : IS_DEV
+          ? fallbackEvents.filter((e) => e.type === "page_view").length
+          : 0;
     const purchases = periodTxns.length;
     const conversionFunnel = {
       views: totalViews,

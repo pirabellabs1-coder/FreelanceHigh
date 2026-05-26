@@ -13,8 +13,10 @@ const NAV = [
   { icon: "groups", label: "Mes apprenants", href: "/formations/mentor/apprenants" },
   { icon: "payments", label: "Finances", href: "/formations/mentor/finances" },
   { icon: "verified_user", label: "Vérification KYC", href: "/formations/kyc" },
+  { icon: "storefront", label: "Ma boutique", href: "/formations/boutique" },
   { icon: "account_circle", label: "Profil public", href: "/formations/mentor/profil" },
   { icon: "forum", label: "Messages", href: "/formations/messages" },
+  { icon: "explore", label: "Explorer la marketplace", href: "/formations/explorer" },
 ];
 
 function initials(n?: string | null): string {

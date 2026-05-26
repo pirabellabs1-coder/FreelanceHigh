@@ -201,6 +201,52 @@ export default function ApprenantDashboardPage() {
         </div>
       </div>
 
+      {/* Card Affiliation — Revenu passif */}
+      <section className="mb-8">
+        <div className="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-5 md:p-6">
+          {/* Decorative blob */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#006e2f]/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-emerald-300/20 blur-2xl pointer-events-none" />
+
+          <div className="relative flex flex-col md:flex-row md:items-center gap-5">
+            <div className="flex-shrink-0">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shadow-md"
+                style={{ background: "linear-gradient(135deg, #006e2f, #22c55e)" }}>
+                <span className="material-symbols-outlined text-white text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  redeem
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <h3 className="text-lg md:text-xl font-extrabold text-[#191c1e]">
+                  💸 Gagnez en parrainant
+                </h3>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-[#006e2f] text-white text-[10px] font-bold tracking-wide">
+                  40% À VIE
+                </span>
+              </div>
+              <p className="text-sm text-[#5c647a] leading-relaxed">
+                Recommandez nos formations à votre réseau et touchez <span className="font-bold text-[#006e2f]">40% de commission à vie</span> sur chaque achat.
+              </p>
+            </div>
+
+            <div className="flex-shrink-0">
+              <Link
+                href="/formations/apprenant/affiliation"
+                className="inline-flex items-center justify-center gap-2 w-full md:w-auto px-5 py-3 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg shadow-md"
+                style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+              >
+                <span className="material-symbols-outlined text-[18px]">card_giftcard</span>
+                Devenir affilié
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats rapides */}
       <section className="mb-8">
         <h2 className="text-base font-bold text-[#191c1e] mb-4">Vos statistiques</h2>

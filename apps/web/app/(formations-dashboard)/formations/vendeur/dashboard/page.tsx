@@ -83,34 +83,46 @@ export default function VendeurDashboard() {
           </h1>
         </header>
 
-        {/* Onboarding KYC CTA — visible tant que non vérifié */}
+        {/* Onboarding KYC CTA — banner compact (2 lignes max) */}
         {needsKyc && (
-          <div className={`mb-10 rounded-2xl p-5 flex items-start gap-4 border ${kycPending ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${kycPending ? "bg-amber-500" : "bg-red-500"}`}>
-              <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>
-                {kycPending ? "hourglass_top" : "warning"}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-bold text-[#191c1e]">
-                {kycPending ? "Vérification d'identité en cours" : "Vérification d'identité requise avant tout retrait"}
-              </h3>
-              <p className="text-sm text-[#5c647a] mt-1">
+          <div
+            className={`mb-6 border-l-4 p-3 rounded-lg flex items-center gap-3 ${
+              kycPending
+                ? "border-amber-500 bg-amber-50"
+                : "border-rose-500 bg-rose-50"
+            }`}
+            role="alert"
+          >
+            <span
+              className={`material-symbols-outlined text-[20px] flex-shrink-0 ${
+                kycPending ? "text-amber-600" : "text-rose-600"
+              }`}
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {kycPending ? "hourglass_top" : "warning"}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[#191c1e] truncate">
                 {kycPending
-                  ? "Votre demande est examinée par notre équipe (24-48h ouvrées). Vous serez notifié dès validation."
-                  : "Vos ventes s'accumulent, mais vous ne pourrez retirer vos gains qu'après validation de votre identité."}
+                  ? "Vérification d'identité en cours"
+                  : "Vérification d'identité requise pour retirer vos gains"}
               </p>
-              {!kycPending && (
-                <Link
-                  href="/formations/kyc"
-                  className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl text-white text-xs font-bold"
-                  style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
-                >
-                  <span className="material-symbols-outlined text-[16px]">verified_user</span>
-                  Soumettre ma pièce d&apos;identité
-                </Link>
-              )}
+              <p className="text-xs text-[#5c647a] truncate">
+                {kycPending
+                  ? "Examen sous 24-48h ouvrées. Vous serez notifié dès validation."
+                  : "Vos ventes s'accumulent — KYC nécessaire avant tout retrait."}
+              </p>
             </div>
+            {!kycPending && (
+              <Link
+                href="/formations/kyc"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-white text-xs font-bold whitespace-nowrap hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#006e2f" }}
+              >
+                <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                Vérifier
+              </Link>
+            )}
           </div>
         )}
 

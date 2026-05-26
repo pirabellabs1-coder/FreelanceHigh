@@ -77,6 +77,22 @@ export default function EditerProduitPage() {
 
   const product = response?.data;
 
+  // Fallback : si l'ID ne correspond pas à un DigitalProduct mais à une Formation,
+  // rediriger silencieusement vers /cours/[id]/editer (UX transparent).
+  const shouldTryFormation = !isLoading && (!product || response?.error);
+  const { data: formationFallback } = useQuery<{ data: { id: string } | null }>({
+    queryKey: ["product-is-formation", id],
+    queryFn: () => fetch(`/api/formations/vendeur/formations/${id}`).then((r) => r.json()).catch(() => ({ data: null })),
+    enabled: shouldTryFormation,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (shouldTryFormation && formationFallback?.data?.id) {
+      router.replace(`/formations/vendeur/cours/${id}/editer`);
+    }
+  }, [shouldTryFormation, formationFallback, id, router]);
+
   useEffect(() => {
     if (product) {
       setTitle(product.title);

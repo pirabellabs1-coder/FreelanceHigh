@@ -25,7 +25,24 @@ function getInitials(name?: string | null): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-type BadgeCounts = { reports: number; comments: number };
+type BadgeCounts = {
+  reports: number;
+  comments: number;
+  kyc: number;
+  disputes: number;
+  refunds: number;
+};
+
+type PendingCountsResponse = {
+  data: {
+    kyc: number;
+    signalements: number;
+    disputes: number;
+    refunds: number;
+    failedOrders24h: number;
+    successOrders24h: number;
+  };
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,11 +54,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const initials = getInitials(session?.user?.name);
   const avatarUrl = session?.user?.image;
 
-  // Fetch dashboard to get pending counts for sidebar badges
-  const { data: dashRes } = useQuery<{ data: { quickStats: { pendingReports: number; pendingRefunds: number } } }>({
-    queryKey: ["admin-dashboard"],
-    queryFn: () => fetch("/api/formations/admin/dashboard").then((r) => r.json()),
-    staleTime: 60_000,
+  // Live pending counts — refetch every 30s for real-time badge updates
+  const { data: pendingRes } = useQuery<PendingCountsResponse>({
+    queryKey: ["admin-pending-counts"],
+    queryFn: () => fetch("/api/formations/admin/pending-counts").then((r) => r.json()),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: commentsRes } = useQuery<{ data: unknown[]; summary: { withoutResponse: number } | null }>({
@@ -51,8 +70,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
 
   const badges: BadgeCounts = {
-    reports: dashRes?.data?.quickStats?.pendingReports ?? 0,
+    reports: pendingRes?.data?.signalements ?? 0,
     comments: commentsRes?.summary?.withoutResponse ?? 0,
+    kyc: pendingRes?.data?.kyc ?? 0,
+    disputes: pendingRes?.data?.disputes ?? 0,
+    refunds: pendingRes?.data?.refunds ?? 0,
   };
 
   return (
@@ -194,6 +216,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {item.icon === "comment" && badges.comments > 0 && (
                       <span className="ml-auto bg-yellow-100 text-yellow-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                         {badges.comments}
+                      </span>
+                    )}
+                    {item.icon === "gavel" && badges.disputes > 0 && (
+                      <span className="ml-auto bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                        {badges.disputes}
+                      </span>
+                    )}
+                    {item.icon === "badge" && badges.kyc > 0 && (
+                      <span className="ml-auto bg-orange-100 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                        {badges.kyc}
                       </span>
                     )}
                   </Link>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Lesson {
@@ -192,6 +193,9 @@ export default function FormationPageClient({ slug }: { slug: string }) {
   const [error, setError] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+
+  // Track view (deduped per session, persisted in DB → Formation.viewsCount++)
+  useEntityTracker("formation", formation?.id);
 
   useEffect(() => {
     async function load() {

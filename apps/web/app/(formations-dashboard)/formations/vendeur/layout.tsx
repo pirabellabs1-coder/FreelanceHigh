@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { RoleGuard } from "@/components/formations/RoleGuard";
 
@@ -13,6 +13,62 @@ type NavItem = {
   badge?: string;
   section?: string;
 };
+
+// Mapping segments techniques → libellés français pour les breadcrumbs
+const SEGMENT_LABELS: Record<string, string> = {
+  formations: "Accueil",
+  vendeur: "Espace vendeur",
+  dashboard: "Tableau de bord",
+  produits: "Produits",
+  nouveau: "Nouveau",
+  creer: "Créer",
+  editer: "Éditer",
+  automatisations: "Automatisations",
+  marketing: "Marketing",
+  statistiques: "Statistiques",
+  transactions: "Transactions",
+  messages: "Messages",
+  communaute: "Communauté",
+  coaching: "Coaching",
+  ressources: "Ressources",
+  "api-keys": "Clés API",
+  profil: "Mon profil",
+  kyc: "Vérification KYC",
+  boutique: "Ma boutique",
+  parametres: "Paramètres",
+  wallet: "Revenus & retraits",
+  explorer: "Explorer",
+  mentors: "Mentors",
+};
+
+type Crumb = { label: string; href: string; isLast: boolean };
+
+function buildBreadcrumbs(pathname: string): Crumb[] {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return [];
+
+  const crumbs: Crumb[] = [];
+  let acc = "";
+  segments.forEach((segment, idx) => {
+    acc += `/${segment}`;
+    // Ignorer les IDs (cuid/uuid-like) en se basant sur la longueur et l'absence de mapping
+    const isLikelyId = !SEGMENT_LABELS[segment] && segment.length >= 16;
+    if (isLikelyId) return;
+    const label = SEGMENT_LABELS[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
+    crumbs.push({
+      label,
+      href: acc,
+      isLast: idx === segments.length - 1,
+    });
+  });
+  // Marquer le dernier réel (après filtrage)
+  if (crumbs.length > 0) {
+    crumbs.forEach((c, i) => {
+      c.isLast = i === crumbs.length - 1;
+    });
+  }
+  return crumbs;
+}
 
 const navItems: NavItem[] = [
   // Vue
@@ -36,7 +92,11 @@ const navItems: NavItem[] = [
   // Compte
   { icon: "account_circle", label: "Mon profil", href: "/formations/vendeur/profil", section: "Compte" },
   { icon: "verified_user", label: "Vérification KYC", href: "/formations/kyc", section: "Compte" },
+  { icon: "storefront", label: "Ma boutique", href: "/formations/boutique", section: "Compte" },
   { icon: "settings", label: "Paramètres", href: "/formations/vendeur/parametres", section: "Compte" },
+  // Découvrir
+  { icon: "explore", label: "Explorer la marketplace", href: "/formations/explorer", section: "Découvrir" },
+  { icon: "record_voice_over", label: "Trouver un mentor", href: "/formations/mentors", section: "Découvrir" },
 ];
 
 // Group nav items by section
@@ -62,6 +122,8 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   // Collapsed sidebar on desktop (persisted in localStorage)
   const [collapsed, setCollapsed] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const fabRef = useRef<HTMLDivElement | null>(null);
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -70,6 +132,30 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
       if (saved === "true") setCollapsed(true);
     } catch { /* ignore */ }
   }, []);
+
+  // Fermer le menu FAB au clic à l'extérieur ou à l'appui sur Escape
+  useEffect(() => {
+    if (!fabOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
+        setFabOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setFabOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [fabOpen]);
+
+  // Fermer le FAB en cas de navigation
+  useEffect(() => {
+    setFabOpen(false);
+  }, [pathname]);
 
   function toggleCollapsed() {
     const next = !collapsed;
@@ -83,6 +169,12 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
 
   const sidebarWidth = collapsed ? "w-20" : "w-64";
   const mainOffset = collapsed ? "md:ml-20" : "md:ml-64";
+
+  // FAB caché sur pages de création / édition (redondant)
+  const hideFab = pathname.includes("/nouveau") || pathname.includes("/editer") || pathname.includes("/creer");
+
+  // Breadcrumbs (à partir de "formations" — on saute le premier "Accueil" technique)
+  const crumbs = buildBreadcrumbs(pathname);
 
   return (
     <div className="min-h-screen bg-[#f7f9fb]" style={{ fontFamily: "'Manrope', sans-serif" }}>
@@ -269,8 +361,124 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className={`pt-16 min-h-screen transition-all duration-300 ${mainOffset}`}>
+        {/* Breadcrumbs contextuels */}
+        {crumbs.length > 1 && (
+          <nav
+            aria-label="Fil d'Ariane"
+            className="px-4 md:px-6 pt-4 pb-1"
+          >
+            <ol className="flex items-center flex-wrap gap-1 text-sm text-gray-500">
+              {crumbs.map((crumb, idx) => (
+                <li key={crumb.href} className="flex items-center gap-1">
+                  {idx > 0 && <span className="text-gray-300 select-none" aria-hidden>›</span>}
+                  {crumb.isLast ? (
+                    <span className="text-[#191c1e] font-medium truncate max-w-[180px]" aria-current="page">
+                      {crumb.label}
+                    </span>
+                  ) : (
+                    <Link
+                      href={crumb.href}
+                      className="hover:text-[#006e2f] hover:underline truncate max-w-[180px] transition-colors"
+                    >
+                      {crumb.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
         {children}
       </main>
+
+      {/* FAB — Création rapide */}
+      {!hideFab && (
+        <div
+          ref={fabRef}
+          className="fixed bottom-6 right-6 z-40"
+        >
+          {/* Mini-menu */}
+          {fabOpen && (
+            <div
+              role="menu"
+              aria-label="Menu de création"
+              className="absolute bottom-[68px] right-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
+            >
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5c647a]">Créer</p>
+              </div>
+              <Link
+                href="/formations/vendeur/produits/nouveau?type=formation"
+                role="menuitem"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                onClick={() => setFabOpen(false)}
+              >
+                <span
+                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  school
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#191c1e]">Nouvelle formation</p>
+                  <p className="text-[11px] text-[#5c647a]">Cours vidéo · modules</p>
+                </div>
+              </Link>
+              <Link
+                href="/formations/vendeur/produits/nouveau?type=digital"
+                role="menuitem"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                onClick={() => setFabOpen(false)}
+              >
+                <span
+                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  download
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#191c1e]">Nouveau produit numérique</p>
+                  <p className="text-[11px] text-[#5c647a]">E-book · template · pack</p>
+                </div>
+              </Link>
+              <Link
+                href="/formations/vendeur/automatisations"
+                role="menuitem"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                onClick={() => setFabOpen(false)}
+              >
+                <span
+                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  bolt
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#191c1e]">Nouvelle automatisation</p>
+                  <p className="text-[11px] text-[#5c647a]">Workflow déclencheur → action</p>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Bouton principal */}
+          <button
+            type="button"
+            onClick={() => setFabOpen((v) => !v)}
+            aria-label={fabOpen ? "Fermer le menu de création" : "Ouvrir le menu de création"}
+            aria-expanded={fabOpen}
+            aria-haspopup="menu"
+            className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
+            style={{ backgroundColor: "#006e2f" }}
+          >
+            <span
+              className={`material-symbols-outlined text-[28px] transition-transform duration-200 ${fabOpen ? "rotate-45" : "rotate-0"}`}
+            >
+              add
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

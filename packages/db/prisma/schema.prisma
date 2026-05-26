@@ -922,6 +922,15 @@ model InstructeurProfile {
   totalEarned Float             @default(0)
   status      InstructeurStatus @default(EN_ATTENTE)
 
+  // ── Boutique personnalisée ────────────────────────────────────────
+  shopSlug         String?  @unique  // slug public de la boutique (ex: "aminata-coaching")
+  shopName         String?           // nom affiché sur la boutique
+  customDomain     String?  @unique  // domaine custom (ex: "coaching.aminata.com")
+  customDomainVerifiedAt DateTime?   // vérification DNS ok
+  customDomainTxt  String?           // token DNS TXT à placer pour vérifier la propriété
+  shopPrimaryColor String?           // couleur principale (hex) override
+  shopLogoUrl      String?           // logo de la boutique
+
   user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   formations      Formation[]
   withdrawals     InstructorWithdrawal[] @relation("InstructeurWithdrawals")
@@ -2333,6 +2342,15 @@ model MentorProfile {
   timezone        String   @default("Africa/Abidjan")
   sessionBuffer   Int      @default(15)   // minutes between 2 sessions
   bookingLeadTime Int      @default(60)   // min minutes before slot can be booked
+
+  // ── Boutique personnalisée mentor ────────────────────────────────
+  shopSlug          String?  @unique // slug public (ex: "aminata-mentor")
+  shopName          String?
+  customDomain      String?  @unique // domaine custom (ex: "aminata.com")
+  customDomainVerifiedAt DateTime?
+  customDomainTxt   String?          // token DNS TXT à placer pour vérifier
+  shopPrimaryColor  String?
+  shopLogoUrl       String?
 
   // Stats (denormalized for display)
   totalSessions Int   @default(0)

@@ -13,7 +13,7 @@ import { tracker } from "./tracker";
  *   useEntityTracker("profile", userId);
  */
 export function useEntityTracker(
-  entityType: "service" | "formation" | "profile" | "project" | "blog",
+  entityType: "service" | "formation" | "product" | "profile" | "project" | "blog",
   entityId: string | undefined | null
 ) {
   useEffect(() => {

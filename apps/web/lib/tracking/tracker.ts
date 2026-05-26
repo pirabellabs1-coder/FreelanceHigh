@@ -153,7 +153,7 @@ class Tracker {
    * Track entity view (service, formation, profile) — deduped per session
    */
   trackEntityView(
-    entityType: "service" | "profile" | "formation" | "project" | "blog",
+    entityType: "service" | "profile" | "formation" | "product" | "project" | "blog",
     entityId: string
   ) {
     const key = `${entityType}:${entityId}`;
@@ -164,11 +164,17 @@ class Tracker {
       service: "service_viewed",
       profile: "profile_viewed",
       formation: "formation_viewed",
+      product: "service_viewed", // Digital product — server resolves by entityId
       project: "page_view",
       blog: "page_view",
     };
 
-    this.track(typeMap[entityType] || "page_view", { entityType, entityId });
+    // Cast: "product" is a hook-level alias for "service" on the wire
+    const trackerEntityType = entityType === "product" ? "service" : entityType;
+    this.track(typeMap[entityType] || "page_view", {
+      entityType: trackerEntityType as TrackingEvent["entityType"],
+      entityId,
+    });
   }
 
   private sendCurrentPageDuration() {

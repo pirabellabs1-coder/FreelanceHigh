@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEntityTracker } from "@/lib/tracking/useEntityTracker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Review {
@@ -101,6 +102,9 @@ export default function ProduitPageClient({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<"description" | "avis">("description");
+
+  // Track view (deduped per session, persisted in DB → DigitalProduct.viewsCount++)
+  useEntityTracker("product", product?.id);
 
   useEffect(() => {
     async function load() {

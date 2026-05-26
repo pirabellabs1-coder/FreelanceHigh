@@ -294,62 +294,7 @@ export default async function FormationsPage() {
         </div>
       </section>
 
-      {/* ── 8. ACADÉMIE & RESSOURCES ────────────────────────────── */}
-      <section className="py-16 md:py-32 px-4 md:px-8 max-w-7xl mx-auto">
-        <div className="flex justify-between items-end mb-10 md:mb-16">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-[#191c1e]">Académie &amp; Ressources</h2>
-          <button className="text-[#006e2f] font-bold text-sm">Voir tout le blog</button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {[
-            { bg: "from-green-50 to-green-100", icon: "menu_book", iconColor: "text-[#006e2f]", tag: "Marketing", title: "Comment générer vos 100 000 premiers FCFA avec un simple PDF" },
-            { bg: "from-blue-50 to-blue-100", icon: "auto_awesome", iconColor: "text-blue-400", tag: "Création", title: "5 outils d'IA pour créer vos visuels de formation en 10 minutes" },
-            { bg: "from-purple-50 to-purple-100", icon: "smart_toy", iconColor: "text-purple-400", tag: "Automatisation", title: "Le système complet pour déléguer votre SAV sans embaucher" },
-          ].map((a) => (
-            <div key={a.title} className="group cursor-pointer">
-              <div className="aspect-video bg-[#eceef0] rounded-3xl mb-5 overflow-hidden">
-                <div className={`w-full h-full bg-gradient-to-br ${a.bg} group-hover:scale-105 transition-transform duration-500 flex items-center justify-center`}>
-                  <span className={`material-symbols-outlined ${a.iconColor} text-5xl`}>{a.icon}</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <span className="text-[10px] font-bold text-[#006e2f] uppercase tracking-widest px-3 py-1 bg-[#006e2f]/10 rounded-full">{a.tag}</span>
-                <h3 className="text-lg font-bold leading-tight group-hover:text-[#006e2f] transition-colors text-[#191c1e]">{a.title}</h3>
-                <div className="flex items-center gap-2 text-sm font-bold text-[#5c647a]">
-                  <span>Lire le guide</span>
-                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform text-[#006e2f]">arrow_forward</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 9. TÉMOIGNAGES ───────────────────────────────────────── */}
-      <section className="py-16 md:py-24 px-4 md:px-8 max-w-7xl mx-auto">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-12 md:mb-16 text-[#191c1e]">Ils ont sauté le pas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {[
-            { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_OQHea6luTKvqnig6NEpqlHA9XhyPRueCOiOxAbh6Ewqu6S1PssqGng0a0UOHLaWsxKP00eZ_VuZUCw5ByHpvlb5XfpEGFeBZCpssQarpUTLDPRAu1sNKp1Unvs9hOBSjqejhwfNI9LpIRRkY4GUby_ymiiyE3Gknvu_atvtL_nk9TQvIrjvPEy7hD_3a-VqfC65nbmZNAHQ7zDvZBqi0mvBPTKfZavTzFxwKr9vceEsFcmrH1rtxUZC0kZKM1XIaSuCxU_pzdAkJ", name: "Thomas @WebDev", tier: "Vendeur Diamant", verified: true, quote: "\"J'ai migré depuis Teachable et mes revenus ont augmenté de 40% juste grâce au SEO natif de Novakou. Une révolution.\"" },
-            { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDOWs0ekMpuEU5rXe-0EVtIPdcT-ofZLJmJWzqlBX0IQHhxr4veUPXPqarB4WUgfzjJhO8TGN6nfC-ocPS1ujb45hD_rmJCJ4yoPnnVGbDTrPQ9nG8jH311kcKp7m_GdHD6EaJ8M7Ab_B8wVqzsKWsgxgsoDy1QAnHZ94zi9tFepqDm-JtKUzGwGpBMOFekBFOE6H4yc8xUVdGvFlz1Sjf5_bTuDaUcKrX440DFd-CtPVXg6lrCLIFpp9Y0M_6jA0kORQNIczRHWw-x", name: "Léa S. - Coach", tier: "Vendeur Or", verified: false, quote: "\"L'interface est si propre que mes clients me disent souvent qu'ils adorent suivre mes cours ici.\"" },
-            { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuC9LJ4_beAvJ-wkCyBEY9apbr_jDS5-ZAOeYYrvA9-Qcf68k025tJH9Sy9D-WTOYrW6XWwtYXs6rtJLWazu823m-w11GRLF1kbbTp5PzUJM3hnkUlNR45JbKOSPB1zZPuteNzj0ravHL7bpSNJcfj8WZRn3n7UXuxq81WFeor_Pe_f5SosmWh6ApR2cFfysUohUXukieH3NJAA0zVpocrJXpRXpGoSSxn0EMYWPHRmmh7HKCP4OFR22nXiCqE4yMxFzmv6r0W4W6zTv", name: "Kevin G. - YouTuber", tier: "Vendeur Diamant", verified: true, quote: "\"Fini le mal de crâne avec les intégrations Stripe complexes. En 5 minutes ma boutique était en ligne. Incroyable.\"" },
-          ].map((t) => (
-            <div key={t.name} className="bg-white squircle p-6 md:p-8 shadow-sm border border-[#f2f4f6] hover:border-[#006e2f]/20 transition-colors">
-              <div className="flex items-center gap-4 mb-5">
-                <Image className="w-11 h-11 rounded-full object-cover" src={t.img} alt={t.name} width={44} height={44} unoptimized />
-                <div className="flex-1">
-                  <p className="font-bold text-sm text-[#191c1e]">{t.name}</p>
-                  <p className="text-xs text-slate-400">{t.tier}</p>
-                </div>
-                {t.verified && <span className="material-symbols-outlined text-sky-400 text-xl">verified</span>}
-              </div>
-              <p className="text-[#5c647a] italic leading-relaxed text-sm">{t.quote}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── 10. FAQ ───────────────────────────────────────────────── */}
+      {/* ── FAQ ───────────────────────────────────────────────── */}
       <section className="py-16 md:py-32 px-4 md:px-8">
         <div className="max-w-[768px] mx-auto">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-12 md:mb-16 text-center text-[#191c1e]">

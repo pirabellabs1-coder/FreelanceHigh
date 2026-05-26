@@ -9,6 +9,54 @@ const ADMIN_LOGIN_PREFIX = "/admin-login/";
 let maintenanceModeCache: { enabled: boolean; message: string; cachedAt: number } | null = null;
 const MAINTENANCE_CACHE_TTL_MS = 60_000; // 60 seconds
 
+// ── Custom domain resolution cache (5 min TTL) ──
+const customDomainCache = new Map<string, { slug: string | null; cachedAt: number }>();
+const CUSTOM_DOMAIN_CACHE_TTL_MS = 5 * 60_000;
+
+// Hôtes considérés comme "principaux" (pas des domaines custom).
+// On y ajoute localhost + *.vercel.app + le domaine principal via env.
+function isPrimaryHost(host: string): boolean {
+  const h = host.toLowerCase().split(":")[0];
+  if (h === "localhost" || h === "127.0.0.1" || h.endsWith(".local")) return true;
+  if (h.endsWith(".vercel.app")) return true;
+  const primary = (process.env.NEXT_PUBLIC_PRIMARY_HOST ?? "").toLowerCase();
+  if (primary && (h === primary || h === `www.${primary}` || h.endsWith(`.${primary}`))) return true;
+  return false;
+}
+
+function getInternalOrigin(req: NextRequest): string {
+  // L'origine doit être résolvable DNS depuis le process Node.
+  // req.url reflète le Host header incoming — inutile si c'est un domaine custom.
+  // On préfère VERCEL_URL (prod) puis NEXT_PUBLIC_PRIMARY_HOST, puis loopback dev.
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  const primary = process.env.NEXT_PUBLIC_PRIMARY_HOST;
+  if (primary && !primary.includes("localhost")) return `https://${primary}`;
+  // Dev fallback: use incoming protocol + loopback on current port.
+  const port = req.nextUrl.port || "3000";
+  return `http://127.0.0.1:${port}`;
+}
+
+async function resolveCustomDomain(host: string, req: NextRequest): Promise<string | null> {
+  const cached = customDomainCache.get(host);
+  if (cached && Date.now() - cached.cachedAt < CUSTOM_DOMAIN_CACHE_TTL_MS) {
+    return cached.slug;
+  }
+  try {
+    const origin = getInternalOrigin(req);
+    const res = await fetch(`${origin}/api/formations/public/resolve-domain?host=${encodeURIComponent(host)}`);
+    if (!res.ok) {
+      customDomainCache.set(host, { slug: null, cachedAt: Date.now() });
+      return null;
+    }
+    const body = await res.json();
+    const slug = (body?.data?.slug as string | undefined) ?? null;
+    customDomainCache.set(host, { slug, cachedAt: Date.now() });
+    return slug;
+  } catch {
+    return null;
+  }
+}
+
 // Routes publiques — toujours accessibles
 const PUBLIC_ROUTES = [
   "/",
@@ -105,6 +153,19 @@ export async function middleware(req: NextRequest) {
   // Laisser passer les assets statiques et les routes API
   if (isStaticAsset(pathname) || isApiRoute(pathname)) {
     return NextResponse.next();
+  }
+
+  // ── Custom domain routing ──
+  // Si la requête arrive via un domaine custom (pas notre host principal),
+  // on réécrit vers /formations/boutique/[slug] correspondant à ce domaine.
+  const host = req.headers.get("host") ?? "";
+  if (host && !isPrimaryHost(host) && !pathname.startsWith("/formations/boutique/")) {
+    const slug = await resolveCustomDomain(host.toLowerCase().split(":")[0], req);
+    if (slug) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/formations/boutique/${slug}`;
+      return NextResponse.rewrite(url);
+    }
   }
 
   // Route admin-login secrete — laisser passer (la verification du token se fait cote client+API)

@@ -142,6 +142,15 @@ function timeAgo(dateStr: string) {
   return `${d}J`;
 }
 
+type PendingCountsData = {
+  kyc: number;
+  signalements: number;
+  disputes: number;
+  refunds: number;
+  failedOrders24h: number;
+  successOrders24h: number;
+};
+
 export default function AdminDashboardPage() {
   const qc = useQueryClient();
 
@@ -150,6 +159,70 @@ export default function AdminDashboardPage() {
     queryFn: () => fetch("/api/formations/admin/dashboard").then((r) => r.json()),
     staleTime: 30_000,
   });
+
+  // Live pending counts — used for real platform-health metric (no hardcoded value)
+  const { data: pendingRes } = useQuery<{ data: PendingCountsData }>({
+    queryKey: ["admin-pending-counts"],
+    queryFn: () => fetch("/api/formations/admin/pending-counts").then((r) => r.json()),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+
+  /**
+   * Real platform-health calculation (replaces hardcoded 99.98%).
+   * Formula: 100% - (failed orders / total orders) over the last 24h.
+   * Returns null when there's no traffic — caller renders "—" + tooltip.
+   */
+  const health = (() => {
+    const counts = pendingRes?.data;
+    if (!counts) return { value: null as number | null, tone: "neutral" as const };
+    const total = counts.successOrders24h + counts.failedOrders24h;
+    if (total === 0) {
+      return { value: null as number | null, tone: "neutral" as const };
+    }
+    const ratio = counts.successOrders24h / total;
+    const pct = Math.max(0, Math.min(100, ratio * 100));
+    const tone = pct >= 99 ? "good" : pct >= 95 ? "warn" : "bad";
+    return { value: pct, tone };
+  })();
+
+  // CSV export — uses already-loaded recent transactions / pending items.
+  const handleExportCSV = () => {
+    const rows = response?.data?.recentTransactions ?? [];
+    if (rows.length === 0) {
+      // Nothing to export — bail silently to avoid empty downloads
+      return;
+    }
+    const header = ["Date", "Type", "Item", "Buyer", "Montant (FCFA)"];
+    const escape = (v: string | number) => {
+      const s = String(v).replace(/"/g, '""');
+      return /[",\n;]/.test(s) ? `"${s}"` : s;
+    };
+    const csvLines = [
+      header.join(","),
+      ...rows.map((tx) =>
+        [
+          new Date(tx.createdAt).toISOString(),
+          tx.type === "formation" ? "Formation" : "Produit",
+          tx.product,
+          tx.user,
+          Math.round(tx.amount),
+        ]
+          .map(escape)
+          .join(","),
+      ),
+    ];
+    // BOM for Excel UTF-8 compatibility
+    const blob = new Blob(["﻿" + csvLines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `freelancehigh-admin-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   type ChartsData = {
     revenueSeries: { date: string; formations: number; products: number; mentors: number; total: number }[];
@@ -193,7 +266,18 @@ export default function AdminDashboardPage() {
               Centre de Contrôle Plateforme
             </h1>
           </div>
-          <WipeMenu />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              disabled={isLoading || (response?.data?.recentTransactions ?? []).length === 0}
+              className="px-3 py-2.5 bg-white border border-zinc-200 text-zinc-900 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-50 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Exporter les transactions récentes au format CSV"
+            >
+              <span className="material-symbols-outlined text-[14px]">download</span>
+              Exporter CSV
+            </button>
+            <WipeMenu />
+          </div>
         </header>
 
         {/* High-Level Stats (Bento) */}
@@ -250,18 +334,55 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-[#22c55e] p-8 flex flex-col justify-between text-[#004b1e]">
-            <div>
-              <p className="font-sans text-[10px] uppercase tracking-widest font-bold opacity-80 mb-4">
-                Santé plateforme
-              </p>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter tabular-nums">99.98%</h2>
-            </div>
-            <div className="mt-8 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">check_circle</span>
-              <span className="text-[10px] uppercase tracking-wider font-bold">Nominal</span>
-            </div>
-          </div>
+          {(() => {
+            const healthBg =
+              health.tone === "good"
+                ? "bg-[#22c55e] text-[#004b1e]"
+                : health.tone === "warn"
+                ? "bg-amber-400 text-amber-950"
+                : health.tone === "bad"
+                ? "bg-red-500 text-red-50"
+                : "bg-zinc-200 text-zinc-700";
+            const healthIcon =
+              health.tone === "good"
+                ? "check_circle"
+                : health.tone === "warn"
+                ? "warning"
+                : health.tone === "bad"
+                ? "error"
+                : "monitoring";
+            const healthLabel =
+              health.tone === "good"
+                ? "Nominal"
+                : health.tone === "warn"
+                ? "Dégradé"
+                : health.tone === "bad"
+                ? "Critique"
+                : "Aucune donnée 24h";
+            return (
+              <div className={`${healthBg} p-8 flex flex-col justify-between`}>
+                <div>
+                  <p className="font-sans text-[10px] uppercase tracking-widest font-bold opacity-80 mb-4">
+                    Santé plateforme
+                  </p>
+                  <h2
+                    className="text-3xl md:text-4xl font-extrabold tracking-tighter tabular-nums"
+                    title={
+                      health.value === null
+                        ? "Aucune commande sur les 24 dernières heures — métrique non calculable."
+                        : `Calcul basé sur ${pendingRes?.data?.successOrders24h ?? 0} commandes réussies vs ${pendingRes?.data?.failedOrders24h ?? 0} remboursées (24h).`
+                    }
+                  >
+                    {health.value === null ? "—" : `${health.value.toFixed(2)}%`}
+                  </h2>
+                </div>
+                <div className="mt-8 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">{healthIcon}</span>
+                  <span className="text-[10px] uppercase tracking-wider font-bold">{healthLabel}</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* ── Analytics live (30 derniers jours) ─────────────────────────────── */}

@@ -38,7 +38,8 @@ interface Workflow {
   triggerType: string;
   status: "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED";
   actions: WorkflowAction[];
-  productId?: string | null;
+  productId?: string | null;     // legacy (single)
+  productIds?: string[] | null;  // new (multi)
 }
 
 // ─── Trigger options ──────────────────────────────────────────────────────────
@@ -105,116 +106,169 @@ const ACTION_OPTIONS: Array<{
   },
 ];
 
-// ─── Product search component ─────────────────────────────────────────────────
-function ProductSearch({
+// ─── Product multi-select component ──────────────────────────────────────────
+// Dropdown: lists ALL vendor products (formations + digital) with checkboxes.
+// Supports legacy single-value (string) and new array (string[]) props.
+function ProductMultiSelect({
   value,
   onChange,
 }: {
-  value: string | null | undefined;
-  onChange: (productId: string | null) => void;
+  value: string[] | string | null | undefined;
+  onChange: (productIds: string[]) => void;
 }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("");
+
+  // Normalize value to always be string[]
+  const selectedIds: string[] = Array.isArray(value) ? value : value ? [value] : [];
 
   useEffect(() => {
-    if (!value) return setSelected(null);
-    if (value && !selected) {
-      fetch(`/api/formations/vendeur/formations?ids=${value}`)
-        .then((r) => r.json())
-        .then((j) => {
-          const found = j.data?.find((p: Product) => p.id === value);
-          if (found) setSelected(found);
-        })
-        .catch(() => null);
-    }
-  }, [value, selected]);
-
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
+    let cancelled = false;
     setLoading(true);
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/formations/vendeur/formations?search=${encodeURIComponent(query)}`);
-        const json = await res.json();
-        setResults(json.data ?? []);
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-    return () => clearTimeout(t);
-  }, [query]);
+    fetch("/api/formations/vendeur/formations")
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        // Endpoint returns { data: { formations: [...], digitalProducts: [...] } }
+        const items: Product[] = [
+          ...((j.data?.formations ?? []) as Product[]).map((f) => ({ ...f, kind: "formation" as const })),
+          ...((j.data?.digitalProducts ?? []) as Product[]).map((p) => ({ ...p, kind: "product" as const })),
+        ];
+        // Fallback : if API returns flat array (old format)
+        if (items.length === 0 && Array.isArray(j.data)) {
+          setAllProducts(j.data);
+        } else {
+          setAllProducts(items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAllProducts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const selectedProducts = allProducts.filter((p) => selectedIds.includes(p.id));
+  const filtered = filter.trim()
+    ? allProducts.filter((p) => p.title.toLowerCase().includes(filter.toLowerCase()))
+    : allProducts;
+
+  function toggle(id: string) {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter((x) => x !== id)
+      : [...selectedIds, id];
+    onChange(next);
+  }
 
   return (
     <div className="relative">
-      {selected ? (
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined text-[18px]" style={{ color: BRAND }}>
-              inventory_2
-            </span>
-            <span className="text-sm font-medium text-gray-900 truncate">{selected.title}</span>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-left hover:border-[#006e2f]/40 transition-colors"
+      >
+        <span className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="material-symbols-outlined text-[18px] text-gray-400">inventory_2</span>
+          <span className="truncate text-gray-900">
+            {selectedIds.length === 0
+              ? "Tous les produits (aucun filtre)"
+              : selectedIds.length === 1
+              ? (selectedProducts[0]?.title ?? "1 produit sélectionné")
+              : `${selectedIds.length} produits sélectionnés`}
+          </span>
+        </span>
+        <span className={`material-symbols-outlined text-[18px] text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}>
+          expand_more
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-20 overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[16px] text-gray-400">search</span>
+              <input
+                type="text"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filtrer mes produits…"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#006e2f]"
+                autoFocus
+              />
+            </div>
           </div>
-          <button
-            onClick={() => {
-              setSelected(null);
-              onChange(null);
-            }}
-            className="text-gray-400 hover:text-red-500"
-          >
-            <span className="material-symbols-outlined text-[16px]">close</span>
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[18px] text-gray-400">
-              search
-            </span>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setOpen(true);
-              }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setTimeout(() => setOpen(false), 200)}
-              placeholder="Rechercher une formation ou un produit…"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#006e2f] focus:ring-2 focus:ring-[#006e2f]/10"
-            />
-          </div>
-          {open && query.trim() && (
-            <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-20 max-h-64 overflow-y-auto">
-              {loading ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-500">Recherche…</div>
-              ) : results.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-500">Aucun résultat</div>
-              ) : (
-                results.map((p) => (
+
+          <div className="max-h-64 overflow-y-auto">
+            {loading ? (
+              <div className="px-4 py-6 text-center text-sm text-gray-500">Chargement…</div>
+            ) : filtered.length === 0 ? (
+              <div className="px-4 py-6 text-center text-sm text-gray-500">
+                {allProducts.length === 0 ? "Vous n'avez pas encore publié de produit." : "Aucun résultat."}
+              </div>
+            ) : (
+              filtered.map((p) => {
+                const checked = selectedIds.includes(p.id);
+                return (
                   <button
                     key={p.id}
-                    onClick={() => {
-                      setSelected(p);
-                      onChange(p.id);
-                      setQuery("");
-                      setOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 text-left"
+                    type="button"
+                    onClick={() => toggle(p.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${checked ? "bg-[#006e2f]/5" : "hover:bg-gray-50"}`}
                   >
-                    <span className="material-symbols-outlined text-[16px] text-gray-400">inventory_2</span>
-                    <span className="text-sm text-gray-900 truncate">{p.title}</span>
+                    <span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${checked ? "bg-[#006e2f] text-white" : "border-2 border-gray-300"}`}>
+                      {checked && <span className="material-symbols-outlined text-[12px]">check</span>}
+                    </span>
+                    <span className="material-symbols-outlined text-[16px] text-gray-400 flex-shrink-0">
+                      {"kind" in p && p.kind === "formation" ? "play_circle" : "inventory_2"}
+                    </span>
+                    <span className="text-sm text-gray-900 truncate flex-1">{p.title}</span>
                   </button>
-                ))
-              )}
-            </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="p-2 border-t border-gray-100 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-xs text-gray-500 hover:text-red-600"
+            >
+              Tout désélectionner
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-xs font-semibold text-[#006e2f] hover:text-[#005a26]"
+            >
+              Valider
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Badges des produits sélectionnés (quand fermé) */}
+      {!open && selectedProducts.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {selectedProducts.slice(0, 5).map((p) => (
+            <span
+              key={p.id}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#006e2f]/10 text-[#006e2f]"
+            >
+              {p.title.slice(0, 28)}{p.title.length > 28 ? "…" : ""}
+              <button onClick={() => toggle(p.id)} className="hover:text-red-600">
+                <span className="material-symbols-outlined text-[12px]">close</span>
+              </button>
+            </span>
+          ))}
+          {selectedProducts.length > 5 && (
+            <span className="text-[11px] text-gray-500 px-2 py-0.5">+{selectedProducts.length - 5} autres</span>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -500,11 +554,11 @@ export default function WorkflowEditorClient({ id }: { id: string }) {
               </select>
               <div className="mt-3">
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
-                  Produit relatif (optionnel)
+                  Produits concernés (optionnel — laissez vide pour tous)
                 </label>
-                <ProductSearch
-                  value={workflow.productId ?? null}
-                  onChange={(pid) => updateLocal({ productId: pid })}
+                <ProductMultiSelect
+                  value={workflow.productIds ?? (workflow.productId ? [workflow.productId] : [])}
+                  onChange={(ids) => updateLocal({ productIds: ids, productId: ids[0] ?? null })}
                 />
               </div>
             </div>
