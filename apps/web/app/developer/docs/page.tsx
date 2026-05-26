@@ -417,7 +417,7 @@ export default function DeveloperDocsPage() {
             {
               name: "PHP",
               version: "v1.0.8",
-              bg: "from-indigo-500 to-purple-600",
+              bg: "from-fh-500 to-fh-700",
               icon: "php",
               install: "composer require novakou/novakou-php",
               snippet: `$nk = new Novakou\\Client($apiKey);`,

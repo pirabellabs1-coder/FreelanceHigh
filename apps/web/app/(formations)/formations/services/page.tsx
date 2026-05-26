@@ -29,8 +29,8 @@ const PRODUCT_TYPES = [
   },
   {
     icon: "dashboard_customize",
-    color: "#8b5cf6",
-    bg: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+    color: "#006e2f",
+    bg: "#006e2f",
     title: "Templates & Modèles",
     desc: "Modèles prêts à l'emploi : Notion, Figma, PSD, présentations, contrats, scripts marketing.",
     features: ["Économisez des heures", "100% personnalisable", "Compatible toutes plateformes", "Exemples réels"],
@@ -59,8 +59,8 @@ const PRODUCT_TYPES = [
   },
   {
     icon: "inventory_2",
-    color: "#7c3aed",
-    bg: "linear-gradient(135deg, #7c3aed, #ec4899)",
+    color: "#006e2f",
+    bg: "linear-gradient(135deg, #006e2f, #ec4899)",
     title: "Bundles & Packs",
     desc: "Plusieurs produits regroupés à prix réduit. La meilleure façon d'économiser sur un domaine.",
     features: ["Jusqu'à -40% de remise", "Plusieurs ressources", "Cohérence pédagogique", "Idéal débutants"],

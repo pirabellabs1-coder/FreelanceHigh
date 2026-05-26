@@ -78,7 +78,7 @@ function KycRequestDetails({ request }: { request: any }) {
       <div className="flex items-center gap-2">
         <span className={cn(
           "text-xs font-semibold px-2.5 py-1 rounded-full",
-          isAgency ? "bg-blue-500/10 text-blue-400" : "bg-purple-500/10 text-purple-400"
+          isAgency ? "bg-blue-500/10 text-blue-400" : "bg-fh-50 text-fh-700"
         )}>
           {isAgency ? "Agence" : "Individuel"}
         </span>

@@ -94,7 +94,7 @@ export default function AdminBoostsPage() {
           { label: "Actifs", value: (safeStats.activeBoosts ?? 0).toLocaleString(), icon: "play_circle", color: "text-emerald-400" },
           { label: "Revenus", value: format(safeStats.totalRevenue ?? 0), icon: "payments", color: "text-amber-400" },
           { label: "Vues generees", value: (safeStats.totalViews ?? 0).toLocaleString(), icon: "visibility", color: "text-blue-400" },
-          { label: "Clics generes", value: (safeStats.totalClicks ?? 0).toLocaleString(), icon: "ads_click", color: "text-purple-400" },
+          { label: "Clics generes", value: (safeStats.totalClicks ?? 0).toLocaleString(), icon: "ads_click", color: "text-fh-600" },
           { label: "Commandes", value: (safeStats.totalOrders ?? 0).toLocaleString(), icon: "shopping_cart", color: "text-pink-400" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
@@ -160,7 +160,7 @@ export default function AdminBoostsPage() {
                   <td className="py-3">
                     <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
                       b.tier === "ultime" || b.tier === "ULTIMATE" ? "text-amber-400 bg-amber-500/10" :
-                      b.tier === "premium" || b.tier === "PREMIUM" ? "text-purple-400 bg-purple-500/10" :
+                      b.tier === "premium" || b.tier === "PREMIUM" ? "text-fh-600 bg-fh-50" :
                       "text-blue-400 bg-blue-500/10"
                     )}>
                       {b.tier}

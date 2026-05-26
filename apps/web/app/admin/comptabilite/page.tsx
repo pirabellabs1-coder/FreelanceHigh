@@ -49,7 +49,7 @@ const TYPE_LABELS: Record<string, { label: string; color: string; icon: string }
   abonnement: { label: "Abonnement", color: "bg-blue-500/10 text-blue-400", icon: "card_membership" },
   boost: { label: "Boost", color: "bg-amber-500/10 text-amber-400", icon: "rocket_launch" },
   remboursement: { label: "Remboursement", color: "bg-red-500/10 text-red-400", icon: "undo" },
-  commission: { label: "Commission", color: "bg-purple-500/10 text-purple-400", icon: "payments" },
+  commission: { label: "Commission", color: "bg-fh-50 text-fh-700", icon: "payments" },
 };
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {

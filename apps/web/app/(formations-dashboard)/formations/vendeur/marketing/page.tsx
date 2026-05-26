@@ -146,8 +146,8 @@ export default function MarketingPage() {
             value: d?.summary.totalConversions ?? 0,
             sub: "Tous outils confondus",
             icon: "conversion_path",
-            color: "text-purple-600",
-            bg: "bg-purple-50",
+            color: "text-fh-600",
+            bg: "bg-fh-50",
           },
         ].map((kpi, i) => (
           <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -203,8 +203,8 @@ export default function MarketingPage() {
           <ToolCard
             href="/formations/vendeur/marketing/funnels"
             icon="account_tree"
-            iconBg="bg-violet-50"
-            iconColor="text-violet-500"
+            iconBg="bg-fh-50"
+            iconColor="text-fh-600"
             title="Funnels de Vente"
             description="Créez des tunnels de vente avec upsells et downsells pour maximiser la valeur de chaque client."
             stat1={String(d?.funnels.active ?? 0)}
@@ -264,7 +264,7 @@ export default function MarketingPage() {
         </div>
         <Link
           href="/formations/vendeur/marketing/affiliation"
-          className="group flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-5 hover:shadow-md hover:border-indigo-200 transition-all duration-200"
+          className="group flex flex-col sm:flex-row items-start sm:items-center gap-5 bg-fh-50 border border-fh-200 rounded-2xl p-5 hover:shadow-md hover:border-fh-600/30 transition-all duration-200"
         >
           <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-[24px] text-indigo-600" style={{ fontVariationSettings: "'FILL' 1" }}>diversity_3</span>

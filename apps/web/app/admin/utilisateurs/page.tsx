@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const ROLE_MAP: Record<string, { label: string; cls: string }> = {
   freelance: { label: "Freelance", cls: "bg-primary/10 text-primary" },
   client: { label: "Client", cls: "bg-blue-500/20 text-blue-400" },
-  agence: { label: "Agence", cls: "bg-purple-500/20 text-purple-400" },
+  agence: { label: "Agence", cls: "bg-fh-50 text-fh-700" },
   admin: { label: "Admin", cls: "bg-red-500/20 text-red-400" },
 };
 

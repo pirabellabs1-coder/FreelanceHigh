@@ -12,7 +12,7 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   en_attente: { label: "En attente", cls: "bg-amber-500/20 text-amber-400" },
   refuse: { label: "Refusé", cls: "bg-red-500/20 text-red-400" },
   pause: { label: "En pause", cls: "bg-slate-500/20 text-slate-400" },
-  vedette: { label: "En vedette", cls: "bg-purple-500/20 text-purple-400" },
+  vedette: { label: "En vedette", cls: "bg-fh-50 text-fh-700" },
   brouillon: { label: "Brouillon", cls: "bg-slate-500/20 text-slate-400" },
 };
 
@@ -223,7 +223,7 @@ export default function AdminServices() {
           [
             { label: "En attente", value: stats.en_attente, color: "text-amber-400", icon: "hourglass_top" },
             { label: "Actifs", value: stats.actif, color: "text-emerald-400", icon: "check_circle" },
-            { label: "En vedette", value: stats.vedette, color: "text-purple-400", icon: "star" },
+            { label: "En vedette", value: stats.vedette, color: "text-fh-600", icon: "star" },
             { label: "En pause", value: stats.pause, color: "text-slate-400", icon: "pause_circle" },
             { label: "Refusés", value: stats.refuse, color: "text-red-400", icon: "cancel" },
           ].map(s => (
@@ -299,7 +299,7 @@ export default function AdminServices() {
                       )}
                       {statusLower === "actif" && (
                         <>
-                          <button onClick={() => handleFeature(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 disabled:opacity-50">
+                          <button onClick={() => handleFeature(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-fh-600 text-white text-xs font-bold rounded-lg hover:bg-fh-700 transition-colors flex items-center gap-1 disabled:opacity-50">
                             <span className="material-symbols-outlined text-sm">star</span>{isThisLoading ? "..." : "Vedette"}
                           </button>
                           <button onClick={() => handlePause(s.id)} disabled={isThisLoading} className="px-3 py-1.5 bg-border-dark text-slate-300 text-xs font-bold rounded-lg hover:bg-border-dark/80 transition-colors disabled:opacity-50">{isThisLoading ? "..." : "Pause"}</button>

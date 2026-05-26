@@ -41,7 +41,7 @@ export default function DepensesPage() {
   const totalForBreakdown = byType.formation + byType.product + byType.mentor || 1;
   const breakdownData = [
     { label: "Formations vidéo", type: "formation", count: 0, fcfa: byType.formation, color: "bg-blue-500",   pct: Math.round((byType.formation / totalForBreakdown) * 100) },
-    { label: "Coaching mentor",  type: "mentor",    count: 0, fcfa: byType.mentor,    color: "bg-purple-500", pct: Math.round((byType.mentor / totalForBreakdown) * 100) },
+    { label: "Coaching mentor",  type: "mentor",    count: 0, fcfa: byType.mentor,    color: "bg-fh-600", pct: Math.round((byType.mentor / totalForBreakdown) * 100) },
     { label: "Produits",         type: "product",   count: 0, fcfa: byType.product,   color: "bg-amber-500",  pct: Math.round((byType.product / totalForBreakdown) * 100) },
   ].filter((b) => b.fcfa > 0);
 
@@ -64,7 +64,7 @@ export default function DepensesPage() {
         ) : [
           { icon: "payments",     iconColor: "text-[#006e2f]",   bg: "bg-[#006e2f]/10", label: "Total dépensé",     value: formatFcfa(totalXof),              sub: `≈ ${toEur(totalXof)} €` },
           { icon: "shopping_bag", iconColor: "text-blue-600",    bg: "bg-blue-50",      label: "Achats effectués",  value: String(totalPurchases),            sub: "produits & formations" },
-          { icon: "play_circle",  iconColor: "text-purple-600",  bg: "bg-purple-50",    label: "Formations",        value: String(byType.formation > 0 ? 1 : 0), sub: "achetées" },
+          { icon: "play_circle",  iconColor: "text-fh-600",  bg: "bg-fh-50",    label: "Formations",        value: String(byType.formation > 0 ? 1 : 0), sub: "achetées" },
           { icon: "trending_up",  iconColor: "text-amber-600",   bg: "bg-amber-50",     label: "Mois le plus actif", value: bestMonth.month.charAt(0).toUpperCase() + bestMonth.month.slice(1), sub: formatFcfa(bestMonth.totalXof) },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -165,7 +165,7 @@ export default function DepensesPage() {
             {[
               { type: "formation", label: "Formations vidéo", icon: "play_circle", color: "text-blue-600", bg: "bg-blue-50", value: byType.formation },
               { type: "product",   label: "Produits numériques", icon: "inventory_2", color: "text-amber-600", bg: "bg-amber-50", value: byType.product },
-              { type: "mentor",    label: "Sessions mentor",  icon: "support_agent", color: "text-purple-600", bg: "bg-purple-50", value: byType.mentor },
+              { type: "mentor",    label: "Sessions mentor",  icon: "support_agent", color: "text-fh-700", bg: "bg-fh-50", value: byType.mentor },
             ]
             .filter((row) => filterType === "tous" || row.type === filterType)
             .map((row) => (

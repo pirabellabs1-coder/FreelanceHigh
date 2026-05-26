@@ -119,7 +119,7 @@ const SERVICES: ServiceSauvegarde[] = [
     note: 4.8,
     avis: 29,
     prix: 150,
-    couleurGradient: "from-purple-900/80 via-pink-900/60 to-background-dark/90",
+    couleurGradient: "from-fh-900/80 via-pink-900/60 to-background-dark/90",
     liste: "Rédaction Content",
   },
 ];

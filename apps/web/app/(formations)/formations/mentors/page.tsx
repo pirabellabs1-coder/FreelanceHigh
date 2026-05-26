@@ -52,7 +52,7 @@ function initialsOf(name: string | null): string {
 function gradientFor(id: string): string {
   const gradients = [
     "from-blue-500 to-blue-700",
-    "from-purple-500 to-pink-600",
+    "from-fh-500 to-pink-600",
     "from-emerald-500 to-teal-700",
     "from-amber-500 to-orange-600",
     "from-indigo-500 to-indigo-700",

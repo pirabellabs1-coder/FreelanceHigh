@@ -616,7 +616,7 @@ export default function ClientExplorer() {
                         <h3 className="font-bold text-white">{a.name}</h3>
                         {a.badges.includes("verified") && <span className="material-symbols-outlined text-blue-400 text-base">verified</span>}
                         {a.badges.includes("premium") && (
-                          <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full font-bold">Premium</span>
+                          <span className="text-[10px] bg-fh-50 text-fh-700 px-2 py-0.5 rounded-full font-bold">Premium</span>
                         )}
                       </div>
                       <p className="text-sm text-slate-400 mt-0.5">{a.serviceCount} service(s)</p>

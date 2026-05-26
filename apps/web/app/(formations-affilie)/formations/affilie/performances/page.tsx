@@ -21,7 +21,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 }
 
 const GRADIENTS: [string, string][] = [
-  ["#006e2f","#22c55e"], ["#1e3a5f","#2563eb"], ["#7c3aed","#a855f7"],
+  ["#006e2f","#22c55e"], ["#1e3a5f","#2563eb"], ["#006e2f","#006e2f"],
   ["#92400e","#d97706"], ["#be185d","#db2777"], ["#0e7490","#0891b2"],
   ["#065f46","#047857"], ["#0f3460","#16213e"],
 ];
@@ -74,8 +74,8 @@ export default function PerformancesPage() {
             label: "Conversions",
             value: totals.conversions.toLocaleString("fr-FR"),
             icon: "shopping_bag",
-            color: "text-purple-400",
-            bg: "bg-purple-500/10",
+            color: "text-fh-600",
+            bg: "bg-fh-50",
             sub: "achats via vos liens",
           },
           {

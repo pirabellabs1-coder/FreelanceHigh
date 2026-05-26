@@ -17,9 +17,9 @@ const TYPE_ICON_MAP: Record<string, { icon: string; color: string }> = {
   agency: { icon: "business", color: "text-cyan-400 bg-cyan-500/10" },
   course: { icon: "school", color: "text-indigo-400 bg-indigo-500/10" },
   product: { icon: "inventory_2", color: "text-pink-400 bg-pink-500/10" },
-  service: { icon: "design_services", color: "text-violet-400 bg-violet-500/10" },
+  service: { icon: "design_services", color: "text-fh-600 bg-fh-50" },
   boost: { icon: "rocket_launch", color: "text-rose-400 bg-rose-500/10" },
-  kyc: { icon: "verified", color: "text-purple-400 bg-purple-500/10" },
+  kyc: { icon: "verified", color: "text-fh-600 bg-fh-50" },
 };
 
 const PREF_SECTIONS = [

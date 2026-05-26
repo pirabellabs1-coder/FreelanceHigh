@@ -40,7 +40,7 @@ function toEur(fcfa: number) {
 }
 
 const GRADIENTS = [
-  "from-violet-400 to-purple-600",
+  "from-fh-400 to-fh-600",
   "from-blue-400 to-sky-600",
   "from-pink-400 to-rose-500",
   "from-amber-400 to-orange-500",

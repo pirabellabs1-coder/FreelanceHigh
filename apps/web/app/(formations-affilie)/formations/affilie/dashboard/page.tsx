@@ -108,8 +108,8 @@ export default function AffilieDashboardPage() {
             value: (profile?.totalConversions ?? 0).toLocaleString("fr-FR"),
             sub: `${qs.conversionRatePct.toFixed(1)}% taux`,
             badge: `moy. ${formatFcfa(qs.avgPerSaleXof)}`,
-            color: "text-purple-400",
-            bg: "bg-purple-500/10",
+            color: "text-fh-600",
+            bg: "bg-fh-50",
           },
           {
             icon: "account_balance_wallet",
@@ -228,7 +228,7 @@ export default function AffilieDashboardPage() {
               {topPages.slice(0, 5).map((p, i) => {
                 const name = p.page?.split("/").filter(Boolean).pop() ?? p.page ?? "Formation";
                 const gradients: [string,string][] = [
-                  ["#006e2f","#22c55e"], ["#1e3a5f","#2563eb"], ["#7c3aed","#a855f7"],
+                  ["#006e2f","#22c55e"], ["#1e3a5f","#2563eb"], ["#006e2f","#006e2f"],
                   ["#92400e","#d97706"], ["#be185d","#db2777"],
                 ];
                 const [gFrom, gTo] = gradients[i % gradients.length];

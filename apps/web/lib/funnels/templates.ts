@@ -332,8 +332,8 @@ const saasTech: LandingTemplate = {
   description: "Pour SaaS, plateformes ou outils tech. Esthétique épurée avec screenshot, comparaison concurrentielle, grille d'intégrations. Inspire confiance et innovation.",
   vibe: "modern",
   icon: "rocket_launch",
-  palette: ["#4f46e5", "#a78bfa", "#f5f3ff"],
-  preview: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a78bfa 100%)",
+  palette: ["#005425", "#9fcdaf", "#f5f3ff"],
+  preview: "linear-gradient(135deg, #005425 0%, #006e2f 50%, #9fcdaf 100%)",
   uniqueElements: ["Logo bar de clients", "Comparaison \"vs concurrence\"", "Grille de 6 intégrations"],
   build: () => [
     // ─── HERO SCREENSHOT ─────────────────────────────────────────────────────
@@ -346,7 +346,7 @@ const saasTech: LandingTemplate = {
         ctaText: "Essayer gratuitement (14 jours)",
         ctaLink: "",
         imageUrl: img("saas-dashboard-v2", 1200, 800),
-        bgColor: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+        bgColor: "linear-gradient(135deg, #005425, #006e2f)",
         textColor: "#ffffff",
       },
     },
@@ -393,8 +393,8 @@ const saasTech: LandingTemplate = {
       data: {
         bgColor: "#f5f3ff", textColor: "", paddingY: 72, paddingX: 16, maxWidth: 1024, bgImage: "",
         blocks: [
-          { id: nid(), type: "text", data: { content: "POURQUOI NOUS CHOISIR", align: "center", size: 12, color: "#4f46e5" } },
-          { id: nid(), type: "heading", data: { content: "Pourquoi nos clients quittent les autres outils", level: 2, align: "center", color: "#4f46e5" } },
+          { id: nid(), type: "text", data: { content: "POURQUOI NOUS CHOISIR", align: "center", size: 12, color: "#005425" } },
+          { id: nid(), type: "heading", data: { content: "Pourquoi nos clients quittent les autres outils", level: 2, align: "center", color: "#005425" } },
           { id: nid(), type: "spacer", data: { height: 32 } },
           { id: nid(), type: "row",
             data: {
@@ -412,7 +412,7 @@ const saasTech: LandingTemplate = {
                 ] },
                 { blocks: [
                   { id: nid(), type: "content-box",
-                    data: { bgColor: "linear-gradient(135deg, #4f46e5, #7c3aed)", borderColor: "#4f46e5", borderWidth: 2, radius: 16, padding: 24, shadow: "lg",
+                    data: { bgColor: "linear-gradient(135deg, #005425, #006e2f)", borderColor: "#005425", borderWidth: 2, radius: 16, padding: 24, shadow: "lg",
                       blocks: [
                         { id: nid(), type: "text", data: { content: "✨  NOTRE OUTIL", align: "center", size: 11, color: "#fef3c7" } },
                         { id: nid(), type: "list", data: { items: ["Setup en 5 minutes", "Tarif fixe illimité", "Chat live + email 2h", "50+ intégrations natives", "API REST publique"], icon: "check_circle", color: "#fbbf24" } },
@@ -432,16 +432,16 @@ const saasTech: LandingTemplate = {
       data: {
         bgColor: "#ffffff", textColor: "", paddingY: 64, paddingX: 16, maxWidth: 1152, bgImage: "",
         blocks: [
-          { id: nid(), type: "heading", data: { content: "S'intègre avec vos outils favoris", level: 2, align: "center", color: "#4f46e5" } },
+          { id: nid(), type: "heading", data: { content: "S'intègre avec vos outils favoris", level: 2, align: "center", color: "#005425" } },
           { id: nid(), type: "text", data: { content: "Connectez en 1 clic. 50+ intégrations natives, plus 5 000 via Zapier.", align: "center", size: 16, color: "#6b7280" } },
           { id: nid(), type: "spacer", data: { height: 32 } },
           { id: nid(), type: "row",
             data: {
               gap: 16, padding: 0, bgColor: "",
               columns: [
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "chat", title: "Slack", desc: "Notifications & commandes en DM", align: "center", color: "#4f46e5" } }] },
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "edit_note", title: "Notion", desc: "Sync bidirectionnelle de pages", align: "center", color: "#4f46e5" } }] },
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "mail", title: "Gmail", desc: "Création auto à partir d'emails", align: "center", color: "#4f46e5" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "chat", title: "Slack", desc: "Notifications & commandes en DM", align: "center", color: "#005425" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "edit_note", title: "Notion", desc: "Sync bidirectionnelle de pages", align: "center", color: "#005425" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "mail", title: "Gmail", desc: "Création auto à partir d'emails", align: "center", color: "#005425" } }] },
               ],
             },
           },
@@ -450,9 +450,9 @@ const saasTech: LandingTemplate = {
             data: {
               gap: 16, padding: 0, bgColor: "",
               columns: [
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "calendar_month", title: "Google Calendar", desc: "Synchro événements & rappels", align: "center", color: "#4f46e5" } }] },
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "code", title: "Github", desc: "Issues, PR, deployments", align: "center", color: "#4f46e5" } }] },
-                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "bolt", title: "Zapier", desc: "5 000+ apps connectées", align: "center", color: "#4f46e5" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "calendar_month", title: "Google Calendar", desc: "Synchro événements & rappels", align: "center", color: "#005425" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "code", title: "Github", desc: "Issues, PR, deployments", align: "center", color: "#005425" } }] },
+                { blocks: [{ id: nid(), type: "icon-box", data: { icon: "bolt", title: "Zapier", desc: "5 000+ apps connectées", align: "center", color: "#005425" } }] },
               ],
             },
           },
@@ -480,7 +480,7 @@ const saasTech: LandingTemplate = {
         ctaText: "Commencer l'essai gratuit (14j)", ctaLink: "",
         badgeText: "", badgeColor: "",
         guaranteeText: "14 jours d'essai gratuit · Aucune carte requise",
-        accentColor: "#4f46e5",
+        accentColor: "#005425",
       },
     },
   ],
@@ -718,8 +718,8 @@ const webinarLive: LandingTemplate = {
   description: "Pour webinars, masterclass live, ateliers gratuits. Date+heure visibles, countdown, AGENDA détaillé avec horaires, profil intervenant. Conversion maximale sur l'inscription.",
   vibe: "event",
   icon: "videocam",
-  palette: ["#7c3aed", "#06b6d4", "#0f172a"],
-  preview: "linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)",
+  palette: ["#006e2f", "#06b6d4", "#0f172a"],
+  preview: "linear-gradient(135deg, #006e2f 0%, #06b6d4 100%)",
   uniqueElements: ["Date+heure visibles dans le hero", "AGENDA détaillé avec horaires", "Speaker bio + crédentiels"],
   build: () => [
     // ─── HERO ÉVÉNEMENT ──────────────────────────────────────────────────────
@@ -732,7 +732,7 @@ const webinarLive: LandingTemplate = {
         ctaText: "Réserver ma place gratuitement",
         ctaLink: "",
         imageUrl: img("webinar-event-v2", 1200, 800),
-        bgColor: "linear-gradient(135deg, #7c3aed, #06b6d4)",
+        bgColor: "linear-gradient(135deg, #006e2f, #06b6d4)",
         textColor: "#ffffff",
       },
     },
@@ -770,7 +770,7 @@ const webinarLive: LandingTemplate = {
       data: {
         bgColor: "#ffffff", textColor: "", paddingY: 72, paddingX: 16, maxWidth: 1024, bgImage: "",
         blocks: [
-          { id: nid(), type: "text", data: { content: "AGENDA DU LIVE", align: "center", size: 12, color: "#7c3aed" } },
+          { id: nid(), type: "text", data: { content: "AGENDA DU LIVE", align: "center", size: 12, color: "#006e2f" } },
           { id: nid(), type: "heading", data: { content: "90 minutes ultra-condensées", level: 2, align: "center", color: "#0f172a" } },
           { id: nid(), type: "spacer", data: { height: 32 } },
           { id: nid(), type: "content-box",
@@ -778,7 +778,7 @@ const webinarLive: LandingTemplate = {
               blocks: [
                 { id: nid(), type: "row", data: { gap: 24, padding: 0, bgColor: "",
                   columns: [
-                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:00", level: 3, align: "left", color: "#7c3aed" } }] },
+                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:00", level: 3, align: "left", color: "#006e2f" } }] },
                     { blocks: [
                       { id: nid(), type: "heading", data: { content: "Ouverture & contexte", level: 3, align: "left", color: "#0f172a" } },
                       { id: nid(), type: "text", data: { content: "Pourquoi 2026 est l'année charnière. Les 3 erreurs à éviter absolument.", align: "left", size: 14, color: "#64748b" } },
@@ -794,7 +794,7 @@ const webinarLive: LandingTemplate = {
               blocks: [
                 { id: nid(), type: "row", data: { gap: 24, padding: 0, bgColor: "",
                   columns: [
-                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:15", level: 3, align: "left", color: "#7c3aed" } }] },
+                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:15", level: 3, align: "left", color: "#006e2f" } }] },
                     { blocks: [
                       { id: nid(), type: "heading", data: { content: "Levier #1 — Le mindset 10x", level: 3, align: "left", color: "#0f172a" } },
                       { id: nid(), type: "text", data: { content: "La transformation mentale qui multiplie les résultats avant de toucher au business.", align: "left", size: 14, color: "#64748b" } },
@@ -810,7 +810,7 @@ const webinarLive: LandingTemplate = {
               blocks: [
                 { id: nid(), type: "row", data: { gap: 24, padding: 0, bgColor: "",
                   columns: [
-                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:35", level: 3, align: "left", color: "#7c3aed" } }] },
+                    { blocks: [{ id: nid(), type: "heading", data: { content: "19:35", level: 3, align: "left", color: "#006e2f" } }] },
                     { blocks: [
                       { id: nid(), type: "heading", data: { content: "Levier #2 — L'offre irrésistible", level: 3, align: "left", color: "#0f172a" } },
                       { id: nid(), type: "text", data: { content: "Comment construire une offre qui se vend toute seule, sans pression ni manipulation.", align: "left", size: 14, color: "#64748b" } },
@@ -826,7 +826,7 @@ const webinarLive: LandingTemplate = {
               blocks: [
                 { id: nid(), type: "row", data: { gap: 24, padding: 0, bgColor: "",
                   columns: [
-                    { blocks: [{ id: nid(), type: "heading", data: { content: "20:00", level: 3, align: "left", color: "#7c3aed" } }] },
+                    { blocks: [{ id: nid(), type: "heading", data: { content: "20:00", level: 3, align: "left", color: "#006e2f" } }] },
                     { blocks: [
                       { id: nid(), type: "heading", data: { content: "Levier #3 — Le scaling intelligent", level: 3, align: "left", color: "#0f172a" } },
                       { id: nid(), type: "text", data: { content: "Les automations + délégations pour multiplier votre temps disponible sans perdre la qualité.", align: "left", size: 14, color: "#64748b" } },
@@ -838,7 +838,7 @@ const webinarLive: LandingTemplate = {
           },
           { id: nid(), type: "spacer", data: { height: 12 } },
           { id: nid(), type: "content-box",
-            data: { bgColor: "linear-gradient(135deg, #7c3aed, #06b6d4)", borderColor: "#7c3aed", borderWidth: 0, radius: 16, padding: 24, shadow: "lg",
+            data: { bgColor: "linear-gradient(135deg, #006e2f, #06b6d4)", borderColor: "#006e2f", borderWidth: 0, radius: 16, padding: 24, shadow: "lg",
               blocks: [
                 { id: nid(), type: "row", data: { gap: 24, padding: 0, bgColor: "",
                   columns: [

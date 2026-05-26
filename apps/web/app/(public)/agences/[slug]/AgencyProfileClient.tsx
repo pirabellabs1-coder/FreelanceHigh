@@ -100,7 +100,7 @@ interface AgencyData {
 const BADGE_CONFIG: Record<string, { labelKey: string; icon: string; color: string }> = {
   verified: { labelKey: "badge_verified", icon: "verified", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
   premium: { labelKey: "badge_premium", icon: "workspace_premium", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  top_agency: { labelKey: "badge_top_agency", icon: "diamond", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" },
+  top_agency: { labelKey: "badge_top_agency", icon: "diamond", color: "bg-fh-50 text-fh-700 border-fh-200" },
 };
 
 // ============================================================
@@ -114,7 +114,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Design UI/UX": "bg-pink-500/10 text-pink-600 dark:text-pink-400",
   "Design": "bg-pink-500/10 text-pink-600 dark:text-pink-400",
   "Backend & API": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "Mobile": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "Mobile": "bg-fh-50 text-fh-700 dark:text-fh-600",
   "E-commerce": "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   "Marketing Digital": "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
   "Marketing": "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
@@ -644,8 +644,8 @@ export default function AgencyProfileClient() {
                       <p className="text-2xl font-black text-slate-900 dark:text-white">{avgRating}/5</p>
                       <p className="text-xs text-slate-500">{t("average_rating")}</p>
                     </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-200 dark:border-purple-800/30 text-center">
-                      <span className="material-symbols-outlined text-2xl text-purple-600 dark:text-purple-400 mb-1">groups</span>
+                    <div className="bg-fh-50 dark:bg-fh-50/10 p-4 rounded-xl border border-fh-200 dark:border-fh-200/30 text-center">
+                      <span className="material-symbols-outlined text-2xl text-fh-700 dark:text-fh-600 mb-1">groups</span>
                       <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.teamSize}</p>
                       <p className="text-xs text-slate-500">{t("team_members")}</p>
                     </div>

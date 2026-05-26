@@ -175,7 +175,7 @@ export default function ActionTagModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-100 text-violet-600">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-fh-50 text-fh-600">
               <span className="material-symbols-outlined text-[20px]">label</span>
             </div>
             <div>
@@ -244,7 +244,7 @@ export default function ActionTagModal({
                   onClick={() => chooseAudience(opt.value)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#006e2f] hover:bg-[#006e2f]/5 text-left transition-all"
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-50 text-violet-600 flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-fh-50 text-fh-600 flex-shrink-0">
                     <span className="material-symbols-outlined text-[18px]">{opt.icon}</span>
                   </div>
                   <div className="flex-1 min-w-0">

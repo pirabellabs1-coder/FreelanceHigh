@@ -215,8 +215,8 @@ export default function ClientInvoices() {
       {/* Credits card */}
       <div className="bg-neutral-dark rounded-xl border border-border-dark p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-violet-400 text-2xl">account_balance_wallet</span>
+          <div className="w-10 h-10 rounded-lg bg-fh-50 flex items-center justify-center">
+            <span className="material-symbols-outlined text-fh-600 text-2xl">account_balance_wallet</span>
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Credits disponibles</p>
@@ -225,7 +225,7 @@ export default function ClientInvoices() {
         </div>
         <button
           onClick={() => addToast("info", "Rechargement de credits bientot disponible")}
-          className="px-4 py-2 bg-violet-500/10 text-violet-400 text-xs font-bold rounded-lg hover:bg-violet-500/20 transition-colors flex items-center gap-1.5"
+          className="px-4 py-2 bg-fh-50 text-fh-600 text-xs font-bold rounded-lg hover:bg-fh-100 transition-colors flex items-center gap-1.5"
         >
           <span className="material-symbols-outlined text-sm">add</span>
           Recharger

@@ -323,7 +323,7 @@ export default function InstructeurPublicPage() {
           <section className="mb-16">
             <div className="flex items-end justify-between mb-6">
               <div>
-                <span className="text-violet-600 text-xs uppercase tracking-[0.15em] font-bold">Produits</span>
+                <span className="text-fh-700 text-xs uppercase tracking-[0.15em] font-bold">Produits</span>
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight mt-1 text-[#191c1e]">Produits digitaux</h2>
               </div>
             </div>
@@ -332,16 +332,16 @@ export default function InstructeurPublicPage() {
                 <Link
                   key={p.id}
                   href={`/formations/produit/${p.slug}`}
-                  className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-violet-500/20 transition-all"
+                  className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:border-fh-600/20 transition-all"
                 >
-                  <div className="aspect-video bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
+                  <div className="aspect-video bg-fh-600 flex items-center justify-center relative overflow-hidden">
                     {p.banner ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.banner} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <span className="material-symbols-outlined text-white text-[48px] opacity-60" style={{ fontVariationSettings: "'FILL' 1" }}>download</span>
                     )}
-                    <span className="absolute top-3 left-3 bg-white/90 text-violet-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                    <span className="absolute top-3 left-3 bg-white/90 text-fh-700 px-2 py-0.5 rounded-full text-[10px] font-bold">
                       {p.productType}
                     </span>
                   </div>
@@ -360,7 +360,7 @@ export default function InstructeurPublicPage() {
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-lg font-extrabold text-violet-600">{formatFCFA(p.price)} FCFA</span>
+                      <span className="text-lg font-extrabold text-fh-700">{formatFCFA(p.price)} FCFA</span>
                       {p.originalPrice && p.originalPrice > p.price && (
                         <span className="text-xs text-[#5c647a] line-through">{formatFCFA(p.originalPrice)}</span>
                       )}

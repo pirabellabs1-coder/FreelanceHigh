@@ -128,7 +128,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Design UI/UX": "bg-pink-500/10 text-pink-600 dark:text-pink-400",
   "Design": "bg-pink-500/10 text-pink-600 dark:text-pink-400",
   "Backend & API": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "Mobile": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  "Mobile": "bg-fh-50 text-fh-700 dark:text-fh-600",
   "E-commerce": "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   "Marketing Digital": "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
   "Marketing": "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
@@ -815,8 +815,8 @@ export default function FreelanceProfilePage() {
                       <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.completionRate ?? 0}%</p>
                       <p className="text-xs text-slate-500">{t("completion_rate")}</p>
                     </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-200 dark:border-purple-800/30 text-center">
-                      <span className="material-symbols-outlined text-2xl text-purple-600 dark:text-purple-400 mb-1">star</span>
+                    <div className="bg-fh-50 dark:bg-fh-50/10 p-4 rounded-xl border border-fh-200 dark:border-fh-200/30 text-center">
+                      <span className="material-symbols-outlined text-2xl text-fh-700 dark:text-fh-600 mb-1">star</span>
                       <p className="text-2xl font-black text-slate-900 dark:text-white">{avgRating}/5</p>
                       <p className="text-xs text-slate-500">{t("average_rating")}</p>
                     </div>

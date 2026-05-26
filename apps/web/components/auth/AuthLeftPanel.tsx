@@ -24,7 +24,7 @@ export function AuthLeftPanel({
       className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between p-12"
       style={{
         background:
-          "linear-gradient(145deg, #6C2BD9 0%, #4A1B9E 55%, #2D1060 100%)",
+          "linear-gradient(145deg, #006e2f 0%, #00501f 55%, #003313 100%)",
       }}
     >
       {/* Grid pattern */}
@@ -49,7 +49,7 @@ export function AuthLeftPanel({
         </svg>
       </div>
       {/* Glow blobs */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-fh-600/20 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-sky-400/15 rounded-full blur-3xl" />
 
       {/* Logo */}

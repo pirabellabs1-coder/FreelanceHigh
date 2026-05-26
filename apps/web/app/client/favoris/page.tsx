@@ -170,7 +170,7 @@ export default function ClientFavorites() {
                   "text-[10px] px-2 py-0.5 rounded-full font-bold",
                   fav.type === "freelance" ? "bg-blue-500/10 text-blue-400" :
                   fav.type === "service" ? "bg-emerald-500/10 text-emerald-400" :
-                  "bg-purple-500/10 text-purple-400"
+                  "bg-fh-50 text-fh-700"
                 )}>
                   {getTypeLabel(fav.type)}
                 </span>

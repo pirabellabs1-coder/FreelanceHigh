@@ -98,12 +98,12 @@ const ITEMS_PER_PAGE = 12;
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
   "developpement-web": "from-emerald-600/80 to-teal-800/80",
-  "design-ui-ux": "from-purple-600/80 to-pink-700/80",
+  "design-ui-ux": "from-fh-600/80 to-pink-700/80",
   "marketing-digital": "from-orange-500/80 to-red-600/80",
   "redaction": "from-blue-500/80 to-indigo-700/80",
   "traduction": "from-cyan-500/80 to-blue-600/80",
-  "video-animation": "from-rose-500/80 to-purple-600/80",
-  "ia-data": "from-violet-600/80 to-indigo-800/80",
+  "video-animation": "from-rose-500/80 to-fh-600/80",
+  "ia-data": "from-fh-600/80 to-indigo-800/80",
   "mobile": "from-sky-500/80 to-blue-700/80",
   "musique-audio": "from-amber-500/80 to-orange-700/80",
   "formation-coaching": "from-teal-500/80 to-emerald-700/80",
@@ -282,7 +282,7 @@ function ServiceCard({
             </div>
           )}
           {service.isVedette && (
-            <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-600/90 text-white backdrop-blur-sm">
+            <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-fh-600/90 text-white backdrop-blur-sm">
               <span className="material-symbols-outlined text-xs">star</span>
               En vedette
             </span>
@@ -374,7 +374,7 @@ function ServiceCard({
           </div>
         )}
         {service.isVedette && (
-          <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-600/90 text-white backdrop-blur-sm">
+          <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-fh-600/90 text-white backdrop-blur-sm">
             <span className="material-symbols-outlined text-xs">star</span>
             En vedette
           </span>

@@ -499,7 +499,7 @@ export default function MentorDashboardPage() {
         {profileComplete && (
           <Link
             href="/formations/mentor/calendrier"
-            className="block bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl px-5 py-4 hover:border-blue-400 transition-colors"
+            className="block bg-gradient-to-r from-blue-50 to-fh-50 border border-blue-200 rounded-2xl px-5 py-4 hover:border-blue-400 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">

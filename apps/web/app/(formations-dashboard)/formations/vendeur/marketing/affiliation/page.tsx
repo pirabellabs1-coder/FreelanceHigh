@@ -43,7 +43,7 @@ function formatFCFA(n: number) {
   return new Intl.NumberFormat("fr-FR").format(Math.round(n));
 }
 
-const GRADIENTS = ["from-violet-400 to-purple-600","from-blue-400 to-sky-600","from-pink-400 to-rose-500","from-amber-400 to-orange-500","from-teal-400 to-emerald-600"];
+const GRADIENTS = ["from-fh-400 to-fh-600","from-blue-400 to-sky-600","from-pink-400 to-rose-500","from-amber-400 to-orange-500","from-teal-400 to-emerald-600"];
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   ACTIVE: { bg: "bg-[#006e2f]/10", text: "text-[#006e2f]", label: "Actif" },
@@ -153,7 +153,7 @@ export default function AffiliationPage() {
 
       {/* No program */}
       {!isLoading && !mainProgram && (
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-10 text-center">
+        <div className="bg-fh-50 border border-fh-200 rounded-2xl p-10 text-center">
           <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-[32px] text-indigo-600" style={{ fontVariationSettings: "'FILL' 1" }}>diversity_3</span>
           </div>

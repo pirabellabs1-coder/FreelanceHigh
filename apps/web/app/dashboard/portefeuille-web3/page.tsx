@@ -59,7 +59,7 @@ const CRYPTO_ASSETS: CryptoAsset[] = [
     symbol: "ETH",
     name: "Ethereum",
     icon: "diamond",
-    iconBg: "bg-purple-500/15 text-purple-400",
+    iconBg: "bg-fh-50 text-fh-600",
     balance: 0,
     valueUSD: 0,
     network: "Ethereum",
@@ -279,10 +279,10 @@ export default function PortefeuilleWeb3Page() {
         {/* Gas Fees */}
         <div className="bg-background-dark/50 border border-border-dark rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-purple-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-fh-600 uppercase tracking-wider">
               Frais Reseau (Gas)
             </p>
-            <span className="material-symbols-outlined text-purple-400">
+            <span className="material-symbols-outlined text-fh-600">
               local_gas_station
             </span>
           </div>

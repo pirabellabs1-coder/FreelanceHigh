@@ -214,11 +214,11 @@ export default function DashboardPage() {
 
         <div className="bg-white dark:bg-background-dark/50 border border-slate-200 dark:border-primary/20 rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
+            <div className="w-10 h-10 rounded-lg bg-fh-50 flex items-center justify-center text-fh-600">
               <span className="material-symbols-outlined">mail</span>
             </div>
             {stats.unreadMessages > 0 && (
-              <span className="text-purple-500 text-xs font-bold bg-purple-500/10 px-2 py-1 rounded">+{stats.unreadMessages}</span>
+              <span className="text-fh-600 text-xs font-bold bg-fh-50 px-2 py-1 rounded">+{stats.unreadMessages}</span>
             )}
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Messages non lus</p>

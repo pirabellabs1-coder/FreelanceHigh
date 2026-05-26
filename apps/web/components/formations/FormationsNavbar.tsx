@@ -57,51 +57,51 @@ function UserMenu({
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-gray-100 transition-colors"
       >
-        <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-[#006e2f] to-[#22c55e] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+        <div className="w-9 h-9 rounded-full overflow-hidden bg-fh-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
           {image ? <img src={image} alt="" className="w-full h-full object-cover" /> : initials(name)}
         </div>
-        <span className="hidden lg:inline text-sm font-semibold text-[#191c1e] max-w-[120px] truncate">
+        <span className="hidden lg:inline text-sm font-semibold text-gray-900 max-w-[120px] truncate">
           {name?.split(" ")[0] ?? "Mon compte"}
         </span>
-        <span className={`material-symbols-outlined text-[16px] text-[#5c647a] transition-transform ${open ? "rotate-180" : ""}`}>expand_more</span>
+        <span className={`material-symbols-outlined text-[16px] text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}>expand_more</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-50">
-          <div className="px-4 py-3 bg-gradient-to-br from-[#006e2f]/5 to-[#22c55e]/5 border-b border-gray-100">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50">
+          <div className="px-4 py-3 bg-fh-50 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#006e2f] to-[#22c55e] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-fh-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                 {image ? <img src={image} alt="" className="w-full h-full object-cover" /> : initials(name)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#191c1e] truncate">{name ?? "Utilisateur"}</p>
-                <p className="text-[11px] text-[#5c647a] truncate">{email}</p>
+                <p className="text-sm font-bold text-gray-900 truncate">{name ?? "Utilisateur"}</p>
+                <p className="text-[11px] text-gray-500 truncate">{email}</p>
               </div>
             </div>
             {formationsRole && (
-              <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#006e2f] text-white uppercase tracking-wider">
+              <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-fh-600 text-white uppercase tracking-wider">
                 {roleLabel}
               </span>
             )}
           </div>
           <div className="py-1.5">
-            <Link href={dashboardHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#191c1e] hover:bg-gray-50 transition-colors">
-              <span className="material-symbols-outlined text-[18px] text-[#006e2f]">dashboard</span>{dashboardLabel}
+            <Link href={dashboardHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors">
+              <span className="material-symbols-outlined text-[18px] text-fh-600">dashboard</span>{dashboardLabel}
             </Link>
             {!isAdmin && !isVendor && (
               <>
-                <Link href="/formations/apprenant/mes-formations" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#191c1e] hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-[#5c647a]">school</span>Mes formations</Link>
-                <Link href="/formations/apprenant/commandes" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#191c1e] hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-[#5c647a]">receipt_long</span>Mes commandes</Link>
+                <Link href="/formations/apprenant/mes-formations" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-gray-500">school</span>Mes formations</Link>
+                <Link href="/formations/apprenant/commandes" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-gray-500">receipt_long</span>Mes commandes</Link>
               </>
             )}
             {isVendor && (
               <>
-                <Link href="/formations/vendeur/produits" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#191c1e] hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-[#5c647a]">inventory_2</span>Mes produits</Link>
-                <Link href="/formations/vendeur/transactions" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#191c1e] hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-[#5c647a]">payments</span>Mes ventes</Link>
+                <Link href="/formations/vendeur/produits" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-gray-500">inventory_2</span>Mes produits</Link>
+                <Link href="/formations/vendeur/transactions" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-gray-500">payments</span>Mes ventes</Link>
               </>
             )}
             <div className="my-1 border-t border-gray-100" />
-            <Link href={isVendor ? "/formations/vendeur/parametres" : "/formations/apprenant/parametres"} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#191c1e] hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-[#5c647a]">settings</span>Paramètres</Link>
+            <Link href={isVendor ? "/formations/vendeur/parametres" : "/formations/apprenant/parametres"} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-900 hover:bg-gray-50"><span className="material-symbols-outlined text-[18px] text-gray-500">settings</span>Paramètres</Link>
             <button onClick={() => { setOpen(false); signOut({ callbackUrl: "/formations" }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 text-left">
               <span className="material-symbols-outlined text-[18px]">logout</span>Se déconnecter
             </button>
@@ -118,7 +118,7 @@ export function FormationsNavbar() {
   const [mobileMenu, setMobileMenu] = useState(false);
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-[0_20px_40px_rgba(15,23,42,0.06)]">
+    <nav className="fixed top-0 w-full z-50 bg-white border-b border-gray-200">
       <div className="flex justify-between items-center px-4 md:px-8 py-3 md:py-4 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/formations" className="flex items-center flex-shrink-0">
@@ -150,13 +150,12 @@ export function FormationsNavbar() {
             />
           ) : (
             <>
-              <Link href="/formations/connexion" className="hidden sm:inline text-slate-600 text-sm font-semibold px-3 py-2 hover:text-green-500">
+              <Link href="/formations/connexion" className="hidden sm:inline text-gray-700 text-sm font-semibold px-3 py-2 hover:text-fh-600 transition-colors">
                 Connexion
               </Link>
               <Link
                 href="/formations/inscription"
-                className="text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap active:scale-90 transition-transform shadow-lg shadow-green-200"
-                style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+                className="bg-fh-600 hover:bg-fh-700 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap active:scale-95 transition-colors"
               >
                 Créer ma boutique
               </Link>
@@ -178,14 +177,14 @@ export function FormationsNavbar() {
 
       {/* Mobile dropdown menu */}
       {mobileMenu && (
-        <div className="md:hidden bg-white border-t border-gray-100 shadow-xl">
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-sm">
           <div className="px-4 py-3 space-y-1">
             {NAV_LINKS.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setMobileMenu(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-[#191c1e] hover:bg-[#006e2f]/5 hover:text-[#006e2f] transition-colors"
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-gray-900 hover:bg-fh-50 hover:text-fh-600 transition-colors"
               >
                 {l.label}
               </Link>
@@ -196,9 +195,9 @@ export function FormationsNavbar() {
                 <Link
                   href="/formations/connexion"
                   onClick={() => setMobileMenu(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-[#191c1e] hover:bg-gray-50"
+                  className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-gray-900 hover:bg-gray-50"
                 >
-                  <span className="material-symbols-outlined text-[18px] text-[#5c647a]">login</span>
+                  <span className="material-symbols-outlined text-[18px] text-gray-500">login</span>
                   Connexion
                 </Link>
               </>

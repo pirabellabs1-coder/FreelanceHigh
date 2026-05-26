@@ -433,7 +433,7 @@ function PopupTypeBadge({ type }: { type: PopupType }) {
   const configs: Record<PopupType, { label: string; color: string }> = {
     DISCOUNT: { label: "Offre speciale", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
     EMAIL_CAPTURE: { label: "Newsletter", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-    ANNOUNCEMENT: { label: "Annonce", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+    ANNOUNCEMENT: { label: "Annonce", color: "bg-fh-50 text-fh-700 dark:bg-fh-600/20 dark:text-fh-600" },
     UPSELL: { label: "Offre exclusive", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
     COUNTDOWN: { label: "Offre limitee", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
   };

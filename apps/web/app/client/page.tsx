@@ -34,7 +34,7 @@ function ChartSkeleton() {
 }
 
 // ── Pie chart colors ──
-const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#006e2f"];
 const PIE_STATUS_LABELS: Record<string, string> = {
   en_attente: "En attente",
   en_cours: "En cours",
@@ -149,8 +149,8 @@ export default function ClientDashboard() {
       variation: "Freelances uniques",
       variationColor: "text-slate-400",
       icon: "people",
-      iconBg: "bg-violet-500/10",
-      iconColor: "text-violet-400",
+      iconBg: "bg-fh-50",
+      iconColor: "text-fh-600",
     },
   ];
 
@@ -459,7 +459,7 @@ export default function ClientDashboard() {
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">Freelances engagés</span>
-                <span className="font-bold text-violet-400">{uniqueFreelances}</span>
+                <span className="font-bold text-fh-600">{uniqueFreelances}</span>
               </div>
             </div>
             {/* Decorative */}

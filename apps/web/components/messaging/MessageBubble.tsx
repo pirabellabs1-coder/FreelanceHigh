@@ -32,7 +32,7 @@ function getFileTypeInfo(fileName?: string, fileType?: string): { icon: string; 
   if (ext === "zip" || ext === "rar" || ext === "7z" || mime.includes("zip") || mime.includes("rar"))
     return { icon: "folder_zip", color: "text-yellow-400", label: "Archive" };
   if (mime.startsWith("video/") || ["mp4", "webm", "mov"].includes(ext))
-    return { icon: "movie", color: "text-purple-400", label: "Video" };
+    return { icon: "movie", color: "text-pink-400", label: "Video" };
   return { icon: "insert_drive_file", color: "text-slate-400", label: ext.toUpperCase() || "Fichier" };
 }
 

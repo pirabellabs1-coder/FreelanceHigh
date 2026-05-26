@@ -24,27 +24,27 @@ const LEVELS = [
     title: "Email verifie",
     description: "Votre email a ete verifie lors de l'inscription.",
     icon: "email",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
+    color: "text-blue-700",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
   },
   {
     level: 3,
     title: "Piece d'identite",
     description: "Soumettez une piece d'identite (CNI ou passeport) pour retirer des fonds et publier des services.",
     icon: "badge",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
   },
   {
     level: 4,
     title: "Verification professionnelle",
     description: "Soumettez un document professionnel (diplome, certificat, SIRET) pour obtenir le badge Elite.",
     icon: "workspace_premium",
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
+    color: "text-fh-700",
+    bg: "bg-fh-50",
+    border: "border-fh-200",
   },
 ];
 
@@ -160,18 +160,18 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
   return (
     <div className="space-y-6">
       {/* Progress bar */}
-      <div className="bg-neutral-dark rounded-2xl border border-border-dark p-6">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-white">Niveau de verification</h3>
-          <span className="text-sm font-semibold text-primary">Etape {displayLevel}/3</span>
+          <h3 className="text-lg font-bold text-gray-900">Niveau de verification</h3>
+          <span className="text-sm font-semibold text-fh-600">Etape {displayLevel}/3</span>
         </div>
-        <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full transition-all duration-500"
+            className="h-full bg-fh-600 rounded-full transition-all duration-500"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-gray-500 mt-2">
           {currentLevel >= 4
             ? "Verification complete — vous avez le badge Elite !"
             : nextLevel
@@ -182,12 +182,12 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
 
       {/* Feedback */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm text-red-400">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-sm text-emerald-400">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-700">
           {success}
         </div>
       )}
@@ -207,52 +207,52 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
           return (
             <div
               key={lvl.level}
-              className={`bg-neutral-dark rounded-2xl border ${
+              className={`bg-white rounded-2xl border ${
                 completed
-                  ? "border-emerald-500/30"
+                  ? "border-emerald-300"
                   : pending
-                    ? "border-amber-500/30"
+                    ? "border-amber-300"
                     : refused
-                      ? "border-red-500/30"
-                      : "border-border-dark"
+                      ? "border-red-300"
+                      : "border-gray-200"
               } p-6`}
             >
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl ${lvl.bg} flex items-center justify-center flex-shrink-0`}>
                   {completed ? (
-                    <span className="material-symbols-outlined text-2xl text-emerald-400">check_circle</span>
+                    <span className="material-symbols-outlined text-2xl text-emerald-600">check_circle</span>
                   ) : (
                     <span className={`material-symbols-outlined text-2xl ${lvl.color}`}>{lvl.icon}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-white">Niveau {lvl.level} — {lvl.title}</h4>
+                    <h4 className="font-bold text-gray-900">Niveau {lvl.level} — {lvl.title}</h4>
                     {completed && (
-                      <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                         Valide
                       </span>
                     )}
                     {pending && (
-                      <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                         En attente
                       </span>
                     )}
                     {refused && (
-                      <span className="text-xs font-semibold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
                         Refuse
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-400">{lvl.description}</p>
+                  <p className="text-sm text-gray-600">{lvl.description}</p>
                   {refusedReq?.reason && (
-                    <p className="text-sm text-red-400 mt-1">Motif : {refusedReq.reason}</p>
+                    <p className="text-sm text-red-700 mt-1">Motif : {refusedReq.reason}</p>
                   )}
                 </div>
                 {canAction && (
                   <button
                     onClick={() => setExpandedLevel(isExpanded ? null : lvl.level)}
-                    className="flex-shrink-0 px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-xl hover:bg-primary/20 transition-colors"
+                    className="flex-shrink-0 px-4 py-2 bg-fh-50 text-fh-700 text-sm font-semibold rounded-xl hover:bg-fh-100 transition-colors"
                   >
                     {isExpanded ? "Annuler" : refused ? "Reessayer" : "Verifier"}
                   </button>
@@ -261,15 +261,15 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
 
               {/* Expanded form */}
               {isExpanded && canAction && (
-                <div className="mt-6 pt-6 border-t border-border-dark space-y-4">
+                <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
                       Type de document
                     </label>
                     <select
                       value={selectedDocType}
                       onChange={(e) => setSelectedDocType(e.target.value)}
-                      className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                      className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:border-fh-600"
                     >
                       <option value="">-- Selectionnez --</option>
                       {DOC_TYPES_BY_LEVEL[lvl.level]?.map((dt) => (
@@ -280,29 +280,29 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
                       Document
                     </label>
                     <div
                       {...getRootProps()}
                       className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
                         isDragActive
-                          ? "border-primary bg-primary/5"
-                          : "border-border-dark hover:border-primary/50"
+                          ? "border-fh-600 bg-fh-50"
+                          : "border-gray-300 hover:border-fh-400"
                       }`}
                     >
                       <input {...getInputProps()} />
-                      <span className="material-symbols-outlined text-3xl text-slate-500 mb-2 block">
+                      <span className="material-symbols-outlined text-3xl text-gray-400 mb-2 block">
                         cloud_upload
                       </span>
                       {fileName ? (
-                        <p className="text-sm text-emerald-400">{fileName}</p>
+                        <p className="text-sm text-emerald-700 font-semibold">{fileName}</p>
                       ) : (
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-gray-600">
                           Glissez un fichier ici ou cliquez pour selectionner
                         </p>
                       )}
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1">
                         PNG, JPG ou PDF — 10 Mo max
                       </p>
                     </div>
@@ -311,7 +311,7 @@ export function KycUploadCard({ currentLevel, requests, onRefresh }: KycUploadCa
                   <button
                     onClick={() => handleSubmit(lvl.level)}
                     disabled={submitting}
-                    className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="w-full bg-fh-600 text-white font-bold py-3 rounded-xl hover:bg-fh-700 transition-colors disabled:opacity-50"
                   >
                     {submitting ? "Envoi en cours..." : "Soumettre la demande"}
                   </button>

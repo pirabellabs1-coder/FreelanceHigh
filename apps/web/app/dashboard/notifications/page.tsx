@@ -14,7 +14,7 @@ const TYPE_META: Record<string, { icon: string; color: string; bgColor: string; 
   admin_action: { icon: "admin_panel_settings", color: "text-amber-400", bgColor: "bg-amber-400/10", label: "Action admin" },
   message: { icon: "chat", color: "text-blue-400", bgColor: "bg-blue-400/10", label: "Message" },
   order: { icon: "shopping_cart", color: "text-green-400", bgColor: "bg-green-400/10", label: "Commande" },
-  kyc: { icon: "verified", color: "text-purple-400", bgColor: "bg-purple-400/10", label: "Verification" },
+  kyc: { icon: "verified", color: "text-fh-600", bgColor: "bg-fh-50", label: "Verification" },
   payment: { icon: "payments", color: "text-emerald-400", bgColor: "bg-emerald-400/10", label: "Paiement" },
   system: { icon: "info", color: "text-slate-400", bgColor: "bg-slate-400/10", label: "Systeme" },
   offer: { icon: "local_offer", color: "text-orange-400", bgColor: "bg-orange-400/10", label: "Offre" },
@@ -22,7 +22,7 @@ const TYPE_META: Record<string, { icon: string; color: string; bgColor: string; 
   agency: { icon: "business", color: "text-cyan-400", bgColor: "bg-cyan-400/10", label: "Agence" },
   course: { icon: "school", color: "text-indigo-400", bgColor: "bg-indigo-400/10", label: "Formation" },
   product: { icon: "inventory_2", color: "text-pink-400", bgColor: "bg-pink-400/10", label: "Produit" },
-  service: { icon: "design_services", color: "text-violet-400", bgColor: "bg-violet-400/10", label: "Service" },
+  service: { icon: "design_services", color: "text-fh-600", bgColor: "bg-fh-50", label: "Service" },
   boost: { icon: "rocket_launch", color: "text-rose-400", bgColor: "bg-rose-400/10", label: "Boost" },
 };
 

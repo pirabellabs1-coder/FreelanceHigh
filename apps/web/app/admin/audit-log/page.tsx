@@ -9,7 +9,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string; icon: string
   ban_user: { label: "Bannissement", color: "text-red-400 bg-red-500/10", icon: "block" },
   reactivate_user: { label: "Réactivation", color: "text-green-400 bg-green-500/10", icon: "check_circle" },
   change_role: { label: "Changement rôle", color: "text-blue-400 bg-blue-500/10", icon: "swap_horiz" },
-  change_plan: { label: "Changement plan", color: "text-purple-400 bg-purple-500/10", icon: "workspace_premium" },
+  change_plan: { label: "Changement plan", color: "text-fh-600 bg-fh-50", icon: "workspace_premium" },
   verify_kyc: { label: "Vérification KYC", color: "text-green-400 bg-green-500/10", icon: "verified" },
   approve_kyc: { label: "KYC approuvé", color: "text-green-400 bg-green-500/10", icon: "verified" },
   refuse_kyc: { label: "KYC refusé", color: "text-red-400 bg-red-500/10", icon: "cancel" },

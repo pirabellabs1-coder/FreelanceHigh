@@ -89,8 +89,7 @@ export function FormationsFooter() {
             <button
               type="submit"
               disabled={status === "loading" || status === "success"}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-200 flex-shrink-0 disabled:opacity-50 hover:opacity-90 transition-opacity"
-              style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white bg-fh-600 hover:bg-fh-700 flex-shrink-0 disabled:opacity-50 transition-colors"
               aria-label="S'abonner"
             >
               <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>

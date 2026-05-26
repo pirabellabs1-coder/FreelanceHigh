@@ -24,12 +24,12 @@ interface PortfolioProject {
 // UI config (not data)
 // ---------------------------------------------------------------------------
 const GRADIENTS = [
-  "from-violet-600 to-indigo-700",
+  "from-fh-600 to-fh-700",
   "from-emerald-500 to-teal-700",
   "from-amber-500 to-orange-700",
   "from-rose-500 to-pink-700",
   "from-blue-500 to-cyan-700",
-  "from-fuchsia-500 to-purple-700",
+  "from-pink-500 to-fh-700",
   "from-lime-500 to-green-700",
   "from-sky-500 to-blue-700",
 ];

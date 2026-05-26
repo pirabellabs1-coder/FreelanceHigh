@@ -51,7 +51,7 @@ function kindColors(kind: string): string {
     case "formation": return "bg-blue-100 text-blue-700";
     case "EBOOK":
     case "PDF": return "bg-amber-100 text-amber-700";
-    case "BUNDLE": return "bg-purple-100 text-purple-700";
+    case "BUNDLE": return "bg-fh-50 text-fh-700";
     case "TEMPLATE": return "bg-teal-100 text-teal-700";
     default: return "bg-gray-100 text-gray-700";
   }
@@ -73,7 +73,7 @@ function kindIcon(kind: string): string {
 const GRADIENTS = [
   "from-[#006e2f] to-[#22c55e]",
   "from-amber-500 to-orange-600",
-  "from-purple-600 to-indigo-700",
+  "from-fh-600 to-fh-700",
   "from-blue-600 to-cyan-500",
   "from-pink-500 to-rose-600",
   "from-teal-500 to-emerald-600",
@@ -216,8 +216,8 @@ export default function ProduitsPage() {
           },
           {
             icon: "payments",
-            iconBg: "bg-purple-50",
-            iconColor: "text-purple-600",
+            iconBg: "bg-fh-50",
+            iconColor: "text-fh-600",
             label: "Revenus totaux",
             value: isLoading ? "…" : `${formatFCFA(totals?.revenue ?? 0)}`,
             unit: "FCFA",

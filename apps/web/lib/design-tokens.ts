@@ -4,11 +4,14 @@
 // ══════════════════════════════════════════════════════════════════════════
 
 // ── Couleurs semantiques (utilisees dans les charts, badges, indicateurs) ──
+// Refonte FH 2026 : fond blanc partout, accent vert canonical #006e2f.
+// Tous violets/purples sont bannis. Style Fiverr (cards) + ComeUp (sobriete).
 export const COLORS = {
-  primary: "#22C55E",
-  primaryHover: "#16A34A",
-  secondary: "#0EA5E9",
-  accent: "#6C2BD9",
+  primary: "#006e2f",         // vert FH canonical (boutons, CTAs, liens)
+  primaryHover: "#005425",    // hover state
+  primarySoft: "#e8f3ec",     // fond doux/badges
+  secondary: "#0EA5E9",       // bleu — usage tertiaire
+  accent: "#006e2f",          // accent = primary (plus de violet)
   success: "#10B981",
   warning: "#F59E0B",
   danger: "#EF4444",
@@ -16,25 +19,29 @@ export const COLORS = {
   muted: "#64748B",
 } as const;
 
-// ── Couleurs de fond et surface ──
+// ── Couleurs de fond et surface (light theme) ──
 export const SURFACE = {
-  background: "#0F172A",
-  card: "#111827",
-  sidebar: "#111827",
-  border: "#1F2937",
-  overlay: "rgba(0, 0, 0, 0.5)",
+  background: "#FFFFFF",      // blanc partout
+  card: "#FFFFFF",            // cards blanches
+  sidebar: "#FFFFFF",         // sidebar blanche
+  subtle: "#FAFAF9",          // stone-50 — sections subtiles
+  border: "#E5E7EB",          // gray-200 — divisions sobres
+  borderStrong: "#D1D5DB",    // gray-300
+  overlay: "rgba(15, 23, 42, 0.5)",
 } as const;
 
-// ── Couleurs de texte ──
+// ── Couleurs de texte (sur fond clair) ──
 export const TEXT = {
-  primary: "#FFFFFF",
-  secondary: "#9CA3AF",
-  muted: "#6B7280",
-  disabled: "#4B5563",
-  link: "#22C55E",
+  primary: "#111827",         // gray-900 — texte principal
+  secondary: "#4B5563",       // gray-600 — secondaire
+  muted: "#6B7280",           // gray-500 — atténué
+  disabled: "#9CA3AF",        // gray-400
+  link: "#006e2f",            // vert FH
+  // Legacy white text — uniquement pour CTAs sur fond vert/sombre
+  onDark: "#FFFFFF",
 } as const;
 
-// ── Palette de graphiques multi-series ──
+// ── Palette de graphiques multi-series (violet retiré) ──
 export const CHART_COLORS = {
   primary: COLORS.primary,
   secondary: COLORS.secondary,
@@ -44,76 +51,76 @@ export const CHART_COLORS = {
   info: COLORS.info,
   muted: COLORS.muted,
   series: [
-    "#22C55E", // vert (primary)
+    "#006e2f", // vert FH (primary)
     "#0EA5E9", // bleu
-    "#6C2BD9", // violet
     "#F59E0B", // orange
-    "#EF4444", // rouge
-    "#6366F1", // indigo
-    "#EC4899", // rose
     "#14B8A6", // teal
+    "#EC4899", // rose
+    "#EF4444", // rouge
+    "#6366F1", // indigo (remplace violet)
+    "#22C55E", // vert clair
   ],
 } as const;
 
-// ── Styles des tooltips de graphiques ──
+// ── Styles des tooltips de graphiques (light theme) ──
 export const TOOLTIP_STYLES = {
-  backgroundColor: "#1E293B",
-  borderColor: "rgba(255, 255, 255, 0.1)",
-  textColor: "#FFFFFF",
-  labelColor: "#94A3B8",
+  backgroundColor: "#FFFFFF",
+  borderColor: "rgba(17, 24, 39, 0.08)",
+  textColor: "#111827",
+  labelColor: "#6B7280",
 } as const;
 
-// ── Styles des axes de graphiques ──
+// ── Styles des axes de graphiques (light theme) ──
 export const CHART_AXIS = {
-  stroke: "#64748b",
+  stroke: "#9CA3AF",
   fontSize: 12,
-  gridStroke: "rgba(255, 255, 255, 0.05)",
+  gridStroke: "rgba(17, 24, 39, 0.06)",
 } as const;
 
-// ── Indicateurs de tendance ──
+// ── Indicateurs de tendance (light theme : opacités plus marquées sur blanc) ──
 export const STAT_CARD_TRENDS = {
   positive: {
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
+    color: "text-emerald-700",
+    bg: "bg-emerald-50",
     icon: "trending_up",
   },
   negative: {
-    color: "text-red-400",
-    bg: "bg-red-400/10",
+    color: "text-red-700",
+    bg: "bg-red-50",
     icon: "trending_down",
   },
   neutral: {
-    color: "text-slate-400",
-    bg: "bg-slate-400/10",
+    color: "text-gray-600",
+    bg: "bg-gray-100",
     icon: "trending_flat",
   },
 } as const;
 
-// ── Couleurs de statut de commande ──
+// ── Couleurs de statut de commande (light theme) ──
 export const ORDER_STATUS_COLORS: Record<string, { label: string; color: string; bg: string }> = {
-  en_attente: { label: "En attente", color: "text-amber-400", bg: "bg-amber-400/10" },
-  en_cours: { label: "En cours", color: "text-blue-400", bg: "bg-blue-400/10" },
-  revision: { label: "Revision", color: "text-orange-400", bg: "bg-orange-400/10" },
-  livre: { label: "Livre", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-  termine: { label: "Termine", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-  annule: { label: "Annule", color: "text-red-400", bg: "bg-red-400/10" },
-  litige: { label: "Litige", color: "text-red-400", bg: "bg-red-400/10" },
+  en_attente: { label: "En attente", color: "text-amber-700", bg: "bg-amber-50" },
+  en_cours: { label: "En cours", color: "text-blue-700", bg: "bg-blue-50" },
+  revision: { label: "Revision", color: "text-orange-700", bg: "bg-orange-50" },
+  livre: { label: "Livre", color: "text-emerald-700", bg: "bg-emerald-50" },
+  termine: { label: "Termine", color: "text-emerald-700", bg: "bg-emerald-50" },
+  annule: { label: "Annule", color: "text-red-700", bg: "bg-red-50" },
+  litige: { label: "Litige", color: "text-red-700", bg: "bg-red-50" },
 };
 
-// ── Couleurs de statut utilisateur ──
+// ── Couleurs de statut utilisateur (light theme) ──
 export const USER_STATUS_COLORS: Record<string, { label: string; color: string; bg: string }> = {
-  ACTIF: { label: "Actif", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-  suspendu: { label: "Suspendu", color: "text-amber-400", bg: "bg-amber-400/10" },
-  banni: { label: "Banni", color: "text-red-400", bg: "bg-red-400/10" },
+  ACTIF: { label: "Actif", color: "text-emerald-700", bg: "bg-emerald-50" },
+  suspendu: { label: "Suspendu", color: "text-amber-700", bg: "bg-amber-50" },
+  banni: { label: "Banni", color: "text-red-700", bg: "bg-red-50" },
 };
 
-// ── Couleurs de badge ──
+// ── Couleurs de badge (light theme, violet → vert pour pro) ──
 export const BADGE_COLORS = {
-  verified: { color: "text-blue-400", bg: "bg-blue-400/10", icon: "verified" },
-  topRated: { color: "text-amber-400", bg: "bg-amber-400/10", icon: "star" },
-  risingTalent: { color: "text-emerald-400", bg: "bg-emerald-400/10", icon: "trending_up" },
-  pro: { color: "text-purple-400", bg: "bg-purple-400/10", icon: "workspace_premium" },
-  elite: { color: "text-orange-400", bg: "bg-orange-400/10", icon: "diamond" },
+  verified: { color: "text-blue-700", bg: "bg-blue-50", icon: "verified" },
+  topRated: { color: "text-amber-700", bg: "bg-amber-50", icon: "star" },
+  risingTalent: { color: "text-emerald-700", bg: "bg-emerald-50", icon: "trending_up" },
+  pro: { color: "text-fh-700", bg: "bg-fh-50", icon: "workspace_premium" },
+  elite: { color: "text-orange-700", bg: "bg-orange-50", icon: "diamond" },
 } as const;
 
 // ── Utilitaires ──

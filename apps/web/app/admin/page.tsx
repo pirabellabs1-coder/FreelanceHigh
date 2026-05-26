@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     { label: "Commandes actives", value: (ordersData.active ?? 0).toString(), icon: "shopping_cart", color: "text-amber-400", link: "/admin/commandes" },
     { label: "Commissions", value: `€${(financesData.platformRevenue ?? 0).toLocaleString()}`, icon: "account_balance", color: "text-emerald-400", trend: "+15.1%", link: "/admin/finances" },
     { label: "Litiges", value: (disputesData.total ?? 0).toString(), icon: "gavel", color: "text-red-400", link: "/admin/litiges" },
-    { label: "Modération", value: (servicesData.pendingModeration ?? 0).toString(), icon: "pending", color: "text-purple-400", link: "/admin/services" },
+    { label: "Modération", value: (servicesData.pendingModeration ?? 0).toString(), icon: "pending", color: "text-fh-600", link: "/admin/services" },
   ];
 
   const roleCounts = [

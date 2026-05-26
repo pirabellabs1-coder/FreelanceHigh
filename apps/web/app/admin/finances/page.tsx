@@ -11,7 +11,7 @@ const TYPE_MAP: Record<string, { label: string; cls: string; icon: string }> = {
   commission: { label: "Commission", cls: "text-blue-400", icon: "account_balance" },
   retrait: { label: "Retrait", cls: "text-orange-400", icon: "account_balance_wallet" },
   remboursement: { label: "Remboursement", cls: "text-red-400", icon: "undo" },
-  abonnement: { label: "Abonnement", cls: "text-purple-400", icon: "card_membership" },
+  abonnement: { label: "Abonnement", cls: "text-fh-600", icon: "card_membership" },
 };
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -191,7 +191,7 @@ export default function AdminFinances() {
             { label: "Revenus plateforme", value: `${platformRevenue.toLocaleString()} €`, icon: "trending_up", color: "text-emerald-400", bgIcon: "bg-emerald-500/20", sub: "Commissions cumulées" },
             { label: "Fonds en escrow", value: `${escrowFunds.toLocaleString()} €`, icon: "lock", color: "text-blue-400", bgIcon: "bg-blue-500/20", sub: "En attente de libération" },
             { label: "Retraits en attente", value: `${pendingWithdrawals.toLocaleString()} €`, icon: "hourglass_top", color: "text-amber-400", bgIcon: "bg-amber-500/20", sub: "À traiter" },
-            { label: "Abonnements", value: `${subscriptionRevenue.toLocaleString()} €`, icon: "card_membership", color: "text-purple-400", bgIcon: "bg-purple-500/20", sub: "Revenus récurrents" },
+            { label: "Abonnements", value: `${subscriptionRevenue.toLocaleString()} €`, icon: "card_membership", color: "text-fh-600", bgIcon: "bg-fh-600/20", sub: "Revenus récurrents" },
           ].map(s => (
             <div key={s.label} className="bg-neutral-dark rounded-xl p-5 border border-border-dark">
               <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-3", s.bgIcon)}>
@@ -224,9 +224,9 @@ export default function AdminFinances() {
             <p className="text-xs text-slate-500 mt-1">Commissions en escrow</p>
             <p className="text-[10px] text-slate-600 mt-0.5">Bloquees jusqu&apos;a livraison</p>
           </div>
-          <div className="bg-neutral-dark rounded-xl p-5 border border-purple-500/30">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-purple-500/20">
-              <span className="material-symbols-outlined text-purple-400">analytics</span>
+          <div className="bg-neutral-dark rounded-xl p-5 border border-fh-600/30">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-fh-600/20">
+              <span className="material-symbols-outlined text-fh-600">analytics</span>
             </div>
             <p className="text-2xl font-bold text-white">{((adminWallet.totalFeesHeld ?? 0) + (adminWallet.totalFeesReleased ?? 0)).toLocaleString()} &euro;</p>
             <p className="text-xs text-slate-500 mt-1">Total commissions</p>
@@ -398,7 +398,7 @@ export default function AdminFinances() {
                 {(adminTransactions || []).map(t => (
                   <tr key={t.id} className="border-b border-border-dark/50 hover:bg-background-dark/30 transition-colors">
                     <td className="px-5 py-3">
-                      <span className={cn("text-xs font-semibold flex items-center gap-1", t.type === "BOOST_FEE" ? "text-purple-400" : "text-emerald-400")}>
+                      <span className={cn("text-xs font-semibold flex items-center gap-1", t.type === "BOOST_FEE" ? "text-fh-600" : "text-emerald-400")}>
                         <span className="material-symbols-outlined text-sm">{t.type === "BOOST_FEE" ? "rocket_launch" : "payments"}</span>
                         {t.type === "SERVICE_FEE" ? "Vente service" : t.type === "BOOST_FEE" ? "Boost" : t.type}
                       </span>

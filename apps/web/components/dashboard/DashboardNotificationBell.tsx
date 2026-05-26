@@ -10,7 +10,7 @@ const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   admin_action: { icon: "admin_panel_settings", color: "text-amber-400" },
   message: { icon: "chat", color: "text-blue-400" },
   order: { icon: "shopping_cart", color: "text-green-400" },
-  kyc: { icon: "verified", color: "text-purple-400" },
+  kyc: { icon: "verified", color: "text-fh-600" },
   payment: { icon: "payments", color: "text-emerald-400" },
   system: { icon: "info", color: "text-slate-400" },
   offer: { icon: "local_offer", color: "text-orange-400" },
@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<string, { icon: string; color: string }> = {
   agency: { icon: "business", color: "text-cyan-400" },
   course: { icon: "school", color: "text-indigo-400" },
   product: { icon: "inventory_2", color: "text-pink-400" },
-  service: { icon: "design_services", color: "text-violet-400" },
+  service: { icon: "design_services", color: "text-fh-600" },
   boost: { icon: "rocket_launch", color: "text-rose-400" },
 };
 

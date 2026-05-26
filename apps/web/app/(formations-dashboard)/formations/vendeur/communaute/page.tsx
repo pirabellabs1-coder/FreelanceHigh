@@ -18,7 +18,7 @@ type Post = {
 
 type Stats = { totalMembers: number; postsThisMonth: number; totalPosts: number; engagement: number };
 
-const GRADIENTS = ["from-violet-400 to-purple-600","from-blue-400 to-sky-600","from-pink-400 to-rose-500","from-amber-400 to-orange-500","from-teal-400 to-emerald-600"];
+const GRADIENTS = ["from-fh-400 to-fh-600","from-blue-400 to-sky-600","from-pink-400 to-rose-500","from-amber-400 to-orange-500","from-teal-400 to-emerald-600"];
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();

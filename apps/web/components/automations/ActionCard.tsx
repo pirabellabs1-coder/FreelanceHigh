@@ -7,7 +7,7 @@ const ACTION_META: Record<
   { label: string; icon: string; color: string; bg: string }
 > = {
   SEND_EMAIL: { label: "Email", icon: "mail", color: "text-[#006e2f]", bg: "bg-[#006e2f]/10" },
-  ADD_TAG: { label: "Tag", icon: "label", color: "text-violet-600", bg: "bg-violet-100" },
+  ADD_TAG: { label: "Tag", icon: "label", color: "text-indigo-600", bg: "bg-indigo-100" },
   ENROLL_SEQUENCE: {
     label: "Séquence",
     icon: "alt_route",

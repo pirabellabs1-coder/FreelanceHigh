@@ -47,8 +47,8 @@ const BRAND = "#006e2f";
 const ACCENT = "#22c55e";
 const CYAN = "#22d3ee";
 const AMBER = "#f59e0b";
-const PURPLE = "#a855f7";
-const DONUT_COLORS = [BRAND, ACCENT, CYAN, AMBER, PURPLE, "#ef4444", "#3b82f6"];
+const TEAL = "#14B8A6";
+const DONUT_COLORS = [BRAND, ACCENT, CYAN, AMBER, TEAL, "#ef4444", "#3b82f6"];
 
 function formatFCFA(n: number) {
   return new Intl.NumberFormat("fr-FR").format(Math.round(n));
@@ -67,13 +67,13 @@ function Kpi({
   sub?: string;
   delta?: number;
   icon: string;
-  tone: "brand" | "accent" | "cyan" | "purple";
+  tone: "brand" | "accent" | "cyan" | "teal";
 }) {
   const toneMap = {
     brand: { bg: `bg-[${BRAND}]/10`, fg: `text-[${BRAND}]` },
     accent: { bg: "bg-green-50", fg: "text-green-600" },
     cyan: { bg: "bg-cyan-50", fg: "text-cyan-600" },
-    purple: { bg: "bg-purple-50", fg: "text-purple-600" },
+    teal: { bg: "bg-teal-50", fg: "text-teal-600" },
   }[tone];
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -214,7 +214,7 @@ export default function StatistiquesPage() {
           value={overview ? `${formatFCFA(overview.avgOrder)} FCFA` : "—"}
           sub="Par commande"
           icon="receipt_long"
-          tone="purple"
+          tone="teal"
         />
       </div>
 

@@ -8,18 +8,36 @@
 @layer base {
   :root {
     --radius: 0.5rem;
-    --primary: #22C55E;
-    --accent: #f2b705;
-    /* Default color tokens — green primary for freelance/public */
-    --color-primary: 34 197 94;
-    --color-bg-light: 248 250 252;
-    --color-bg-dark: 15 23 42;
-    --color-neutral-dark: 17 24 39;
+
+    /* ── FreelanceHigh Canonical Palette — refonte Fiverr+ComeUp ──
+       Background = blanc partout. Accent = vert #006e2f canonical.
+       Tous violets/purples sont bannis. */
+    --primary: #006e2f;                /* vert FH canonical (boutons, liens, CTAs) */
+    --primary-hover: #005425;          /* hover state */
+    --primary-soft: #e8f3ec;           /* fond doux pour cards/badges */
+    --accent: #f2b705;                 /* jaune — reserved aux highlights ponctuels */
+
+    /* RGB tokens (alpha-value compatible) */
+    --color-primary: 0 110 47;         /* #006e2f */
+    --color-primary-soft: 232 243 236; /* #e8f3ec */
+
+    /* Backgrounds */
+    --color-bg-light: 255 255 255;     /* white */
+    --color-bg-subtle: 250 250 249;    /* stone-50 — sections subtiles */
+    --color-bg-muted: 244 244 245;     /* zinc-100 — zones repos */
+    --color-bg-dark: 15 23 42;         /* slate-900 — dashboards dark mode futur */
+
+    /* Borders & dividers */
+    --color-border: 229 231 235;       /* gray-200 — défaut sobre */
+    --color-border-strong: 209 213 219;/* gray-300 — emphasis */
     --color-border-dark: 31 41 55;
-    /* Text color tokens */
-    --color-text-primary: 255 255 255;
-    --color-text-secondary: 156 163 175;
-    --color-text-muted: 107 114 128;
+
+    /* Text — pyramide lisibilité */
+    --color-text-primary: 17 24 39;    /* gray-900 — texte principal sur blanc */
+    --color-text-secondary: 75 85 99;  /* gray-600 */
+    --color-text-muted: 107 114 128;   /* gray-500 */
+    --color-text-on-dark: 255 255 255;
+    --color-neutral-dark: 17 24 39;
   }
 
   * {
