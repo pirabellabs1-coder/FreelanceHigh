@@ -78,45 +78,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Manrope', sans-serif" }}>
       {/* Top Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 h-16 flex items-center px-4 md:px-6 gap-4">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14 flex items-center px-4 md:px-6 gap-4">
         {/* Hamburger (mobile) */}
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-[#191c1e]"
+          className="md:hidden p-1.5 rounded-md hover:bg-gray-100 text-gray-900"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Toggle sidebar"
         >
-          <span className="material-symbols-outlined text-[22px]">menu</span>
+          <span className="material-symbols-outlined text-[18px]">menu</span>
         </button>
 
         {/* Logo */}
         <Link href="/formations/admin/dashboard" className="flex items-center gap-2 flex-shrink-0">
-          <div
-            className="w-8 h-8 rounded-[8px] flex items-center justify-center"
-            style={{ background: "#006e2f" }}
-          >
-            <span className="text-white font-bold text-xs tracking-tight">NK</span>
+          <div className="w-7 h-7 rounded-md flex items-center justify-center bg-fh-600">
+            <span className="text-white font-bold text-[10px] tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
+          <span className="hidden sm:block font-bold text-gray-900 text-base">Novakou</span>
         </Link>
 
         {/* Admin badge */}
-        <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-[#191c1e]">
-          <span className="material-symbols-outlined text-[12px]">shield</span>
+        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gray-900">
+          <span className="material-symbols-outlined text-[11px]">shield</span>
           Admin Panel
         </span>
 
         <div className="flex-1" />
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
-          <button className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]">
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        <div className="flex items-center gap-1">
+          <button className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600">
+            <span className="material-symbols-outlined text-[18px]">notifications</span>
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full ring-2 ring-white"></span>
           </button>
-          <button className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]">
-            <span className="material-symbols-outlined text-[22px]">settings</span>
+          <button className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600">
+            <span className="material-symbols-outlined text-[18px]">settings</span>
           </button>
           {/* Admin avatar */}
           <div className="flex items-center gap-2 ml-1">
@@ -125,15 +122,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
             ) : (
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #191c1e 0%, #006e2f 100%)" }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 bg-fh-600"
               >
                 {initials}
               </div>
             )}
             <div className="hidden md:block">
-              <p className="text-xs font-semibold text-[#191c1e] leading-none">{displayName}</p>
-              <p className="text-[10px] text-[#5c647a]">{displayEmail}</p>
+              <p className="text-xs font-semibold text-gray-900 leading-none">{displayName}</p>
+              <p className="text-[10px] text-gray-600">{displayEmail}</p>
             </div>
           </div>
         </div>
@@ -149,40 +145,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Left Sidebar */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-40 w-64 bg-white border-r border-gray-100 pt-16 flex flex-col transition-transform duration-300 ${
+        className={`fixed top-0 left-0 bottom-0 z-40 w-60 bg-white border-r border-gray-200 pt-14 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Admin info */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center gap-2.5">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #191c1e 0%, #006e2f 100%)" }}
-              >
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 bg-fh-600">
                 {initials}
               </div>
             )}
             <div className="min-w-0">
-              <p className="font-semibold text-[#191c1e] text-sm truncate">{displayName}</p>
+              <p className="font-semibold text-gray-900 text-xs truncate">{displayName}</p>
               <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full"></span>
-                <p className="text-[10px] text-[#5c647a]">Accès complet</p>
+                <span className="w-1.5 h-1.5 bg-fh-600 rounded-full"></span>
+                <p className="text-[10px] text-gray-600">Accès complet</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-[#5c647a]">
+        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+          <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
             Administration
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
@@ -191,15 +184,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150 border-l-2 ${
                       isActive
-                        ? "bg-[#006e2f]/10 text-[#006e2f] font-semibold"
-                        : "text-[#5c647a] hover:bg-gray-50 hover:text-[#191c1e]"
+                        ? "bg-fh-50 text-fh-700 font-semibold border-fh-600"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium border-transparent"
                     }`}
                   >
                     <span
-                      className={`material-symbols-outlined text-[20px] flex-shrink-0 ${
-                        isActive ? "text-[#006e2f]" : "text-[#5c647a]"
+                      className={`material-symbols-outlined text-[18px] flex-shrink-0 ${
+                        isActive ? "text-fh-600" : "text-gray-600"
                       }`}
                       style={{
                         fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
@@ -234,38 +227,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </ul>
 
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-[#5c647a]">
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
               Accès rapide
             </p>
             <Link
               href="/formations"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#5c647a] hover:bg-gray-50 hover:text-[#191c1e] transition-all duration-200"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 border-l-2 border-transparent"
             >
-              <span className="material-symbols-outlined text-[20px] flex-shrink-0">open_in_new</span>
+              <span className="material-symbols-outlined text-[18px] flex-shrink-0 text-gray-600">open_in_new</span>
               Voir la plateforme
             </Link>
             <Link
               href="/formations/explorer"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#5c647a] hover:bg-gray-50 hover:text-[#191c1e] transition-all duration-200"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-150 border-l-2 border-transparent"
             >
-              <span className="material-symbols-outlined text-[20px] flex-shrink-0">storefront</span>
+              <span className="material-symbols-outlined text-[18px] flex-shrink-0 text-gray-600">storefront</span>
               Marketplace
             </Link>
           </div>
         </nav>
 
         {/* Bottom section */}
-        <div className="px-3 py-4 border-t border-gray-100">
-          <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all duration-200">
-            <span className="material-symbols-outlined text-[20px]">logout</span>
+        <div className="px-2 py-3 border-t border-gray-200">
+          <button className="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-150">
+            <span className="material-symbols-outlined text-[18px]">logout</span>
             Déconnexion
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="md:ml-64 pt-16 min-h-screen">{children}</main>
+      <main className="md:ml-60 pt-14 min-h-screen">{children}</main>
     </div>
   );
 }

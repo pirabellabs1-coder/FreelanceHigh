@@ -86,7 +86,7 @@ export default function BoutiquePublicPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-[#5c647a]">Chargement de la boutique…</div>
+        <div className="text-gray-600">Chargement de la boutique…</div>
       </div>
     );
   }
@@ -94,14 +94,14 @@ export default function BoutiquePublicPage() {
   if (error || !data?.data) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-        <span className="material-symbols-outlined text-[48px] text-[#5c647a]">storefront</span>
-        <h1 className="mt-4 text-xl font-bold text-[#191c1e]">Boutique introuvable</h1>
-        <p className="mt-2 text-sm text-[#5c647a] text-center">
+        <span className="material-symbols-outlined text-[48px] text-gray-600">storefront</span>
+        <h1 className="mt-4 text-lg md:text-xl font-bold text-gray-900">Boutique introuvable</h1>
+        <p className="mt-2 text-sm text-gray-600 text-center">
           Cette boutique n&apos;existe pas ou a été désactivée.
         </p>
         <Link
           href="/formations/explorer"
-          className="mt-6 px-5 py-2.5 rounded-xl bg-[#006e2f] text-white text-sm font-semibold hover:bg-[#005425]"
+          className="mt-6 px-5 py-2.5 rounded-lg bg-fh-600 text-white text-sm font-semibold hover:bg-fh-700"
         >
           Explorer la marketplace
         </Link>
@@ -113,42 +113,42 @@ export default function BoutiquePublicPage() {
   const color = shop.primaryColor;
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb]" style={{ fontFamily: "'Manrope', sans-serif" }}>
-      {/* Hero */}
+    <div className="min-h-screen bg-stone-50" style={{ fontFamily: "'Manrope', sans-serif" }}>
+      {/* Hero — solid couleur boutique (sobriété) */}
       <header
         className="relative overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)` }}
+        style={{ background: color }}
       >
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-12 md:py-16">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-12">
           <div className="flex items-start gap-4 md:gap-6">
             {shop.logoUrl ? (
               <img
                 src={shop.logoUrl}
                 alt={shop.name}
-                className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover bg-white/10 border-2 border-white/30"
+                className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover bg-white/10 border-2 border-white/30"
               />
             ) : shop.owner.image ? (
               <img
                 src={shop.owner.image}
                 alt={shop.name}
-                className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover border-2 border-white/30"
+                className="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover border-2 border-white/30"
               />
             ) : (
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-white/20 flex items-center justify-center text-white text-3xl font-bold border-2 border-white/30">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-white/20 flex items-center justify-center text-white text-2xl md:text-3xl font-bold border-2 border-white/30">
                 {(shop.name || "S").slice(0, 1).toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0 text-white">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl md:text-4xl font-extrabold truncate">{shop.name}</h1>
+                <h1 className="text-xl md:text-2xl font-extrabold truncate">{shop.name}</h1>
                 {shop.kind === "mentor" && shop.isVerified && (
-                  <span className="material-symbols-outlined text-[22px]" title="Mentor vérifié">
+                  <span className="material-symbols-outlined text-[20px]" title="Mentor vérifié">
                     verified
                   </span>
                 )}
               </div>
               {shop.kind === "mentor" && shop.specialty && (
-                <p className="mt-1 text-white/90 text-sm md:text-base">{shop.specialty}</p>
+                <p className="mt-1 text-white/90 text-sm">{shop.specialty}</p>
               )}
               {shop.kind === "vendor" && shop.expertise?.length > 0 && (
                 <div className="mt-2 flex gap-1.5 flex-wrap">
@@ -162,7 +162,7 @@ export default function BoutiquePublicPage() {
                   ))}
                 </div>
               )}
-              <p className="mt-3 text-sm md:text-base text-white/90 max-w-2xl">
+              <p className="mt-3 text-sm text-white/90 max-w-2xl">
                 {shop.bio ?? "Boutique Novakou"}
               </p>
             </div>
@@ -170,15 +170,15 @@ export default function BoutiquePublicPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-12">
         {shop.kind === "vendor" ? <VendorBody shop={shop} /> : <MentorBody shop={shop} />}
       </main>
 
       <footer className="border-t border-gray-200 py-6 mt-10 bg-white">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between text-xs text-[#5c647a]">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between text-xs text-gray-600">
           <span>
             Propulsé par{" "}
-            <Link href="/formations" className="font-semibold text-[#006e2f] hover:underline">
+            <Link href="/formations" className="font-semibold text-fh-600 hover:underline">
               Novakou
             </Link>
           </span>
@@ -199,9 +199,9 @@ function VendorBody({ shop }: { shop: VendorShop }) {
   if (!hasFormations && !hasProducts) {
     return (
       <div className="text-center py-16">
-        <span className="material-symbols-outlined text-[48px] text-[#5c647a]">inventory_2</span>
-        <h2 className="mt-4 font-bold text-[#191c1e]">Aucun produit pour le moment</h2>
-        <p className="mt-1 text-sm text-[#5c647a]">Revenez bientôt — de nouveaux produits arrivent.</p>
+        <span className="material-symbols-outlined text-[48px] text-gray-600">inventory_2</span>
+        <h2 className="mt-4 font-bold text-gray-900">Aucun produit pour le moment</h2>
+        <p className="mt-1 text-sm text-gray-600">Revenez bientôt — de nouveaux produits arrivent.</p>
       </div>
     );
   }
@@ -210,17 +210,17 @@ function VendorBody({ shop }: { shop: VendorShop }) {
     <div className="space-y-10">
       {hasFormations && (
         <section>
-          <h2 className="text-lg md:text-xl font-bold text-[#191c1e] mb-4">Formations</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Formations</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {shop.formations.map((f) => (
               <Link
                 key={f.id}
                 href={`/formations/formation/${f.slug}`}
-                className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all"
+                className="group bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div
-                  className="aspect-video bg-gray-100 overflow-hidden"
-                  style={!f.thumbnail ? { background: `linear-gradient(135deg, ${color}30, ${color}10)` } : undefined}
+                  className="aspect-[4/3] bg-gray-100 overflow-hidden"
+                  style={!f.thumbnail ? { background: `${color}15` } : undefined}
                 >
                   {f.thumbnail ? (
                     <img src={f.thumbnail} alt={f.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -231,13 +231,13 @@ function VendorBody({ shop }: { shop: VendorShop }) {
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-[#191c1e] text-sm line-clamp-2">{f.title}</h3>
-                  {f.shortDesc && <p className="mt-1 text-xs text-[#5c647a] line-clamp-2">{f.shortDesc}</p>}
+                  <h3 className="font-semibold text-gray-900 text-sm line-clamp-2">{f.title}</h3>
+                  {f.shortDesc && <p className="mt-1 text-xs text-gray-600 line-clamp-2">{f.shortDesc}</p>}
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="font-bold" style={{ color }}>{formatFCFA(f.price)}</div>
-                    <div className="flex items-center gap-1 text-xs text-[#5c647a]">
+                    <div className="text-base font-extrabold" style={{ color }}>{formatFCFA(f.price)}</div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <span className="material-symbols-outlined text-[14px] text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                      {f.rating.toFixed(1)} ({f.reviewsCount})
+                      <span className="font-semibold text-gray-900">{f.rating.toFixed(1)}</span> ({f.reviewsCount})
                     </div>
                   </div>
                 </div>
@@ -249,17 +249,17 @@ function VendorBody({ shop }: { shop: VendorShop }) {
 
       {hasProducts && (
         <section>
-          <h2 className="text-lg md:text-xl font-bold text-[#191c1e] mb-4">Produits digitaux</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4">Produits digitaux</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {shop.digitalProducts.map((p) => (
               <Link
                 key={p.id}
                 href={`/formations/produit/${p.slug}`}
-                className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all"
+                className="group bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div
-                  className="aspect-video bg-gray-100 overflow-hidden"
-                  style={!p.banner ? { background: `linear-gradient(135deg, ${color}30, ${color}10)` } : undefined}
+                  className="aspect-[4/3] bg-gray-100 overflow-hidden"
+                  style={!p.banner ? { background: `${color}15` } : undefined}
                 >
                   {p.banner ? (
                     <img src={p.banner} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -270,15 +270,15 @@ function VendorBody({ shop }: { shop: VendorShop }) {
                   )}
                 </div>
                 <div className="p-4">
-                  <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide bg-gray-100 text-[#5c647a]">
+                  <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide bg-gray-100 text-gray-600">
                     {p.productType}
                   </span>
-                  <h3 className="mt-2 font-semibold text-[#191c1e] text-sm line-clamp-2">{p.title}</h3>
+                  <h3 className="mt-2 font-semibold text-gray-900 text-sm line-clamp-2">{p.title}</h3>
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="font-bold" style={{ color }}>{formatFCFA(p.price)}</div>
-                    <div className="flex items-center gap-1 text-xs text-[#5c647a]">
+                    <div className="text-base font-extrabold" style={{ color }}>{formatFCFA(p.price)}</div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <span className="material-symbols-outlined text-[14px] text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                      {p.rating.toFixed(1)} ({p.reviewsCount})
+                      <span className="font-semibold text-gray-900">{p.rating.toFixed(1)}</span> ({p.reviewsCount})
                     </div>
                   </div>
                 </div>
@@ -296,14 +296,14 @@ function MentorBody({ shop }: { shop: MentorShop }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
-        <section className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-bold text-[#191c1e]">À propos</h2>
-          <p className="mt-2 text-sm text-[#5c647a] whitespace-pre-line">
+        <section className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+          <h2 className="text-base md:text-lg font-bold text-gray-900">À propos</h2>
+          <p className="mt-2 text-sm text-gray-600 whitespace-pre-line">
             {shop.bio ?? "Aucune bio renseignée."}
           </p>
           {shop.domainExpertise?.length > 0 && (
             <div className="mt-4">
-              <div className="text-xs font-semibold text-[#191c1e] mb-2">Domaines d&apos;expertise</div>
+              <div className="text-xs font-semibold text-gray-900 mb-2">Domaines d&apos;expertise</div>
               <div className="flex gap-1.5 flex-wrap">
                 {shop.domainExpertise.map((d) => (
                   <span
@@ -319,8 +319,8 @@ function MentorBody({ shop }: { shop: MentorShop }) {
           )}
         </section>
 
-        <section className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h2 className="font-bold text-[#191c1e]">Statistiques</h2>
+        <section className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+          <h2 className="text-base md:text-lg font-bold text-gray-900">Statistiques</h2>
           <div className="mt-4 grid grid-cols-3 gap-4">
             <Stat label="Sessions" value={shop.totalSessions.toString()} />
             <Stat label="Note" value={`${shop.rating.toFixed(1)}/5`} />
@@ -329,17 +329,17 @@ function MentorBody({ shop }: { shop: MentorShop }) {
         </section>
       </div>
 
-      <aside className="bg-white rounded-2xl border border-gray-100 p-6 h-fit lg:sticky lg:top-6">
+      <aside className="bg-white rounded-lg border border-gray-100 shadow-sm p-6 h-fit lg:sticky lg:top-6">
         <div className="text-center">
-          <div className="text-xs text-[#5c647a] uppercase tracking-wide">Session à partir de</div>
-          <div className="mt-1 text-3xl font-extrabold" style={{ color }}>
+          <div className="text-xs text-gray-600 uppercase tracking-wide">Session à partir de</div>
+          <div className="mt-1 text-xl md:text-2xl font-extrabold" style={{ color }}>
             {formatFCFA(shop.sessionPrice)}
           </div>
-          <div className="text-xs text-[#5c647a]">{shop.sessionDuration} minutes</div>
+          <div className="text-xs text-gray-600">{shop.sessionDuration} minutes</div>
         </div>
         <Link
           href={`/formations/mentors/${shop.id}/reserver`}
-          className={`mt-5 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-opacity ${
+          className={`mt-5 w-full flex items-center justify-center gap-2 px-4 py-2.5 md:py-3 rounded-lg text-white font-semibold text-sm transition-opacity ${
             shop.isAvailable ? "hover:opacity-90" : "opacity-60 pointer-events-none"
           }`}
           style={{ background: color }}
@@ -349,7 +349,7 @@ function MentorBody({ shop }: { shop: MentorShop }) {
         </Link>
         <Link
           href={`/formations/mentors/${shop.id}`}
-          className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-[#191c1e] font-semibold text-sm hover:bg-gray-50"
+          className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 md:py-3 rounded-lg border border-gray-200 text-gray-900 font-semibold text-sm hover:bg-gray-50"
         >
           Voir le profil complet
         </Link>
@@ -361,8 +361,8 @@ function MentorBody({ shop }: { shop: MentorShop }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
-      <div className="text-xl font-extrabold text-[#191c1e]">{value}</div>
-      <div className="text-[10px] text-[#5c647a] uppercase tracking-wide">{label}</div>
+      <div className="text-base md:text-lg font-extrabold text-gray-900">{value}</div>
+      <div className="text-[10px] text-gray-500 uppercase tracking-wide">{label}</div>
     </div>
   );
 }

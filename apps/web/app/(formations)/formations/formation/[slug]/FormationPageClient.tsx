@@ -129,32 +129,32 @@ function SectionAccordion({ section, index }: { section: Section; index: number 
   const [open, setOpen] = useState(index === 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-[#006e2f]/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-extrabold text-[#006e2f]">{index + 1}</span>
+          <div className="w-8 h-8 rounded-lg bg-fh-600/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-extrabold text-fh-600">{index + 1}</span>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-[#191c1e] truncate">{section.title}</p>
-            <p className="text-[11px] text-[#5c647a]">
+            <p className="text-sm font-bold text-gray-900 truncate">{section.title}</p>
+            <p className="text-[11px] text-gray-600">
               {section.lessonCount} leçon{section.lessonCount > 1 ? "s" : ""}
               {section.duration > 0 && ` · ${fmtDuration(section.duration)}`}
             </p>
           </div>
         </div>
         <span
-          className="material-symbols-outlined text-[#5c647a] text-[20px] flex-shrink-0"
+          className="material-symbols-outlined text-gray-600 text-[20px] flex-shrink-0"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
         >
           expand_more
         </span>
       </button>
       {open && (
-        <div className="border-t border-gray-100 bg-[#f7f9fb]/50">
+        <div className="border-t border-gray-100 bg-stone-50/50">
           {section.lessons.map((l) => (
             <div
               key={l.id}
@@ -166,15 +166,15 @@ function SectionAccordion({ section, index }: { section: Section; index: number 
               >
                 {l.isFree ? "play_circle" : "lock"}
               </span>
-              <p className="text-xs text-[#191c1e] flex-1 min-w-0 truncate">{l.title}</p>
+              <p className="text-xs text-gray-900 flex-1 min-w-0 truncate">{l.title}</p>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {l.isFree && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#006e2f]/10 text-[#006e2f]">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-fh-600/10 text-fh-600">
                     Aperçu
                   </span>
                 )}
                 {l.duration && (
-                  <span className="text-[10px] text-[#5c647a]">{fmtDuration(l.duration)}</span>
+                  <span className="text-[10px] text-gray-500">{fmtDuration(l.duration)}</span>
                 )}
               </div>
             </div>
@@ -238,11 +238,11 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f9fb] animate-pulse">
+      <div className="min-h-screen bg-stone-50 animate-pulse">
         <div className="h-72 bg-gray-200" />
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-4">
-          <div className="h-10 w-2/3 bg-gray-200 rounded-xl" />
-          <div className="h-60 bg-gray-200 rounded-2xl" />
+          <div className="h-10 w-2/3 bg-gray-200 rounded-lg" />
+          <div className="h-60 bg-gray-200 rounded-lg" />
         </div>
       </div>
     );
@@ -250,17 +250,16 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
   if (error || !formation) {
     return (
-      <div className="min-h-screen bg-[#f7f9fb] flex items-center justify-center px-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center max-w-md">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-6">
+        <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-12 text-center max-w-md">
           <span className="material-symbols-outlined text-gray-300 text-5xl">school</span>
-          <h2 className="text-lg font-bold text-[#191c1e] mt-3">Formation introuvable</h2>
-          <p className="text-sm text-[#5c647a] mt-1.5 mb-4">
+          <h2 className="text-base md:text-lg font-bold text-gray-900 mt-3">Formation introuvable</h2>
+          <p className="text-sm text-gray-600 mt-1.5 mb-4">
             Cette formation n&apos;existe pas ou n&apos;est plus disponible.
           </p>
           <Link
             href="/formations/explorer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-bold"
-            style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-bold bg-fh-600 hover:bg-fh-700"
           >
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             Voir le catalogue
@@ -276,18 +275,18 @@ export default function FormationPageClient({ slug }: { slug: string }) {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb]">
+    <div className="min-h-screen bg-stone-50">
       {/* Breadcrumb minimal — no hero cover */}
       <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6">
         <Link
           href="/formations/explorer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-[#5c647a] text-xs font-semibold hover:bg-gray-50 hover:text-[#191c1e] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           <span className="material-symbols-outlined text-[14px]">arrow_back</span>
           Catalogue
         </Link>
         {/* Mobile title */}
-        <h1 className="text-2xl font-extrabold text-[#191c1e] leading-tight mt-4 md:hidden">
+        <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 leading-tight mt-4 md:hidden">
           {formation.title}
         </h1>
       </div>
@@ -297,8 +296,8 @@ export default function FormationPageClient({ slug }: { slug: string }) {
           {/* ── Main content ─────────────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-5">
             {/* Product image card — aspect 16:9 */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-              <div className="aspect-video w-full bg-gradient-to-br from-[#006e2f]/10 to-[#22c55e]/10 flex items-center justify-center">
+            <div className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+              <div className="aspect-video w-full bg-fh-600/5 flex items-center justify-center">
                 {formation.thumbnail ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -309,12 +308,12 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                 ) : (
                   <div className="text-center">
                     <span
-                      className="material-symbols-outlined text-[#006e2f] text-[64px] opacity-40"
+                      className="material-symbols-outlined text-fh-600 text-[64px] opacity-40"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
                       play_circle
                     </span>
-                    <p className="text-xs text-[#5c647a] mt-2 font-semibold uppercase tracking-wide">
+                    <p className="text-xs text-gray-600 mt-2 font-semibold uppercase tracking-wide">
                       Formation vidéo
                     </p>
                   </div>
@@ -323,13 +322,13 @@ export default function FormationPageClient({ slug }: { slug: string }) {
             </div>
 
             {/* Header card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
+            <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${levelInfo.color}`}>
                   {levelInfo.label}
                 </span>
                 {formation.category && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-[#5c647a]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
                     {formation.category.name}
                   </span>
                 )}
@@ -349,39 +348,39 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                 )}
               </div>
 
-              <h1 className="hidden md:block text-2xl md:text-3xl font-extrabold text-[#191c1e] leading-tight">
+              <h1 className="hidden md:block text-xl md:text-2xl font-extrabold text-gray-900 leading-tight">
                 {formation.title}
               </h1>
               {formation.shortDesc && (
-                <p className="text-sm text-[#5c647a] mt-3 leading-relaxed">{formation.shortDesc}</p>
+                <p className="text-sm md:text-base text-gray-600 mt-3 leading-relaxed">{formation.shortDesc}</p>
               )}
 
               {/* Stats */}
               <div className="flex items-center gap-4 mt-4 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <StarRating rating={formation.rating} size={16} />
-                  <span className="text-sm font-bold text-[#191c1e]">
+                  <span className="text-sm font-semibold text-gray-900">
                     {formation.rating > 0 ? formation.rating.toFixed(1) : "Nouveau"}
                   </span>
                   {formation.reviewsCount > 0 && (
-                    <span className="text-xs text-[#5c647a]">({formation.reviewsCount})</span>
+                    <span className="text-xs text-gray-500">({formation.reviewsCount})</span>
                   )}
                 </div>
-                <span className="text-xs text-[#5c647a] flex items-center gap-1">
+                <span className="text-xs text-gray-500 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">groups</span>
                   {fmt(formation.studentsCount)} apprenant{formation.studentsCount > 1 ? "s" : ""}
                 </span>
-                <span className="text-xs text-[#5c647a] flex items-center gap-1">
+                <span className="text-xs text-gray-500 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">play_lesson</span>
                   {formation.totalLessons} leçon{formation.totalLessons > 1 ? "s" : ""}
                 </span>
                 {formation.duration > 0 && (
-                  <span className="text-xs text-[#5c647a] flex items-center gap-1">
+                  <span className="text-xs text-gray-500 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">schedule</span>
                     {fmtDuration(formation.duration)}
                   </span>
                 )}
-                <span className="text-xs text-[#5c647a] flex items-center gap-1">
+                <span className="text-xs text-gray-500 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">language</span>
                   {formation.languages.map((l) => l.toUpperCase()).join(", ")}
                 </span>
@@ -390,18 +389,18 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
             {/* What you'll learn */}
             {formation.learnPoints && formation.learnPoints.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-                <h2 className="text-lg font-extrabold text-[#191c1e] mb-4">Ce que vous allez apprendre</h2>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+                <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-4">Ce que vous allez apprendre</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {formation.learnPoints.map((p, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <span
-                        className="material-symbols-outlined text-[#006e2f] text-[18px] flex-shrink-0 mt-0.5"
+                        className="material-symbols-outlined text-fh-600 text-[18px] flex-shrink-0 mt-0.5"
                         style={{ fontVariationSettings: "'FILL' 1" }}
                       >
                         check_circle
                       </span>
-                      <p className="text-sm text-[#191c1e] leading-relaxed">{p}</p>
+                      <p className="text-sm text-gray-900 leading-relaxed">{p}</p>
                     </div>
                   ))}
                 </div>
@@ -410,9 +409,9 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
             {/* Course content */}
             {formation.sections && formation.sections.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-                <h2 className="text-lg font-extrabold text-[#191c1e] mb-2">Contenu de la formation</h2>
-                <p className="text-xs text-[#5c647a] mb-4">
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+                <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-2">Contenu de la formation</h2>
+                <p className="text-xs text-gray-600 mb-4">
                   {formation.sections.length} section{formation.sections.length > 1 ? "s" : ""} ·{" "}
                   {formation.totalLessons} leçon{formation.totalLessons > 1 ? "s" : ""}
                   {formation.duration > 0 && ` · ${fmtDuration(formation.duration)}`}
@@ -427,15 +426,15 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
             {/* Requirements */}
             {formation.requirements && formation.requirements.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-                <h2 className="text-lg font-extrabold text-[#191c1e] mb-4">Prérequis</h2>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+                <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-4">Prérequis</h2>
                 <ul className="space-y-2">
                   {formation.requirements.map((r, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="material-symbols-outlined text-[#5c647a] text-[18px] flex-shrink-0 mt-0.5">
+                      <span className="material-symbols-outlined text-gray-600 text-[18px] flex-shrink-0 mt-0.5">
                         arrow_right
                       </span>
-                      <p className="text-sm text-[#5c647a] leading-relaxed">{r}</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">{r}</p>
                     </li>
                   ))}
                 </ul>
@@ -444,23 +443,23 @@ export default function FormationPageClient({ slug }: { slug: string }) {
 
             {/* Target audience */}
             {formation.targetAudience && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-                <h2 className="text-lg font-extrabold text-[#191c1e] mb-3">À qui s&apos;adresse cette formation ?</h2>
-                <p className="text-sm text-[#5c647a] leading-relaxed whitespace-pre-wrap">{formation.targetAudience}</p>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+                <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-3">À qui s&apos;adresse cette formation ?</h2>
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{formation.targetAudience}</p>
               </div>
             )}
 
             {/* Description */}
             {formation.description && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-                <h2 className="text-lg font-extrabold text-[#191c1e] mb-3">Description</h2>
+              <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+                <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-3">Description</h2>
                 {formation.descriptionFormat === "tiptap" || /<\/?(p|h[1-6]|ul|ol|li|strong|em|br|a|blockquote)[\s>/]/i.test(formation.description) ? (
                   <div
-                    className="prose prose-sm max-w-none text-[#5c647a] prose-headings:text-[#191c1e] prose-strong:text-[#191c1e] prose-a:text-[#006e2f]"
+                    className="prose prose-sm max-w-none text-gray-600 prose-headings:text-gray-900 prose-strong:text-gray-900 prose-a:text-fh-600"
                     dangerouslySetInnerHTML={{ __html: formation.description }}
                   />
                 ) : (
-                  <div className="text-sm text-[#5c647a] leading-relaxed whitespace-pre-wrap">
+                  <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
                     {formation.description}
                   </div>
                 )}
@@ -468,22 +467,22 @@ export default function FormationPageClient({ slug }: { slug: string }) {
             )}
 
             {/* Reviews */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-              <h2 className="text-lg font-extrabold text-[#191c1e] mb-4 flex items-center gap-2">
+            <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-5 md:p-6">
+              <h2 className="text-base md:text-lg font-extrabold text-gray-900 mb-4 flex items-center gap-2">
                 Avis des apprenants
-                <span className="text-sm font-semibold text-[#5c647a]">({formation.reviewsCount})</span>
+                <span className="text-sm font-semibold text-gray-600">({formation.reviewsCount})</span>
               </h2>
               {formation.reviews.length === 0 ? (
                 <div className="text-center py-8">
                   <span className="material-symbols-outlined text-gray-300 text-5xl">reviews</span>
-                  <p className="text-sm text-[#5c647a] mt-3">Aucun avis pour cette formation pour l&apos;instant.</p>
+                  <p className="text-sm text-gray-600 mt-3">Aucun avis pour cette formation pour l&apos;instant.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {formation.reviews.map((r) => (
                     <div key={r.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
                           {r.user.image ? (
                             <img src={r.user.image} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -492,11 +491,11 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-[#191c1e]">{r.user.name ?? "Apprenant"}</p>
-                            <span className="text-[11px] text-[#5c647a]">{timeAgo(r.createdAt)}</span>
+                            <p className="text-sm font-bold text-gray-900">{r.user.name ?? "Apprenant"}</p>
+                            <span className="text-[11px] text-gray-500">{timeAgo(r.createdAt)}</span>
                           </div>
                           <StarRating rating={r.rating} size={13} />
-                          <p className="text-sm text-[#5c647a] mt-1.5 leading-relaxed">{r.comment}</p>
+                          <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{r.comment}</p>
                         </div>
                       </div>
                     </div>
@@ -509,7 +508,7 @@ export default function FormationPageClient({ slug }: { slug: string }) {
           {/* ── Sidebar ─────────────────────────────────────────────────── */}
           <div className="space-y-5">
             {/* Price card */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden sticky top-4">
+            <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden sticky top-4">
               {/* Preview video */}
               {formation.previewVideo && (
                 <div className="relative aspect-video bg-black">
@@ -522,7 +521,7 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                 </div>
               )}
 
-              <div className="p-6">
+              <div className="p-5">
                 <div className="mb-4">
                   {discount > 0 && (
                     <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 mb-2">
@@ -531,11 +530,11 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                   )}
                   <div className="flex items-baseline gap-2">
                     {formation.isFree ? (
-                      <p className="text-3xl font-extrabold text-[#006e2f]">Gratuit</p>
+                      <p className="text-xl md:text-2xl font-extrabold text-fh-600">Gratuit</p>
                     ) : (
                       <>
-                        <p className="text-3xl font-extrabold text-[#006e2f]">{fmt(formation.price)}</p>
-                        <span className="text-sm font-bold text-[#5c647a]">FCFA</span>
+                        <p className="text-xl md:text-2xl font-extrabold text-fh-600">{fmt(formation.price)}</p>
+                        <span className="text-sm font-bold text-gray-600">FCFA</span>
                       </>
                     )}
                   </div>
@@ -543,7 +542,7 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                     <p className="text-sm text-gray-400 line-through">{fmt(formation.originalPrice)} FCFA</p>
                   )}
                   {!formation.isFree && (
-                    <p className="text-xs text-[#5c647a] mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       ≈ {Math.round(formation.price / 655.957)} EUR
                     </p>
                   )}
@@ -552,8 +551,7 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                 <div className="space-y-2">
                   <button
                     onClick={handleBuyNow}
-                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-                    style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+                    className="w-full py-2.5 md:py-3 rounded-lg text-white font-bold text-sm transition-colors bg-fh-600 hover:bg-fh-700 flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">{formation.isFree ? "play_arrow" : "bolt"}</span>
                     {formation.isFree ? "Commencer maintenant" : "Acheter maintenant"}
@@ -562,7 +560,7 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                     <button
                       onClick={handleAddToCart}
                       disabled={addingToCart}
-                      className="w-full py-3 rounded-xl text-[#006e2f] font-bold text-sm border-2 border-[#006e2f]/20 hover:border-[#006e2f]/40 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full py-2.5 md:py-3 rounded-lg text-fh-600 font-bold text-sm border border-fh-600/30 hover:border-fh-600/60 hover:bg-fh-600/5 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {addingToCart ? (
                         <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
@@ -582,22 +580,22 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                 </div>
 
                 <div className="mt-5 pt-5 border-t border-gray-100 space-y-2.5">
-                  <div className="flex items-center gap-2 text-xs text-[#5c647a]">
-                    <span className="material-symbols-outlined text-[#006e2f] text-[16px]">all_inclusive</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="material-symbols-outlined text-fh-600 text-[16px]">all_inclusive</span>
                     Accès à vie
                   </div>
                   {formation.hasCertificate && (
-                    <div className="flex items-center gap-2 text-xs text-[#5c647a]">
-                      <span className="material-symbols-outlined text-[#006e2f] text-[16px]">workspace_premium</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <span className="material-symbols-outlined text-fh-600 text-[16px]">workspace_premium</span>
                       Certificat de complétion
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-[#5c647a]">
-                    <span className="material-symbols-outlined text-[#006e2f] text-[16px]">devices</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="material-symbols-outlined text-fh-600 text-[16px]">devices</span>
                     Accessible sur mobile & desktop
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-[#5c647a]">
-                    <span className="material-symbols-outlined text-[#006e2f] text-[16px]">event_available</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="material-symbols-outlined text-fh-600 text-[16px]">event_available</span>
                     Remboursement 14 jours
                   </div>
                 </div>
@@ -607,11 +605,11 @@ export default function FormationPageClient({ slug }: { slug: string }) {
             {/* Instructeur card */}
             <Link
               href={`/formations/instructeurs/${formation.instructeur.userId}`}
-              className="block bg-white rounded-2xl border border-gray-100 p-5 hover:border-[#006e2f]/30 transition-colors"
+              className="block bg-white rounded-lg border border-gray-100 shadow-sm p-5 hover:border-fh-600/30 transition-colors"
             >
-              <p className="text-[10px] font-semibold text-[#5c647a] uppercase tracking-wider mb-2">Formateur</p>
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Formateur</p>
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-[#006e2f] to-[#22c55e] flex items-center justify-center text-white font-bold flex-shrink-0">
+                <div className="w-11 h-11 rounded-full overflow-hidden bg-fh-600 flex items-center justify-center text-white font-bold flex-shrink-0">
                   {formation.instructeur.image ? (
                     <img src={formation.instructeur.image} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -619,19 +617,19 @@ export default function FormationPageClient({ slug }: { slug: string }) {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#191c1e] truncate">
+                  <p className="text-sm font-bold text-gray-900 truncate">
                     {formation.instructeur.name ?? "Formateur"}
                   </p>
-                  <p className="text-xs text-[#5c647a]">
+                  <p className="text-xs text-gray-600">
                     {formation.instructeur.yearsExp > 0
                       ? `${formation.instructeur.yearsExp} an(s) d'expérience`
                       : "Nouveau formateur"}
                   </p>
                 </div>
-                <span className="material-symbols-outlined text-[#5c647a] text-[18px]">chevron_right</span>
+                <span className="material-symbols-outlined text-gray-500 text-[18px]">chevron_right</span>
               </div>
               {formation.instructeur.bio && (
-                <p className="text-xs text-[#5c647a] mt-3 line-clamp-3 leading-relaxed">
+                <p className="text-xs text-gray-600 mt-3 line-clamp-3 leading-relaxed">
                   {formation.instructeur.bio}
                 </p>
               )}

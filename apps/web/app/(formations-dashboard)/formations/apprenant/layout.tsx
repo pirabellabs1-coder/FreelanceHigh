@@ -43,22 +43,22 @@ const navGroups = [
 
 function ApprenantFooter() {
   return (
-    <footer className="border-t border-gray-100 bg-white mt-auto">
+    <footer className="border-t border-gray-200 bg-white mt-auto">
       <div className="px-6 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "#006e2f" }}>
+              <div className="w-7 h-7 rounded-md flex items-center justify-center bg-fh-600">
                 <span className="text-white font-bold text-[10px]">NK</span>
               </div>
-              <span className="font-bold text-[#191c1e] text-sm">Novakou</span>
+              <span className="font-bold text-gray-900 text-sm">Novakou</span>
             </div>
-            <p className="text-xs text-[#5c647a] leading-relaxed">
+            <p className="text-xs text-gray-600 leading-relaxed">
               La plateforme d&apos;apprentissage qui élève votre carrière freelance.
             </p>
           </div>
           <div>
-            <p className="text-xs font-bold text-[#191c1e] uppercase tracking-wide mb-3">Apprendre</p>
+            <p className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-3">Apprendre</p>
             <ul className="space-y-1.5">
               {[
                 { label: "Explorer le catalogue",  href: "/formations/explorer" },
@@ -67,13 +67,13 @@ function ApprenantFooter() {
                 { label: "Mes certificats",         href: "/formations/apprenant/certificats" },
               ].map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-xs text-[#5c647a] hover:text-[#006e2f] transition-colors">{l.label}</Link>
+                  <Link href={l.href} className="text-xs text-gray-600 hover:text-fh-600 transition-colors">{l.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-bold text-[#191c1e] uppercase tracking-wide mb-3">Support</p>
+            <p className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-3">Support</p>
             <ul className="space-y-1.5">
               {[
                 { label: "Centre d'aide",               href: "/formations/aide" },
@@ -82,15 +82,15 @@ function ApprenantFooter() {
                 { label: "Politique de confidentialité", href: "/formations/confidentialite" },
               ].map((l) => (
                 <li key={l.label}>
-                  <Link href={l.href} className="text-xs text-[#5c647a] hover:text-[#006e2f] transition-colors">{l.label}</Link>
+                  <Link href={l.href} className="text-xs text-gray-600 hover:text-fh-600 transition-colors">{l.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
         </div>
-        <div className="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[10px] text-[#5c647a]">© 2026 Novakou — Tous droits réservés</p>
-          <p className="text-[10px] text-[#5c647a]">Fondé par Lissanon Gildas · Afrique francophone &amp; diaspora</p>
+        <div className="border-t border-gray-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-[10px] text-gray-600">© 2026 Novakou — Tous droits réservés</p>
+          <p className="text-[10px] text-gray-600">Fondé par Lissanon Gildas · Afrique francophone &amp; diaspora</p>
         </div>
       </div>
     </footer>
@@ -133,37 +133,37 @@ function ApprenantLayoutInner({ children }: { children: React.ReactNode }) {
                     ?? (user as Record<string, unknown> | undefined)?.avatar as string | undefined;
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Manrope', sans-serif" }}>
       {/* Top Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 h-16 flex items-center px-4 md:px-6 gap-4">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14 flex items-center px-4 md:px-6 gap-4">
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-[#191c1e]"
+          className="md:hidden p-1.5 rounded-md hover:bg-gray-100 text-gray-900"
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label="Toggle sidebar"
         >
-          <span className="material-symbols-outlined text-[22px]">menu</span>
+          <span className="material-symbols-outlined text-[18px]">menu</span>
         </button>
 
         <Link href="/formations/apprenant/dashboard" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 rounded-[8px] flex items-center justify-center" style={{ background: "#006e2f" }}>
-            <span className="text-white font-bold text-xs tracking-tight">NK</span>
+          <div className="w-7 h-7 rounded-md flex items-center justify-center bg-fh-600">
+            <span className="text-white font-bold text-[10px] tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
+          <span className="hidden sm:block font-bold text-gray-900 text-base">Novakou</span>
         </Link>
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {/* Notifications */}
-          <button className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]">
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
+          <button className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600">
+            <span className="material-symbols-outlined text-[18px]">notifications</span>
           </button>
 
           {/* Cart */}
-          <Link href="/formations/apprenant/panier" className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]">
-            <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+          <Link href="/formations/apprenant/panier" className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600">
+            <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#006e2f] text-white text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-fh-600 text-white text-[9px] font-bold flex items-center justify-center">
                 {cartCount}
               </span>
             )}
@@ -174,7 +174,7 @@ function ApprenantLayoutInner({ children }: { children: React.ReactNode }) {
             {avatarUrl ? (
               <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ml-1" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#006e2f] to-[#22c55e] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ml-1">
+              <div className="w-8 h-8 rounded-full bg-fh-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ml-1">
                 {initials}
               </div>
             )}
@@ -189,33 +189,33 @@ function ApprenantLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Left Sidebar */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-40 w-64 bg-white border-r border-gray-100 pt-16 flex flex-col transition-transform duration-300 ${
+        className={`fixed top-0 left-0 bottom-0 z-40 w-60 bg-white border-r border-gray-200 pt-14 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* User info */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center gap-2.5">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#006e2f] to-[#22c55e] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-fh-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                 {initials}
               </div>
             )}
             <div className="min-w-0">
-              <p className="font-semibold text-[#191c1e] text-sm truncate">{displayName}</p>
-              <p className="text-xs text-[#5c647a] truncate">{displayEmail}</p>
+              <p className="font-semibold text-gray-900 text-xs truncate">{displayName}</p>
+              <p className="text-[11px] text-gray-600 truncate">{displayEmail}</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <div className="space-y-5">
+        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+          <div>
             {navGroups.map((group) => (
-              <div key={group.label}>
-                <p className="text-[10px] font-bold text-[#5c647a] uppercase tracking-widest px-3 mb-1.5">
+              <div key={group.label} className="mt-4 first:mt-0">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-1">
                   {group.label}
                 </p>
                 <ul className="space-y-0.5">
@@ -229,21 +229,21 @@ function ApprenantLayoutInner({ children }: { children: React.ReactNode }) {
                         <Link
                           href={item.href}
                           onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-150 border-l-2 ${
                             isActive
-                              ? "bg-[#006e2f]/10 text-[#006e2f] font-semibold"
-                              : "text-[#5c647a] hover:bg-gray-50 hover:text-[#191c1e]"
+                              ? "bg-fh-50 text-fh-700 font-semibold border-fh-600"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium border-transparent"
                           }`}
                         >
                           <span
-                            className={`material-symbols-outlined text-[20px] flex-shrink-0 ${isActive ? "text-[#006e2f]" : "text-[#5c647a]"}`}
+                            className={`material-symbols-outlined text-[18px] flex-shrink-0 ${isActive ? "text-fh-600" : "text-gray-600"}`}
                             style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
                           >
                             {item.icon}
                           </span>
                           <span className="flex-1">{item.label}</span>
                           {showBadge && (
-                            <span className="w-5 h-5 rounded-full bg-[#006e2f] text-white text-[9px] font-bold flex items-center justify-center">
+                            <span className="w-4 h-4 rounded-full bg-fh-600 text-white text-[9px] font-bold flex items-center justify-center">
                               {cartCount}
                             </span>
                           )}
@@ -258,35 +258,34 @@ function ApprenantLayoutInner({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* CTAs */}
-        <div className="px-3 py-4 border-t border-gray-100 space-y-2">
+        <div className="px-2 py-3 border-t border-gray-200 space-y-1.5">
           <Link
             href="/formations/apprenant/affiliation"
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-white text-xs font-bold hover:opacity-90 transition-opacity"
-            style={{ background: "linear-gradient(to right, #006e2f, #22c55e)" }}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-white text-xs font-bold hover:opacity-90 transition-opacity bg-fh-600"
           >
-            <span className="material-symbols-outlined text-[16px]">volunteer_activism</span>
+            <span className="material-symbols-outlined text-[15px]">volunteer_activism</span>
             Devenir Affilié
             <span className="ml-auto text-[9px] bg-white/20 px-1.5 py-0.5 rounded font-bold">40%</span>
           </Link>
           <Link
             href="/formations/explorer"
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border border-[#006e2f]/30 text-[#006e2f] text-xs font-semibold hover:bg-[#006e2f]/5 transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md border border-fh-200 text-fh-600 text-xs font-semibold hover:bg-fh-50 transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">explore</span>
+            <span className="material-symbols-outlined text-[15px]">explore</span>
             Explorer le catalogue
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/formations" })}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors border border-red-200"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors border border-red-200"
           >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <span className="material-symbols-outlined text-[15px]">logout</span>
             Se déconnecter
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="md:ml-64 pt-16 min-h-screen flex flex-col">
+      <main className="md:ml-60 pt-14 min-h-screen flex flex-col">
         <div className="flex-1">{children}</div>
         <ApprenantFooter />
       </main>

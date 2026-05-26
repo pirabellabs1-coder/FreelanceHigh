@@ -167,8 +167,8 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
   const initials = getInitials(session?.user?.name);
   const avatarUrl = session?.user?.image;
 
-  const sidebarWidth = collapsed ? "w-20" : "w-64";
-  const mainOffset = collapsed ? "md:ml-20" : "md:ml-64";
+  const sidebarWidth = collapsed ? "w-16" : "w-60";
+  const mainOffset = collapsed ? "md:ml-16" : "md:ml-60";
 
   // FAB caché sur pages de création / édition (redondant)
   const hideFab = pathname.includes("/nouveau") || pathname.includes("/editer") || pathname.includes("/creer");
@@ -177,60 +177,60 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
   const crumbs = buildBreadcrumbs(pathname);
 
   return (
-    <div className="min-h-screen bg-[#f7f9fb]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Manrope', sans-serif" }}>
       {/* Top Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 h-16 flex items-center px-4 md:px-6 gap-3">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14 flex items-center px-4 md:px-6 gap-3">
         {/* Mobile hamburger */}
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-[#191c1e]"
+          className="md:hidden p-1.5 rounded-md hover:bg-gray-100 text-gray-900"
           onClick={() => setMobileOpen(true)}
           aria-label="Ouvrir le menu"
         >
-          <span className="material-symbols-outlined text-[22px]">menu</span>
+          <span className="material-symbols-outlined text-[18px]">menu</span>
         </button>
 
         {/* Desktop collapse toggle */}
         <button
           onClick={toggleCollapsed}
-          className="hidden md:flex p-2 rounded-lg hover:bg-gray-100 text-[#5c647a] transition-colors"
+          className="hidden md:flex p-1.5 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
           aria-label={collapsed ? "Étendre le menu" : "Réduire le menu"}
           title={collapsed ? "Étendre le menu" : "Réduire le menu"}
         >
-          <span className="material-symbols-outlined text-[22px]">
+          <span className="material-symbols-outlined text-[18px]">
             {collapsed ? "menu_open" : "menu"}
           </span>
         </button>
 
         {/* Logo */}
         <Link href="/formations/vendeur/dashboard" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg, #006e2f, #22c55e)" }}>
-            <span className="text-white font-bold text-xs tracking-tight">NK</span>
+          <div className="w-7 h-7 rounded-md flex items-center justify-center bg-fh-600">
+            <span className="text-white font-bold text-[10px] tracking-tight">NK</span>
           </div>
-          <span className="hidden sm:block font-bold text-[#191c1e] text-sm">Novakou</span>
+          <span className="hidden sm:block font-bold text-gray-900 text-base">Novakou</span>
         </Link>
 
         {/* Vendor badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full">
-          <span className="material-symbols-outlined text-amber-500 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
-          <span className="text-amber-700 text-[11px] font-semibold">Espace Vendeur</span>
+        <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full">
+          <span className="material-symbols-outlined text-amber-500 text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
+          <span className="text-amber-700 text-[10px] font-semibold">Espace Vendeur</span>
         </div>
 
         <div className="flex-1" />
 
         {/* Right actions */}
         <div className="flex items-center gap-1">
-          <button className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]" aria-label="Notifications">
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full ring-2 ring-white" />
+          <button className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600" aria-label="Notifications">
+            <span className="material-symbols-outlined text-[18px]">notifications</span>
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full ring-2 ring-white" />
           </button>
-          <button className="relative p-2 rounded-full hover:bg-gray-100 text-[#5c647a]" aria-label="Aide">
-            <span className="material-symbols-outlined text-[22px]">help_outline</span>
+          <button className="relative p-1.5 rounded-full hover:bg-gray-100 text-gray-600" aria-label="Aide">
+            <span className="material-symbols-outlined text-[18px]">help_outline</span>
           </button>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ml-1 ring-2 ring-white shadow-sm" />
+            <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ml-1 ring-1 ring-gray-200" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ml-1 ring-2 ring-white shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ml-1 ring-1 ring-gray-200">
               {initials}
             </div>
           )}
@@ -248,36 +248,36 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-40 bg-white border-r border-gray-100 pt-16 flex flex-col transition-all duration-300 ${sidebarWidth} ${
+        className={`fixed top-0 left-0 bottom-0 z-40 bg-white border-r border-gray-200 pt-14 flex flex-col transition-all duration-300 ${sidebarWidth} ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } ${mobileOpen ? "w-64" : ""}`}
+        } ${mobileOpen ? "w-60" : ""}`}
       >
         {/* Close button mobile */}
         {mobileOpen && (
           <button
             onClick={() => setMobileOpen(false)}
-            className="md:hidden absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100"
+            className="md:hidden absolute top-3 right-3 p-1 rounded-md hover:bg-gray-100"
           >
-            <span className="material-symbols-outlined text-[20px] text-[#5c647a]">close</span>
+            <span className="material-symbols-outlined text-[18px] text-gray-600">close</span>
           </button>
         )}
 
         {/* Instructor info */}
-        <div className={`border-b border-gray-100 transition-all ${collapsed && !mobileOpen ? "py-4 px-2" : "px-5 py-5"}`}>
-          <div className={`flex items-center ${collapsed && !mobileOpen ? "justify-center" : "gap-3"}`}>
+        <div className={`border-b border-gray-200 transition-all ${collapsed && !mobileOpen ? "py-3 px-2" : "px-4 py-3"}`}>
+          <div className={`flex items-center ${collapsed && !mobileOpen ? "justify-center" : "gap-2.5"}`}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-[#006e2f]/20" />
+              <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-1 ring-fh-200" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ring-2 ring-amber-400/20">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                 {initials}
               </div>
             )}
             {(!collapsed || mobileOpen) && (
               <div className="min-w-0">
-                <p className="font-semibold text-[#191c1e] text-sm truncate">{displayName}</p>
-                <p className="text-xs text-[#5c647a] flex items-center gap-1">
-                  <span className="material-symbols-outlined text-amber-500 text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+                <p className="font-semibold text-gray-900 text-xs truncate">{displayName}</p>
+                <p className="text-[11px] text-gray-600 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-amber-500 text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
                   Instructeur
                 </p>
               </div>
@@ -286,13 +286,13 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation — sectioned */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 overflow-y-auto">
           {sections.map((section) => {
             const items = navItems.filter((n) => n.section === section);
             return (
-              <div key={section} className="mb-5 last:mb-0">
+              <div key={section} className="mt-4 first:mt-0">
                 {(!collapsed || mobileOpen) && (
-                  <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-[#5c647a]">
+                  <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                     {section}
                   </p>
                 )}
@@ -305,17 +305,17 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
                           href={item.href}
                           onClick={() => setMobileOpen(false)}
                           title={collapsed && !mobileOpen ? item.label : undefined}
-                          className={`group flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                            collapsed && !mobileOpen ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
+                          className={`group flex items-center gap-2.5 rounded-md text-sm transition-all duration-150 ${
+                            collapsed && !mobileOpen ? "justify-center px-2 py-2" : "px-3 py-2"
                           } ${
                             isActive
-                              ? "bg-gradient-to-r from-[#006e2f]/10 to-transparent text-[#006e2f] font-semibold"
-                              : "text-[#5c647a] hover:bg-gray-50 hover:text-[#191c1e]"
+                              ? "bg-fh-50 text-fh-700 font-semibold border-l-2 border-fh-600"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium border-l-2 border-transparent"
                           }`}
                         >
                           <span
-                            className={`material-symbols-outlined text-[20px] flex-shrink-0 ${
-                              isActive ? "text-[#006e2f]" : "text-[#5c647a] group-hover:text-[#191c1e]"
+                            className={`material-symbols-outlined text-[18px] flex-shrink-0 ${
+                              isActive ? "text-fh-600" : "text-gray-600 group-hover:text-gray-900"
                             }`}
                             style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
                           >
@@ -332,7 +332,7 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
                             </>
                           )}
                           {collapsed && !mobileOpen && item.badge && (
-                            <span className="absolute ml-8 -mt-5 text-[8px] font-bold w-3 h-3 rounded-full bg-amber-400" />
+                            <span className="absolute ml-7 -mt-4 text-[8px] font-bold w-2.5 h-2.5 rounded-full bg-amber-400" />
                           )}
                         </Link>
                       </li>
@@ -345,40 +345,40 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Sign out only (Create product CTA retiré) */}
-        <div className={`border-t border-gray-100 ${collapsed && !mobileOpen ? "p-2" : "px-3 py-4"}`}>
+        <div className={`border-t border-gray-200 ${collapsed && !mobileOpen ? "p-2" : "px-2 py-3"}`}>
           <button
             onClick={() => signOut({ callbackUrl: "/formations" })}
             title={collapsed && !mobileOpen ? "Se déconnecter" : undefined}
-            className={`flex items-center justify-center gap-2 w-full rounded-xl text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors border border-red-200 ${
-              collapsed && !mobileOpen ? "py-2 px-2" : "py-2.5 px-4"
+            className={`flex items-center justify-center gap-2 w-full rounded-md text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors border border-red-200 ${
+              collapsed && !mobileOpen ? "py-1.5 px-2" : "py-2 px-3"
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <span className="material-symbols-outlined text-[15px]">logout</span>
             {(!collapsed || mobileOpen) && "Se déconnecter"}
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className={`pt-16 min-h-screen transition-all duration-300 ${mainOffset}`}>
+      <main className={`pt-14 min-h-screen transition-all duration-300 ${mainOffset}`}>
         {/* Breadcrumbs contextuels */}
         {crumbs.length > 1 && (
           <nav
             aria-label="Fil d'Ariane"
-            className="px-4 md:px-6 pt-4 pb-1"
+            className="px-4 py-2 md:px-6"
           >
-            <ol className="flex items-center flex-wrap gap-1 text-sm text-gray-500">
+            <ol className="flex items-center flex-wrap gap-1 text-xs text-gray-500">
               {crumbs.map((crumb, idx) => (
                 <li key={crumb.href} className="flex items-center gap-1">
                   {idx > 0 && <span className="text-gray-300 select-none" aria-hidden>›</span>}
                   {crumb.isLast ? (
-                    <span className="text-[#191c1e] font-medium truncate max-w-[180px]" aria-current="page">
+                    <span className="text-gray-900 font-medium truncate max-w-[180px]" aria-current="page">
                       {crumb.label}
                     </span>
                   ) : (
                     <Link
                       href={crumb.href}
-                      className="hover:text-[#006e2f] hover:underline truncate max-w-[180px] transition-colors"
+                      className="hover:text-fh-600 hover:underline truncate max-w-[180px] transition-colors"
                     >
                       {crumb.label}
                     </Link>
@@ -402,60 +402,60 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
             <div
               role="menu"
               aria-label="Menu de création"
-              className="absolute bottom-[68px] right-0 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
+              className="absolute bottom-[60px] right-0 w-60 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
             >
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#5c647a]">Créer</p>
+              <div className="px-3 py-2 border-b border-gray-200">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Créer</p>
               </div>
               <Link
                 href="/formations/vendeur/produits/nouveau?type=formation"
                 role="menuitem"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors group"
                 onClick={() => setFabOpen(false)}
               >
                 <span
-                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  className="material-symbols-outlined text-[18px] text-fh-600 flex-shrink-0"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   school
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#191c1e]">Nouvelle formation</p>
-                  <p className="text-[11px] text-[#5c647a]">Cours vidéo · modules</p>
+                  <p className="text-xs font-semibold text-gray-900">Nouvelle formation</p>
+                  <p className="text-[10px] text-gray-600">Cours vidéo · modules</p>
                 </div>
               </Link>
               <Link
                 href="/formations/vendeur/produits/nouveau?type=digital"
                 role="menuitem"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors group"
                 onClick={() => setFabOpen(false)}
               >
                 <span
-                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  className="material-symbols-outlined text-[18px] text-fh-600 flex-shrink-0"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   download
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#191c1e]">Nouveau produit numérique</p>
-                  <p className="text-[11px] text-[#5c647a]">E-book · template · pack</p>
+                  <p className="text-xs font-semibold text-gray-900">Nouveau produit numérique</p>
+                  <p className="text-[10px] text-gray-600">E-book · template · pack</p>
                 </div>
               </Link>
               <Link
                 href="/formations/vendeur/automatisations"
                 role="menuitem"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors group"
                 onClick={() => setFabOpen(false)}
               >
                 <span
-                  className="material-symbols-outlined text-[20px] text-[#006e2f] flex-shrink-0"
+                  className="material-symbols-outlined text-[18px] text-fh-600 flex-shrink-0"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   bolt
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#191c1e]">Nouvelle automatisation</p>
-                  <p className="text-[11px] text-[#5c647a]">Workflow déclencheur → action</p>
+                  <p className="text-xs font-semibold text-gray-900">Nouvelle automatisation</p>
+                  <p className="text-[10px] text-gray-600">Workflow déclencheur → action</p>
                 </div>
               </Link>
             </div>
@@ -468,11 +468,10 @@ function VendeurLayoutInner({ children }: { children: React.ReactNode }) {
             aria-label={fabOpen ? "Fermer le menu de création" : "Ouvrir le menu de création"}
             aria-expanded={fabOpen}
             aria-haspopup="menu"
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
-            style={{ backgroundColor: "#006e2f" }}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 bg-fh-600"
           >
             <span
-              className={`material-symbols-outlined text-[28px] transition-transform duration-200 ${fabOpen ? "rotate-45" : "rotate-0"}`}
+              className={`material-symbols-outlined text-[20px] transition-transform duration-200 ${fabOpen ? "rotate-45" : "rotate-0"}`}
             >
               add
             </span>
